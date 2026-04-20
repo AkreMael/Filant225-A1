@@ -931,6 +931,7 @@ const App: React.FC = () => {
                 handleTabChange(tab);
             }}
             onToggleProfile={handleToggleProfile}
+            onOpenScanner={() => setShowScannerGlobal(true)}
             isProfileOpen={isProfileOpen}
             userRole="Client"
             isMiseEnRelationActive={false}

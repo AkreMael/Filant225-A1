@@ -27,15 +27,16 @@ interface BottomNavProps {
   userPhone?: string;
   isMiseEnRelationActive?: boolean;
   unreadChatCount?: number;
+  onOpenScanner: () => void;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggleProfile, isProfileOpen, userRole, userPhone, isMiseEnRelationActive, unreadChatCount }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggleProfile, isProfileOpen, userRole, userPhone, isMiseEnRelationActive, unreadChatCount, onOpenScanner }) => {
   // Définition statique des onglets pour le Client uniquement
   const navItems = [
     { id: Tab.Profile, icon: <ProfileIcon />, label: "Profil" },
     { id: Tab.Menu, icon: <MenuIcon />, label: "Menu" },
     { id: Tab.Offer, icon: <SiteIcon />, label: "Site" },
-    { id: Tab.UserChat, icon: <ChatBubbleIcon />, label: "Chat" },
+    { id: 'scanner', icon: <ScannerIcon />, label: "Scanner" },
     { id: Tab.Payment, icon: <PaymentIcon />, label: "Paiement" },
   ];
 
@@ -53,7 +54,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
               key={item.id}
               onClick={() => {
                 if (item.id === Tab.Profile) onToggleProfile();
-                else setActiveTab(item.id);
+                else if (item.id === 'scanner') onOpenScanner();
+                else setActiveTab(item.id as Tab);
               }}
               className={`group relative flex flex-col items-center justify-center transition-all duration-300 ${isActive ? 'scale-110' : 'hover:scale-105 active:scale-95'}`}
             >
