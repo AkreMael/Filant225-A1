@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FILANT 225</string>
+    <string name="title_activity_main">FILANT 225</string>
+    <string name="package_name">com.filant225.app</string>
+    <string name="custom_url_scheme">com.filant225.app</string>
+</resources>

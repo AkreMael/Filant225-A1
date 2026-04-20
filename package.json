@@ -1,0 +1,49 @@
+{
+  "name": "filant°225-a1",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "start": "node server.ts",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@google-cloud/firestore": "^8.3.0",
+    "@google/genai": "^1.29.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
+    "@types/papaparse": "^5.5.2",
+    "buffer": "^6.0.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "firebase": "^12.10.0",
+    "firebase-admin": "^13.7.0",
+    "google-auth-library": "^10.6.2",
+    "google-spreadsheet": "^5.2.0",
+    "googleapis": "^171.4.0",
+    "jsqr": "latest",
+    "lucide-react": "^0.575.0",
+    "motion": "^12.34.3",
+    "papaparse": "^5.5.3",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsx": "^4.21.0",
+    "vite-plugin-pwa": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

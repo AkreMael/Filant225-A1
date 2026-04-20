@@ -1,0 +1,8 @@
+{
+  "name": "FILANT°225 A1",
+  "description": "Plateforme de services (offres, travailleurs, urgence, position, carte, etc.)",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

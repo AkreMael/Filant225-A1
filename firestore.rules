@@ -1,0 +1,467 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: [PhoneNumber] (sanitized)
+    // Fields:
+    //   - name: string (required)
+    //   - phone: string (required)
+    //   - city: string (required)
+    //   - role: string (optional, default 'Client')
+    //   - lastSeen: timestamp (optional)
+    //   - updatedAt: timestamp (optional)
+    //   - lastConnection: string (optional)
+    //   - lastModeChange: timestamp (optional)
+    //   - cardDataPro: map (optional)
+    //   - cardDataService: map (optional)
+    //   - fcmToken: string (optional)
+    //
+    // Collection: recruitments
+    // Document ID: auto-generated
+    // Fields:
+    //   - nomPrenom: string (required)
+    //   - telephone: string (required)
+    //   - typeInscription: string (required)
+    //   - titre: string (optional)
+    //   - ville: string (optional)
+    //   - whatsapp: string (optional)
+    //   - formation: string (optional)
+    //   - naissance: string (optional)
+    //   - gmail: string (optional)
+    //   - createdAt: timestamp (required)
+    //   - price: number (optional)
+    //
+    // Collection: travailleurs
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required)
+    //   - jobTitle: string (required)
+    //   - fullName: string (required)
+    //   - city: string (required)
+    //   - phone: string (required)
+    //   - whatsapp: string (required)
+    //   - experience: string (required, 'Appris sur le tas'|'Nouveau (Formation)')
+    //   - workMode: string (required, 'J'ai un local'|'Travailleur ambulant')
+    //   - birthDate: string (required)
+    //   - createdAt: timestamp (required)
+    //   - status: string (optional, 'pending'|'paid'|'validated')
+    //   - email: string (optional)
+    //   - price: number (optional)
+    //
+    // Collection: agences
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required)
+    //   - agencyName: string (required)
+    //   - managerName: string (required)
+    //   - city: string (required)
+    //   - phone: string (required)
+    //   - whatsapp: string (required)
+    //   - services: list (required)
+    //   - interventionZones: string (optional)
+    //   - createdAt: timestamp (required)
+    //   - status: string (optional)
+    //   - price: number (optional)
+    //
+    // Collection: proprietaires
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required)
+    //   - ownerName: string (required)
+    //   - location: string (required)
+    //   - phone: string (required)
+    //   - whatsapp: string (required)
+    //   - equipmentType: string (required)
+    //   - dailyPrice: number (required)
+    //   - description: string (optional)
+    //   - createdAt: timestamp (required)
+    //   - status: string (optional)
+    //   - price: number (optional)
+    //
+    // Collection: entreprises
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required)
+    //   - companyName: string (required)
+    //   - ownerName: string (required)
+    //   - location: string (required)
+    //   - phone: string (required)
+    //   - whatsapp: string (required)
+    //   - proposedSalary: string (required)
+    //   - description: string (optional)
+    //   - email: string (optional)
+    //   - createdAt: timestamp (required)
+    //   - status: string (optional)
+    //   - price: number (optional)
+    //
+    // Collection: messages
+    // Document ID: [UserName]_[PhoneNumber]
+    // Fields:
+    //   - userId: string (required)
+    //   - userName: string (required)
+    //   - role: string (required, 'user'|'ai')
+    //   - content: string (required)
+    //   - timestamp: timestamp (required)
+    //   - paymentInfo: map (optional)
+    //   - whatsAppPayload: string (optional)
+    //
+    // Collection: Chats/{userId}/messages
+    // Document ID: auto-generated
+    // Fields:
+    //   - id: string (required)
+    //   - sender: string (required, 'user'|'admin')
+    //   - text: string (required)
+    //   - timestamp: timestamp (required)
+    //   - read: bool (required)
+    //
+    // Collection: scanned_contacts
+    // Document ID: auto-generated
+    // Fields:
+    //   - scannerUserId: string (required)
+    //   - scannerName: string (optional)
+    //   - name: string (required)
+    //   - phone: string (required)
+    //   - title: string (optional)
+    //   - city: string (optional)
+    //   - details: string (optional)
+    //   - scannedAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             (request.auth.token.email == "filantmael225@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && 
+             (resource.data.userId == request.auth.uid || 
+              (resource.data.userId is string && exists(/databases/$(database)/documents/users/$(resource.data.userId)) && get(/databases/$(database)/documents/users/$(resource.data.userId)).data.userId == request.auth.uid));
+    }
+
+    function uidUnchanged() {
+      return !('userId' in request.resource.data) || 
+             request.resource.data.userId == request.auth.uid ||
+             (request.resource.data.userId is string && exists(/databases/$(database)/documents/users/$(request.resource.data.userId)) && get(/databases/$(database)/documents/users/$(request.resource.data.userId)).data.userId == request.auth.uid);
+    }
+
+    function uidNotModified() {
+      return !('userId' in request.resource.data) || 
+             request.resource.data.userId == resource.data.userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      let requiredFields = ['userId', 'name', 'phone', 'city'];
+      let allowedFields = [
+        'userId', 'name', 'phone', 'city', 'role', 'lastSeen', 'updatedAt', 
+        'lastConnection', 'lastModeChange', 'cardDataPro', 'cardDataService', 'fcmToken'
+      ];
+      
+      return hasRequiredFields(requiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.userId is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.phone is string && data.phone.size() >= 8 && data.phone.size() < 20 &&
+             data.city is string && data.city.size() > 0 && data.city.size() < 100 &&
+             (!('role' in data) || (data.role is string && data.role.size() < 50)) &&
+             (!('lastConnection' in data) || (data.lastConnection is string && data.lastConnection.size() < 100)) &&
+             (!('fcmToken' in data) || (data.fcmToken is string && data.fcmToken.size() < 500)) &&
+             (!('lastSeen' in data) || data.lastSeen is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp) &&
+             (!('lastModeChange' in data) || data.lastModeChange is timestamp) &&
+             (!('cardDataPro' in data) || data.cardDataPro is map) &&
+             (!('cardDataService' in data) || data.cardDataService is map);
+    }
+
+    function isValidRecruitment(data) {
+      let requiredFields = ['nomPrenom', 'telephone', 'typeInscription', 'createdAt'];
+      let allowedFields = [
+        'nomPrenom', 'telephone', 'typeInscription', 'titre', 'ville', 
+        'whatsapp', 'formation', 'naissance', 'gmail', 'createdAt', 'price'
+      ];
+      
+      return hasRequiredFields(requiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.nomPrenom is string && data.nomPrenom.size() > 0 && data.nomPrenom.size() < 100 &&
+             data.telephone is string && data.telephone.size() >= 8 && data.telephone.size() < 20 &&
+             data.typeInscription is string && data.typeInscription.size() > 0 &&
+             data.createdAt is timestamp &&
+             (!('titre' in data) || (data.titre is string && data.titre.size() < 100)) &&
+             (!('ville' in data) || (data.ville is string && data.ville.size() < 100)) &&
+             (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() < 20)) &&
+             (!('formation' in data) || (data.formation is string && data.formation.size() < 200)) &&
+             (!('naissance' in data) || (data.naissance is string && data.naissance.size() < 50)) &&
+             (!('gmail' in data) || isValidEmail(data.gmail)) &&
+             (!('price' in data) || data.price is number);
+    }
+
+    function isValidTravailleur(data) {
+      let requiredFields = [
+        'userId', 'jobTitle', 'fullName', 'city', 'phone', 
+        'whatsapp', 'experience', 'workMode', 'birthDate', 'createdAt'
+      ];
+      
+      // For "Demande d'emploi" (direct publication), we relax the required fields
+      let isDirectPublication = ('typeInscription' in data && data.typeInscription == "Demande d'emploi");
+      let effectiveRequiredFields = isDirectPublication ? ['userId', 'jobTitle', 'fullName', 'city', 'createdAt'] : requiredFields;
+
+      let allowedFields = [
+        'userId', 'jobTitle', 'fullName', 'city', 'phone', 'whatsapp', 
+        'experience', 'workMode', 'name', 'service', 'photoUrl', 'frequency', 'description',
+        'birthDate', 'email', 'status', 'createdAt', 'price', 'typeInscription', 'isUnblurred'
+      ];
+      
+      return hasRequiredFields(effectiveRequiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.userId is string &&
+             data.jobTitle is string && data.jobTitle.size() > 0 && data.jobTitle.size() < 100 &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() < 100 &&
+             data.city is string && data.city.size() > 0 && data.city.size() < 100 &&
+             data.createdAt is timestamp &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() >= 8 && data.phone.size() < 20)) &&
+             (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() >= 8 && data.whatsapp.size() < 20)) &&
+             (!('experience' in data) || data.experience in ['Appris sur le tas', 'Nouveau (Formation)']) &&
+             (!('workMode' in data) || data.workMode in ["J'ai un local", "Travailleur ambulant"]) &&
+             (!('birthDate' in data) || (data.birthDate is string && data.birthDate.size() < 50)) &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('status' in data) || data.status in ['pending', 'paid', 'validated']) &&
+             (!('price' in data) || (data.price is number || data.price is string)) &&
+             (!('typeInscription' in data) || data.typeInscription is string) &&
+             (!('isUnblurred' in data) || data.isUnblurred is bool) &&
+             (!('photoUrl' in data) || isValidUrl(data.photoUrl));
+    }
+
+    function isValidProprietaire(data) {
+      let requiredFields = ['userId', 'ownerName', 'location', 'phone', 'whatsapp', 'equipmentType', 'dailyPrice', 'createdAt'];
+      let allowedFields = ['userId', 'ownerName', 'location', 'phone', 'whatsapp', 'equipmentType', 'dailyPrice', 'description', 'createdAt', 'status', 'price', 'typeInscription'];
+      
+      return hasRequiredFields(requiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.userId is string &&
+             data.ownerName is string && data.ownerName.size() > 0 &&
+             data.location is string && data.location.size() > 0 &&
+             data.phone is string && data.phone.size() >= 8 &&
+             data.whatsapp is string && data.whatsapp.size() >= 8 &&
+             data.equipmentType is string &&
+             data.dailyPrice is number &&
+             data.createdAt is timestamp &&
+             (!('description' in data) || data.description is string) &&
+             (!('status' in data) || data.status is string) &&
+             (!('price' in data) || data.price is number) &&
+             (!('typeInscription' in data) || data.typeInscription is string);
+    }
+
+    function isValidAgence(data) {
+      let requiredFields = ['userId', 'agencyName', 'managerName', 'city', 'phone', 'whatsapp', 'services', 'createdAt'];
+      let allowedFields = ['userId', 'agencyName', 'managerName', 'city', 'phone', 'whatsapp', 'services', 'interventionZones', 'description', 'createdAt', 'status', 'price', 'typeInscription'];
+      
+      return hasRequiredFields(requiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.userId is string &&
+             data.agencyName is string && data.agencyName.size() > 0 &&
+             data.managerName is string && data.managerName.size() > 0 &&
+             data.city is string && data.city.size() > 0 &&
+             data.phone is string && data.phone.size() >= 8 &&
+             data.whatsapp is string && data.whatsapp.size() >= 8 &&
+             data.services is list &&
+             data.createdAt is timestamp &&
+             (!('interventionZones' in data) || data.interventionZones is string) &&
+             (!('description' in data) || data.description is string) &&
+             (!('status' in data) || data.status is string) &&
+             (!('price' in data) || data.price is number) &&
+             (!('typeInscription' in data) || data.typeInscription is string);
+    }
+
+    function isValidEntreprise(data) {
+      let requiredFields = ['userId', 'companyName', 'ownerName', 'location', 'phone', 'whatsapp', 'proposedSalary', 'createdAt'];
+      let allowedFields = ['userId', 'companyName', 'ownerName', 'location', 'phone', 'whatsapp', 'proposedSalary', 'description', 'email', 'createdAt', 'status', 'price', 'typeInscription'];
+      
+      return hasRequiredFields(requiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.userId is string &&
+             data.companyName is string && data.companyName.size() > 0 &&
+             data.ownerName is string && data.ownerName.size() > 0 &&
+             data.location is string && data.location.size() > 0 &&
+             data.phone is string && data.phone.size() >= 8 &&
+             data.whatsapp is string && data.whatsapp.size() >= 8 &&
+             data.proposedSalary is string &&
+             data.createdAt is timestamp &&
+             (!('description' in data) || data.description is string) &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('status' in data) || data.status is string) &&
+             (!('price' in data) || data.price is number) &&
+             (!('typeInscription' in data) || data.typeInscription is string);
+    }
+
+    function isValidMessage(data) {
+      let requiredFields = ['userId', 'userName', 'role', 'content', 'timestamp'];
+      let allowedFields = ['userId', 'userName', 'role', 'content', 'timestamp', 'paymentInfo', 'whatsAppPayload'];
+      
+      return hasRequiredFields(requiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.userId is string && 
+             data.userName is string && data.userName.size() > 0 &&
+             data.role in ['user', 'ai'] &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 5000 &&
+             data.timestamp is timestamp &&
+             (!('paymentInfo' in data) || data.paymentInfo is map) &&
+             (!('whatsAppPayload' in data) || data.whatsAppPayload is string);
+    }
+
+    function isValidChatMessage(data) {
+      let requiredFields = ['id', 'sender', 'text', 'timestamp', 'read'];
+      let allowedFields = ['id', 'sender', 'text', 'timestamp', 'read', 'type', 'userId', 'userName'];
+      
+      return hasRequiredFields(requiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.id is string &&
+             data.sender in ['user', 'admin'] &&
+             data.text is string && data.text.size() > 0 && data.text.size() < 5000 &&
+             (data.timestamp is number || data.timestamp is timestamp) &&
+             data.read is bool &&
+             (!('type' in data) || data.type is string) &&
+             (!('userId' in data) || data.userId is string) &&
+             (!('userName' in data) || data.userName is string);
+    }
+
+    function isValidScannedContact(data) {
+      let requiredFields = ['scannerUserId', 'name', 'phone', 'scannedAt'];
+      let allowedFields = ['id', 'scannerUserId', 'scannerName', 'name', 'phone', 'title', 'city', 'details', 'scannedAt'];
+      
+      return hasRequiredFields(requiredFields) &&
+             hasOnlyAllowedFields(allowedFields) &&
+             data.scannerUserId is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.phone is string && data.phone.size() >= 8 && data.phone.size() < 20 &&
+             data.scannedAt is timestamp &&
+             (!('scannerName' in data) || (data.scannerName is string && data.scannerName.size() < 100)) &&
+             (!('title' in data) || (data.title is string && data.title.size() < 100)) &&
+             (!('city' in data) || (data.city is string && data.city.size() < 100)) &&
+             (!('details' in data) || (data.details is string && data.details.size() < 1000));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{phone} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      
+      // Subcollection for notifications
+      match /notifications/{id} {
+        allow read, write: if isAdmin() || (isAuthenticated() && get(/databases/$(database)/documents/users/$(phone)).data.userId == request.auth.uid);
+      }
+    }
+
+    match /travailleurs/{id} {
+      allow create: if isAuthenticated() && isValidTravailleur(request.resource.data) && uidUnchanged();
+      allow read: if true; // Publicly visible
+      allow update: if isAdmin() || (isDocOwner() && isValidTravailleur(request.resource.data) && uidNotModified());
+      allow delete: if isAdmin();
+    }
+
+    match /proprietaires/{id} {
+      allow create: if isAuthenticated() && isValidProprietaire(request.resource.data) && uidUnchanged();
+      allow read: if true; // Publicly visible
+      allow update: if isAdmin() || (isDocOwner() && isValidProprietaire(request.resource.data) && uidNotModified());
+      allow delete: if isAdmin();
+    }
+
+    match /agences/{id} {
+      allow create: if isAuthenticated() && isValidAgence(request.resource.data) && uidUnchanged();
+      allow read: if true; // Publicly visible
+      allow update: if isAdmin() || (isDocOwner() && isValidAgence(request.resource.data) && uidNotModified());
+      allow delete: if isAdmin();
+    }
+
+    match /entreprises/{id} {
+      allow create: if isAuthenticated() && isValidEntreprise(request.resource.data) && uidUnchanged();
+      allow read: if true; // Publicly visible
+      allow update: if isAdmin() || (isDocOwner() && isValidEntreprise(request.resource.data) && uidNotModified());
+      allow delete: if isAdmin();
+    }
+
+    match /messages/{phone} {
+      allow read: if isAdmin() || (isAuthenticated() && get(/databases/$(database)/documents/users/$(phone)).data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+
+      // Subcollection for private chat messages
+      match /history/{messageId} {
+        allow read: if isAdmin() || (isAuthenticated() && (resource.data.authUid == request.auth.uid || get(/databases/$(database)/documents/users/$(phone)).data.userId == request.auth.uid));
+        allow write: if isAdmin() || (isAuthenticated() && (request.resource.data.authUid == request.auth.uid || get(/databases/$(database)/documents/users/$(phone)).data.userId == request.auth.uid));
+      }
+    }
+
+    match /recruitments/{id} {
+      allow create: if isValidRecruitment(request.resource.data);
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /Chats/{userId} {
+      allow read, write: if isAdmin() || isOwner(userId);
+      
+      match /messages/{messageId} {
+        allow read: if isAdmin() || isOwner(userId);
+        allow create: if (isAdmin() || isOwner(userId)) && isValidChatMessage(request.resource.data);
+        allow update: if isAdmin() && isValidChatMessage(request.resource.data);
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /scanned_contacts/{id} {
+      allow create: if isAuthenticated() && isValidScannedContact(request.resource.data) && request.resource.data.scannerUserId == request.auth.uid;
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.scannerUserId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    match /offres_emploi/{id} {
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || (request.resource.data.userId is string && exists(/databases/$(database)/documents/users/$(request.resource.data.userId)) && get(/databases/$(database)/documents/users/$(request.resource.data.userId)).data.userId == request.auth.uid));
+      allow read: if true; // Publicly visible
+      allow update: if isAdmin() || isDocOwner();
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
