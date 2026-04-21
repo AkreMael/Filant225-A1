@@ -751,8 +751,8 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                         </div>
                     </div>
 
-                    <div className="pt-6 border-t border-white/10 flex flex-col items-center">
-                        <p className="text-white/70 text-[10px] font-black uppercase tracking-widest mb-4 text-center">
+                    <div className="pt-6 border-t border-white/10 flex flex-col items-center space-y-4">
+                        <p className="text-white/70 text-[10px] font-black uppercase tracking-widest mb-2 text-center">
                             🎧 Clique ici pour écouter l’audio et comprendre tout clairement 👇
                         </p>
                         
@@ -764,7 +764,14 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
                         >
                             <SpeakerIcon className="w-6 h-6" />
-                            <span>MONTER UN TEXTE EN AUDIO</span>
+                            <span>ÉCOUTER</span>
+                        </button>
+
+                        <button 
+                            onClick={() => window.open('https://filant-225-inscription.vercel.app/', '_blank')}
+                            className="w-full bg-white text-[#16a34a] font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm border-2 border-white"
+                        >
+                            <span>S’inscrire</span>
                         </button>
                     </div>
                 </div>
