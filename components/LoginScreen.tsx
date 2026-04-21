@@ -151,7 +151,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
         />
         <div className="absolute inset-0 bg-orange-600/40"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl mb-2">
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
             <img 
               src="https://i.supaimg.com/5cd01a23-e101-4415-9e28-ff02a617cd11.png" 
               alt="Logo" 
@@ -159,7 +159,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
               referrerPolicy="no-referrer"
             />
           </div>
-          <h1 className="text-white font-black text-2xl tracking-tighter uppercase drop-shadow-lg">FILANT°225</h1>
         </div>
       </div>
 

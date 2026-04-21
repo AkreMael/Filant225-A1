@@ -10,6 +10,7 @@ export interface Question {
   options?: { label: string; value: string }[];
   placeholder?: string;
   defaultValue?: string;
+  hint?: string;
   condition?: (answers: Answers) => boolean;
   inputType?: string;
 }
@@ -229,13 +230,13 @@ export const workerRapidQuestions: Question[] = [
     options: DURATION_DAYS_OPTIONS
   },
   { key: 'serviceCity', text: () => "Où le service doit s'exécuter ?", type: 'text', placeholder: 'Ex: Abidjan, Cocody' },
-  { key: 'budgetPerDay', text: () => "Quel est votre budget par jour ?", type: 'text', inputType: 'tel', defaultValue: "5000" },
+  { key: 'budgetPerDay', text: () => "Quel est votre budget par jour ?", type: 'text', inputType: 'tel', placeholder: "15 000 FCFA", hint: "Exemple: 15 000 FCFA" },
   { key: 'description', text: () => "Veuillez donner des détails sur votre demande", type: 'text', placeholder: 'Détails de la tâche...' },
 ];
 
 export const workerHireQuestions: Question[] = [
   { key: 'serviceCity', text: () => "Où le travailleur doit-il exercer ?", type: 'text', placeholder: 'Ex: Abidjan, Cocody' },
-  { key: 'salary', text: () => "Quel salaire mensuel proposez-vous ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 60000' },
+  { key: 'salary', text: () => "Quel salaire mensuel proposez-vous ?", type: 'text', inputType: 'tel', placeholder: "65 000 FCFA", hint: "Exemple: 65 000 FCFA" },
   { key: 'description', text: () => "Description du poste et des tâches souhaitées", type: 'text', placeholder: 'Détails...' },
 ];
 
@@ -247,20 +248,20 @@ export const rapidBuildingQuestions: Question[] = [
         options: DURATION_DAYS_OPTIONS
     },
     { key: 'workLocation', text: () => "Localité du chantier ?", type: 'text', placeholder: 'Ville / Commune' },
-    { key: 'dailyBudget', text: () => "Budget journalier prévu ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 10000' },
+    { key: 'dailyBudget', text: () => "Budget journalier prévu ?", type: 'text', inputType: 'tel', placeholder: "15 000 FCFA", hint: "Exemple: 15 000 FCFA" },
     { key: 'workDescription', text: () => "Détail des travaux à effectuer ?", type: 'text', placeholder: 'Besoins...' },
 ];
 
 export const apartmentQuestions: Question[] = [
     { key: 'commune', text: () => "Dans quelle commune souhaitez-vous louer ?", type: 'text', placeholder: 'Ex: Cocody, Angré...' },
-    { key: 'budget', text: () => "Quel est votre budget mensuel maximum ?", type: 'text', inputType: 'tel', defaultValue: "150000" },
+    { key: 'budget', text: () => "Quel est votre budget mensuel maximum ?", type: 'text', inputType: 'tel', placeholder: "150 000 FCFA", hint: "Exemple: 150 000 FCFA" },
     { key: 'description', text: () => "Précisez le type de bien (ex: 3 pièces, studio...)", type: 'text', placeholder: 'Détails...' },
 ];
 
 export const equipmentQuestions: Question[] = [
     { key: 'city', text: () => "Ville de location de l'équipement ?", type: 'text', placeholder: 'Ex: Abidjan' },
     { key: 'duration', text: () => "Pour combien de jours ?", type: 'select', options: DURATION_DAYS_OPTIONS },
-    { key: 'budget', text: () => "Budget total ou par jour prévu ?", type: 'text', inputType: 'tel', defaultValue: "15000" },
+    { key: 'budget', text: () => "Budget total ou par jour prévu ?", type: 'text', inputType: 'tel', placeholder: "15 000 FCFA", hint: "Exemple: 15 000 FCFA" },
     { key: 'description', text: () => "Matériel spécifique ou options souhaitées ?", type: 'text', placeholder: 'Détails...' },
 ];
 
@@ -276,7 +277,7 @@ export const terrainQuestions: Question[] = [
     },
     { key: 'location', text: () => "Localisation souhaitée ?", type: 'text', placeholder: 'Ville / Commune / Quartier' },
     { key: 'area', text: () => "Superficie souhaitée (en m²) ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 500' },
-    { key: 'price', text: () => "Quel est votre budget (en francs) ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 5000000' },
+    { key: 'price', text: () => "Quel est votre budget (en francs) ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 5000000', hint: "Exemple: 5 000 000 ou 10 000 000 FCFA" },
     { 
         key: 'usage', 
         text: () => "Usage prévu pour ce terrain ?", 
@@ -342,7 +343,7 @@ export const sonorisationQuestions: Question[] = [
     { key: 'location', text: () => "Lieu / Commune / Quartier ?", type: 'text', placeholder: 'Ex: Cocody, Angré...' },
     { key: 'duration', text: () => "Durée de prestation ?", type: 'select', options: DURATION_DAYS_OPTIONS },
     { key: 'materialType', text: () => "Type de matériel souhaité ?", type: 'text', placeholder: 'Ex: Micros, Baffles, Console...' },
-    { key: 'dailyBudget', text: () => "Budget prévu par jours ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 50000' },
+    { key: 'dailyBudget', text: () => "Budget prévu par jours ?", type: 'text', inputType: 'tel', placeholder: "15 000 FCFA", hint: "Exemple: 15 000 FCFA" },
     { key: 'extraInfo', text: () => "Informations complémentaires ?", type: 'text', placeholder: 'Détails...' },
 ];
 

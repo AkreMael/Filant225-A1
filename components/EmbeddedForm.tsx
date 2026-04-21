@@ -359,19 +359,26 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                         </div>
                     ) : (
                       <div className="flex gap-2 items-stretch">
-                          <div className="flex-1 bg-gray-100 rounded-full flex items-center px-6 border-2 border-transparent focus-within:border-orange-200 shadow-inner">
-                              <input 
-                                  ref={inputRef}
-                                  type={currentQuestion.inputType === 'tel' ? 'text' : (currentQuestion.inputType || 'text')} 
-                                  inputMode={currentQuestion.inputType === 'tel' ? 'numeric' : undefined}
-                                  value={inputValue}
-                                  onChange={handleInputChange}
-                                  onClick={handleInputClick}
-                                  onFocus={handleInputClick}
-                                  onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                                  className="bg-transparent w-full py-4 text-sm font-bold text-gray-800 outline-none"
-                                  placeholder="..."
-                              />
+                          <div className="flex-1 flex flex-col gap-2">
+                              <div className="bg-gray-100 rounded-full flex items-center px-6 border-2 border-transparent focus-within:border-orange-200 shadow-inner">
+                                  <input 
+                                      ref={inputRef}
+                                      type={currentQuestion.inputType === 'tel' ? 'text' : (currentQuestion.inputType || 'text')} 
+                                      inputMode={currentQuestion.inputType === 'tel' ? 'numeric' : undefined}
+                                      value={inputValue}
+                                      onChange={handleInputChange}
+                                      onClick={handleInputClick}
+                                      onFocus={handleInputClick}
+                                      onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                                      className="bg-transparent w-full py-4 text-sm font-bold text-gray-800 outline-none"
+                                      placeholder={currentQuestion.placeholder || "..."}
+                                  />
+                              </div>
+                              {currentQuestion.hint && (
+                                <p className="text-[10px] text-gray-400 font-bold italic ml-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                                  {currentQuestion.hint}
+                                </p>
+                              )}
                           </div>
                           <button 
                               onClick={() => handleNext()}
