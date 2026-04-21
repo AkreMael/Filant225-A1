@@ -239,7 +239,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       onNavigate(view, category);
   };
 
-  const formattedTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formattedDate = useMemo(() => {
+    const day = currentTime.toLocaleDateString('fr-FR', { weekday: 'long' });
+    const capitalizedDay = day.charAt(0).toUpperCase() + day.slice(1);
+    const month = currentTime.toLocaleDateString('fr-FR', { month: '2-digit' });
+    return `${capitalizedDay} ${month}`;
+  }, [currentTime]);
   
   const isClient = true; // Forcé car l'app est maintenant Client-only
   const isEntreprise = false;
@@ -382,8 +387,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-1.5">
-                    <div className={`text-lg font-bold ${isClient ? 'text-slate-900' : 'text-white'} font-mono tracking-wider select-none`}>
-                        {formattedTime}
+                    <div className={`px-4 py-1.5 border-2 border-blue-500 rounded-lg text-lg font-bold ${isClient ? 'text-slate-900 border-blue-500' : 'text-white border-white'} font-mono tracking-wider select-none bg-white/5 shadow-sm`}>
+                        {formattedDate}
                     </div>
                     {!isAdmin(user) && (
                         <button 
