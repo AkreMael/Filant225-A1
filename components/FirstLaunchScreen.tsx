@@ -34,25 +34,39 @@ const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => 
         
         {/* Welcome Section */}
         <div className="mb-2 transition-all duration-700 animate-in fade-in slide-in-from-top-10 ease-out">
-          <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-0">Bienvenue chez</h2>
-          <h1 className="text-7xl sm:text-8xl font-black text-black tracking-tighter leading-none mt-2">
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-0">Bienvenue chez</h2>
+          <h1 className="text-6xl sm:text-7xl font-black text-black tracking-tighter leading-none mt-2">
             FILANT°225
           </h1>
         </div>
 
         {/* Description Section */}
-        <div className="mt-12 space-y-6 max-w-sm transition-all duration-1000 delay-300 animate-in fade-in slide-in-from-bottom-10 ease-out">
-          <p className="text-[17px] sm:text-[19px] font-bold leading-tight px-2">
-            Transforme ton quotidien avec une expérience simple,<br/>
-            rapide et efficace.
+        <div className="mt-10 space-y-5 max-w-sm transition-all duration-1000 delay-300 animate-in fade-in slide-in-from-bottom-10 ease-out">
+          <p className="text-[20px] sm:text-[22px] font-black leading-tight">
+            Trouvez facilement ce dont vous avez besoin.
           </p>
-          <p className="text-[17px] sm:text-[19px] font-bold leading-tight px-2">
-            Accède à des services innovants, découvre de nouvelles<br/>
-            opportunités et prends le contrôle dès maintenant.
+          
+          <div className="bg-black/10 backdrop-blur-sm rounded-3xl p-6 py-4 space-y-2 border border-white/20">
+            <p className="text-sm font-black uppercase tracking-widest text-black/60 translate-y-[-2px]">
+              🔎 Recherchez rapidement :
+            </p>
+            <ul className="text-[17px] sm:text-[18px] font-bold space-y-1">
+              <li>• Des travailleurs (tous types de métiers)</li>
+              <li>• Des équipements</li>
+              <li>• Des appartements</li>
+            </ul>
+          </div>
+
+          <p className="text-[15px] sm:text-[16px] font-bold leading-tight px-2">
+            🤝 FILANT°225 vous met en relation directe avec les bonnes personnes.
           </p>
-          <p className="text-[17px] sm:text-[19px] font-bold leading-tight px-2">
-            Rejoins-nous en quelques secondes et commence ton<br/>
-            aventure dès aujourd'hui.
+          
+          <p className="text-[14px] font-black uppercase tracking-[0.2em] opacity-80 pt-2">
+            Simple. Rapide. Efficace.
+          </p>
+          
+          <p className="text-[17px] sm:text-[18px] font-bold leading-tight px-2">
+            Connectez-vous et commencez dès aujourd'hui.
           </p>
         </div>
 

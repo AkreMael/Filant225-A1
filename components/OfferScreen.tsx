@@ -611,12 +611,43 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-600 animate-pulse"></span>
                 DISPONIBLE PARTOUT EN CÔTE D'IVOIRE
             </div>
-            <h1 className="text-4xl font-black text-slate-900 leading-[1.1] tracking-tight mb-6">
-                La solution rapide pour <br/>
-                <span className="text-orange-500">vos besoins quotidiens</span>
+            <h1 className="text-3xl font-black text-slate-900 leading-tight tracking-tight mb-4">
+                Bienvenue chez <span className="text-orange-500">FILANT°225</span>
             </h1>
-            <p className="text-gray-500 text-sm leading-relaxed max-w-xs mb-10">
-                Trouvez des travailleurs qualifiés, louez du matériel ou dénichez votre future maison. FILANT°225 connecte particuliers et professionnels en toute sécurité.
+            <p className="text-lg font-bold text-gray-800 mb-6">
+                Trouvez facilement ce dont vous avez besoin.
+            </p>
+            
+            <div className="bg-gray-50 rounded-3xl p-6 mb-8 w-full max-w-sm border border-gray-100 shadow-sm">
+                <p className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4 flex items-center justify-center gap-2">
+                    🔎 Recherchez rapidement :
+                </p>
+                <ul className="space-y-3 text-sm font-bold text-gray-600">
+                    <li className="flex items-center justify-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                        Des travailleurs (tous types de métiers)
+                    </li>
+                    <li className="flex items-center justify-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                        Des équipements
+                    </li>
+                    <li className="flex items-center justify-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                        Des appartements
+                    </li>
+                </ul>
+            </div>
+
+            <p className="text-sm font-bold text-slate-800 px-4 mb-4">
+                🤝 FILANT°225 vous met en relation directe avec les bonnes personnes.
+            </p>
+            
+            <p className="text-orange-600 font-black text-xs uppercase tracking-[0.2em] mb-4">
+                Simple. Rapide. Efficace.
+            </p>
+            
+            <p className="text-gray-500 text-xs font-medium mb-10">
+                Connectez-vous et commencez dès aujourd'hui.
             </p>
             <button 
               onClick={scrollIntoView}
