@@ -181,42 +181,59 @@ export const SEARCHABLE_TITLES = [
 
 // --- PRICE CALCULATION ---
 export const calculateTotalPrice = (formType: string, answers: Answers, serviceMode?: string, count: number = 1, title: string = ''): number => {
-    // Nouvelle règle : Location d'équipement est TOUJOURS à 530 CFA fixe
+    // 1. Détecter le type de formulaire
     const apartmentTitles = ['Studio à louer', 'Villa à louer', 'Chambre-salon à louer', 'Petit local à louer', 'Magasin à louer'];
     const isAppart = apartmentTitles.some(t => title.includes(t)) || title.toLowerCase().includes('appartement');
     const isEquipment = (formType === 'location' || formType === 'personal_location') && !isAppart;
+    const isWorker = formType === 'worker' || formType === 'personal_worker' || formType === 'rapid_building_service';
 
+    // 2. Règle spéciale : Location d'équipement est TOUJOURS à 530 CFA fixe
     if (isEquipment) {
         return 530;
     }
 
-    // On cherche si un champ de durée existe dans les réponses
     const duration = answers.serviceDuration || answers.workDuration || answers.duration;
-    
+
+    // 3. Logique pour les Travailleurs (Multiplication automatique selon la demande)
+    if (isWorker) {
+        let baseFee = 530; // Frais de base par personne
+
+        if (serviceMode === 'Embauche') {
+            baseFee = 4650;
+        } else if (duration) {
+            if (duration === 'Par mois') {
+                baseFee = 4650;
+            } else {
+                const daysMatch = (duration as string).match(/(\d+)/);
+                if (daysMatch) {
+                    const days = parseInt(daysMatch[1], 10);
+                    // 465 CFA par jour par personne, plafonné à 4650 par personne
+                    baseFee = Math.min(days * 465, 4650);
+                }
+            }
+        }
+        
+        return baseFee * count;
+    }
+
+    // 4. Logique pour les autres types (Immobilier, Urgences, etc.)
+    // On conserve le plafond global de 4650 CFA pour ces cas
     if (duration) {
         if (duration === 'Par mois') {
-            return 4650; // Plafond pour le mois aussi
+            return 4650;
         }
-        // Extraire le nombre de jours (ex: "3 jours" -> 3)
         const daysMatch = (duration as string).match(/(\d+)/);
         if (daysMatch) {
             const days = parseInt(daysMatch[1], 10);
-            // Nouvelle règle : 465 francs par jour, plafonné à 4 650 francs au total
-            const basePrice = days * 465 * count;
-            return Math.min(basePrice, 4650);
+            const calculated = days * 465 * count;
+            return Math.min(calculated, 4650);
         }
     }
 
-    // --- LOGIQUE POUR LES CAS SANS DURÉE ---
-    
-    // Cas spécifique : Embaucher (Prix fixe)
-    if (serviceMode === 'Embaucher') {
-        const basePrice = 4650 * count;
-        return Math.min(basePrice, 4650); // On applique aussi le plafond ici par cohérence si nécessaire, ou on laisse à 4650? 
-        // L'utilisateur dit "Le total ne doit jamais dépasser 4 650 francs".
+    if (serviceMode === 'Embauche') {
+        return Math.min(4650 * count, 4650);
     }
 
-    // Cas par défaut (Immobilier, Urgences, etc. sans durée sélectionnée)
     return Math.min(530 * count, 4650);
 };
 
@@ -354,10 +371,10 @@ export const getQuestionsForType = (formType: string, title: string, serviceMode
     ];
     if (formType === 'personal_worker') return [
         { key: 'workerTitle', text: () => "Quel métier recherchez-vous ?", type: 'text', placeholder: 'Ex: maçon, électricien...' },
-        ...(serviceMode === 'Embaucher' ? workerHireQuestions : workerRapidQuestions)
+        ...(serviceMode === 'Embauche' ? workerHireQuestions : workerRapidQuestions)
     ];
     if (formType === 'rapid_building_service') return rapidBuildingQuestions;
-    if (formType === 'worker') return (serviceMode === 'Embaucher' ? workerHireQuestions : workerRapidQuestions);
+    if (formType === 'worker') return (serviceMode === 'Embauche' ? workerHireQuestions : workerRapidQuestions);
     
     const isTerrain = title.includes('Terrain') || title.toLowerCase().includes('terrain');
     if (isTerrain) return terrainQuestions;

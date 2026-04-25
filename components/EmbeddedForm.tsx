@@ -35,8 +35,8 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
 }) => {
   const isRapidTitle = title.toLowerCase().endsWith('rapide');
 
-  const [serviceMode, setServiceMode] = useState<'Embaucher' | 'Service rapide'>(() => {
-    if (isBlurredImage) return 'Embaucher';
+  const [serviceMode, setServiceMode] = useState<'Embauche' | 'Service rapide'>(() => {
+    if (isBlurredImage) return 'Embauche';
     return 'Service rapide';
   });
 
@@ -265,10 +265,10 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
             {isWorker && !isBlurredImage && !isRapidTitle && (
               <div className="flex gap-3 mb-8">
                   <button 
-                    onClick={() => setServiceMode('Embaucher')}
-                    className={`px-5 py-2 rounded-full font-black text-[10px] uppercase transition-all border-2 ${serviceMode === 'Embaucher' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-gray-400 border-gray-100'}`}
+                    onClick={() => setServiceMode('Embauche')}
+                    className={`px-5 py-2 rounded-full font-black text-[10px] uppercase transition-all border-2 ${serviceMode === 'Embauche' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-gray-400 border-gray-100'}`}
                   >
-                      Embaucher
+                      Embauche
                   </button>
                   <button 
                     onClick={() => setServiceMode('Service rapide')}
