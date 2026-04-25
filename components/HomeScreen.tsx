@@ -240,10 +240,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const formattedDate = useMemo(() => {
-    const day = currentTime.toLocaleDateString('fr-FR', { weekday: 'long' });
-    const capitalizedDay = day.charAt(0).toUpperCase() + day.slice(1);
-    const month = currentTime.toLocaleDateString('fr-FR', { month: '2-digit' });
-    return `${capitalizedDay} ${month}`;
+    const dayName = currentTime.toLocaleDateString('fr-FR', { weekday: 'long' });
+    const capitalizedDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+    const dayNum = currentTime.toLocaleDateString('fr-FR', { day: '2-digit' });
+    return `${capitalizedDay} ${dayNum}`;
   }, [currentTime]);
   
   const isClient = true; // Forcé car l'app est maintenant Client-only
@@ -387,7 +387,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-1.5">
-                    <div className={`px-4 py-1.5 border-2 border-blue-500 rounded-lg text-lg font-bold ${isClient ? 'text-slate-900 border-blue-500' : 'text-white border-white'} font-mono tracking-wider select-none bg-white/5 shadow-sm`}>
+                    <div className={`px-3 py-1 border-2 border-blue-500 rounded-lg text-sm font-bold ${isClient ? 'text-slate-900 border-blue-500' : 'text-white border-white'} font-mono tracking-wider select-none bg-white/5 shadow-sm`}>
                         {formattedDate}
                     </div>
                     {!isAdmin(user) && (
