@@ -410,9 +410,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     )}
                     {isAdmin(user) ? (
                         <button 
-                            onClick={() => onNavigate('admin_sms')}
+                            onClick={() => onNavigate('admin_dashboard')}
                             className="active:scale-90 transition-transform shadow-lg focus:outline-none"
-                            aria-label="Gestion SMS Administrateur"
+                            aria-label="Dashboard Administrateur"
                         >
                             <IvoryCoastFlagIcon className="h-6 w-9 rounded-sm" />
                         </button>

@@ -23,6 +23,7 @@ import PaymentConfirmationScreen from './components/PaymentConfirmationScreen';
 import ChatScreen from './components/ChatScreen';
 import LocationScreen from './components/LocationScreen';
 import InterventionShopScreen from './components/InterventionShopScreen';
+import AdminDashboard from './components/AdminDashboard';
 import { motion, AnimatePresence } from 'motion/react';
 import { databaseService, SavedContact } from './services/databaseService';
 import { messagingService } from './services/messagingService';
@@ -129,7 +130,7 @@ const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Menu);
-  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr'>('hub');
+  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard'>('hub');
   const [offerSubView, setOfferSubView] = useState<'main' | 'shop'>('main');
   
   const [navHistory, setNavHistory] = useState<NavigationPoint[]>([]);
@@ -710,6 +711,9 @@ const App: React.FC = () => {
         case 'assistant_qr':
           activeScreen = <AssistantQRScreen onBack={handleBack} user={displayUser} onShowPopup={showPopup} />;
           break;
+        case 'admin_dashboard':
+          activeScreen = <AdminDashboard onBack={handleBack} user={displayUser} />;
+          break;
         case 'hub':
         default:
           activeScreen = <HomeScreen 
@@ -794,7 +798,7 @@ const App: React.FC = () => {
       break;
   }
 
-  const isAdminView = false;
+  const isAdminView = menuView === 'admin_dashboard' && activeTab === Tab.Menu;
 
   if (currentUser?.isBlocked) {
     return (
