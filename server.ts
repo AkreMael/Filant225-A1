@@ -69,11 +69,11 @@ async function startServer() {
       }
 
       // Save to Firestore for immediate display
-      console.log("Saving to Firestore collection 'travailleurs'...");
+      console.log("Saving to Firestore collection 'Travailleurs'...");
       let docRef;
       try {
-        // 1. Save to 'travailleurs' for immediate display on the page
-        docRef = await firestore.collection("travailleurs").add({
+        // 1. Save to 'Travailleurs' for immediate display on the page
+        docRef = await firestore.collection("Travailleurs").add({
           name,
           city: city || "Non spécifiée",
           price: price || "À discuter",
@@ -87,23 +87,7 @@ async function startServer() {
           photoUrl: photoUrl || null,
           isUnblurred: isUnblurred || false
         });
-        console.log("Saved to 'travailleurs' with ID:", docRef.id);
-
-        // 2. Save to 'offres_emploi' for the Admin database as requested
-        await firestore.collection("offres_emploi").add({
-          name,
-          city: city || "Non spécifiée",
-          price: price || "À discuter",
-          frequency: frequency || "mois",
-          service,
-          description: description || `Disponible pour : ${service}`,
-          submittedAt: admin.firestore.FieldValue.serverTimestamp(),
-          userId: userId || null,
-          photoUrl: photoUrl || null,
-          isUnblurred: isUnblurred || false,
-          source: "Publication Directe"
-        });
-        console.log("Saved to 'offres_emploi' for Admin.");
+        console.log("Saved to 'Travailleurs' with ID:", docRef.id);
       } catch (firestoreError: any) {
         console.error("Firestore Write Error:", firestoreError);
         return res.status(500).json({ error: "Erreur lors de la sauvegarde dans Firestore.", details: firestoreError.message });
@@ -125,7 +109,7 @@ async function startServer() {
       if (!offerId) {
         return res.status(400).json({ error: "Missing offerId" });
       }
-      await firestore.collection("travailleurs").doc(offerId).update({
+      await firestore.collection("Travailleurs").doc(offerId).update({
         isUnblurred: !!isUnblurred
       });
       res.json({ success: true });
@@ -138,7 +122,7 @@ async function startServer() {
   app.get("/api/workers", async (req, res) => {
     try {
       // Fetch from multiple collections in parallel to provide a comprehensive list quickly
-      const collections = ["travailleurs", "agences", "proprietaires", "entreprises"];
+      const collections = ["Travailleurs", "Agences immobilières", "Équipements", "Entreprises"];
       
       const snapshots = await Promise.all(
         collections.map(col => firestore.collection(col).get())
@@ -182,7 +166,7 @@ async function startServer() {
   app.post("/api/workers", async (req, res) => {
     try {
       const worker = req.body;
-      const docRef = await firestore.collection("travailleurs").add({
+      const docRef = await firestore.collection("Travailleurs").add({
         ...worker,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
@@ -212,7 +196,7 @@ async function startServer() {
 
   app.get("/api/offers", async (req, res) => {
     try {
-      const snapshot = await firestore.collection("offers").get();
+      const snapshot = await firestore.collection("Travailleurs").get();
       const offers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       res.json(offers);
     } catch (error: any) {
@@ -224,9 +208,9 @@ async function startServer() {
   app.post("/api/offers", async (req, res) => {
     try {
       const offer = req.body;
-      const docRef = await firestore.collection("offers").add({
+      const docRef = await firestore.collection("Travailleurs").add({
         ...offer,
-        createdAt: new Date().toISOString(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       res.json({ id: docRef.id, success: true });
     } catch (error) {
@@ -237,9 +221,10 @@ async function startServer() {
   app.post("/api/recruitment", async (req, res) => {
     try {
       const data = req.body;
-      const docRef = await firestore.collection("recruitment").add({
+      const docRef = await firestore.collection("Messagerie").add({
         ...data,
-        createdAt: new Date().toISOString(),
+        type: 'recruitment',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       res.json({ id: docRef.id, success: true });
     } catch (error) {
@@ -251,9 +236,10 @@ async function startServer() {
   app.post("/api/placement", async (req, res) => {
     try {
       const data = req.body;
-      const docRef = await firestore.collection("placement").add({
+      const docRef = await firestore.collection("Messagerie").add({
         ...data,
-        createdAt: new Date().toISOString(),
+        type: 'placement',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       res.json({ id: docRef.id, success: true });
     } catch (error) {
@@ -343,7 +329,7 @@ async function startServer() {
       }
 
       const sanitizedPhone = phone.replace(/\D/g, '');
-      const userDoc = await firestore.collection("users").doc(sanitizedPhone).get();
+      const userDoc = await firestore.collection("Clients").doc(sanitizedPhone).get();
       const userData = userDoc.data();
       const fcmToken = userData?.fcmToken;
 

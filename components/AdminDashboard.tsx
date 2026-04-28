@@ -40,40 +40,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
   useEffect(() => {
     setLoading(true);
     
-    // 1. Listen to Firestore Users (Clients & Connections)
-    const unsubscribeUsers = onSnapshot(query(collection(db, 'users'), orderBy('lastConnection', 'desc')), (snapshot) => {
-      const allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClients(allUsers.filter((u: any) => u.role === 'Client'));
-      setConnections(allUsers.slice(0, 50)); 
+    // 1. Listen to Firestore Clients & Connections
+    const unsubscribeUsers = onSnapshot(query(collection(db, 'Clients'), orderBy('lastConnection', 'desc')), (snapshot) => {
+      const allClients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setClients(allClients);
     }, (err) => console.error("Admin dashboard users error:", err));
 
+    const unsubscribeConns = onSnapshot(query(collection(db, 'Connexions'), orderBy('timestamp', 'desc'), limit(50)), (snapshot) => {
+        setConnections(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     // 2. Listen to Firestore Travailleurs
-    const unsubscribeTravailleurs = onSnapshot(collection(db, 'travailleurs'), (snapshot) => {
+    const unsubscribeTravailleurs = onSnapshot(collection(db, 'Travailleurs'), (snapshot) => {
       setTravailleurs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    // 3. Listen to Firestore Agences
-    const unsubscribeAgences = onSnapshot(collection(db, 'agences'), (snapshot) => {
+    // 3. Listen to Firestore Agences immobilières
+    const unsubscribeAgences = onSnapshot(collection(db, 'Agences immobilières'), (snapshot) => {
       setAgences(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    // 4. Listen to Firestore Equipements (Proprietaires)
-    const unsubscribeEquipements = onSnapshot(collection(db, 'proprietaires'), (snapshot) => {
+    // 4. Listen to Firestore Équipements
+    const unsubscribeEquipements = onSnapshot(collection(db, 'Équipements'), (snapshot) => {
       setEquipements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
     // 5. Listen to Firestore Entreprises
-    const unsubscribeEntreprises = onSnapshot(collection(db, 'entreprises'), (snapshot) => {
+    const unsubscribeEntreprises = onSnapshot(collection(db, 'Entreprises'), (snapshot) => {
       setEntreprises(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    // 6. Listen to Firestore Messages
-    const unsubscribeMessages = onSnapshot(query(collection(db, 'messages'), orderBy('timestamp', 'desc'), limit(100)), (snapshot) => {
+    // 6. Listen to Firestore Messagerie
+    const unsubscribeMessages = onSnapshot(query(collection(db, 'Messagerie'), orderBy('timestamp', 'desc'), limit(100)), (snapshot) => {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    // 7. Listen to RTDB QR Codes (scanned_contacts)
-    const qrRef = rtdbRef(rtdb, 'scanned_contacts');
+    // 7. Listen to RTDB QR Code
+    const qrRef = rtdbRef(rtdb, 'QR Code');
     const unsubscribeQR = onValue(qrRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -93,8 +96,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
       }
     });
 
-    // 8. Listen to RTDB Payments (wave_payments)
-    const paymentsRef = rtdbRef(rtdb, 'wave_payments');
+    // 8. Listen to RTDB Paiements
+    const paymentsRef = rtdbRef(rtdb, 'Paiements');
     const unsubscribePayments = onValue(paymentsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {

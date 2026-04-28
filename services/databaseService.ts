@@ -1,6 +1,6 @@
 import { User, Worker, Offer, FavoriteRequest, PersonalRequest, Notification } from '../types';
 import { db, auth, rtdb, storage } from '../firebase';
-import { doc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, orderBy, deleteDoc, getDoc, onSnapshot, writeBatch, updateDoc, where } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, orderBy, deleteDoc, getDoc, onSnapshot, writeBatch, updateDoc, where, limit } from 'firebase/firestore';
 import { ref as rtdbRef, push, set, serverTimestamp as rtdbTimestamp, get, update, onValue, remove } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL, uploadString } from 'firebase/storage';
 
@@ -242,7 +242,17 @@ export const databaseService = {
         }
         localStorage.setItem(CONNECTION_LOGS_KEY, JSON.stringify(logs));
         
-        // Sync to Firestore (Non-blocking)
+        // Sync to Firestore 'Connexions'
+        const connRef = collection(db, 'Connexions');
+        await addDoc(connRef, {
+            name: user.name,
+            phone: user.phone,
+            city: user.city,
+            timestamp: serverTimestamp(),
+            role: user.role || 'Client'
+        });
+
+        // Sync to Firestore 'Clients' or 'Travailleurs' based on role
         databaseService.syncUserToFirestore(user);
     } catch (e) {
         console.error("Error logging connection", e);
@@ -270,7 +280,19 @@ export const databaseService = {
   syncUserToFirestore: async (user: User) => {
     if (!user.phone) return;
     const sanitizedPhone = user.phone.replace(/\D/g, '');
-    const path = `users/${sanitizedPhone}`;
+    let collectionName = 'Clients'; // Default
+
+    // Routing logic based on role
+    const role = user.role?.toLowerCase() || '';
+    if (role.includes('travailleur') || role === 'agent') {
+      collectionName = 'Travailleurs';
+    } else if (role.includes('agence') || role.includes('immobilier')) {
+      collectionName = 'Agences immobilières';
+    } else if (role.includes('equipement')) {
+      collectionName = 'Équipements';
+    } else if (role.includes('entreprise')) {
+      collectionName = 'Entreprises';
+    }
     
     try {
       const fbUser = await databaseService.ensureAuth();
@@ -288,7 +310,7 @@ export const databaseService = {
         }
       }
 
-      const userRef = doc(db, 'users', sanitizedPhone);
+      const userRef = doc(db, collectionName, sanitizedPhone);
       const docSnap = await getDoc(userRef);
       const existingData = docSnap.exists() ? docSnap.data() : {};
 
@@ -298,7 +320,7 @@ export const databaseService = {
         phone: sanitizedPhone,
         city: (user.city && !['Non spécifiée', ''].includes(user.city)) ? user.city : (existingData.city || user.city || ''),
         pin: user.pin || existingData.pin || null,
-        role: 'Client',
+        role: user.role || 'Client',
         isVerified: existingData.isVerified || user.isVerified || false,
         lastConnection: new Date().toISOString(),
         activeSessionId: user.activeSessionId || existingData.activeSessionId || null
@@ -308,27 +330,35 @@ export const databaseService = {
       userData.updatedAt = serverTimestamp();
       
       await setDoc(userRef, userData, { merge: true });
-      console.log("User synced to Firestore successfully:", user.name);
+      console.log(`User synced to ${collectionName} successfully:`, user.name);
+
+      // Add to Connexions as well
+      const connRef = doc(db, 'Connexions', `${sanitizedPhone}_${Date.now()}`);
+      await setDoc(connRef, {
+          ...userData,
+          timestamp: serverTimestamp()
+      });
+
     } catch (e) {
       console.error("Error in syncUserToFirestore:", e);
-      // Don't throw here to avoid blocking the main flow if sync fails
     }
   },
 
   getUserByUidFromFirestore: async (uid: string): Promise<User | null> => {
-    const path = 'users';
     try {
-      const { getDocs, query, collection, where, limit } = await import('firebase/firestore');
-      const q = query(collection(db, path), where('userId', '==', uid), limit(1));
-      const snapshot = await withTimeout(getDocs(q));
-      if (!snapshot.empty) {
-        const doc = snapshot.docs[0];
-        const data = doc.data();
-        return {
-          id: doc.id,
-          phone: data.phone || doc.id, // Ensure phone is present
-          ...data
-        } as User;
+      const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
+      for (const col of collections) {
+          const q = query(collection(db, col), where('userId', '==', uid), limit(1));
+          const snapshot = await withTimeout(getDocs(q));
+          if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            const data = doc.data();
+            return {
+              id: doc.id,
+              phone: data.phone || doc.id,
+              ...data
+            } as User;
+          }
       }
     } catch (e) {
       console.error("Error fetching user by UID:", e);
@@ -338,8 +368,7 @@ export const databaseService = {
 
   getUserFromFirestore: async (name: string, phone: string): Promise<User | null> => {
     const sanitizedPhone = phone.replace(/\D/g, '');
-    const path = `users/${sanitizedPhone}`;
-    const userRef = doc(db, 'users', sanitizedPhone);
+    const userRef = doc(db, 'Clients', sanitizedPhone);
     
     try {
       await databaseService.ensureAuth();
@@ -353,7 +382,7 @@ export const databaseService = {
               phone: data.phone,
               city: data.city,
               role: data.role
-            };
+            } as User;
         }
       }
     } catch (e) {
@@ -364,18 +393,20 @@ export const databaseService = {
 
   getUserByPhoneFromFirestore: async (phone: string): Promise<User | null> => {
     const sanitizedPhone = phone.replace(/\D/g, '');
-    const userRef = doc(db, 'users', sanitizedPhone);
-    
     try {
       await databaseService.ensureAuth();
-      const docSnap = await withTimeout(getDoc(userRef));
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          phone: data.phone || docSnap.id, // Ensure phone is present
-          ...data
-        } as User;
+      const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
+      for (const col of collections) {
+          const userRef = doc(db, col, sanitizedPhone);
+          const docSnap = await withTimeout(getDoc(userRef));
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            return {
+              id: docSnap.id,
+              phone: data.phone || docSnap.id,
+              ...data
+            } as User;
+          }
       }
     } catch (e) {
       console.error("Error in getUserByPhoneFromFirestore:", e);
@@ -412,7 +443,7 @@ export const databaseService = {
     if (!user || !user.phone || !token) return;
     
     const sanitizedPhone = user.phone.replace(/\D/g, '');
-    const userRef = doc(db, 'users', sanitizedPhone);
+    const userRef = doc(db, 'Clients', sanitizedPhone);
     
     try {
       await setDoc(userRef, { fcmToken: token, updatedAt: serverTimestamp() }, { merge: true });
@@ -537,9 +568,9 @@ export const databaseService = {
     return { user: newUser };
   },
 
-  resetPin: async (phone: string, newPin: string): Promise<{success: boolean, error?: string}> => {
+  resetPin: async (phone: string, newPin: string) => {
     const normalizedPhone = phone.replace(/\D/g, '');
-    const userRef = doc(db, 'users', normalizedPhone);
+    const userRef = doc(db, 'Clients', normalizedPhone);
     
     try {
       const docSnap = await getDoc(userRef);
@@ -575,6 +606,13 @@ export const databaseService = {
       await databaseService.ensureAuth();
       
       const collectionsToClear = [
+        'Clients',
+        'Connexions',
+        'Travailleurs',
+        'Agences immobilières',
+        'Équipements',
+        'Entreprises',
+        'Messagerie',
         'users',
         'recruitments',
         'messages',
@@ -597,8 +635,8 @@ export const databaseService = {
         let deleteCount = 0;
         
         snapshot.forEach((doc) => {
-          // Preserve admin in users collection
-          if (colName === 'users' && doc.id === ADMIN_PHONE) {
+          // Preserve admin in any collection by phone if id is the phone
+          if ((colName === 'users' || colName === 'Clients' || colName === 'Admin') && doc.id === ADMIN_PHONE) {
             return;
           }
           batch.delete(doc.ref);
@@ -612,7 +650,7 @@ export const databaseService = {
       }
 
       // 2. Ensure Admin exists with PIN 1234
-      const adminRef = doc(db, 'users', ADMIN_PHONE);
+      const adminRef = doc(db, 'Clients', ADMIN_PHONE);
       const adminData: User = {
         name: 'Mael',
         city: 'Bassam',
@@ -629,7 +667,7 @@ export const databaseService = {
         lastSeen: serverTimestamp()
       }, { merge: true });
       
-      console.log("Admin account verified/created with PIN 1234.");
+      console.log("Admin account verified/created with PIN 1234 in Clients collection.");
 
       // 3. Cleanup LocalStorage
       localStorage.removeItem(USERS_KEY);
@@ -728,7 +766,7 @@ export const databaseService = {
     try {
         databaseService.saveActiveUser(null);
         const sanitizedPhone = phone.replace(/\D/g, '');
-        const userRef = doc(db, 'users', sanitizedPhone);
+        const userRef = doc(db, 'Clients', sanitizedPhone);
         await updateDoc(userRef, {
             activeSessionId: null
         });
@@ -791,7 +829,7 @@ export const databaseService = {
           try {
               const sanitizedUserName = (user.name || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
               const userKey = `${sanitizedUserName}_${user.phone}`;
-              const contactsRef = rtdbRef(rtdb, `scanned_contacts/${userKey}`);
+              const contactsRef = rtdbRef(rtdb, `QR Code/${userKey}`);
               
               // Create an object where keys are "Nom_Numero"
               const contactsObject: Record<string, any> = {};
@@ -867,10 +905,9 @@ export const databaseService = {
       const sanitizedPhone = phone.replace(/\D/g, '');
       const user = databaseService.getUserByPhoneFromLocalStorage(phone);
       const userName = user?.name || 'Utilisateur';
-      const messageId = `${userName}_${sanitizedPhone}`;
-      const messageRef = doc(db, 'messages', messageId);
+      const messageRef = collection(db, 'Messagerie');
       
-      await setDoc(messageRef, {
+      await addDoc(messageRef, {
         userId: sanitizedPhone,
         userName: userName,
         role: message.sender,
@@ -921,7 +958,7 @@ export const databaseService = {
   sendNotificationToFirestore: async (phone: string, notification: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => {
     const sanitizedPhone = phone.replace(/\D/g, '');
     try {
-      const notifRef = collection(db, 'users', sanitizedPhone, 'notifications');
+      const notifRef = collection(db, 'Clients', sanitizedPhone, 'notifications');
       await addDoc(notifRef, {
         ...notification,
         timestamp: serverTimestamp(),
@@ -935,7 +972,7 @@ export const databaseService = {
 
   onNotificationsUpdate: (phone: string, callback: (notifications: Notification[]) => void) => {
     const sanitizedPhone = phone.replace(/\D/g, '');
-    const q = query(collection(db, 'users', sanitizedPhone, 'notifications'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'Clients', sanitizedPhone, 'notifications'), orderBy('timestamp', 'desc'));
     return onSnapshot(q, (snapshot) => {
       const notifications = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -951,7 +988,7 @@ export const databaseService = {
   markNotificationAsReadInFirestore: async (phone: string, notificationId: string) => {
     const sanitizedPhone = phone.replace(/\D/g, '');
     try {
-      const notifRef = doc(db, 'users', sanitizedPhone, 'notifications', notificationId);
+      const notifRef = doc(db, 'Clients', sanitizedPhone, 'notifications', notificationId);
       await updateDoc(notifRef, { isRead: true });
       const current = databaseService.getNotifications(phone);
       const updated = current.map(n => n.id === notificationId ? { ...n, isRead: true } : n);
@@ -964,7 +1001,7 @@ export const databaseService = {
   deleteNotificationFromFirestore: async (phone: string, notificationId: string) => {
     const sanitizedPhone = phone.replace(/\D/g, '');
     try {
-      const notifRef = doc(db, 'users', sanitizedPhone, 'notifications', notificationId);
+      const notifRef = doc(db, 'Clients', sanitizedPhone, 'notifications', notificationId);
       await deleteDoc(notifRef);
       const current = databaseService.getNotifications(phone);
       const updated = current.filter(n => n.id !== notificationId);
@@ -977,7 +1014,7 @@ export const databaseService = {
   clearAllNotificationsFromFirestore: async (phone: string) => {
     const sanitizedPhone = phone.replace(/\D/g, '');
     try {
-      const notifRef = collection(db, 'users', sanitizedPhone, 'notifications');
+      const notifRef = collection(db, 'Clients', sanitizedPhone, 'notifications');
       const snapshot = await getDocs(notifRef);
       const batch = writeBatch(db);
       snapshot.docs.forEach((doc) => batch.delete(doc.ref));
@@ -993,14 +1030,15 @@ export const databaseService = {
       localStorage.setItem(key, JSON.stringify([]));
   },
 
-  saveAssistantRequestToRTDB: async (requestData: any) => {
+  saveAssistantRequest: async (requestData: any) => {
     try {
-      const { userName, userId } = requestData;
-      const sanitizedName = (userName || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
-      const userKey = `${sanitizedName}_${userId}`;
-      const requestsRef = rtdbRef(rtdb, `assistant_requests/${userKey}`);
-      const newRequestRef = push(requestsRef);
-      await set(newRequestRef, { ...requestData, timestamp: rtdbTimestamp() });
+      const messageRef = collection(db, 'Messagerie');
+      await addDoc(messageRef, {
+        ...requestData,
+        type: 'assistant_request',
+        timestamp: serverTimestamp()
+      });
+      console.log("Assistant request saved to Firestore successfully");
     } catch (e) {
       console.error("Error saving assistant request:", e);
     }
@@ -1011,7 +1049,7 @@ export const databaseService = {
       const { userName, userId } = paymentData;
       const sanitizedName = (userName || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
       const userKey = `${sanitizedName}_${userId}`;
-      const paymentsRef = rtdbRef(rtdb, `wave_payments/${userKey}`);
+      const paymentsRef = rtdbRef(rtdb, `Paiements/${userKey}`);
       const newPaymentRef = push(paymentsRef);
       await set(newPaymentRef, { ...paymentData, timestamp: rtdbTimestamp() });
     } catch (e) {
@@ -1028,7 +1066,7 @@ export const databaseService = {
   onAdminChatUpdate: (chatUserId: string, callback: (messages: any[]) => void) => {
     const userId = chatUserId.replace(/\D/g, '');
     const q = query(
-      collection(db, 'chats', userId, 'messages'),
+      collection(db, 'Messagerie', userId, 'messages'),
       orderBy('timestamp', 'asc')
     );
     return onSnapshot(q, (snapshot) => {
@@ -1044,7 +1082,7 @@ export const databaseService = {
     try {
       const userId = chatUserId.replace(/\D/g, '');
       const q = query(
-        collection(db, 'chats', userId, 'messages'),
+        collection(db, 'Messagerie', userId, 'messages'),
         where('sender', '==', side),
         where('isRead', '==', false)
       );
@@ -1060,11 +1098,11 @@ export const databaseService = {
   saveAdminChatMessage: async (chatUserId: string, message: any) => {
     try {
       const userId = chatUserId.replace(/\D/g, '');
-      await addDoc(collection(db, 'chats', userId, 'messages'), {
+      await addDoc(collection(db, 'Messagerie', userId, 'messages'), {
         ...message,
         isRead: false
       });
-      await setDoc(doc(db, 'chats', userId), {
+      await setDoc(doc(db, 'Messagerie', userId), {
         lastMessage: message.text,
         lastSender: message.sender,
         updatedAt: serverTimestamp(),
@@ -1079,20 +1117,42 @@ export const databaseService = {
   deleteAdminChatMessage: async (chatUserId: string, messageId: string) => {
     try {
       const userId = chatUserId.replace(/\D/g, '');
-      await deleteDoc(doc(db, 'chats', userId, 'messages', messageId));
+      await deleteDoc(doc(db, 'Messagerie', userId, 'messages', messageId));
       return true;
     } catch (e) { return false; }
   },
 
   saveFormSubmission: async (formData: any) => {
     try {
-      const submissionsRef = collection(db, 'form_submissions');
+      const { formType, formTitle } = formData;
+      let targetCollection = 'Messagerie'; // Default
+
+      // Routing logic based on user's fixed columns
+      const titleLower = formTitle?.toLowerCase() || '';
+      
+      if (formType === 'worker' || formType === 'personal_worker' || formType === 'rapid_building_service' || titleLower.includes('travailleur')) {
+        targetCollection = 'Travailleurs';
+      } else if (formType === 'location' || formType === 'personal_location') {
+        if (titleLower.includes('agence') || titleLower.includes('appartement') || titleLower.includes('studio') || titleLower.includes('villa') || titleLower.includes('maison')) {
+          targetCollection = 'Agences immobilières';
+        } else {
+          targetCollection = 'Équipements';
+        }
+      } else if (titleLower.includes('entreprise')) {
+        targetCollection = 'Entreprises';
+      }
+
+      const submissionsRef = collection(db, targetCollection);
       await addDoc(submissionsRef, {
         ...formData,
-        submittedAt: serverTimestamp()
+        type: 'form_submission',
+        timestamp: serverTimestamp()
       });
       return true;
-    } catch (e) { return false; }
+    } catch (e) { 
+      console.error("Error saving form submission:", e);
+      return false; 
+    }
   },
 
   getCardData: (phone: string, role: string) => {
@@ -1110,9 +1170,28 @@ export const databaseService = {
     return true;
   },
 
-  publishStatusAsMessage: async (phone: string, message: string) => {
-    // Pro logic removed
-    return true;
+  publishStatusAsMessage: async (phone: string, data: any) => {
+    try {
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const workersRef = collection(db, 'Travailleurs');
+      
+      await addDoc(workersRef, {
+        userId: sanitizedPhone,
+        name: data.name,
+        city: data.city || "Non spécifiée",
+        price: data.price ? `${data.price} (${data.frequency || 'mois'})` : "À discuter",
+        service: data.service,
+        description: data.description || `Disponible pour : ${data.service}`,
+        photoUrl: data.photoUrl || null,
+        createdAt: serverTimestamp(),
+        isUnblurred: false,
+        typeInscription: "Demande d'emploi"
+      });
+      return true;
+    } catch (e) {
+      console.error("Error publishing status:", e);
+      return false;
+    }
   },
 
   savePlacement: async (data: any, additional?: any) => {

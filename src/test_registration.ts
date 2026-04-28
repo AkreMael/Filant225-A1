@@ -32,11 +32,11 @@ async function runTest() {
       userId: userCredential.user.uid
     };
 
-    const docRef = await addDoc(collection(db, 'travailleurs'), testData);
+    const docRef = await addDoc(collection(db, 'Travailleurs'), testData);
     console.log("Registration successful! ID:", docRef.id);
     
     // Check if it's there
-    const q = query(collection(db, 'travailleurs'), where('name', '==', testData.name));
+    const q = query(collection(db, 'Travailleurs'), where('name', '==', testData.name));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
       console.log("Verification successful: Document found in Firestore.");

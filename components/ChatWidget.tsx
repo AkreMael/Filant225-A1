@@ -361,9 +361,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         });
     }
     
-    // Save to RTDB if it's a validated request (has payment info or is a form submission)
+    // Save to Firestore if it's a validated request (has payment info or is a form submission)
     if (detected || isFormSubmission || isCardRecovery) {
-        databaseService.saveAssistantRequestToRTDB({
+        databaseService.saveAssistantRequest({
             userId: effectiveChatUserId,
             userName: effectiveName || 'Utilisateur',
             phone: sanitizedEffectivePhone,

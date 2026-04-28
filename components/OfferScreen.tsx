@@ -445,9 +445,9 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
 
   // Fetch Firebase offers
   useEffect(() => {
-    console.log("Setting up Firestore onSnapshot listener for offres_emploi...");
+    console.log("Setting up Firestore onSnapshot listener for Travailleurs...");
     // We don't use orderBy here to avoid excluding documents missing the createdAt field
-    const q = query(collection(db, 'offres_emploi'));
+    const q = query(collection(db, 'Travailleurs'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       console.log(`Firestore snapshot received: ${snapshot.size} documents`);
       const offers = snapshot.docs.map(doc => {
