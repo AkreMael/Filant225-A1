@@ -24,6 +24,7 @@ import ChatScreen from './components/ChatScreen';
 import LocationScreen from './components/LocationScreen';
 import InterventionShopScreen from './components/InterventionShopScreen';
 import AdminDashboard from './components/AdminDashboard';
+import AdminLogin from './components/AdminLogin';
 import { motion, AnimatePresence } from 'motion/react';
 import { databaseService, SavedContact } from './services/databaseService';
 import { messagingService } from './services/messagingService';
@@ -130,6 +131,7 @@ const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Menu);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard'>('hub');
   const [offerSubView, setOfferSubView] = useState<'main' | 'shop'>('main');
   
@@ -324,6 +326,7 @@ const App: React.FC = () => {
             }
             localStorage.setItem('filant_currentUserPhone', userData.phone);
             databaseService.syncUserToFirestore(fullUser);
+            databaseService.logConnection(fullUser);
           }
         } else {
           console.log("Auth state changed: No user");
@@ -393,7 +396,8 @@ const App: React.FC = () => {
 
   const isFullScreenView = (activeTab === Tab.Menu && FULL_SCREEN_MENU_VIEWS.includes(menuView)) || 
                            (activeTab === Tab.Offer && offerSubView === 'shop') ||
-                           activeTab === Tab.Emergency;
+                           activeTab === Tab.Emergency ||
+                           activeTab === Tab.Admin;
 
   const displayUser: User = {
     name: currentUser?.name ? currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1) : '',
@@ -466,9 +470,17 @@ const App: React.FC = () => {
       };
   }, []);
 
+  const isUserAdmin = currentUser?.phone === '0705052632';
+
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     databaseService.saveActiveUser(user);
+    
+    // Redirect to admin dashboard if admin
+    if (user.phone === '0705052632') {
+      setMenuView('admin_dashboard');
+    }
+    
     setShowSplash(true);
     localStorage.setItem('filant_currentUserPhone', user.phone);
   };
@@ -627,8 +639,6 @@ const App: React.FC = () => {
     return <GlobalModeLoading message="Vérification de votre session..." />;
   }
 
-  const isUserAdmin = false;
-
   if (!currentUser) {
     return (
         <GlobalRippleEffect>
@@ -780,6 +790,18 @@ const App: React.FC = () => {
         />
       );
       break;
+    case Tab.Admin:
+      if (isAdminAuthenticated) {
+        activeScreen = <AdminDashboard onBack={handleBack} user={displayUser} />;
+      } else {
+        activeScreen = (
+          <AdminLogin 
+            onSuccess={() => setIsAdminAuthenticated(true)} 
+            onBack={() => setActiveTab(Tab.Menu)} 
+          />
+        );
+      }
+      break;
     default:
       activeScreen = <HomeScreen 
         onNavigate={handleHomeNavigate} 
@@ -798,7 +820,7 @@ const App: React.FC = () => {
       break;
   }
 
-  const isAdminView = menuView === 'admin_dashboard' && activeTab === Tab.Menu;
+  const isAdminView = (menuView === 'admin_dashboard' && activeTab === Tab.Menu) || (activeTab === Tab.Admin && isAdminAuthenticated);
 
   if (currentUser?.isBlocked) {
     return (

@@ -148,6 +148,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
 
   const handleWhatsAppContact = (data: any) => {
     const text = `Bonjour, je souhaite recruter le profil suivant :\nNom: ${data.name}\nVille: ${data.city}\nMétier: ${data.service}\nPrix: ${data.price}\nFilant Services`;
+    
+    // Synchronisation admin
+    databaseService.saveFormSubmission({
+        userPhone: currentUser.phone,
+        userName: currentUser.name,
+        formType: 'recruitment_contact',
+        formTitle: 'Contact Recrutement - ' + data.name,
+        data: data,
+        whatsappMessage: text,
+        type: 'whatsapp_contact'
+    }).catch(e => console.error("Error syncing recruitment contact:", e));
+
     window.open(`https://wa.me/2250546648058?text=${encodeURIComponent(text)}`, '_blank');
   };
 

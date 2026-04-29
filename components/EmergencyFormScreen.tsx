@@ -52,6 +52,22 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({ onBack, user 
     const mailtoLink = `mailto:filantmael225@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
 
     await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Synchronisation Firebase en arrière-plan
+    databaseService.saveFormSubmission({
+        userPhone: user.phone,
+        userName: user.name,
+        formType: 'emergency',
+        formTitle: 'URGENCE - ' + finalReason,
+        data: {
+            reason: finalReason,
+            contactEmail: email,
+            city: user.city
+        },
+        whatsappMessage: emailBody, // On réutilise le corps pour l'affichage admin
+        type: 'emergency_submission'
+    }).catch(err => console.error("Error syncing emergency to Firebase:", err));
+
     window.location.href = mailtoLink;
     
     setIsSending(false);

@@ -17,6 +17,7 @@ const IdCardIcon: React.FC<IconProps> = ({ className }) => <svg xmlns="http://ww
 </svg>;
 const ScannerIcon: React.FC<IconProps> = ({ className }) => <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 12H11V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M45 12H53V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M19 52H11V44" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M45 52H53V44" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 32H52" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 const ChatBubbleIcon: React.FC<IconProps> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>;
+const AdminIcon: React.FC<IconProps> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.744c0 5.548 4.076 10.144 9 10.856 4.924-.712 9-5.308 9-10.856 0-1.286-.203-2.526-.577-3.686A11.959 11.959 0 0112 2.714z" /></svg>;
 
 interface BottomNavProps {
   activeTab: Tab;
@@ -37,6 +38,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
     { id: Tab.Menu, icon: <MenuIcon />, label: "Menu" },
     { id: Tab.Offer, icon: <SiteIcon />, label: "Site" },
     { id: 'scanner', icon: <ScannerIcon />, label: "Scanner" },
+    { id: Tab.Admin, icon: <AdminIcon />, label: "Admin", isBlue: true },
     { id: Tab.Payment, icon: <PaymentIcon />, label: "Paiement" },
   ];
 

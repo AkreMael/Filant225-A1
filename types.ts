@@ -3,6 +3,7 @@ export enum Tab {
   Profile = 'Profile',
   Menu = 'Menu',
   Offer = 'Offer',
+  Admin = 'Admin',
   Emergency = 'Emergency',
   WavePayment = 'WavePayment',
   Map = 'Map',

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { db, rtdb, auth } from '../firebase';
+import { db, rtdb } from '../firebase';
 import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 import { ref as rtdbRef, onValue } from 'firebase/database';
 import { User } from '../types';
@@ -14,7 +14,15 @@ import {
   ArrowLeft,
   ChevronRight,
   ShieldCheck,
-  BarChart3
+  BarChart3,
+  Search,
+  LayoutDashboard,
+  HardHat,
+  Home,
+  Factory,
+  Mail,
+  Scan,
+  MoreVertical
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -22,301 +30,411 @@ interface AdminDashboardProps {
   user: User;
 }
 
+type AdminTab = 
+  | 'overview' 
+  | 'connections' 
+  | 'messaging' 
+  | 'scanner' 
+  | 'payments';
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'workers' | 'locations' | 'companies' | 'chat' | 'payments' | 'qr'>('overview');
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Data States
-  const [clients, setClients] = useState<any[]>([]);
-  const [travailleurs, setTravailleurs] = useState<any[]>([]);
-  const [agences, setAgences] = useState<any[]>([]);
-  const [equipements, setEquipements] = useState<any[]>([]);
-  const [entreprises, setEntreprises] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [qrCodes, setQrCodes] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [connections, setConnections] = useState<any[]>([]);
+  const [data, setData] = useState<Record<string, any[]>>({
+    connections: [],
+    messaging: [],
+    scanner: [],
+    payments: []
+  });
 
   useEffect(() => {
     setLoading(true);
     
-    // 1. Listen to Firestore Clients & Connections
-    const unsubscribeUsers = onSnapshot(query(collection(db, 'Clients'), orderBy('lastConnection', 'desc')), (snapshot) => {
-      const allClients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClients(allClients);
-    }, (err) => console.error("Admin dashboard users error:", err));
-
-    const unsubscribeConns = onSnapshot(query(collection(db, 'Connexions'), orderBy('timestamp', 'desc'), limit(50)), (snapshot) => {
-        setConnections(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    // 1. Connexions
+    const unsubConns = onSnapshot(query(collection(db, 'Connexions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
+      setData(prev => ({ ...prev, connections: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
-    // 2. Listen to Firestore Travailleurs
-    const unsubscribeTravailleurs = onSnapshot(collection(db, 'Travailleurs'), (snapshot) => {
-      setTravailleurs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    // 2. Messagerie (Form Submissions & Messages)
+    const unsubMessaging = onSnapshot(query(collection(db, 'Messagerie'), orderBy('timestamp', 'desc'), limit(300)), (snap) => {
+      setData(prev => ({ ...prev, messaging: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
-    // 3. Listen to Firestore Agences immobilières
-    const unsubscribeAgences = onSnapshot(collection(db, 'Agences immobilières'), (snapshot) => {
-      setAgences(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    // 4. Listen to Firestore Équipements
-    const unsubscribeEquipements = onSnapshot(collection(db, 'Équipements'), (snapshot) => {
-      setEquipements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    // 5. Listen to Firestore Entreprises
-    const unsubscribeEntreprises = onSnapshot(collection(db, 'Entreprises'), (snapshot) => {
-      setEntreprises(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    // 6. Listen to Firestore Messagerie
-    const unsubscribeMessages = onSnapshot(query(collection(db, 'Messagerie'), orderBy('timestamp', 'desc'), limit(100)), (snapshot) => {
-      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    // 7. Listen to RTDB QR Code
-    const qrRef = rtdbRef(rtdb, 'QR Code');
-    const unsubscribeQR = onValue(qrRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
+    // 3. Scanner (RTDB)
+    const qrRef = rtdbRef(rtdb, 'Scanner');
+    const unsubQR = onValue(qrRef, (snap) => {
+      const val = snap.val();
+      if (val) {
         const list: any[] = [];
-        Object.entries(data).forEach(([userKey, userVal]: [string, any]) => {
+        Object.entries(val).forEach(([userKey, userVal]: [string, any]) => {
           if (userVal.contacts) {
-            Object.entries(userVal.contacts).forEach(([contactKey, contactVal]: [string, any]) => {
-              list.push({
-                userKey,
-                contactKey,
-                ...contactVal
+            Object.values(userVal.contacts).forEach((contact: any) => {
+              list.push({ 
+                ...contact, 
+                scannerUser: userVal.lastUsername || userKey.split('_')[0],
+                userPhone: userVal.lastPhone || userKey.split('_')[1]
               });
             });
           }
         });
-        setQrCodes(list.sort((a, b) => (b.syncedAt || 0) - (a.syncedAt || 0)));
+        setData(prev => ({ ...prev, scanner: list.sort((a, b) => (b.syncedAt || 0) - (a.syncedAt || 0)) }));
       }
     });
 
-    // 8. Listen to RTDB Paiements
-    const paymentsRef = rtdbRef(rtdb, 'Paiements');
-    const unsubscribePayments = onValue(paymentsRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
+    // 4. Paiements (RTDB)
+    const payRef = rtdbRef(rtdb, 'Paiements');
+    const unsubPayments = onValue(payRef, (snap) => {
+      const val = snap.val();
+      if (val) {
         const list: any[] = [];
-        Object.entries(data).forEach(([userKey, userVal]: [string, any]) => {
-          Object.entries(userVal).forEach(([payKey, payVal]: [string, any]) => {
-            list.push({
-              userKey,
-              payKey,
-              ...payVal
-            });
+        Object.values(val).forEach((userPayments: any) => {
+          Object.values(userPayments).forEach((payment: any) => {
+            list.push(payment);
           });
         });
-        setPayments(list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
+        setData(prev => ({ ...prev, payments: list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) }));
       }
     });
 
     setLoading(false);
 
     return () => {
-      unsubscribeUsers();
-      unsubscribeTravailleurs();
-      unsubscribeAgences();
-      unsubscribeEquipements();
-      unsubscribeEntreprises();
-      unsubscribeMessages();
-      // Unsub scribing RTDB happens differently in v9, but using onValue with return is generally safe for cleanup if handled by sdk
+      unsubConns();
+      unsubMessaging();
+      unsubQR();
+      unsubPayments();
     };
   }, []);
 
   const stats = [
-    { label: 'Utilisateurs', value: clients.length, icon: Users, color: 'bg-blue-500' },
-    { label: 'Travailleurs', value: travailleurs.length, icon: Briefcase, color: 'bg-green-500' },
-    { label: 'Agences', value: agences.length, icon: Building2, color: 'bg-purple-500' },
-    { label: 'Paiements', value: payments.length, icon: CreditCard, color: 'bg-orange-500' },
+    { label: 'Total Connexions', value: data.connections.length, icon: BarChart3, color: 'text-blue-500' },
+    { label: 'Messages', value: data.messaging.length, icon: Mail, color: 'text-green-500' },
+    { label: 'Paiements', value: data.payments.length, icon: CreditCard, color: 'text-orange-500' },
+    { label: 'Scanner', value: data.scanner.length, icon: Scan, color: 'text-purple-500' },
   ];
 
-  const renderOverview = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-            <div className={`w-10 h-10 ${stat.color} rounded-xl flex items-center justify-center mb-3 text-white`}>
-              <stat.icon size={20} />
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">{stat.label}</p>
-            <p className="text-2xl font-black mt-1">{stat.value}</p>
-          </div>
-        ))}
-      </div>
+  const formatDate = (val: any) => {
+    if (!val) return 'N/A';
+    if (typeof val === 'number') return new Date(val).toLocaleString('fr-FR');
+    if (typeof val === 'string') return new Date(val).toLocaleString('fr-FR');
+    if (val.seconds) return new Date(val.seconds * 1000).toLocaleString('fr-FR');
+    return String(val);
+  };
 
-      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-          <h3 className="text-lg font-black uppercase tracking-tight">Dernières Connexions</h3>
-          <BarChart3 className="text-blue-500" size={20} />
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 dark:bg-slate-900/50">
-              <tr>
-                <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Utilisateur</th>
-                <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ville</th>
-                <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Dernière vue</th>
+  const filteredData = (tabData: any[]) => {
+    if (!searchTerm) return tabData;
+    return tabData.filter(item => 
+      Object.values(item).some(val => 
+        String(val).toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  };
+
+  const renderTable = (headers: string[], keys: string[], sourceData: any[]) => {
+    const list = filteredData(sourceData);
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-slate-800">
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
+                {headers.map((h, i) => (
+                  <th key={i} className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-              {connections.slice(0, 10).map((conn, i) => (
-                <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors uppercase">
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-sm">{conn.name}</span>
-                      <span className="text-[10px] text-gray-400">{conn.phone}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-xs font-medium text-gray-600 dark:text-gray-300">{conn.city}</td>
-                  <td className="px-6 py-4 text-[10px] font-mono text-blue-500">
-                    {conn.lastConnection ? new Date(conn.lastConnection).toLocaleString('fr-FR') : 'N/A'}
-                  </td>
+            <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
+              {list.length > 0 ? list.map((item, i) => (
+                <tr key={i} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors">
+                  {keys.map((key, j) => {
+                    let val = item[key];
+                    if (key === 'timestamp' || key === 'lastConnection' || key === 'date' || key === 'syncedAt') {
+                      val = formatDate(val);
+                    }
+                    return (
+                      <td key={j} className="px-6 py-4">
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">
+                          {val || '-'}
+                        </span>
+                      </td>
+                    );
+                  })}
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                   <td colSpan={headers.length} className="px-6 py-12 text-center text-gray-400 font-bold italic">
+                     Aucune donnée trouvée
+                   </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
-  const renderTable = (title: string, data: any[], columns: string[]) => (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
-      <div className="p-6 border-b border-gray-100 dark:border-slate-700">
-        <h3 className="text-lg font-black uppercase tracking-tight">{title} ({data.length})</h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 dark:bg-slate-900/50">
-            <tr>
-              {columns.map((col, i) => (
-                <th key={i} className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">{col}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-700 uppercase">
-            {data.map((item, i) => (
-              <tr key={i} className="hover:bg-gray-50 dark:hover:bg-slate-700/50">
-                {columns.map((col, j) => {
-                   const key = col.toLowerCase().replace(/é/g, 'e').replace(/ /g, '');
-                   let val = item[key] || item[col] || 'N/A';
-                   if (typeof val === 'object' && val?.seconds) {
-                       val = new Date(val.seconds * 1000).toLocaleString();
-                   }
-                   return (
-                    <td key={j} className="px-6 py-4 text-xs font-medium">
-                        {val.toString()}
-                    </td>
-                   );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const menuItems: { id: AdminTab, label: string, icon: any }[] = [
+    { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
+    { id: 'connections', label: 'Connexions', icon: BarChart3 },
+    { id: 'messaging', label: 'Messagerie', icon: Mail },
+    { id: 'scanner', label: 'Scanner', icon: Scan },
+    { id: 'payments', label: 'Paiements', icon: CreditCard },
+  ];
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-slate-950">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-900 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-50">
+    <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-slate-950 font-sans">
+      {/* Top Header */}
+      <div className="bg-white dark:bg-slate-900 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-[100] border-b border-gray-100 dark:border-slate-800">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-            <ArrowLeft />
+          <button onClick={onBack} className="p-2.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-90 text-gray-600 dark:text-gray-400">
+            <ArrowLeft size={20} />
           </button>
-          <div>
-            <h1 className="text-xl font-black uppercase tracking-tight">Dashboard Admin</h1>
-            <p className="text-[10px] font-bold text-green-500 uppercase flex items-center gap-1">
-              <ShieldCheck size={12} /> Live Sync Active
-            </p>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Administration</h1>
+            <div className="flex items-center gap-1.5">
+               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+               <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Base de données en direct</span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Base-Default-RTDB</span>
+        
+        <div className="hidden sm:flex items-center gap-4">
+             <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                <input 
+                  type="text" 
+                  placeholder="Rechercher..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="bg-gray-100 dark:bg-slate-800 border-none rounded-xl pl-9 pr-4 py-2 text-xs font-bold outline-none ring-0 focus:ring-2 focus:ring-blue-500/50 transition-all w-48 sm:w-64"
+                />
+             </div>
+             <button className="p-2.5 bg-gray-100 dark:bg-slate-800 rounded-xl text-gray-500">
+                <MoreVertical size={18} />
+             </button>
         </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800 overflow-y-auto hidden md:block">
-          <nav className="p-4 space-y-1">
-            {[
-              { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
-              { id: 'users', label: 'Clients', icon: Users },
-              { id: 'workers', label: 'Travailleurs', icon: Briefcase },
-              { id: 'locations', label: 'Agences & Loc.', icon: Building2 },
-              { id: 'companies', label: 'Entreprises', icon: Building2 },
-              { id: 'chat', label: 'Messagerie', icon: MessageSquare },
-              { id: 'payments', label: 'Paiements', icon: CreditCard },
-              { id: 'qr', label: 'QR Codes Scan', icon: QrCode },
-            ].map((nav) => (
+        {/* Desktop Sidebar */}
+        <aside className="w-72 bg-white dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800 overflow-y-auto hidden lg:block p-6">
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 ml-4">Menu Principal</p>
+            {menuItems.map((item) => (
               <button
-                key={nav.id}
-                onClick={() => setActiveTab(nav.id as any)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all ${
-                  activeTab === nav.id 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
-                    : 'hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-500 dark:text-gray-400'
+                key={item.id}
+                onClick={() => { setActiveTab(item.id); setSearchTerm(''); }}
+                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all group ${
+                  activeTab === item.id 
+                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-gray-400'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <nav.icon size={18} />
-                  <span className="text-xs font-black uppercase tracking-tight">{nav.label}</span>
-                </div>
-                {activeTab === nav.id && <ChevronRight size={14} />}
+                <item.icon size={20} className={activeTab === item.id ? 'text-white' : 'group-hover:text-blue-500 transition-colors'} />
+                <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
+                {activeTab === item.id && <ChevronRight size={14} className="ml-auto" />}
               </button>
             ))}
-          </nav>
+          </div>
+          
+          <div className="mt-12 p-6 bg-slate-900 rounded-3xl relative overflow-hidden group">
+               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-150 transition-transform duration-500">
+                   <ShieldCheck size={80} className="text-white" />
+               </div>
+               <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Sécurité</p>
+               <h4 className="text-white font-bold text-sm">Mode Supervisé</h4>
+               <p className="text-white/50 text-[10px] mt-2 leading-relaxed font-medium">Session sécurisée par authentification biométrique et jeton unique.</p>
+          </div>
         </aside>
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6 scroll-container">
+        {/* content Area */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8 scroll-container">
           {loading ? (
-            <div className="h-full flex items-center justify-center">
-               <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
-            </div>
+             <div className="h-full flex flex-col items-center justify-center space-y-4">
+                 <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-600 rounded-full animate-spin"></div>
+                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Synchronisation...</p>
+             </div>
           ) : (
             <>
-              {activeTab === 'overview' && renderOverview()}
-              {activeTab === 'users' && renderTable('Clients Enregistrés', clients, ['Name', 'Phone', 'City', 'lastConnection'])}
-              {activeTab === 'workers' && renderTable('Travailleurs Qualifiés', travailleurs, ['Name', 'Phone', 'Category', 'isVerified'])}
-              {activeTab === 'locations' && renderTable('Agences & Locaux', agences, ['Name', 'Phone', 'City'])}
-              {activeTab === 'companies' && renderTable('Entreprises Partenaires', entreprises, ['Name', 'Category', 'Phone'])}
-              {activeTab === 'chat' && renderTable('Derniers Messages', messages, ['userName', 'role', 'content', 'timestamp'])}
-              {activeTab === 'payments' && renderTable('Paiements Wave', payments, ['userName', 'amount', 'status', 'timestamp'])}
-              {activeTab === 'qr' && renderTable('Codes QR Scannés', qrCodes, ['name', 'phone', 'city', 'syncedAt'])}
+              {activeTab === 'overview' && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Vue d'ensemble</h2>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Résumé de l'activité en temps réel</p>
+                    </div>
+                    <div className="bg-blue-600/10 text-blue-600 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-blue-600/20">
+                        {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                    {stats.map((stat, i) => (
+                      <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${stat.color} bg-current/10 font-bold`}>
+                          <stat.icon size={22} className={stat.color} />
+                        </div>
+                        <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{stat.label}</p>
+                        <p className="text-3xl font-black mt-2 text-slate-900 dark:text-white">{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid lg:grid-cols-2 gap-8">
+                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-1 border border-gray-100 dark:border-slate-800">
+                        <div className="p-6 border-b border-gray-50 dark:border-slate-800 flex justify-between items-center">
+                            <h3 className="font-black uppercase tracking-widest text-xs">Dernières Activités</h3>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                        </div>
+                        <div className="p-4 space-y-4">
+                           {data.connections.slice(0, 6).map((conn, i) => (
+                             <div key={i} className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all group">
+                                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600 font-black">
+                                   {conn.name?.charAt(0) || 'U'}
+                                </div>
+                                <div className="flex-1">
+                                   <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{conn.name}</p>
+                                   <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{conn.city} • {conn.phone}</p>
+                                </div>
+                                <div className="text-right">
+                                   <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{formatDate(conn.timestamp).split(' ')[1]}</p>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+
+                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-1 border border-gray-100 dark:border-slate-800">
+                        <div className="p-6 border-b border-gray-50 dark:border-slate-800 flex justify-between items-center">
+                            <h3 className="font-black uppercase tracking-widest text-xs">Derniers Paiements</h3>
+                            <CreditCard size={16} className="text-orange-500" />
+                        </div>
+                        <div className="p-4 space-y-4">
+                           {data.payments.slice(0, 6).map((pay, i) => (
+                             <div key={i} className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all">
+                                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600 font-bold">
+                                   <CreditCard size={18} />
+                                </div>
+                                <div className="flex-1">
+                                   <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{pay.userName}</p>
+                                   <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{pay.paymentType} • {pay.amount} FCFA</p>
+                                </div>
+                                <div className="text-right">
+                                   <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{formatDate(pay.timestamp).split(' ')[1]}</p>
+                                   <div className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-1 inline-block ${
+                                      pay.status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                   }`}>
+                                       {pay.status}
+                                   </div>
+                                </div>
+                             </div>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'connections' && renderTable(
+                ['Nom', 'Ville', 'Numéro', 'Date'],
+                ['name', 'city', 'phone', 'timestamp'],
+                data.connections
+              )}
+
+              {activeTab === 'messaging' && (
+                <div className="space-y-6">
+                  {Object.entries(
+                    data.messaging.reduce((acc: Record<string, any[]>, msg) => {
+                      const key = msg.phone || msg.userId || 'Inconnu';
+                      if (!acc[key]) acc[key] = [];
+                      acc[key].push(msg);
+                      return acc;
+                    }, {})
+                  ).map(([phone, messages]: [string, any[]], i) => (
+                    <div key={i} className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+                      <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
+                        <div className="flex items-center gap-3">
+                           <div className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black">
+                             {messages[0]?.userName?.charAt(0) || 'U'}
+                           </div>
+                           <div className="flex flex-col">
+                              <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
+                                {messages[0]?.userName || 'Utilisateur'}
+                              </span>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{phone}</span>
+                           </div>
+                        </div>
+                        <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">
+                          {messages.length} message(s)
+                        </span>
+                      </div>
+                      <div className="p-2 divide-y divide-gray-50 dark:divide-slate-800">
+                        {messages.map((m, idx) => (
+                          <div key={idx} className="p-4 hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                             <div className="flex justify-between mb-1">
+                                <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{m.formTitle || 'Message Simple'}</span>
+                                <span className="text-[9px] font-bold text-gray-300">{formatDate(m.timestamp)}</span>
+                             </div>
+                             <p className="text-xs font-medium text-slate-700 dark:text-gray-300 leading-relaxed italic border-l-2 border-blue-200 dark:border-blue-900 pl-3 py-1 mt-2">
+                                {m.whatsappMessage || m.message || 'Contenu vide'}
+                             </p>
+                             {m.city && <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-2 inline-block">Ville: {m.city}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'scanner' && renderTable(
+                ['Scanné par', 'Nom du contact', 'Numéro contact', 'Ville contact', 'Synchro'],
+                ['scannerUser', 'name', 'phone', 'city', 'syncedAt'],
+                data.scanner
+              )}
+
+              {activeTab === 'payments' && renderTable(
+                ['Nom', 'Numéro', 'Type', 'Montant', 'Statut', 'Date'],
+                ['userName', 'userPhone', 'paymentType', 'amount', 'status', 'timestamp'],
+                data.payments
+              )}
             </>
           )}
         </main>
       </div>
 
-      <div className="md:hidden fixed bottom-6 left-6 right-6 z-[100] flex justify-center">
-          <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-full p-2 shadow-2xl border border-white/20 flex gap-1">
-             {[
-                { id: 'overview', icon: BarChart3 },
-                { id: 'users', icon: Users },
-                { id: 'chat', icon: MessageSquare },
-                { id: 'payments', icon: CreditCard },
-                { id: 'qr', icon: QrCode }
-             ].map((nav) => (
+      {/* Mobile Sidebar Trigger (Bottom Navigation) */}
+      <div className="lg:hidden fixed bottom-6 left-6 right-6 z-[1000] flex justify-center">
+          <div className="bg-slate-900/90 backdrop-blur-xl rounded-[2rem] p-2 shadow-2xl border border-white/10 flex gap-1 overflow-x-auto max-w-[90vw] scrollbar-hide">
+             {menuItems.map((item) => (
                 <button
-                    key={nav.id}
-                    onClick={() => setActiveTab(nav.id as any)}
-                    className={`p-3 rounded-full transition-all ${
-                        activeTab === nav.id ? 'bg-blue-600 text-white' : 'text-gray-400'
+                    key={item.id}
+                    onClick={() => { setActiveTab(item.id); setSearchTerm(''); }}
+                    className={`p-3.5 rounded-full transition-all flex-shrink-0 ${
+                        activeTab === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'
                     }`}
                 >
-                    <nav.icon size={20} />
+                    <item.icon size={20} />
                 </button>
              ))}
           </div>
+      </div>
+      
+      {/* Mobile Search Overlay */}
+      <div className="lg:hidden fixed top-20 right-6 z-[1001]">
+           <button 
+             onClick={() => {
+                const term = prompt("Rechercher dans la base de données...");
+                if (term !== null) setSearchTerm(term);
+             }}
+             className="w-12 h-12 bg-white dark:bg-slate-800 shadow-xl rounded-2xl flex items-center justify-center text-gray-500 border border-gray-100 dark:border-slate-800"
+           >
+                <Search size={20} />
+           </button>
       </div>
     </div>
   );

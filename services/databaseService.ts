@@ -223,36 +223,18 @@ export const databaseService = {
 
   logConnection: async (user: User) => {
     try {
-        const logsString = localStorage.getItem(CONNECTION_LOGS_KEY);
-        let logs: ConnectionLog[] = logsString ? JSON.parse(logsString) : [];
-        const now = new Date().toISOString();
-        const existingIndex = logs.findIndex(log => log.phone === user.phone);
-        if (existingIndex !== -1) {
-            logs[existingIndex].lastConnection = now;
-            logs[existingIndex].name = user.name;
-            logs[existingIndex].city = user.city;
-        } else {
-            logs.unshift({
-                name: user.name,
-                city: user.city,
-                phone: user.phone,
-                firstConnection: now,
-                lastConnection: now
-            });
-        }
-        localStorage.setItem(CONNECTION_LOGS_KEY, JSON.stringify(logs));
+        const sanitizedPhone = user.phone.replace(/\D/g, '');
         
-        // Sync to Firestore 'Connexions'
-        const connRef = collection(db, 'Connexions');
-        await addDoc(connRef, {
+        // Sync to Firestore 'Connexions' - One document per user (ligne dédiée)
+        const connRef = doc(db, 'Connexions', sanitizedPhone);
+        await setDoc(connRef, {
             name: user.name,
             phone: user.phone,
             city: user.city,
-            timestamp: serverTimestamp(),
-            role: user.role || 'Client'
-        });
+            timestamp: serverTimestamp()
+        }, { merge: true });
 
-        // Sync to Firestore 'Clients' or 'Travailleurs' based on role
+        // Sync to Firestore 'Clients'
         databaseService.syncUserToFirestore(user);
     } catch (e) {
         console.error("Error logging connection", e);
@@ -280,35 +262,10 @@ export const databaseService = {
   syncUserToFirestore: async (user: User) => {
     if (!user.phone) return;
     const sanitizedPhone = user.phone.replace(/\D/g, '');
-    let collectionName = 'Clients'; // Default
-
-    // Routing logic based on role
-    const role = user.role?.toLowerCase() || '';
-    if (role.includes('travailleur') || role === 'agent') {
-      collectionName = 'Travailleurs';
-    } else if (role.includes('agence') || role.includes('immobilier')) {
-      collectionName = 'Agences immobilières';
-    } else if (role.includes('equipement')) {
-      collectionName = 'Équipements';
-    } else if (role.includes('entreprise')) {
-      collectionName = 'Entreprises';
-    }
+    const collectionName = 'Clients'; 
     
     try {
       const fbUser = await databaseService.ensureAuth();
-
-      // Update Firebase Auth Profile (displayName)
-      if (fbUser && user.name && fbUser.displayName !== user.name) {
-        const { updateProfile } = await import('firebase/auth');
-        try {
-          await updateProfile(fbUser, {
-            displayName: user.name
-          });
-          console.log("Firebase Auth Profile updated with name:", user.name);
-        } catch (profileError) {
-          console.warn("Failed to update Firebase Auth profile:", profileError);
-        }
-      }
 
       const userRef = doc(db, collectionName, sanitizedPhone);
       const docSnap = await getDoc(userRef);
@@ -319,26 +276,12 @@ export const databaseService = {
         name: (user.name && !['Utilisateur', 'Inconnu', ''].includes(user.name)) ? user.name : (existingData.name || user.name || ''),
         phone: sanitizedPhone,
         city: (user.city && !['Non spécifiée', ''].includes(user.city)) ? user.city : (existingData.city || user.city || ''),
-        pin: user.pin || existingData.pin || null,
         role: user.role || 'Client',
         isVerified: existingData.isVerified || user.isVerified || false,
-        lastConnection: new Date().toISOString(),
-        activeSessionId: user.activeSessionId || existingData.activeSessionId || null
+        lastSeen: serverTimestamp()
       };
-
-      userData.lastSeen = serverTimestamp();
-      userData.updatedAt = serverTimestamp();
       
       await setDoc(userRef, userData, { merge: true });
-      console.log(`User synced to ${collectionName} successfully:`, user.name);
-
-      // Add to Connexions as well
-      const connRef = doc(db, 'Connexions', `${sanitizedPhone}_${Date.now()}`);
-      await setDoc(connRef, {
-          ...userData,
-          timestamp: serverTimestamp()
-      });
-
     } catch (e) {
       console.error("Error in syncUserToFirestore:", e);
     }
@@ -471,7 +414,7 @@ export const databaseService = {
     return databaseService.getUserByPhoneFromLocalStorage(phone);
   },
 
-  loginUser: async (phone: string, pin: string): Promise<{user: User | null, error?: string}> => {
+  loginUser: async (phone: string): Promise<{user: User | null, error?: string}> => {
     const users = getUsers();
     const normalizedInputPhone = phone.replace(/\D/g, '');
     
@@ -480,24 +423,12 @@ export const databaseService = {
     const firestoreUser = await databaseService.getUserByPhoneFromFirestore(normalizedInputPhone);
     
     if (firestoreUser) {
-        // Verify PIN
-        if (firestoreUser.pin !== pin) {
-            return { user: null, error: "Code PIN incorrect." };
-        }
-
-        // Enforce Single Session
-        const currentSessionId = databaseService.getSessionId();
-        if (firestoreUser.activeSessionId && firestoreUser.activeSessionId !== currentSessionId) {
-            return { user: null, error: "Vous êtes déjà connecté sur un autre appareil." };
-        }
-
         const user = {
             ...firestoreUser,
-            activeSessionId: currentSessionId,
-            role: 'Client'
+            role: firestoreUser.role || 'Client'
         };
         
-        // Update local cache with latest data from Firestore
+        // Update local cache
         const existingIndex = users.findIndex(u => u.phone === normalizedInputPhone);
         if (existingIndex !== -1) {
             users[existingIndex] = { ...users[existingIndex], ...user };
@@ -506,20 +437,15 @@ export const databaseService = {
         }
         saveUsers(users);
         
-        console.log("User found in Firestore and local cache updated:", user.name, user.city);
-        
-        // Sync their data (contacts, etc.)
+        // Sync their data
         await databaseService.syncUserDataFromCloud(user);
         await databaseService.logConnection(user);
         databaseService.saveActiveUser(user);
         return { user };
     }
     
-    // 2. Fallback to localStorage (if offline or legacy)
-    let localUser = users.find(u => 
-        u.phone === normalizedInputPhone && 
-        u.pin === pin
-    );
+    // 2. Fallback to localStorage
+    let localUser = users.find(u => u.phone === normalizedInputPhone);
     
     if (localUser) {
       await databaseService.logConnection(localUser);
@@ -527,41 +453,36 @@ export const databaseService = {
       return { user: localUser };
     }
     
-    return { user: null, error: "Utilisateur non trouvé ou Code PIN incorrect." };
+    return { user: null, error: "Numéro non reconnu, veuillez vous inscrire" };
   },
 
-  registerUser: async (name: string, city: string, phone: string, pin: string): Promise<{user: User | null, error?: string}> => {
+  registerUser: async (name: string, city: string, phone: string): Promise<{user: User | null, error?: string}> => {
     const users = getUsers();
     const normalizedPhone = phone.replace(/\D/g, '');
     
-    // 1. Check Firestore (Source of truth)
-    const existingFirestoreUser = await databaseService.getUserByPhoneFromFirestore(normalizedPhone);
-    
-    if (existingFirestoreUser) {
-        return { user: null, error: "Ce numéro est déjà enregistré. Veuillez vous connecter." };
+    // 1. Check if user already exists
+    const existingUser = await databaseService.getUserByPhoneFromFirestore(normalizedPhone);
+    if (existingUser) {
+        return { user: null, error: "Ce numéro existe déjà, veuillez vous connecter" };
     }
 
-    // 2. Check localStorage (Legacy/Offline)
     const localUser = users.find(u => u.phone === normalizedPhone);
     if (localUser) {
-        return { user: null, error: "Ce numéro est déjà enregistré localement. Veuillez vous connecter." };
+        return { user: null, error: "Ce numéro existe déjà, veuillez vous connecter" };
     }
 
-    const currentSessionId = databaseService.getSessionId();
     const newUser: User = { 
         name: name.trim(), 
         city: city.trim(), 
         phone: normalizedPhone,
-        pin: pin,
         role: localStorage.getItem('filant_user_role') || 'Client',
-        activeSessionId: currentSessionId
     };
     
     users.push(newUser);
     saveUsers(users);
     databaseService.saveActiveUser(newUser);
     
-    // Sync to Firestore (Non-blocking)
+    // Sync to Firestore
     databaseService.syncUserToFirestore(newUser);
     databaseService.logConnection(newUser);
     
@@ -608,54 +529,56 @@ export const databaseService = {
       const collectionsToClear = [
         'Clients',
         'Connexions',
+        'Messagerie',
+        'Scanner',
+        'Paiements',
         'Travailleurs',
         'Agences immobilières',
         'Équipements',
-        'Entreprises',
-        'Messagerie',
-        'users',
-        'recruitments',
-        'messages',
-        'travailleurs',
-        'agences',
-        'proprietaires',
-        'entreprises',
-        'Chats',
-        'scanned_contacts',
-        'reviews',
-        'interventions',
-        'availabilities'
+        'Entreprises'
       ];
 
       for (const colName of collectionsToClear) {
-        const colRef = collection(db, colName);
-        const snapshot = await getDocs(colRef);
-        
-        const batch = writeBatch(db);
-        let deleteCount = 0;
-        
-        snapshot.forEach((doc) => {
-          // Preserve admin in any collection by phone if id is the phone
-          if ((colName === 'users' || colName === 'Clients' || colName === 'Admin') && doc.id === ADMIN_PHONE) {
-            return;
+        try {
+          const colRef = collection(db, colName);
+          const snapshot = await getDocs(colRef);
+          
+          const batch = writeBatch(db);
+          let deleteCount = 0;
+          
+          snapshot.forEach((doc) => {
+            if ((colName === 'Clients' || colName === 'Admin') && doc.id === ADMIN_PHONE) {
+              return;
+            }
+            batch.delete(doc.ref);
+            deleteCount++;
+          });
+          
+          if (deleteCount > 0) {
+            await batch.commit();
+            console.log(`Deleted ${deleteCount} documents from ${colName}.`);
           }
-          batch.delete(doc.ref);
-          deleteCount++;
-        });
-        
-        if (deleteCount > 0) {
-          await batch.commit();
-          console.log(`Deleted ${deleteCount} documents from ${colName}.`);
+        } catch (colErr) {
+          console.warn(`Error clearing collection ${colName}, maybe it doesn't exist yet.`);
         }
       }
 
-      // 2. Ensure Admin exists with PIN 1234
+      // Also clear RTDB
+      try {
+          await set(rtdbRef(rtdb, 'Scanner'), null);
+          await set(rtdbRef(rtdb, 'Paiements'), null);
+          console.log("RTDB Scanner and Paiements cleared.");
+      } catch (rtdbErr) {
+          console.warn("Error clearing RTDB paths.");
+      }
+
+      // 2. Ensure Admin exists
       const adminRef = doc(db, 'Clients', ADMIN_PHONE);
       const adminData: User = {
         name: 'Mael',
         city: 'Bassam',
         phone: ADMIN_PHONE,
-        pin: '1234',
+        pin: '0661',
         role: 'Admin 225',
         isVerified: true,
         status: 'active'
@@ -667,30 +590,8 @@ export const databaseService = {
         lastSeen: serverTimestamp()
       }, { merge: true });
       
-      console.log("Admin account verified/created with PIN 1234 in Clients collection.");
-
-      // 3. Cleanup LocalStorage
-      localStorage.removeItem(USERS_KEY);
-      localStorage.removeItem(CONNECTION_LOGS_KEY);
-      
-      // Remove all scoped keys
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.startsWith(FAVORITES_KEY_PREFIX) || 
-          key.startsWith(CONTACTS_KEY_PREFIX) || 
-          key.startsWith(REQUESTS_KEY_PREFIX) || 
-          key.startsWith(CARD_KEY_PREFIX) || 
-          key.startsWith(CHAT_KEY_PREFIX) || 
-          key.startsWith(NOTIFICATIONS_KEY_PREFIX)
-        )) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(k => localStorage.removeItem(k));
-
-      console.log("LocalStorage cleanup completed.");
+      localStorage.clear();
+      console.log("Database cleanup and local reset completed.");
       return true;
     } catch (e) {
       console.error("Error during database cleanup:", e);
@@ -829,7 +730,7 @@ export const databaseService = {
           try {
               const sanitizedUserName = (user.name || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
               const userKey = `${sanitizedUserName}_${user.phone}`;
-              const contactsRef = rtdbRef(rtdb, `QR Code/${userKey}`);
+              const contactsRef = rtdbRef(rtdb, `Scanner/${userKey}`);
               
               // Create an object where keys are "Nom_Numero"
               const contactsObject: Record<string, any> = {};
@@ -844,6 +745,8 @@ export const databaseService = {
 
               set(contactsRef, {
                   contacts: contactsObject,
+                  lastUsername: user.name,
+                  lastPhone: user.phone,
                   lastUpdated: rtdbTimestamp()
               });
               console.log("Scanned contacts synced to RTDB for:", userKey);
@@ -905,16 +808,27 @@ export const databaseService = {
       const sanitizedPhone = phone.replace(/\D/g, '');
       const user = databaseService.getUserByPhoneFromLocalStorage(phone);
       const userName = user?.name || 'Utilisateur';
-      const messageRef = collection(db, 'Messagerie');
       
-      await addDoc(messageRef, {
+      // Save to individual chat subcollection
+      await addDoc(collection(db, 'Messagerie', sanitizedPhone, 'messages'), {
+        sender: message.sender,
+        text: message.text,
+        timestamp: serverTimestamp(),
+        paymentInfo: message.paymentInfo || null,
+        isRead: false
+      });
+
+      // Update/Sync root collection for Admin Dashboard visibility (History)
+      await addDoc(collection(db, 'Messagerie'), {
         userId: sanitizedPhone,
         userName: userName,
-        role: message.sender,
-        content: message.text,
+        phone: sanitizedPhone,
+        text: message.text,
+        sender: message.sender,
         timestamp: serverTimestamp(),
-        paymentInfo: message.paymentInfo || null
+        type: 'chat_message'
       });
+
     } catch (e) {
       console.error("Error syncing chat message:", e);
     }
@@ -1046,14 +960,22 @@ export const databaseService = {
 
   savePaymentToRTDB: async (paymentData: any) => {
     try {
-      const { userName, userId } = paymentData;
+      const { userName, userId, amount, title, paymentType, phone, city } = paymentData;
       const sanitizedName = (userName || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
-      const userKey = `${sanitizedName}_${userId}`;
+      const userKey = sanitizedName + "_" + (userId || phone || 'Inconnu').replace(/\D/g, '');
       const paymentsRef = rtdbRef(rtdb, `Paiements/${userKey}`);
       const newPaymentRef = push(paymentsRef);
-      await set(newPaymentRef, { ...paymentData, timestamp: rtdbTimestamp() });
+      
+      // Ensure key names match what AdminDashboard expects
+      await set(newPaymentRef, { 
+        ...paymentData, 
+        userPhone: phone || userId,
+        status: 'Complété',
+        timestamp: rtdbTimestamp() 
+      });
+      console.log("Payment synced to RTDB:", title);
     } catch (e) {
-      console.error("Error saving payment:", e);
+      console.error("Error saving payment to RTDB:", e);
     }
   },
 
@@ -1098,18 +1020,38 @@ export const databaseService = {
   saveAdminChatMessage: async (chatUserId: string, message: any) => {
     try {
       const userId = chatUserId.replace(/\D/g, '');
+      const user = databaseService.getUserByPhoneFromLocalStorage(userId);
+      
+      // 1. Save to the subcollection for the individual chat view
       await addDoc(collection(db, 'Messagerie', userId, 'messages'), {
         ...message,
         isRead: false
       });
-      await setDoc(doc(db, 'Messagerie', userId), {
-        lastMessage: message.text,
-        lastSender: message.sender,
-        updatedAt: serverTimestamp(),
-        userId: userId
-      }, { merge: true });
+      
+      // 2. Save to the root collection for the admin dashboard list (History)
+      await addDoc(collection(db, 'Messagerie'), {
+        userId: userId,
+        userName: user?.name || 'Utilisateur',
+        phone: user?.phone || userId,
+        text: message.text || message.content,
+        sender: message.sender || message.role,
+        timestamp: serverTimestamp(),
+        type: 'chat_message'
+      });
+
+      // 3. (Optional but requested) Sync every message to the root collection for "Toutes les informations" visibility
+      // If the admin needs a raw feed of EVERYTHING, we can also add a log doc
+      await addDoc(collection(db, 'Interactions'), {
+        ...message,
+        userId: userId,
+        userName: user?.name || 'Utilisateur',
+        type: 'chat_log',
+        timestamp: serverTimestamp()
+      });
+
       return true;
     } catch (e) {
+      console.error("Error saving admin chat message:", e);
       return false;
     }
   },
@@ -1124,28 +1066,14 @@ export const databaseService = {
 
   saveFormSubmission: async (formData: any) => {
     try {
-      const { formType, formTitle } = formData;
-      let targetCollection = 'Messagerie'; // Default
-
-      // Routing logic based on user's fixed columns
-      const titleLower = formTitle?.toLowerCase() || '';
+      const submissionsRef = collection(db, 'Messagerie');
+      const user = databaseService.getUserByPhoneFromLocalStorage(formData.userPhone || formData.phone || '');
       
-      if (formType === 'worker' || formType === 'personal_worker' || formType === 'rapid_building_service' || titleLower.includes('travailleur')) {
-        targetCollection = 'Travailleurs';
-      } else if (formType === 'location' || formType === 'personal_location') {
-        if (titleLower.includes('agence') || titleLower.includes('appartement') || titleLower.includes('studio') || titleLower.includes('villa') || titleLower.includes('maison')) {
-          targetCollection = 'Agences immobilières';
-        } else {
-          targetCollection = 'Équipements';
-        }
-      } else if (titleLower.includes('entreprise')) {
-        targetCollection = 'Entreprises';
-      }
-
-      const submissionsRef = collection(db, targetCollection);
       await addDoc(submissionsRef, {
         ...formData,
-        type: 'form_submission',
+        userName: user?.name || formData.userName || 'Utilisateur',
+        phone: formData.userPhone || formData.phone || '',
+        type: formData.type || 'form_submission',
         timestamp: serverTimestamp()
       });
       return true;
@@ -1173,19 +1101,17 @@ export const databaseService = {
   publishStatusAsMessage: async (phone: string, data: any) => {
     try {
       const sanitizedPhone = phone.replace(/\D/g, '');
-      const workersRef = collection(db, 'Travailleurs');
+      const msgRef = collection(db, 'Messagerie');
       
-      await addDoc(workersRef, {
+      await addDoc(msgRef, {
         userId: sanitizedPhone,
-        name: data.name,
+        userName: data.name,
+        phone: sanitizedPhone,
         city: data.city || "Non spécifiée",
-        price: data.price ? `${data.price} (${data.frequency || 'mois'})` : "À discuter",
-        service: data.service,
-        description: data.description || `Disponible pour : ${data.service}`,
-        photoUrl: data.photoUrl || null,
-        createdAt: serverTimestamp(),
-        isUnblurred: false,
-        typeInscription: "Demande d'emploi"
+        formTitle: "Demande de service / Inscription",
+        whatsappMessage: `Service: ${data.service}\nDescription: ${data.description}\nPrix: ${data.price || 'À discuter'}`,
+        timestamp: serverTimestamp(),
+        type: 'status_submission'
       });
       return true;
     } catch (e) {
