@@ -59,7 +59,7 @@ export const extractQRInfo = (data: string) => {
         };
     }
 
-    const lines = data.split('\n').map(l => l.trim()).filter(Boolean);
+    const lines = (data || '').split('\n').map(l => l.trim()).filter(Boolean);
     
     const parseKeyValue = (text: string, key: string) => {
         const regex = new RegExp(`${key}\\s*[:=]\\s*([^\\n\\r]+)`, 'i');

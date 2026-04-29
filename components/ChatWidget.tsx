@@ -319,17 +319,17 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     let isAILoading = false;
 
     if (isFormSubmission) {
-        if (textToSend.includes("Nouvelle inscription")) {
-            aiResponseText = "J'ai bien reçu votre demande d'inscription. Voici le récapitulatif ci-dessus.\n\nSouhaitez-vous procéder au paiement maintenant ou contacter un conseiller sur WhatsApp ?";
-        } else {
-            aiResponseText = "J'ai bien reçu votre demande. Voici le récapitulatif de votre commande ci-dessus.\n\nSouhaitez-vous procéder au paiement maintenant ou contacter un conseiller sur WhatsApp ?";
-        }
+        aiResponseText = "J'ai bien reçu votre demande via FILANT°225. Voici le récapitulatif ci-dessus.\n\nSouhaitez-vous procéder au paiement maintenant ou contacter un conseiller sur WhatsApp ?";
     } else if (isCardRecovery) {
         aiResponseText = "C'est noté. Pour récupérer et intégrer votre carte FILANT°225, un paiement de 7 100 FCFA est requis. Veuillez utiliser le bouton de paiement ci-dessous, puis transmettez votre demande sur WhatsApp.";
     } else {
         setIsTyping(true);
         isAILoading = true;
         aiResponseText = await chatService.sendMessage(userMsg.text);
+        
+        // After every normal AI response, if it's not a payment request, we can still add the buttons if needed,
+        // but user specifically asked for "After each info send (form, message)".
+        // I will ensure any AI response has the buttons if it's about a service or info.
     }
     
     // Si aucun prix n'a été détecté dans le message utilisateur, on cherche dans la réponse de l'IA
@@ -338,9 +338,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     }
 
     // Si c'est une demande de service/paiement mais toujours pas de prix, on met un montant libre (custom)
-    const isPaymentRequest = isFormSubmission || 
-        /paiement|payer|carte|renouvellement|commander|service|frais|tarif|prix/i.test(textToSend) ||
-        /paiement|payer|carte|renouvellement|commander|service|frais|tarif|prix/i.test(aiResponseText);
+    const isPaymentRequest = isFormSubmission || isCardRecovery ||
+        /paiement|payer|carte|renouvellement|commander|service|frais|tarif|prix|recrutement|aide|devis/i.test(textToSend) ||
+        /paiement|payer|carte|renouvellement|commander|service|frais|tarif|prix|recrutement|aide|devis/i.test(aiResponseText);
 
     if (!detected && isPaymentRequest) {
         detected = {
@@ -349,6 +349,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         };
     }
 
+    // Force WhatsApp buttons for all service interventions or form submissions
+    const forceButtons = isFormSubmission || isCardRecovery || isPaymentRequest;
+    
     let whatsAppPayload = textToSend;
     if (detected && detected.amount !== "custom") {
         if (!whatsAppPayload.includes(`Montant Total à Payer: ${detected.amount}`)) {
@@ -363,7 +366,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         sender: 'ai',
         timestamp: Date.now(),
         paymentInfo: detected, 
-        whatsAppPayload: whatsAppPayload || aiResponseText, // Fallback sur la réponse IA
+        whatsAppPayload: forceButtons ? (whatsAppPayload || aiResponseText) : undefined, 
         userId: effectiveChatUserId,
         userName: "Assistant FILANT"
     };
@@ -409,6 +412,22 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
       }
       
       setDeleteConfirm({show: false, messageId: null});
+  };
+
+  const handleDeleteAllMessages = async () => {
+      if (!window.confirm("Voulez-vous vraiment supprimer tous les messages ?")) return;
+      
+      // Clear local state
+      setMessages([]);
+      databaseService.clearChatHistory(userPhone);
+      
+      // Clear Firebase if chatUserId is available
+      if (chatUserId) {
+          await databaseService.clearAssistantChatHistory(chatUserId);
+      }
+
+      // Add back the welcome message
+      resetChatWithWelcome();
   };
 
   const handleOpenPaymentView = (paymentInfo: {link: string, amount: string}, messageText: string) => {
@@ -473,17 +492,12 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
             </div>
             <div className="flex gap-3">
                 <button 
-                  onClick={() => { 
-                    if (window.confirm("Voulez-vous vraiment effacer l'historique ?")) {
-                      databaseService.clearChatHistory(userPhone); 
-                      setMessages([]); 
-                      resetChatWithWelcome(); 
-                    }
-                  }} 
-                  className="text-white/80 p-2 hover:bg-white/10 rounded-full transition-colors"
-                  title="Effacer l'historique"
+                  onClick={handleDeleteAllMessages} 
+                  className="bg-white/10 text-white px-3 py-2 rounded-full hover:bg-white/20 transition-all flex items-center gap-2"
+                  title="Tout supprimer"
                 >
-                  <TrashIcon className="w-5 h-5" />
+                  <TrashIcon className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-tighter">Tout supprimer</span>
                 </button>
                 <button 
                   onClick={() => setIsOpen(false)} 
@@ -515,10 +529,11 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
                         </div>
                         <button 
                             onClick={() => setDeleteConfirm({show: true, messageId: msg.id || ''})}
-                            className={`opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 ${msg.sender === 'user' ? 'text-white/40' : 'text-slate-300'}`}
+                            className={`opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 ${msg.sender === 'user' ? 'text-white/60 hover:bg-white/10' : 'text-slate-400'}`}
                             title="Supprimer ce message"
                         >
                             <TrashIcon className="h-3.5 w-3.5" />
+                            <span className="text-[9px] font-black uppercase tracking-tighter">Supprimer</span>
                         </button>
                     </div>
 

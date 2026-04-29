@@ -1067,6 +1067,21 @@ export const databaseService = {
     return databaseService.deleteTypedChatMessage('Assistant', chatUserId, messageId);
   },
 
+  clearAssistantChatHistory: async (chatUserId: string) => {
+    try {
+      const userId = chatUserId.replace(/\D/g, '');
+      const messagesRef = collection(db, 'MessagerieAssistant', userId, 'messages');
+      const snapshot = await getDocs(messagesRef);
+      const batch = writeBatch(db);
+      snapshot.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      return true;
+    } catch (e) {
+      console.error("Error clearing assistant chat history in Firebase:", e);
+      return false;
+    }
+  },
+
   deletePrivateChatMessage: async (chatUserId: string, messageId: string) => {
     return databaseService.deleteTypedChatMessage('Privee', chatUserId, messageId);
   },

@@ -80,10 +80,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
         Object.entries(val).forEach(([userKey, userVal]: [string, any]) => {
           if (userVal.contacts) {
             Object.values(userVal.contacts).forEach((contact: any) => {
+              const safeKey = String(userKey || '');
               list.push({ 
                 ...contact, 
-                scannerUser: userVal.lastUsername || (userKey || '').split('_')[0],
-                userPhone: userVal.lastPhone || (userKey || '').split('_')[1]
+                scannerUser: userVal.lastUsername || safeKey.split('_')[0] || 'Inconnu',
+                userPhone: userVal.lastPhone || safeKey.split('_')[1] || 'Inconnu'
               });
             });
           }
@@ -135,10 +136,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
   const filteredData = (tabData: any[]) => {
     if (!searchTerm) return tabData;
+    const term = searchTerm.toLowerCase();
     return tabData.filter(item => 
-      Object.values(item).some(val => 
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      Object.entries(item).some(([key, val]) => {
+        if (typeof val === 'object' && val !== null) {
+          return Object.values(val).some(v => String(v).toLowerCase().includes(term));
+        }
+        return String(val).toLowerCase().includes(term);
+      })
     );
   };
 
@@ -262,7 +267,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
         </aside>
 
         {/* content Area */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8 scroll-container">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-8 scroll-container pb-32">
+          {/* Mobile Search Bar */}
+          <div className="lg:hidden relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input 
+              type="text" 
+              placeholder="Rechercher dans cette section..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+            />
+          </div>
+
           {loading ? (
              <div className="h-full flex flex-col items-center justify-center space-y-4">
                  <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-600 rounded-full animate-spin"></div>
@@ -357,37 +374,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
               {activeTab === 'assistant' && (
                 <div className="space-y-6">
-                  {data.assistant.map((item, i) => (
-                    <div key={i} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+                  {filteredData(data.assistant).map((item, i) => (
+                    <div key={i} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 p-6 hover:shadow-md transition-shadow">
                        <div className="flex justify-between items-start mb-4">
                           <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-black text-[10px]">
+                             <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-black text-xs shadow-inner">
                                 {item.userName?.charAt(0) || 'U'}
                              </div>
                              <div>
-                                <h4 className="text-xs font-black uppercase tracking-tight">{item.userName || 'Système'}</h4>
+                                <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{item.userName || 'Système'}</h4>
                                 <p className="text-[10px] text-gray-400 font-bold tracking-widest">{item.phone || item.userId || '-'}</p>
                              </div>
                           </div>
-                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/10 px-2 py-1 rounded-lg">
+                          <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/10 px-3 py-1.5 rounded-xl border border-blue-100/50 dark:border-blue-900/50">
                              {item.type || 'Interaction'}
                           </span>
                        </div>
-                       <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-gray-100 dark:border-slate-800">
-                          <p className="text-xs font-medium text-slate-700 dark:text-gray-300 leading-relaxed italic">
+                       <div className="bg-gray-50/80 dark:bg-slate-800/50 rounded-2xl p-5 border border-gray-100 dark:border-slate-800/80 shadow-inner">
+                          <p className="text-xs font-semibold text-slate-700 dark:text-gray-300 leading-relaxed italic">
                              {item.whatsappMessage || item.message || JSON.stringify(item.data || item)}
                           </p>
                        </div>
-                       <div className="mt-4 flex justify-between items-center">
-                          <span className="text-[8px] font-bold text-gray-300 uppercase letter-spacing-1">{formatDate(item.timestamp)}</span>
+                       <div className="mt-5 flex justify-between items-center">
+                          <div className="flex flex-col">
+                             <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{formatDate(item.timestamp)}</span>
+                             {item.city && <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mt-1">Secteur: {item.city}</span>}
+                          </div>
                           <div className="flex items-center gap-4">
-                             {item.city && <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Ville: {item.city}</span>}
                              {(item.phone || item.userId) && (
                                 <button 
                                   onClick={() => onOpenChat(item.phone || item.userId, item.userName || 'Utilisateur', 'Assistant')}
-                                  className="px-3 py-1 bg-blue-600 text-white text-[9px] font-black uppercase rounded-lg shadow-sm active:scale-95 transition-transform"
+                                  className="px-5 py-2.5 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg shadow-blue-500/30 active:scale-95 transition-all hover:bg-blue-700"
                                 >
-                                  Répondre
+                                  Ouvrir le Chat
                                 </button>
                              )}
                           </div>
@@ -400,7 +419,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               {activeTab === 'private' && (
                 <div className="space-y-6">
                   {Object.entries(
-                    data.privateMsgs.reduce((acc: Record<string, any[]>, msg) => {
+                    filteredData(data.privateMsgs).reduce((acc: Record<string, any[]>, msg) => {
                       const key = msg.userId || msg.phone || 'Inconnu';
                       if (!acc[key]) acc[key] = [];
                       acc[key].push(msg);

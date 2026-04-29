@@ -727,7 +727,17 @@ const App: React.FC = () => {
           activeScreen = <AssistantQRScreen onBack={handleBack} user={displayUser} onShowPopup={showPopup} />;
           break;
         case 'admin_dashboard':
-          activeScreen = <AdminDashboard onBack={handleBack} user={displayUser} />;
+          activeScreen = (
+            <AdminDashboard 
+              onBack={handleBack} 
+              user={displayUser} 
+              onOpenChat={(userId, userName, type) => {
+                setIsAdminAuthenticated(true);
+                setActiveTab(Tab.Admin);
+                setAdminChatContext({ userId, userName, type });
+              }}
+            />
+          );
           break;
         case 'hub':
         default:
