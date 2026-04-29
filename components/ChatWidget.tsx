@@ -127,8 +127,25 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
       return;
     }
     
-    // Completely rely on Firebase if it has messages
-    setMessages(firebaseMessages);
+    setMessages(prev => {
+      // Use a Map for efficient deduplication by ID
+      const mergedMap = new Map();
+      
+      // Add existing local messages to the map
+      prev.forEach(m => {
+        const key = m.id || `${m.text}_${m.timestamp}`;
+        mergedMap.set(key, m);
+      });
+      
+      // Overwrite/Add with Firebase messages (source of truth)
+      firebaseMessages.forEach(m => {
+        const key = m.id || `${m.text}_${m.timestamp}`;
+        mergedMap.set(key, m);
+      });
+      
+      // Convert back to array and sort
+      return Array.from(mergedMap.values()).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    });
   }, [firebaseMessages]);
 
   useEffect(() => {
@@ -273,14 +290,16 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         userName: effectiveName || sanitizedEffectivePhone
     };
 
-    // DO NOT update local state directly anymore to avoid duplicates with Firebase sync
-    // The Firebase subscriber in useEffect will handle adding it to the UI
+    // Optimistic update for immediate display
+    const userMsgWithId = { ...userMsg, id: msgId };
+    setMessages(prev => [...prev, userMsgWithId]);
 
     // Sync to Firebase if effectiveChatUserId is available
     if (effectiveChatUserId) {
         if (detected || isFormSubmission || isCardRecovery) {
             // Log as a formal request which includes the message text
             databaseService.saveAssistantRequest({
+                id: msgId,
                 userId: effectiveChatUserId,
                 userName: effectiveName || 'Utilisateur',
                 phone: sanitizedEffectivePhone,
@@ -338,8 +357,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         };
     }
 
-    // Force WhatsApp buttons for all service interventions or form submissions
-    const forceButtons = isFormSubmission || isCardRecovery || isPaymentRequest;
+    // Force WhatsApp buttons for all service interventions, form submissions, or informative messages
+    const isGenericInfo = /aide|conseil|comment|info|details|filant|contrat|service/i.test(textToSend) || /aide|conseil|comment|info|details|filant|contrat|service/i.test(aiResponseText);
+    const forceButtons = isFormSubmission || isCardRecovery || isPaymentRequest || isGenericInfo;
     
     let whatsAppPayload = textToSend;
     if (detected && detected.amount !== "custom") {
@@ -360,7 +380,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         userName: "Assistant FILANT"
     };
 
-    // DO NOT update local state directly anymore to avoid duplicates with Firebase sync
+    // Optimistic update for immediate display
+    setMessages(prev => [...prev, aiMsg]);
     
     if (effectiveChatUserId) {
         databaseService.saveAssistantChatMessage(effectiveChatUserId, aiMsg);
@@ -376,6 +397,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         .trim();
     
     audioService.speak(textToSpeak);
+    
+    // Extra scroll for immediate feedback
+    setTimeout(scrollToBottom, 100);
   };
 
   const handleWhatsAppRedirect = (payload: string) => {

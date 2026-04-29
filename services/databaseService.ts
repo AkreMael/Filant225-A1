@@ -1028,11 +1028,14 @@ export const databaseService = {
       orderBy('timestamp', 'asc')
     );
     return onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toMillis ? doc.data().timestamp.toMillis() : (doc.data().timestamp || Date.now())
-      }));
+      const msgs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: data.id || doc.id,
+          timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : (data.timestamp || Date.now())
+        };
+      });
       callback(msgs);
     }, (error) => console.error(`${type} Chat sync error:`, error));
   },
