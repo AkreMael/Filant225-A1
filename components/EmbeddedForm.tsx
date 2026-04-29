@@ -200,15 +200,6 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
         window.open(`https://wa.me/2250705052632?text=${encodeURIComponent(message)}`, '_blank');
     }
 
-    // Sauvegarde en arrière-plan sans bloquer l'UI
-    databaseService.saveFormSubmission({ 
-        userPhone: user.phone, 
-        formType, 
-        formTitle: title, 
-        data: answers, 
-        whatsappMessage: message 
-    }).catch(err => console.error("Error background saving form:", err));
-
     // Fermeture immédiate du formulaire pour voir la messagerie
     onClose();
   };

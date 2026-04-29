@@ -94,9 +94,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
 
   useEffect(() => {
     if (!userPhone) return;
-    const history = databaseService.getChatHistory(userPhone);
-    if (history.length > 0) setMessages(history);
-    else resetChatWithWelcome();
+    // We now rely on Firebase for history via the observer in onAssistantChatUpdate
+    // resetChatWithWelcome is called in the merge observer if no messages are found
   }, [userPhone]);
 
   // Listen to Firebase messages in real-time
@@ -123,18 +122,13 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
 
   // Merge local and firebase messages
   useEffect(() => {
-    if (firebaseMessages.length === 0) return;
+    if (firebaseMessages.length === 0) {
+      if (messages.length === 0) resetChatWithWelcome();
+      return;
+    }
     
-    setMessages(prev => {
-      // Create a map of existing messages by ID or text+timestamp to avoid duplicates
-      const existingIds = new Set(prev.map(m => m.id || `${m.text}_${m.timestamp}`));
-      const newFromFirebase = firebaseMessages.filter(m => !existingIds.has(m.id || `${m.text}_${m.timestamp}`));
-      
-      if (newFromFirebase.length === 0) return prev;
-      
-      const merged = [...prev, ...newFromFirebase].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-      return merged;
-    });
+    // Completely rely on Firebase if it has messages
+    setMessages(firebaseMessages);
   }, [firebaseMessages]);
 
   useEffect(() => {
@@ -279,13 +273,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         userName: effectiveName || sanitizedEffectivePhone
     };
 
-    // Only update local state if we're not using Firebase sync or to show it immediately
-    // The merge logic in useEffect will handle de-duplication if IDs match
-    setMessages(prev => {
-        const exists = prev.some(m => m.id === msgId);
-        if (exists) return prev;
-        return [...prev, userMsg];
-    });
+    // DO NOT update local state directly anymore to avoid duplicates with Firebase sync
+    // The Firebase subscriber in useEffect will handle adding it to the UI
 
     // Sync to Firebase if effectiveChatUserId is available
     if (effectiveChatUserId) {
@@ -371,11 +360,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         userName: "Assistant FILANT"
     };
 
-    setMessages(prev => {
-        const exists = prev.some(m => m.id === aiMsgId);
-        if (exists) return prev;
-        return [...prev, aiMsg];
-    });
+    // DO NOT update local state directly anymore to avoid duplicates with Firebase sync
     
     if (effectiveChatUserId) {
         databaseService.saveAssistantChatMessage(effectiveChatUserId, aiMsg);
@@ -399,19 +384,18 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
   };
 
   const handleDeleteMessage = async () => {
-      if (!deleteConfirm.messageId) return;
-      
-      // Delete from local state
-      const updatedMessages = messages.filter(m => m.id !== deleteConfirm.messageId);
-      setMessages(updatedMessages);
-      databaseService.saveChatHistory(userPhone, updatedMessages);
-      
-      // Delete from Firebase if chatUserId is available
-      if (chatUserId) {
-          await databaseService.deleteAssistantChatMessage(chatUserId, deleteConfirm.messageId);
-      }
-      
-      setDeleteConfirm({show: false, messageId: null});
+    if (!deleteConfirm.messageId) return;
+    
+    // Delete from Firebase if chatUserId is available
+    if (chatUserId) {
+        await databaseService.deleteAssistantChatMessage(chatUserId, deleteConfirm.messageId);
+    } else {
+        // Fallback for local-only if somehow used (though unlikely now)
+        const updatedMessages = messages.filter(m => m.id !== deleteConfirm.messageId);
+        setMessages(updatedMessages);
+    }
+    
+    setDeleteConfirm({show: false, messageId: null});
   };
 
   const handleDeleteAllMessages = async () => {
