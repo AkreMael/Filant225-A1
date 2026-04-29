@@ -23,6 +23,7 @@ const LogoWithWhatsApp = () => (
 
 // --- HELPER PARSING UNIFIÉ ---
 export const extractQRInfo = (data: string) => {
+    if (!data) return { title: 'Assistant QR', name: 'Prestataire', phone: 'N/A', city: 'Non spécifiée', details: '' };
     // Support JSON
     try {
         const json = JSON.parse(data);

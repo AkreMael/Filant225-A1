@@ -28,6 +28,7 @@ import {
 interface AdminDashboardProps {
   onBack: () => void;
   user: User;
+  onOpenChat: (userId: string, userName: string, type: 'Assistant' | 'Privee') => void;
 }
 
 type AdminTab = 
@@ -38,7 +39,7 @@ type AdminTab =
   | 'scanner' 
   | 'payments';
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,8 +82,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
             Object.values(userVal.contacts).forEach((contact: any) => {
               list.push({ 
                 ...contact, 
-                scannerUser: userVal.lastUsername || userKey.split('_')[0],
-                userPhone: userVal.lastPhone || userKey.split('_')[1]
+                scannerUser: userVal.lastUsername || (userKey || '').split('_')[0],
+                userPhone: userVal.lastPhone || (userKey || '').split('_')[1]
               });
             });
           }
@@ -310,7 +311,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
                                    <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{conn.city} • {conn.phone}</p>
                                 </div>
                                 <div className="text-right">
-                                   <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{formatDate(conn.timestamp).split(' ')[1]}</p>
+                                   <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{(formatDate(conn.timestamp) || '').split(' ')[1] || '-'}</p>
                                 </div>
                              </div>
                            ))}
@@ -333,7 +334,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
                                    <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{pay.paymentType} • {pay.amount} FCFA</p>
                                 </div>
                                 <div className="text-right">
-                                   <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{formatDate(pay.timestamp).split(' ')[1]}</p>
+                                   <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{(formatDate(pay.timestamp) || '').split(' ')[1] || '-'}</p>
                                    <div className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-1 inline-block ${
                                       pay.status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
                                    }`}>
@@ -379,7 +380,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
                        </div>
                        <div className="mt-4 flex justify-between items-center">
                           <span className="text-[8px] font-bold text-gray-300 uppercase letter-spacing-1">{formatDate(item.timestamp)}</span>
-                          {item.city && <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Ville: {item.city}</span>}
+                          <div className="flex items-center gap-4">
+                             {item.city && <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Ville: {item.city}</span>}
+                             {(item.phone || item.userId) && (
+                                <button 
+                                  onClick={() => onOpenChat(item.phone || item.userId, item.userName || 'Utilisateur', 'Assistant')}
+                                  className="px-3 py-1 bg-blue-600 text-white text-[9px] font-black uppercase rounded-lg shadow-sm active:scale-95 transition-transform"
+                                >
+                                  Répondre
+                                </button>
+                             )}
+                          </div>
                        </div>
                     </div>
                   ))}
@@ -402,16 +413,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
                            <div className="bg-green-600 w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black">
                              {messages[0]?.userName?.charAt(0) || 'U'}
                            </div>
-                           <div className="flex flex-col">
+                         <div className="flex flex-col">
                               <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
                                 {messages[0]?.userName || 'Utilisateur'}
                               </span>
                               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
                            </div>
                         </div>
-                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">
-                          {messages.length} message(s)
-                        </span>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={() => onOpenChat(userId, messages[0]?.userName || 'Utilisateur', 'Privee')}
+                                className="bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase hover:bg-blue-600 hover:text-white transition-colors"
+                            >
+                                Répondre
+                            </button>
+                            <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">
+                                {messages.length} message(s)
+                            </span>
+                        </div>
                       </div>
                       <div className="p-2 divide-y divide-gray-50 dark:divide-slate-800">
                         {messages.map((m, idx) => (

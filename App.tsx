@@ -132,7 +132,8 @@ const App: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Menu);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard'>('hub');
+  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map'>('hub');
+  const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Assistant' | 'Privee' } | null>(null);
   const [offerSubView, setOfferSubView] = useState<'main' | 'shop'>('main');
   
   const [navHistory, setNavHistory] = useState<NavigationPoint[]>([]);
@@ -458,16 +459,11 @@ const App: React.FC = () => {
       const handlePaymentTrigger = (event: CustomEvent<PaymentConfirmationContext>) => {
           setPaymentConfirmationContext(event.detail);
       };
-      const handleChatTrigger = () => {
-          setActiveTab(Tab.UserChat);
-      };
 
       window.addEventListener('trigger-payment-view' as any, handlePaymentTrigger as any);
-      window.addEventListener('trigger-chat-message' as any, handleChatTrigger as any);
       
       return () => {
           window.removeEventListener('trigger-payment-view' as any, handlePaymentTrigger as any);
-          window.removeEventListener('trigger-chat-message' as any, handleChatTrigger as any);
       };
   }, []);
 
@@ -801,7 +797,25 @@ const App: React.FC = () => {
       break;
     case Tab.Admin:
       if (isAdminAuthenticated) {
-        activeScreen = <AdminDashboard onBack={handleBack} user={displayUser} />;
+        if (adminChatContext) {
+          activeScreen = (
+            <ChatScreen 
+              currentUser={currentUser || maelUser} 
+              targetUser={{ phone: adminChatContext.userId, name: adminChatContext.userName } as any}
+              isAdmin={true}
+              type={adminChatContext.type}
+              onBack={() => setAdminChatContext(null)}
+            />
+          );
+        } else {
+          activeScreen = (
+            <AdminDashboard 
+              onBack={handleBack} 
+              user={displayUser}
+              onOpenChat={(userId, userName, type) => setAdminChatContext({ userId, userName, type })}
+            />
+          );
+        }
       } else {
         activeScreen = (
           <AdminLogin 

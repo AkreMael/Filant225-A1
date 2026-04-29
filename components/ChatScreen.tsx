@@ -21,6 +21,7 @@ interface ChatScreenProps {
   targetUser?: User; // Only for admin
   isAdmin: boolean;
   onBack: () => void;
+  type?: 'Assistant' | 'Privee';
 }
 
 const BackIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>;
@@ -38,7 +39,7 @@ const QUICK_MESSAGES = [
   { label: 'CORRECTION', text: "Bonjour, certaines informations de votre formulaire sont incomplètes. Merci de nous préciser les détails manquants ici même dans cette messagerie." }
 ];
 
-const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmin, onBack }) => {
+const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmin, onBack, type = 'Privee' }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -46,27 +47,33 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Standardize chatUserId to always use the phone number if available
-  // This ensures consistency between different admin views (Cloud Users, Wave, Assistant)
-  // and the user's own chat view.
+  const chatTypeLabel = type === 'Assistant' ? 'Assistant' : 'Privé';
   const chatUserId = isAdmin && targetUser 
     ? ((targetUser.phone || '').replace(/\D/g, '') || targetUser.userId || targetUser.id || `${targetUser.name}_${(targetUser.phone || '').replace(/\D/g, '')}`)
     : ((currentUser.phone || '').replace(/\D/g, '') || currentUser.userId || currentUser.id || `${currentUser.name}_${(currentUser.phone || '').replace(/\D/g, '')}`);
 
-  const chatTitle = isAdmin && targetUser ? `Chat avec ${targetUser.name}` : "Message Privé (Filant 225)";
+  const chatTitle = isAdmin && targetUser ? `Chat ${chatTypeLabel} avec ${targetUser.name}` : `Message ${chatTypeLabel} (Filant 225)`;
 
   useEffect(() => {
     let unsubscribe: any;
     
     const setupChat = async () => {
       setIsLoading(true);
-      unsubscribe = databaseService.onPrivateChatUpdate(chatUserId, (msgs) => {
+      const onUpdate = type === 'Assistant' 
+        ? databaseService.onAssistantChatUpdate 
+        : databaseService.onPrivateChatUpdate;
+
+      unsubscribe = onUpdate(chatUserId, (msgs) => {
         setMessages(msgs);
         setIsLoading(false);
         
         // Mark messages from the other side as read
         const otherSide = isAdmin ? 'user' : 'admin';
-        databaseService.markPrivateMessagesAsRead(chatUserId, otherSide);
+        if (type === 'Assistant') {
+            databaseService.markAssistantMessagesAsRead(chatUserId, otherSide);
+        } else {
+            databaseService.markPrivateMessagesAsRead(chatUserId, otherSide);
+        }
 
         // Simulate typing indicator when receiving a message
         if (msgs.length > 0 && msgs[msgs.length - 1].sender !== (isAdmin ? 'admin' : 'user')) {
@@ -83,7 +90,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         unsubscribe();
       }
     };
-  }, [chatUserId]);
+  }, [chatUserId, type]);
 
   const displayMessages = useMemo(() => {
     if (isAdmin) return messages;
@@ -107,7 +114,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
 
     try {
       if (typeof textOverride !== 'string') setInputText('');
-      const success = await databaseService.savePrivateChatMessage(chatUserId, newMessage);
+      
+      const saveFunction = type === 'Assistant'
+        ? databaseService.saveAssistantChatMessage
+        : databaseService.savePrivateChatMessage;
+
+      const success = await saveFunction(chatUserId, newMessage);
       if (!success) {
         // Optionnel: remettre le texte si l'envoi a échoué
         if (typeof textOverride !== 'string') setInputText(textToSend);
@@ -140,7 +152,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   const handleDeleteMessage = async () => {
     if (!deleteConfirm.messageId) return;
     
-    const success = await databaseService.deletePrivateChatMessage(chatUserId, deleteConfirm.messageId);
+    const deleteFunction = type === 'Assistant'
+        ? databaseService.deleteAssistantChatMessage
+        : databaseService.deletePrivateChatMessage;
+
+    const success = await deleteFunction(chatUserId, deleteConfirm.messageId);
     if (success) {
       setDeleteConfirm({show: false, messageId: null});
     }
@@ -219,7 +235,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
             const messageId = msg.id || `msg_${idx}`;
             
             // Handle special messages
-            let content: React.ReactNode = <Linkify text={msg.text} />;
+            const messageText = msg.text || msg.message || msg.whatsappMessage || "";
+            let content: React.ReactNode = <Linkify text={messageText} />;
             let specialAction: React.ReactNode = null;
 
             return (

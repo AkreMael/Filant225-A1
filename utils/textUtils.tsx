@@ -7,6 +7,7 @@ interface LinkifyProps {
 }
 
 export const Linkify: React.FC<LinkifyProps> = ({ text, className }) => {
+  if (!text) return null;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
 

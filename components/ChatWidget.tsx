@@ -249,6 +249,12 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     return null;
   };
 
+  useEffect(() => {
+    if (isOpen && chatUserId) {
+        databaseService.markAssistantMessagesAsRead(chatUserId, 'admin');
+    }
+  }, [isOpen, chatUserId]);
+
   const handleSend = async (overrideText?: any, overridePhone?: string, overrideName?: string) => {
     const textToSend = (typeof overrideText === 'string' ? overrideText : input).trim();
     if (!textToSend) return;
@@ -495,7 +501,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
                 <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'} group animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                   <div className={`max-w-[90%] p-5 rounded-3xl text-[14px] leading-relaxed relative shadow-sm select-text touch-auto overflow-hidden ${msg.sender === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 rounded-tl-none border border-gray-100 dark:border-slate-700'}`}>
                     <div className="break-words whitespace-pre-wrap">
-                      <Linkify text={msg.text} />
+                      <Linkify text={msg.text || msg.message || msg.whatsappMessage} />
                     </div>
                     
                     <div className="flex items-center justify-between mt-3 gap-4">
@@ -504,7 +510,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
                                 {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             {msg.sender === 'ai' && (
-                                <SpeakerIcon text={msg.text} className="p-1" />
+                                <SpeakerIcon text={msg.text || msg.message || msg.whatsappMessage} className="p-1" />
                             )}
                         </div>
                         <button 
