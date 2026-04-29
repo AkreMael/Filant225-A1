@@ -353,14 +353,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     });
     databaseService.saveChatMessage(effectivePhone, aiMsg);
     
-    // Sync to Firebase if effectiveChatUserId is available
-    if (effectiveChatUserId) {
-        databaseService.saveAdminChatMessage(effectiveChatUserId, {
-            ...aiMsg,
-            sender: 'admin' // Assistant acts as admin for the user's "Messagerie Bleue"
-        });
-    }
-    
     // Save to Firestore if it's a validated request (has payment info or is a form submission)
     if (detected || isFormSubmission || isCardRecovery) {
         databaseService.saveAssistantRequest({
@@ -369,7 +361,6 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
             phone: sanitizedEffectivePhone,
             request: textToSend,
             requestText: textToSend, // Keep for backward compatibility if needed
-            aiResponse: aiResponseText,
             amount: detected?.amount || null,
             paymentLink: detected?.link || null,
             isFormSubmission,

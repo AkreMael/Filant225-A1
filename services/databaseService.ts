@@ -805,6 +805,10 @@ export const databaseService = {
 
   syncChatMessageToFirestore: async (phone: string, message: StoredChatMessage) => {
     try {
+      if (message.sender === 'ai' || message.sender === 'system') {
+        return; // Skip syncing AI/System messages to Firebase
+      }
+      
       const sanitizedPhone = phone.replace(/\D/g, '');
       const user = databaseService.getUserByPhoneFromLocalStorage(phone);
       const userName = user?.name || 'Utilisateur';
@@ -1019,6 +1023,11 @@ export const databaseService = {
 
   saveAdminChatMessage: async (chatUserId: string, message: any) => {
     try {
+      const sender = message.sender || message.role;
+      if (sender === 'ai' || sender === 'assistant' || sender === 'system') {
+        return true; // Skip saving to database, but return success for local flow
+      }
+
       const userId = chatUserId.replace(/\D/g, '');
       const user = databaseService.getUserByPhoneFromLocalStorage(userId);
       
@@ -1034,7 +1043,7 @@ export const databaseService = {
         userName: user?.name || 'Utilisateur',
         phone: user?.phone || userId,
         text: message.text || message.content,
-        sender: message.sender || message.role,
+        sender: sender,
         timestamp: serverTimestamp(),
         type: 'chat_message'
       });
