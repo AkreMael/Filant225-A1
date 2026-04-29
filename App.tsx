@@ -179,6 +179,7 @@ const App: React.FC = () => {
   });
 
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [unreadAssistantCount, setUnreadAssistantCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -485,17 +486,25 @@ const App: React.FC = () => {
     localStorage.setItem('filant_currentUserPhone', user.phone);
   };
 
-  // Écoute des messages non lus pour le badge
+  // Écoute des messages non lus pour les badges
   useEffect(() => {
     if (currentUser?.phone) {
       const sanitizedPhone = currentUser.phone.replace(/\D/g, '');
       const chatUserId = sanitizedPhone || currentUser.userId || currentUser.id || `${currentUser.name}_${sanitizedPhone}`;
       
-      const unsubscribe = databaseService.onUnreadMessagesCount(chatUserId, (count) => {
+      // Counter for Private Messages (Tab 4)
+      const unsubPrivate = databaseService.onUnreadPrivateMessagesCount(chatUserId, (count) => {
         setUnreadChatCount(count);
       });
+
+      // Counter for Assistant Messages (ChatWidget)
+      const unsubAssistant = databaseService.onUnreadAssistantMessagesCount(chatUserId, (count) => {
+        setUnreadAssistantCount(count);
+      });
+
       return () => {
-        if (unsubscribe && typeof unsubscribe === 'function') unsubscribe();
+        if (unsubPrivate) unsubPrivate();
+        if (unsubAssistant) unsubAssistant();
       };
     }
   }, [currentUser?.phone, currentUser?.userId, currentUser?.id, currentUser?.name]);
@@ -883,7 +892,7 @@ const App: React.FC = () => {
               userName={displayUser.name}
               activeTab={activeTab} 
               currentMenuView={menuView}
-              unreadChatCount={unreadChatCount}
+              unreadChatCount={unreadAssistantCount}
             />
             
             {popup.show && (

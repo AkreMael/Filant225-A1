@@ -105,7 +105,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     
     let unsubscribe: any;
     const setupFirebaseListener = () => {
-      unsubscribe = databaseService.onAdminChatUpdate(chatUserId, (msgs) => {
+      unsubscribe = databaseService.onAssistantChatUpdate(chatUserId, (msgs) => {
         // Map RTDB messages to our Message format if needed
         const mappedMsgs = msgs.map(m => ({
           ...m,
@@ -141,7 +141,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     if (isOpen && chatUserId && firebaseMessages.length > 0) {
       const lastMsg = firebaseMessages[firebaseMessages.length - 1];
       if (lastMsg.sender === 'admin' && !lastMsg.read) {
-        databaseService.markAdminMessagesAsRead(chatUserId, 'admin');
+        databaseService.markAssistantMessagesAsRead(chatUserId, 'admin');
       }
     }
   }, [isOpen, chatUserId, firebaseMessages]);
@@ -154,7 +154,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         timestamp: Date.now()
     };
     setMessages([welcomeMsg]);
-    databaseService.saveChatMessage(userPhone, welcomeMsg);
+    databaseService.saveAssistantChatMessage(chatUserId, welcomeMsg);
   };
 
   const displayMessages = useMemo(() => {
@@ -281,14 +281,30 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         return [...prev, userMsg];
     });
 
-    databaseService.saveChatMessage(effectivePhone, userMsg);
-    
     // Sync to Firebase if effectiveChatUserId is available
     if (effectiveChatUserId) {
-        databaseService.saveAdminChatMessage(effectiveChatUserId, {
-            ...userMsg,
-            sender: 'user'
-        });
+        if (detected || isFormSubmission || isCardRecovery) {
+            // Log as a formal request which includes the message text
+            databaseService.saveAssistantRequest({
+                userId: effectiveChatUserId,
+                userName: effectiveName || 'Utilisateur',
+                phone: sanitizedEffectivePhone,
+                request: textToSend,
+                requestText: textToSend,
+                amount: detected?.amount || null,
+                paymentLink: detected?.link || null,
+                isFormSubmission,
+                isCardRecovery,
+                sender: 'user', // Ensure it's marked as user for chat history
+                text: textToSend // Ensure it's displayable as a message
+            });
+        } else {
+            // Simple chat message
+            databaseService.saveAssistantChatMessage(effectiveChatUserId, {
+                ...userMsg,
+                sender: 'user'
+            });
+        }
     }
     
     if (typeof overrideText !== 'string') setInput('');
@@ -351,21 +367,9 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         if (exists) return prev;
         return [...prev, aiMsg];
     });
-    databaseService.saveChatMessage(effectivePhone, aiMsg);
     
-    // Save to Firestore if it's a validated request (has payment info or is a form submission)
-    if (detected || isFormSubmission || isCardRecovery) {
-        databaseService.saveAssistantRequest({
-            userId: effectiveChatUserId,
-            userName: effectiveName || 'Utilisateur',
-            phone: sanitizedEffectivePhone,
-            request: textToSend,
-            requestText: textToSend, // Keep for backward compatibility if needed
-            amount: detected?.amount || null,
-            paymentLink: detected?.link || null,
-            isFormSubmission,
-            isCardRecovery
-        });
+    if (effectiveChatUserId) {
+        databaseService.saveAssistantChatMessage(effectiveChatUserId, aiMsg);
     }
     
     if (isAILoading) {
@@ -395,7 +399,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
       
       // Delete from Firebase if chatUserId is available
       if (chatUserId) {
-          await databaseService.deleteAdminChatMessage(chatUserId, deleteConfirm.messageId);
+          await databaseService.deleteAssistantChatMessage(chatUserId, deleteConfirm.messageId);
       }
       
       setDeleteConfirm({show: false, messageId: null});

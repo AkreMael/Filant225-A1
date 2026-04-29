@@ -530,6 +530,8 @@ export const databaseService = {
         'Clients',
         'Connexions',
         'Messagerie',
+        'MessagerieAssistant',
+        'MessageriePrivee',
         'Scanner',
         'Paiements',
         'Travailleurs',
@@ -792,50 +794,14 @@ export const databaseService = {
   },
 
   saveChatMessage: (phone: string, message: StoredChatMessage) => {
-      try {
-          const historyKey = getScopedKey(phone, CHAT_KEY_PREFIX);
-          const historyString = localStorage.getItem(historyKey);
-          let history: StoredChatMessage[] = historyString ? JSON.parse(historyString) : [];
-          history.push(message);
-          if (history.length > 100) history.shift();
-          localStorage.setItem(historyKey, JSON.stringify(history));
-          databaseService.syncChatMessageToFirestore(phone, message);
-      } catch (e) {}
+      // Logic removed as we now use saveAssistantChatMessage or savePrivateChatMessage specifically.
+      // Keeping this as a shell to prevent breakage in legacy code, redirecting to Assistant as default.
+      const chatUserId = phone.replace(/\D/g, '');
+      databaseService.saveAssistantChatMessage(chatUserId, message);
   },
 
   syncChatMessageToFirestore: async (phone: string, message: StoredChatMessage) => {
-    try {
-      if (message.sender === 'ai' || message.sender === 'system') {
-        return; // Skip syncing AI/System messages to Firebase
-      }
-      
-      const sanitizedPhone = phone.replace(/\D/g, '');
-      const user = databaseService.getUserByPhoneFromLocalStorage(phone);
-      const userName = user?.name || 'Utilisateur';
-      
-      // Save to individual chat subcollection
-      await addDoc(collection(db, 'Messagerie', sanitizedPhone, 'messages'), {
-        sender: message.sender,
-        text: message.text,
-        timestamp: serverTimestamp(),
-        paymentInfo: message.paymentInfo || null,
-        isRead: false
-      });
-
-      // Update/Sync root collection for Admin Dashboard visibility (History)
-      await addDoc(collection(db, 'Messagerie'), {
-        userId: sanitizedPhone,
-        userName: userName,
-        phone: sanitizedPhone,
-        text: message.text,
-        sender: message.sender,
-        timestamp: serverTimestamp(),
-        type: 'chat_message'
-      });
-
-    } catch (e) {
-      console.error("Error syncing chat message:", e);
-    }
+    // Deprecated: use saveTypedChatMessage instead
   },
 
   clearChatHistory: (phone: string) => {
@@ -949,17 +915,11 @@ export const databaseService = {
   },
 
   saveAssistantRequest: async (requestData: any) => {
-    try {
-      const messageRef = collection(db, 'Messagerie');
-      await addDoc(messageRef, {
-        ...requestData,
-        type: 'assistant_request',
-        timestamp: serverTimestamp()
-      });
-      console.log("Assistant request saved to Firestore successfully");
-    } catch (e) {
-      console.error("Error saving assistant request:", e);
-    }
+    const userId = (requestData.phone || requestData.userId || '').replace(/\D/g, '');
+    return databaseService.saveTypedChatMessage('Assistant', userId, {
+      ...requestData,
+      type: 'assistant_request'
+    });
   },
 
   savePaymentToRTDB: async (paymentData: any) => {
@@ -984,32 +944,114 @@ export const databaseService = {
   },
 
   // --- DUMMIES & RESTORED FUNCTIONS FOR CLIENT-SIDE STABILITY ---
-  onUnreadMessagesCount: (chatUserId: string, callback: (count: number) => void) => {
-    // Basic placeholder for message count logic
-    return () => {};
+  onUnreadAssistantMessagesCount: (chatUserId: string, callback: (count: number) => void) => {
+    return databaseService.onUnreadTypedMessagesCount('Assistant', chatUserId, callback);
   },
 
-  onAdminChatUpdate: (chatUserId: string, callback: (messages: any[]) => void) => {
+  onUnreadPrivateMessagesCount: (chatUserId: string, callback: (count: number) => void) => {
+    return databaseService.onUnreadTypedMessagesCount('Privee', chatUserId, callback);
+  },
+
+  onUnreadTypedMessagesCount: (type: 'Assistant' | 'Privee', chatUserId: string, callback: (count: number) => void) => {
     const userId = chatUserId.replace(/\D/g, '');
+    const collectionName = `Messagerie${type}`;
     const q = query(
-      collection(db, 'Messagerie', userId, 'messages'),
+      collection(db, collectionName, userId, 'messages'),
+      where('sender', '==', 'admin'),
+      where('isRead', '==', false)
+    );
+    return onSnapshot(q, (snapshot) => {
+      callback(snapshot.size);
+    }, (error) => console.error(`Unread ${type} messages count error:`, error));
+  },
+
+  onUnreadMessagesCount: (chatUserId: string, callback: (count: number) => void) => {
+    // Default main counter for Private Messages (Tab 4)
+    return databaseService.onUnreadPrivateMessagesCount(chatUserId, callback);
+  },
+
+  saveAssistantChatMessage: async (chatUserId: string, message: any) => {
+    return databaseService.saveTypedChatMessage('Assistant', chatUserId, message);
+  },
+
+  savePrivateChatMessage: async (chatUserId: string, message: any) => {
+    return databaseService.saveTypedChatMessage('Privee', chatUserId, message);
+  },
+
+  saveTypedChatMessage: async (type: 'Assistant' | 'Privee', chatUserId: string, message: any) => {
+    try {
+      const userId = chatUserId.replace(/\D/g, '');
+      const user = databaseService.getUserByPhoneFromLocalStorage(userId);
+      const collectionName = `Messagerie${type}`;
+      
+      const docData = {
+        ...message,
+        userId: userId,
+        userName: user?.name || message.userName || 'Utilisateur',
+        phone: user?.phone || userId,
+        timestamp: serverTimestamp(),
+        isRead: false
+      };
+
+      // 1. Save to the user's specific conversation for sync across devices
+      await addDoc(collection(db, collectionName, userId, 'messages'), docData);
+      
+      // 2. Save to the global history for admin overview ONLY if it's from user or a form
+      // This respects the rule: "Admin database must ONLY contain user-sent messages/forms"
+      if (message.sender === 'user' || message.type === 'assistant_request' || message.type === 'form_submission' || message.type === 'status_submission') {
+        await addDoc(collection(db, collectionName), {
+          ...docData,
+          chatType: type
+        });
+      }
+
+      return true;
+    } catch (e) {
+      console.error(`Error saving ${type} chat message:`, e);
+      return false;
+    }
+  },
+
+  onAssistantChatUpdate: (chatUserId: string, callback: (messages: any[]) => void) => {
+    return databaseService.onTypedChatUpdate('Assistant', chatUserId, callback);
+  },
+
+  onPrivateChatUpdate: (chatUserId: string, callback: (messages: any[]) => void) => {
+    return databaseService.onTypedChatUpdate('Privee', chatUserId, callback);
+  },
+
+  onTypedChatUpdate: (type: 'Assistant' | 'Privee', chatUserId: string, callback: (messages: any[]) => void) => {
+    const userId = chatUserId.replace(/\D/g, '');
+    const collectionName = `Messagerie${type}`;
+    const q = query(
+      collection(db, collectionName, userId, 'messages'),
       orderBy('timestamp', 'asc')
     );
     return onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toMillis ? doc.data().timestamp.toMillis() : (doc.data().timestamp || Date.now())
       }));
       callback(msgs);
-    }, (error) => console.error("Chat sync error:", error));
+    }, (error) => console.error(`${type} Chat sync error:`, error));
   },
 
-  markAdminMessagesAsRead: async (chatUserId: string, side: 'user' | 'admin') => {
+  markAssistantMessagesAsRead: async (chatUserId: string, side: 'user' | 'admin') => {
+    return databaseService.markTypedMessagesAsRead('Assistant', chatUserId, side);
+  },
+
+  markPrivateMessagesAsRead: async (chatUserId: string, side: 'user' | 'admin') => {
+    return databaseService.markTypedMessagesAsRead('Privee', chatUserId, side);
+  },
+
+  markTypedMessagesAsRead: async (type: 'Assistant' | 'Privee', chatUserId: string, side: 'user' | 'admin') => {
     try {
       const userId = chatUserId.replace(/\D/g, '');
+      const collectionName = `Messagerie${type}`;
       const q = query(
-        collection(db, 'Messagerie', userId, 'messages'),
-        where('sender', '==', side),
+        collection(db, collectionName, userId, 'messages'),
+        where('sender', '==', side === 'user' ? 'user' : 'admin'),
         where('isRead', '==', false)
       );
       const snapshot = await getDocs(q);
@@ -1021,75 +1063,29 @@ export const databaseService = {
     } catch (e) {}
   },
 
-  saveAdminChatMessage: async (chatUserId: string, message: any) => {
-    try {
-      const sender = message.sender || message.role;
-      if (sender === 'ai' || sender === 'assistant' || sender === 'system') {
-        return true; // Skip saving to database, but return success for local flow
-      }
-
-      const userId = chatUserId.replace(/\D/g, '');
-      const user = databaseService.getUserByPhoneFromLocalStorage(userId);
-      
-      // 1. Save to the subcollection for the individual chat view
-      await addDoc(collection(db, 'Messagerie', userId, 'messages'), {
-        ...message,
-        isRead: false
-      });
-      
-      // 2. Save to the root collection for the admin dashboard list (History)
-      await addDoc(collection(db, 'Messagerie'), {
-        userId: userId,
-        userName: user?.name || 'Utilisateur',
-        phone: user?.phone || userId,
-        text: message.text || message.content,
-        sender: sender,
-        timestamp: serverTimestamp(),
-        type: 'chat_message'
-      });
-
-      // 3. (Optional but requested) Sync every message to the root collection for "Toutes les informations" visibility
-      // If the admin needs a raw feed of EVERYTHING, we can also add a log doc
-      await addDoc(collection(db, 'Interactions'), {
-        ...message,
-        userId: userId,
-        userName: user?.name || 'Utilisateur',
-        type: 'chat_log',
-        timestamp: serverTimestamp()
-      });
-
-      return true;
-    } catch (e) {
-      console.error("Error saving admin chat message:", e);
-      return false;
-    }
+  deleteAssistantChatMessage: async (chatUserId: string, messageId: string) => {
+    return databaseService.deleteTypedChatMessage('Assistant', chatUserId, messageId);
   },
 
-  deleteAdminChatMessage: async (chatUserId: string, messageId: string) => {
+  deletePrivateChatMessage: async (chatUserId: string, messageId: string) => {
+    return databaseService.deleteTypedChatMessage('Privee', chatUserId, messageId);
+  },
+
+  deleteTypedChatMessage: async (type: 'Assistant' | 'Privee', chatUserId: string, messageId: string) => {
     try {
       const userId = chatUserId.replace(/\D/g, '');
-      await deleteDoc(doc(db, 'Messagerie', userId, 'messages', messageId));
+      const collectionName = `Messagerie${type}`;
+      await deleteDoc(doc(db, collectionName, userId, 'messages', messageId));
       return true;
     } catch (e) { return false; }
   },
 
   saveFormSubmission: async (formData: any) => {
-    try {
-      const submissionsRef = collection(db, 'Messagerie');
-      const user = databaseService.getUserByPhoneFromLocalStorage(formData.userPhone || formData.phone || '');
-      
-      await addDoc(submissionsRef, {
-        ...formData,
-        userName: user?.name || formData.userName || 'Utilisateur',
-        phone: formData.userPhone || formData.phone || '',
-        type: formData.type || 'form_submission',
-        timestamp: serverTimestamp()
-      });
-      return true;
-    } catch (e) { 
-      console.error("Error saving form submission:", e);
-      return false; 
-    }
+    const userId = (formData.userPhone || formData.phone || '').replace(/\D/g, '');
+    return databaseService.saveTypedChatMessage('Assistant', userId, {
+      ...formData,
+      type: formData.type || 'form_submission'
+    });
   },
 
   getCardData: (phone: string, role: string) => {
@@ -1108,25 +1104,16 @@ export const databaseService = {
   },
 
   publishStatusAsMessage: async (phone: string, data: any) => {
-    try {
-      const sanitizedPhone = phone.replace(/\D/g, '');
-      const msgRef = collection(db, 'Messagerie');
-      
-      await addDoc(msgRef, {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    return databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, {
         userId: sanitizedPhone,
         userName: data.name,
         phone: sanitizedPhone,
         city: data.city || "Non spécifiée",
         formTitle: "Demande de service / Inscription",
         whatsappMessage: `Service: ${data.service}\nDescription: ${data.description}\nPrix: ${data.price || 'À discuter'}`,
-        timestamp: serverTimestamp(),
         type: 'status_submission'
-      });
-      return true;
-    } catch (e) {
-      console.error("Error publishing status:", e);
-      return false;
-    }
+    });
   },
 
   savePlacement: async (data: any, additional?: any) => {

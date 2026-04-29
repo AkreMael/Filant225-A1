@@ -33,7 +33,8 @@ interface AdminDashboardProps {
 type AdminTab = 
   | 'overview' 
   | 'connections' 
-  | 'messaging' 
+  | 'assistant'
+  | 'private' 
   | 'scanner' 
   | 'payments';
 
@@ -45,7 +46,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
   // Data States
   const [data, setData] = useState<Record<string, any[]>>({
     connections: [],
-    messaging: [],
+    assistant: [],
+    privateMsgs: [],
     scanner: [],
     payments: []
   });
@@ -58,9 +60,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
       setData(prev => ({ ...prev, connections: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
-    // 2. Messagerie (Form Submissions & Messages)
-    const unsubMessaging = onSnapshot(query(collection(db, 'Messagerie'), orderBy('timestamp', 'desc'), limit(300)), (snap) => {
-      setData(prev => ({ ...prev, messaging: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+    // 2. Messagerie Assistant (Form Submissions & System Logs)
+    const unsubAssistant = onSnapshot(query(collection(db, 'MessagerieAssistant'), orderBy('timestamp', 'desc'), limit(300)), (snap) => {
+      setData(prev => ({ ...prev, assistant: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+    });
+
+    // 3. Messagerie Privée (Manual Chats)
+    const unsubPrivate = onSnapshot(query(collection(db, 'MessageriePrivee'), orderBy('timestamp', 'desc'), limit(300)), (snap) => {
+      setData(prev => ({ ...prev, privateMsgs: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
     // 3. Scanner (RTDB)
@@ -103,15 +110,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
 
     return () => {
       unsubConns();
-      unsubMessaging();
+      unsubAssistant();
+      unsubPrivate();
       unsubQR();
       unsubPayments();
     };
   }, []);
 
   const stats = [
-    { label: 'Total Connexions', value: data.connections.length, icon: BarChart3, color: 'text-blue-500' },
-    { label: 'Messages', value: data.messaging.length, icon: Mail, color: 'text-green-500' },
+    { label: 'Assistant', value: data.assistant.length, icon: ShieldCheck, color: 'text-blue-500' },
+    { label: 'Privé', value: data.privateMsgs.length, icon: Mail, color: 'text-green-500' },
     { label: 'Paiements', value: data.payments.length, icon: CreditCard, color: 'text-orange-500' },
     { label: 'Scanner', value: data.scanner.length, icon: Scan, color: 'text-purple-500' },
   ];
@@ -180,7 +188,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
   const menuItems: { id: AdminTab, label: string, icon: any }[] = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
     { id: 'connections', label: 'Connexions', icon: BarChart3 },
-    { id: 'messaging', label: 'Messagerie', icon: Mail },
+    { id: 'assistant', label: 'Interactions Assistant', icon: ShieldCheck },
+    { id: 'private', label: 'Messagerie Privée', icon: Mail },
     { id: 'scanner', label: 'Scanner', icon: Scan },
     { id: 'payments', label: 'Paiements', icon: CreditCard },
   ];
@@ -345,44 +354,77 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user }) => {
                 data.connections
               )}
 
-              {activeTab === 'messaging' && (
+              {activeTab === 'assistant' && (
+                <div className="space-y-6">
+                  {data.assistant.map((item, i) => (
+                    <div key={i} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
+                       <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-black text-[10px]">
+                                {item.userName?.charAt(0) || 'U'}
+                             </div>
+                             <div>
+                                <h4 className="text-xs font-black uppercase tracking-tight">{item.userName || 'Système'}</h4>
+                                <p className="text-[10px] text-gray-400 font-bold tracking-widest">{item.phone || item.userId || '-'}</p>
+                             </div>
+                          </div>
+                          <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/10 px-2 py-1 rounded-lg">
+                             {item.type || 'Interaction'}
+                          </span>
+                       </div>
+                       <div className="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 border border-gray-100 dark:border-slate-800">
+                          <p className="text-xs font-medium text-slate-700 dark:text-gray-300 leading-relaxed italic">
+                             {item.whatsappMessage || item.message || JSON.stringify(item.data || item)}
+                          </p>
+                       </div>
+                       <div className="mt-4 flex justify-between items-center">
+                          <span className="text-[8px] font-bold text-gray-300 uppercase letter-spacing-1">{formatDate(item.timestamp)}</span>
+                          {item.city && <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Ville: {item.city}</span>}
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'private' && (
                 <div className="space-y-6">
                   {Object.entries(
-                    data.messaging.reduce((acc: Record<string, any[]>, msg) => {
-                      const key = msg.phone || msg.userId || 'Inconnu';
+                    data.privateMsgs.reduce((acc: Record<string, any[]>, msg) => {
+                      const key = msg.userId || msg.phone || 'Inconnu';
                       if (!acc[key]) acc[key] = [];
                       acc[key].push(msg);
                       return acc;
                     }, {})
-                  ).map(([phone, messages]: [string, any[]], i) => (
+                  ).map(([userId, messages]: [string, any[]], i) => (
                     <div key={i} className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
                       <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
                         <div className="flex items-center gap-3">
-                           <div className="bg-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black">
+                           <div className="bg-green-600 w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black">
                              {messages[0]?.userName?.charAt(0) || 'U'}
                            </div>
                            <div className="flex flex-col">
                               <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
                                 {messages[0]?.userName || 'Utilisateur'}
                               </span>
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{phone}</span>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
                            </div>
                         </div>
-                        <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">
+                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">
                           {messages.length} message(s)
                         </span>
                       </div>
                       <div className="p-2 divide-y divide-gray-50 dark:divide-slate-800">
                         {messages.map((m, idx) => (
-                          <div key={idx} className="p-4 hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                          <div key={idx} className={`p-4 hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors ${m.sender === 'admin' ? 'bg-blue-50/10' : ''}`}>
                              <div className="flex justify-between mb-1">
-                                <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{m.formTitle || 'Message Simple'}</span>
+                                <span className={`text-[9px] font-black uppercase tracking-widest ${m.sender === 'admin' ? 'text-blue-500' : 'text-green-500'}`}>
+                                    {m.sender === 'admin' ? 'Admin' : 'Utilisateur'}
+                                </span>
                                 <span className="text-[9px] font-bold text-gray-300">{formatDate(m.timestamp)}</span>
                              </div>
-                             <p className="text-xs font-medium text-slate-700 dark:text-gray-300 leading-relaxed italic border-l-2 border-blue-200 dark:border-blue-900 pl-3 py-1 mt-2">
-                                {m.whatsappMessage || m.message || 'Contenu vide'}
+                             <p className="text-xs font-medium text-slate-700 dark:text-gray-300 leading-relaxed">
+                                {m.text || m.message || 'Contenu vide'}
                              </p>
-                             {m.city && <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-2 inline-block">Ville: {m.city}</span>}
                           </div>
                         ))}
                       </div>
