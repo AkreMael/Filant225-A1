@@ -9,7 +9,6 @@ import WorkerListScreen from './components/WorkerListScreen';
 import PaymentScreen from './components/PaymentScreen';
 import WavePaymentScreen from './components/WavePaymentScreen';
 import InteractiveModal from './components/InteractiveModal';
-import ChatWidget from './components/ChatWidget';
 import GlobalPopup from './components/common/GlobalPopup';
 import SplashScreen from './components/SplashScreen';
 import FirstLaunchScreen from './components/FirstLaunchScreen';
@@ -180,7 +179,6 @@ const App: React.FC = () => {
   });
 
   const [unreadChatCount, setUnreadChatCount] = useState(0);
-  const [unreadAssistantCount, setUnreadAssistantCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
@@ -493,14 +491,8 @@ const App: React.FC = () => {
         setUnreadChatCount(count);
       });
 
-      // Counter for Assistant Messages (ChatWidget)
-      const unsubAssistant = databaseService.onUnreadAssistantMessagesCount(chatUserId, (count) => {
-        setUnreadAssistantCount(count);
-      });
-
       return () => {
         if (unsubPrivate) unsubPrivate();
-        if (unsubAssistant) unsubAssistant();
       };
     }
   }, [currentUser?.phone, currentUser?.userId, currentUser?.id, currentUser?.name]);
@@ -910,15 +902,6 @@ const App: React.FC = () => {
               )}
             </AnimatePresence>
 
-            <ChatWidget 
-              userPhone={displayUser.phone} 
-              userId={currentUser?.userId || currentUser?.id}
-              userName={displayUser.name}
-              activeTab={activeTab} 
-              currentMenuView={menuView}
-              unreadChatCount={unreadAssistantCount}
-            />
-            
             {popup.show && (
                 <GlobalPopup 
                   message={popup.message} 

@@ -1100,7 +1100,7 @@ export const databaseService = {
 
   saveFormSubmission: async (formData: any) => {
     const userId = (formData.userPhone || formData.phone || '').replace(/\D/g, '');
-    return databaseService.saveTypedChatMessage('Assistant', userId, {
+    return databaseService.saveTypedChatMessage('Privee', userId, {
       ...formData,
       type: formData.type || 'form_submission'
     });
@@ -1123,7 +1123,7 @@ export const databaseService = {
 
   publishStatusAsMessage: async (phone: string, data: any) => {
     const sanitizedPhone = phone.replace(/\D/g, '');
-    return databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, {
+    return databaseService.saveTypedChatMessage('Privee', sanitizedPhone, {
         userId: sanitizedPhone,
         userName: data.name,
         phone: sanitizedPhone,

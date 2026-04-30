@@ -34,7 +34,6 @@ interface AdminDashboardProps {
 type AdminTab = 
   | 'overview' 
   | 'connections' 
-  | 'assistant'
   | 'private' 
   | 'scanner' 
   | 'payments';
@@ -59,11 +58,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     // 1. Connexions
     const unsubConns = onSnapshot(query(collection(db, 'Connexions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
       setData(prev => ({ ...prev, connections: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
-    });
-
-    // 2. Messagerie Assistant (Form Submissions & System Logs)
-    const unsubAssistant = onSnapshot(query(collection(db, 'MessagerieAssistant'), orderBy('timestamp', 'desc'), limit(300)), (snap) => {
-      setData(prev => ({ ...prev, assistant: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
     // 3. Messagerie Privée (Manual Chats)
@@ -112,7 +106,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
     return () => {
       unsubConns();
-      unsubAssistant();
       unsubPrivate();
       unsubQR();
       unsubPayments();
@@ -120,7 +113,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   }, []);
 
   const stats = [
-    { label: 'Assistant', value: data.assistant.length, icon: ShieldCheck, color: 'text-blue-500' },
     { label: 'Privé', value: data.privateMsgs.length, icon: Mail, color: 'text-green-500' },
     { label: 'Paiements', value: data.payments.length, icon: CreditCard, color: 'text-orange-500' },
     { label: 'Scanner', value: data.scanner.length, icon: Scan, color: 'text-purple-500' },
@@ -194,7 +186,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const menuItems: { id: AdminTab, label: string, icon: any }[] = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
     { id: 'connections', label: 'Connexions', icon: BarChart3 },
-    { id: 'assistant', label: 'Interactions Assistant', icon: ShieldCheck },
     { id: 'private', label: 'Messagerie Privée', icon: Mail },
     { id: 'scanner', label: 'Scanner', icon: Scan },
     { id: 'payments', label: 'Paiements', icon: CreditCard },
@@ -370,50 +361,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 ['Nom', 'Ville', 'Numéro', 'Date'],
                 ['name', 'city', 'phone', 'timestamp'],
                 data.connections
-              )}
-
-              {activeTab === 'assistant' && (
-                <div className="space-y-6">
-                  {filteredData(data.assistant).map((item, i) => (
-                    <div key={i} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 p-6 hover:shadow-md transition-shadow">
-                       <div className="flex justify-between items-start mb-4">
-                          <div className="flex items-center gap-3">
-                             <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-black text-xs shadow-inner">
-                                {item.userName?.charAt(0) || 'U'}
-                             </div>
-                             <div>
-                                <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{item.userName || 'Système'}</h4>
-                                <p className="text-[10px] text-gray-400 font-bold tracking-widest">{item.phone || item.userId || '-'}</p>
-                             </div>
-                          </div>
-                          <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/10 px-3 py-1.5 rounded-xl border border-blue-100/50 dark:border-blue-900/50">
-                             {item.type || 'Interaction'}
-                          </span>
-                       </div>
-                       <div className="bg-gray-50/80 dark:bg-slate-800/50 rounded-2xl p-5 border border-gray-100 dark:border-slate-800/80 shadow-inner">
-                          <p className="text-xs font-semibold text-slate-700 dark:text-gray-300 leading-relaxed italic">
-                             {item.whatsappMessage || item.message || JSON.stringify(item.data || item)}
-                          </p>
-                       </div>
-                       <div className="mt-5 flex justify-between items-center">
-                          <div className="flex flex-col">
-                             <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">{formatDate(item.timestamp)}</span>
-                             {item.city && <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mt-1">Secteur: {item.city}</span>}
-                          </div>
-                          <div className="flex items-center gap-4">
-                             {(item.phone || item.userId) && (
-                                <button 
-                                  onClick={() => onOpenChat(item.phone || item.userId, item.userName || 'Utilisateur', 'Assistant')}
-                                  className="px-5 py-2.5 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl shadow-lg shadow-blue-500/30 active:scale-95 transition-all hover:bg-blue-700"
-                                >
-                                  Ouvrir le Chat
-                                </button>
-                             )}
-                          </div>
-                       </div>
-                    </div>
-                  ))}
-                </div>
               )}
 
               {activeTab === 'private' && (

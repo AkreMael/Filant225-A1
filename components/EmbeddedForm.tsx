@@ -177,32 +177,133 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     setTimeout(() => setToastMessage(null), 5000);
   };
 
-  const handleAction = (target: 'whatsapp' | 'assistant' | 'validate') => {
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const handleAction = async (target: 'whatsapp' | 'assistant' | 'validate') => {
     if (!isFormComplete) {
       showToast(`${remainingFields} champs à remplir`);
       return;
     }
     
+    setIsSending(true);
+    
     // Preparation immédiate du message
     const message = generateWhatsAppMessage(title, questions, answers, user, totalPrice, serviceMode, count);
 
-    // Envoi à l'assistant pour traitement (Paiement, Récapitulatif, etc.)
-    window.dispatchEvent(new CustomEvent('trigger-chat-message', { 
-        detail: {
-            message: message,
-            phone: user.phone,
-            name: user.name
+    // Sauvegarde directe dans la messagerie privée sans ouvrir le chat
+    const sanitizedPhone = user.phone.replace(/\D/g, '');
+    const chatUserId = sanitizedPhone || user.userId || user.id || `${user.name}_${sanitizedPhone}`;
+    
+    const chatMsg = {
+        sender: 'user',
+        text: `Nouveau formulaire soumis : ${title}\n\n${message}`,
+        timestamp: Date.now(),
+        type: 'form_submission',
+        formData: {
+            title,
+            formType,
+            answers,
+            totalPrice
         }
-    }));
+    };
 
-    // Si on a explicitement demandé WhatsApp, on l'ouvre aussi
-    if (target === 'whatsapp') {
-        window.open(`https://wa.me/2250705052632?text=${encodeURIComponent(message)}`, '_blank');
+    try {
+        await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
+        
+        // Si on a explicitement demandé WhatsApp, on l'ouvre
+        if (target === 'whatsapp') {
+            window.open(`https://wa.me/2250705052632?text=${encodeURIComponent(message)}`, '_blank');
+        }
+
+        // Afficher l'écran de confirmation
+        setShowConfirmation(true);
+    } catch (error) {
+        console.error("Error saving form to private chat:", error);
+        showToast("Erreur lors de l'enregistrement. Réessayez.");
+    } finally {
+        setIsSending(false);
     }
-
-    // Fermeture immédiate du formulaire pour voir la messagerie
-    onClose();
   };
+
+  if (showConfirmation) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-white z-[700] flex flex-col font-sans p-8 items-center justify-center text-center"
+      >
+        <div className="w-full max-w-[320px] flex flex-col items-center">
+            {/* Logo area from the image */}
+            <div className="relative w-48 h-48 mb-8">
+                <img 
+                  src={LOGO_URL} 
+                  alt="Filant Logo" 
+                  className="w-full h-full object-contain" 
+                  referrerPolicy="no-referrer"
+                />
+            </div>
+
+            <div className="space-y-6 mb-12">
+                <p className="text-xl font-bold text-gray-900 leading-tight">
+                    Nous avons bien reçu votre demande de recherche de
+                </p>
+                
+                <p className="text-2xl font-black text-orange-600 uppercase tracking-tight">
+                    {title.replace(/ Rapide$/i, '').toUpperCase()}{title.toLowerCase().endsWith('s') ? '' : 'S'}.
+                </p>
+
+                <p className="text-lg font-bold text-gray-900 leading-snug">
+                    Dès que vous procéderez au paiement de mise en relation, un agent vous contactera dans les plus brefs délais.
+                </p>
+            </div>
+
+            <div className="w-full space-y-4">
+                <button 
+                  onClick={() => {
+                    const message = generateWhatsAppMessage(title, questions, answers, user, totalPrice, serviceMode, count);
+                    window.dispatchEvent(new CustomEvent('trigger-payment-view', { 
+                      detail: {
+                        title: title,
+                        amount: totalPrice.toString(),
+                        paymentType: formType,
+                        waveLink: "https://pay.wave.com/m/M_filant/c/ci",
+                        formData: {
+                            formType,
+                            formTitle: title,
+                            data: answers,
+                            whatsappMessage: message
+                        }
+                      }
+                    }));
+                    onClose();
+                  }}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl text-xl shadow-xl active:scale-[0.98] transition-all"
+                >
+                    Frais {totalPrice} FCFA
+                </button>
+
+                <button 
+                  onClick={() => {
+                    const message = generateWhatsAppMessage(title, questions, answers, user, totalPrice, serviceMode, count);
+                    window.open(`https://wa.me/2250705052632?text=${encodeURIComponent(message)}`, '_blank');
+                  }}
+                  className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-4 rounded-2xl text-xl shadow-xl active:scale-[0.98] transition-all"
+                >
+                    Agence WhatsApp
+                </button>
+            </div>
+            
+            <button 
+                onClick={onClose}
+                className="mt-12 text-gray-400 font-bold uppercase tracking-widest text-[10px] hover:text-gray-600"
+            >
+                Fermer
+            </button>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div 
