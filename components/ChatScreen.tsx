@@ -64,7 +64,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         : databaseService.onPrivateChatUpdate;
 
       unsubscribe = onUpdate(chatUserId, (msgs) => {
-        setMessages(msgs);
+        setMessages(prev => {
+          const mergedMap = new Map();
+          
+          // Local messages
+          prev.forEach(m => {
+            const key = m.id || `${m.text}_${m.timestamp}`;
+            mergedMap.set(key, m);
+          });
+          
+          // Firebase messages
+          msgs.forEach(m => {
+            const key = m.id || `${m.text}_${m.timestamp}`;
+            mergedMap.set(key, m);
+          });
+          
+          return Array.from(mergedMap.values()).sort((a, b) => {
+            const timeDiff = (a.timestamp || 0) - (b.timestamp || 0);
+            if (timeDiff !== 0) return timeDiff;
+            return (a.id || "").localeCompare(b.id || "");
+          });
+        });
         setIsLoading(false);
         
         // Mark messages from the other side as read
@@ -106,11 +126,21 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     const textToSend = (typeof textOverride === 'string' ? textOverride : inputText).trim();
     if (!textToSend) return;
 
+    const sender = senderOverride || (isAdmin ? 'admin' : 'user');
+    const msgId = `${sender === 'admin' ? 'admin' : 'user'}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const newMessage: ChatMessage = {
-      sender: senderOverride || (isAdmin ? 'admin' : 'user'),
+      id: msgId,
+      sender: sender,
       text: textToSend,
       timestamp: Date.now()
     };
+
+    // Optimistic update for immediate display
+    setMessages(prev => {
+        if (prev.some(m => m.id === msgId)) return prev;
+        return [...prev, newMessage];
+    });
 
     try {
       if (typeof textOverride !== 'string') setInputText('');
@@ -119,11 +149,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         ? databaseService.saveAssistantChatMessage
         : databaseService.savePrivateChatMessage;
 
-      const success = await saveFunction(chatUserId, newMessage);
-      if (!success) {
-        // Optionnel: remettre le texte si l'envoi a échoué
-        if (typeof textOverride !== 'string') setInputText(textToSend);
-      }
+      await saveFunction(chatUserId, newMessage);
     } catch (error) {
       console.error("Error in handleSendMessage:", error);
     }

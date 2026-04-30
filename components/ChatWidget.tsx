@@ -143,8 +143,15 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         mergedMap.set(key, m);
       });
       
-      // Convert back to array and sort
-      return Array.from(mergedMap.values()).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      // Convert map back to array and sort by timestamp then by ID for stability
+      return Array.from(mergedMap.values()).sort((a, b) => {
+        const timeDiff = (a.timestamp || 0) - (b.timestamp || 0);
+        if (timeDiff !== 0) return timeDiff;
+        // If timestamps are identical, sort by ID to maintain stable order
+        const idA = a.id || "";
+        const idB = b.id || "";
+        return idA.localeCompare(idB);
+      });
     });
   }, [firebaseMessages]);
 
@@ -280,7 +287,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     const sanitizedEffectivePhone = effectivePhone.replace(/\D/g, '');
     const effectiveChatUserId = sanitizedEffectivePhone || userId || `${effectiveName || 'User'}_${sanitizedEffectivePhone}`;
 
-    const msgId = Date.now().toString();
+    const msgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const userMsg: Message = { 
         id: msgId, 
         text: textToSend, 
@@ -291,8 +298,14 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     };
 
     // Optimistic update for immediate display
-    const userMsgWithId = { ...userMsg, id: msgId };
-    setMessages(prev => [...prev, userMsgWithId]);
+    setMessages(prev => {
+        // Avoid duplicate if somehow already there
+        if (prev.some(m => m.id === msgId)) return prev;
+        return [...prev, userMsg];
+    });
+
+    // Scroll immediately
+    setTimeout(scrollToBottom, 50);
 
     // Sync to Firebase if effectiveChatUserId is available
     if (effectiveChatUserId) {
@@ -314,10 +327,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
             });
         } else {
             // Simple chat message
-            databaseService.saveAssistantChatMessage(effectiveChatUserId, {
-                ...userMsg,
-                sender: 'user'
-            });
+            databaseService.saveAssistantChatMessage(effectiveChatUserId, userMsg);
         }
     }
     
@@ -333,11 +343,14 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     } else {
         setIsTyping(true);
         isAILoading = true;
-        aiResponseText = await chatService.sendMessage(userMsg.text);
-        
-        // After every normal AI response, if it's not a payment request, we can still add the buttons if needed,
-        // but user specifically asked for "After each info send (form, message)".
-        // I will ensure any AI response has the buttons if it's about a service or info.
+        try {
+            aiResponseText = await chatService.sendMessage(userMsg.text);
+        } catch (err) {
+            aiResponseText = "Désolé, j'ai rencontré une erreur. Comment puis-je vous aider ?";
+        } finally {
+            setIsTyping(false);
+            isAILoading = false;
+        }
     }
     
     // Si aucun prix n'a été détecté dans le message utilisateur, on cherche dans la réponse de l'IA
@@ -358,8 +371,8 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     }
 
     // Force WhatsApp buttons for all service interventions, form submissions, or informative messages
-    const isGenericInfo = /aide|conseil|comment|info|details|filant|contrat|service/i.test(textToSend) || /aide|conseil|comment|info|details|filant|contrat|service/i.test(aiResponseText);
-    const forceButtons = isFormSubmission || isCardRecovery || isPaymentRequest || isGenericInfo;
+    const isGenericInfo = /aide|conseil|comment|info|details|filant|contrat|service|contact|whatsapp|prix|tarif/i.test(textToSend) || /aide|conseil|comment|info|details|filant|contrat|service|contact|whatsapp/i.test(aiResponseText);
+    const forceButtons = true; // Forcing for ALL assistant replies as per "Après chaque envoi d'information" request
     
     let whatsAppPayload = textToSend;
     if (detected && detected.amount !== "custom") {
@@ -368,7 +381,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
         }
     }
 
-    const aiMsgId = (Date.now() + 1).toString();
+    const aiMsgId = `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const aiMsg: Message = { 
         id: aiMsgId, 
         text: aiResponseText, 
@@ -381,14 +394,13 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ userPhone, userId, userName, ac
     };
 
     // Optimistic update for immediate display
-    setMessages(prev => [...prev, aiMsg]);
+    setMessages(prev => {
+        if (prev.some(m => m.id === aiMsgId)) return prev;
+        return [...prev, aiMsg];
+    });
     
     if (effectiveChatUserId) {
         databaseService.saveAssistantChatMessage(effectiveChatUserId, aiMsg);
-    }
-    
-    if (isAILoading) {
-        setIsTyping(false);
     }
 
     const textToSpeak = aiResponseText
