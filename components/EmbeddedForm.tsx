@@ -237,9 +237,9 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
             {/* Logo area from the image */}
             <div className="relative w-48 h-48 mb-8">
                 <img 
-                  src={LOGO_URL} 
-                  alt="Filant Logo" 
-                  className="w-full h-full object-contain" 
+                  src={resolvedImage || LOGO_URL} 
+                  alt={title} 
+                  className="w-full h-full object-cover rounded-[2rem] shadow-2xl border-4 border-orange-50" 
                   referrerPolicy="no-referrer"
                 />
             </div>
