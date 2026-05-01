@@ -308,7 +308,7 @@ const App: React.FC = () => {
           };
 
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Recovery Timeout')), 5000)
+            setTimeout(() => reject(new Error('Recovery Timeout')), 10000)
           );
 
           try {
@@ -325,8 +325,17 @@ const App: React.FC = () => {
               setShowSplash(true);
             }
             localStorage.setItem('filant_currentUserPhone', userData.phone);
-            databaseService.syncUserToFirestore(fullUser);
-            databaseService.logConnection(fullUser);
+            
+            // Safety check: Only sync if we have something meaningful to sync
+            const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', ''].includes(val);
+            if (isValid(fullUser.name) || isValid(fullUser.city)) {
+              databaseService.syncUserToFirestore(fullUser);
+              databaseService.logConnection(fullUser);
+            } else {
+              console.log("Skipping early sync for partial user data:", fullUser.phone);
+              // Log connection anyway with what we have (phone is enough for presence)
+              databaseService.logConnection(fullUser);
+            }
           }
         } else {
           console.log("Auth state changed: No user");

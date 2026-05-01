@@ -227,12 +227,18 @@ export const databaseService = {
         
         // Sync to Firestore 'Connexions' - One document per user (ligne dédiée)
         const connRef = doc(db, 'Connexions', sanitizedPhone);
-        await setDoc(connRef, {
-            name: user.name,
+        const connData: any = {
             phone: user.phone,
-            city: user.city,
             timestamp: serverTimestamp()
-        }, { merge: true });
+        };
+
+        // Only update name and city if they are valid and not empty
+        const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', ''].includes(val);
+        
+        if (isValid(user.name)) connData.name = user.name;
+        if (isValid(user.city)) connData.city = user.city;
+
+        await setDoc(connRef, connData, { merge: true });
 
         // Sync to Firestore 'Clients'
         databaseService.syncUserToFirestore(user);
@@ -262,24 +268,57 @@ export const databaseService = {
   syncUserToFirestore: async (user: User) => {
     if (!user.phone) return;
     const sanitizedPhone = user.phone.replace(/\D/g, '');
-    const collectionName = 'Clients'; 
     
     try {
       const fbUser = await databaseService.ensureAuth();
 
-      const userRef = doc(db, collectionName, sanitizedPhone);
-      const docSnap = await getDoc(userRef);
-      const existingData = docSnap.exists() ? docSnap.data() : {};
+      // Find which collection this user belongs to by checking all potential collections
+      let targetCollection = 'Clients';
+      let existingData: any = {};
+      
+      const collections = ['Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin', 'Clients'];
+      
+      // Parallelize checking for existing records to be faster
+      const checkPromises = collections.map(async (col) => {
+          const ref = doc(db, col, sanitizedPhone);
+          const snap = await getDoc(ref);
+          return snap.exists() ? { col, data: snap.data() } : null;
+      });
 
+      const results = await Promise.all(checkPromises);
+      const found = results.find(r => r !== null);
+      
+      if (found) {
+          targetCollection = found.col;
+          existingData = found.data;
+      }
+
+      const userRef = doc(db, targetCollection, sanitizedPhone);
+
+      // Construct update object with existing data preservation
       const userData: any = {
-        userId: fbUser?.uid || existingData.userId || null,
-        name: (user.name && !['Utilisateur', 'Inconnu', ''].includes(user.name)) ? user.name : (existingData.name || user.name || ''),
         phone: sanitizedPhone,
-        city: (user.city && !['Non spécifiée', ''].includes(user.city)) ? user.city : (existingData.city || user.city || ''),
-        role: user.role || 'Client',
-        isVerified: existingData.isVerified || user.isVerified || false,
         lastSeen: serverTimestamp()
       };
+
+      if (fbUser?.uid) userData.userId = fbUser.uid;
+      
+      const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', ''].includes(val);
+      
+      // Only include name and city if provided AND valid (not partial/generic)
+      if (isValid(user.name)) {
+          userData.name = user.name;
+      } else if (existingData.name) {
+          // If provided is invalid, but we have existing, keep existing implicitly by not including it in the update
+          // or explicitly to ensure it's not lost if merge behavior is complex
+      }
+
+      if (isValid(user.city)) {
+          userData.city = user.city;
+      }
+      
+      if (user.role) userData.role = user.role;
+      if (user.isVerified !== undefined) userData.isVerified = user.isVerified;
       
       await setDoc(userRef, userData, { merge: true });
     } catch (e) {
@@ -339,18 +378,25 @@ export const databaseService = {
     try {
       await databaseService.ensureAuth();
       const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
-      for (const col of collections) {
+      
+      // Check all collections in parallel for maximum speed
+      const promises = collections.map(async (col) => {
           const userRef = doc(db, col, sanitizedPhone);
-          const docSnap = await withTimeout(getDoc(userRef));
+          const docSnap = await getDoc(userRef);
           if (docSnap.exists()) {
-            const data = docSnap.data();
-            return {
-              id: docSnap.id,
-              phone: data.phone || docSnap.id,
-              ...data
-            } as User;
+             const data = docSnap.data();
+             return {
+                id: docSnap.id,
+                phone: data.phone || docSnap.id,
+                ...data
+             } as User;
           }
-      }
+          return null;
+      });
+
+      const results = await Promise.all(promises);
+      return results.find(u => u !== null) || null;
+      
     } catch (e) {
       console.error("Error in getUserByPhoneFromFirestore:", e);
     }
