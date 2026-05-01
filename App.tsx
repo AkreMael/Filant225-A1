@@ -620,9 +620,6 @@ const App: React.FC = () => {
         <GlobalRippleEffect>
           <div className="flex justify-center bg-white w-full h-full min-h-[100dvh]">
             <div className="w-full max-w-[480px] h-[100dvh] relative flex flex-col overflow-hidden bg-white shadow-2xl">
-              {/* Status Bar Area */}
-              <div className="w-full bg-blue-600 flex-shrink-0 z-[999] h-[env(safe-area-inset-top,24px)] min-h-[24px]" />
-              
               <div className="flex-1 relative overflow-hidden">
                 <FirstLaunchScreen onComplete={handleFirstLaunchComplete} />
               </div>
@@ -641,9 +638,6 @@ const App: React.FC = () => {
         <GlobalRippleEffect>
           <div className="flex justify-center bg-white w-full h-full min-h-[100dvh]">
             <div className="w-full max-w-[480px] h-[100dvh] relative flex flex-col overflow-hidden bg-white shadow-2xl">
-              {/* Status Bar Area */}
-              <div className="w-full bg-blue-600 flex-shrink-0 z-[999] h-[env(safe-area-inset-top,24px)] min-h-[24px]" />
-              
               <div className="flex-1 relative overflow-hidden">
                 <LoginScreen onLoginSuccess={handleLogin} onShowPopup={showPopup} />
                 {popup.show && (
@@ -668,9 +662,6 @@ const App: React.FC = () => {
       return (
           <div className="flex justify-center bg-white w-full h-full min-h-[100dvh]">
             <div className="w-full max-w-[480px] h-[100dvh] relative flex flex-col overflow-hidden bg-white shadow-2xl">
-              {/* Status Bar Area */}
-              <div className="w-full bg-blue-600 flex-shrink-0 z-[999] h-[env(safe-area-inset-top,24px)] min-h-[24px]" />
-              
               <div className="flex-1 relative overflow-hidden">
                 <SplashScreen 
                   userName={currentUser.name} 
@@ -872,9 +863,6 @@ const App: React.FC = () => {
     <GlobalRippleEffect>
       <div className="flex justify-center bg-white w-full min-h-[100dvh]">
         <div className={`w-full ${isAdminView ? 'admin-layout' : 'max-w-[480px]'} h-[100dvh] relative flex flex-col bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 shadow-2xl overflow-hidden`}>
-          
-          {/* Status Bar Area */}
-          <div className="w-full bg-blue-600 flex-shrink-0 z-[999] h-[env(safe-area-inset-top,24px)] min-h-[24px]" />
           
           {/* App Content Area */}
           <div className="flex-1 relative flex flex-col overflow-hidden">

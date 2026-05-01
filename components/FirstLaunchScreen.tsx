@@ -71,16 +71,16 @@ const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => 
         </div>
 
         {/* Action Section */}
-        <div className="mt-20 flex items-center gap-4 transition-all duration-1000 delay-700 animate-in fade-in slide-in-from-bottom-10 ease-out">
+        <div className="mt-16 flex items-center gap-3 transition-all duration-1000 delay-700 animate-in fade-in slide-in-from-bottom-10 ease-out">
           <button
             onClick={handleStartRegister}
-            className="bg-white text-black text-2xl font-bold py-5 px-16 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:bg-gray-100 active:scale-95 transition-all duration-300 transform"
+            className="bg-white text-black text-xl font-black py-4 px-10 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:bg-gray-100 active:scale-95 transition-all duration-300 transform border-2 border-white/20"
           >
             S'inscrire
           </button>
           
-          <button className="w-14 h-14 bg-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform">
-            <span className="text-white text-2xl font-serif italic font-bold">i</span>
+          <button className="w-12 h-12 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform border-2 border-white/10 group">
+            <span className="text-white text-xl font-serif italic font-bold group-hover:scale-110 transition-transform">i</span>
           </button>
         </div>
 
