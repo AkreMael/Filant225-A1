@@ -65,26 +65,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setData(prev => ({ ...prev, privateMsgs: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
-    // 3. Scanner (RTDB)
-    const qrRef = rtdbRef(rtdb, 'Scanner');
-    const unsubQR = onValue(qrRef, (snap) => {
-      const val = snap.val();
-      if (val) {
-        const list: any[] = [];
-        Object.entries(val).forEach(([userKey, userVal]: [string, any]) => {
-          if (userVal.contacts) {
-            Object.values(userVal.contacts).forEach((contact: any) => {
-              const safeKey = String(userKey || '');
-              list.push({ 
-                ...contact, 
-                scannerUser: userVal.lastUsername || safeKey.split('_')[0] || 'Inconnu',
-                userPhone: userVal.lastPhone || safeKey.split('_')[1] || 'Inconnu'
-              });
-            });
-          }
-        });
-        setData(prev => ({ ...prev, scanner: list.sort((a, b) => (b.syncedAt || 0) - (a.syncedAt || 0)) }));
-      }
+    // 3. Scanner (RTDB + Firestore History)
+    const unsubScans = onSnapshot(query(collection(db, 'HistoriqueScans'), orderBy('syncedAt', 'desc'), limit(200)), (snap) => {
+      const firestoreScans = snap.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(),
+        source: 'Firestore'
+      }));
+      setData(prev => {
+        // Merge with existing logic or just use Firestore as primary history
+        return { ...prev, scanner: firestoreScans };
+      });
     });
 
     // 4. Paiements (RTDB)
@@ -107,7 +98,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     return () => {
       unsubConns();
       unsubPrivate();
-      unsubQR();
+      unsubScans();
       unsubPayments();
     };
   }, []);

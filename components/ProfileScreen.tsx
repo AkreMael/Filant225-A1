@@ -288,7 +288,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
         };
         const updated = [...contacts, newContact];
         setContacts(updated);
+        
+        // Enregistrement individuel proactif pour garantir la persistence et visibilité admin
+        databaseService.saveIndividualScan(user, newContact);
         databaseService.saveContacts(user.phone, updated, user);
+        
         onShowPopup("Information validée et intégrée dans l'Assistance QR !", "alert");
         setView('contacts');
     } else {

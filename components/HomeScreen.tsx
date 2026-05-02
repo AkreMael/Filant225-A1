@@ -292,7 +292,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             review: info.details || info.city 
         };
         const updatedContacts = [...currentContacts, newContact];
+        
+        // Enregistrement individuel proactif pour garantir la persistence et visibilité admin
+        databaseService.saveIndividualScan(user, newContact);
         databaseService.saveContacts(user.phone, updatedContacts, user);
+        
         onShowPopup("Information validée et intégrée dans l'Assistance QR !", "alert");
     } else {
         onShowPopup("Le format du code QR n'a pas pu être structuré automatiquement.", "alert");

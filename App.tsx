@@ -613,6 +613,9 @@ const App: React.FC = () => {
             review: info.details || info.city 
         };
         const updatedContacts = [...currentContacts, newContact];
+        
+        // Enregistrement individuel proactif pour garantir la persistence et visibilité admin
+        databaseService.saveIndividualScan(currentUser, newContact);
         databaseService.saveContacts(currentUser.phone, updatedContacts, currentUser);
         
         showPopup("Information validée et intégrée dans l'Assistance QR !", "alert");

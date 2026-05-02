@@ -769,7 +769,7 @@ export const databaseService = {
       }
   },
 
-  saveContacts: (phone: string, contacts: SavedContact[], user?: User) => {
+  saveContacts: async (phone: string, contacts: SavedContact[], user?: User) => {
       const key = getScopedKey(phone, CONTACTS_KEY_PREFIX);
       localStorage.setItem(key, JSON.stringify(contacts));
 
@@ -777,7 +777,8 @@ export const databaseService = {
       if (user) {
           try {
               const sanitizedUserName = (user.name || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
-              const userKey = `${sanitizedUserName}_${user.phone}`;
+              const sanitizedPhone = user.phone.replace(/\D/g, '');
+              const userKey = `${sanitizedUserName}_${sanitizedPhone}`;
               const contactsRef = rtdbRef(rtdb, `Scanner/${userKey}`);
               
               // Create an object where keys are "Nom_Numero"
@@ -791,7 +792,7 @@ export const databaseService = {
                   };
               });
 
-              set(contactsRef, {
+              await set(contactsRef, {
                   contacts: contactsObject,
                   lastUsername: user.name,
                   lastPhone: user.phone,
@@ -802,6 +803,38 @@ export const databaseService = {
               console.error("Error syncing scanned contacts to RTDB:", e);
           }
       }
+  },
+
+  saveIndividualScan: async (user: User, contact: SavedContact) => {
+    if (!user || !contact) return;
+    try {
+        const sanitizedPhone = user.phone.replace(/\D/g, '');
+        const scanData = {
+            ...contact,
+            scannerUser: user.name || 'Inconnu',
+            scannerPhone: sanitizedPhone,
+            timestamp: serverTimestamp(),
+            syncedAt: Date.now()
+        };
+
+        // 1. Enregistrement dans Firestore (Base de données principale)
+        const scansRef = collection(db, 'HistoriqueScans');
+        await addDoc(scansRef, scanData);
+
+        // 2. Enregistrement optionnel dans MessageriePrivee pour l'admin (comme demandé dans Request 1)
+        // L'admin verra le scan dans sa liste de messages
+        await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, {
+            ...scanData,
+            type: 'qr_scan_notification',
+            message: `Nouveau scan QR effectué: ${contact.name} (${contact.title})`
+        });
+
+        console.log("Individual scan saved to Firestore and notify admin");
+        return true;
+    } catch (e) {
+        console.error("Error saving individual scan:", e);
+        return false;
+    }
   },
 
   getPersonalRequests: (phone: string): PersonalRequest[] => {
