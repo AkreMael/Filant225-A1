@@ -160,10 +160,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     if (key === 'timestamp' || key === 'lastConnection' || key === 'date' || key === 'syncedAt') {
                       val = formatDate(val);
                     }
+                    if (key === 'details' && typeof val === 'object' && val !== null) {
+                      val = Object.entries(val)
+                        .filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join(' | ');
+                    }
                     return (
                       <td key={j} className="px-6 py-4">
                         <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">
-                          {val || '-'}
+                          {String(val || '-')}
                         </span>
                       </td>
                     );
@@ -365,8 +371,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               )}
 
               {activeTab === 'inscriptions' && renderTable(
-                ['Profil', 'Nom', 'Ville', 'Numéro', 'Status', 'Date'],
-                ['profileType', 'name', 'city', 'phone', 'status', 'timestamp'],
+                ['Profil', 'Nom', 'Ville', 'Numéro', 'Détails', 'Status', 'Date'],
+                ['profileType', 'name', 'city', 'phone', 'details', 'status', 'timestamp'],
                 data.inscriptions
               )}
 
