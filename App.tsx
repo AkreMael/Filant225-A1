@@ -12,6 +12,7 @@ import InteractiveModal from './components/InteractiveModal';
 import GlobalPopup from './components/common/GlobalPopup';
 import SplashScreen from './components/SplashScreen';
 import FirstLaunchScreen from './components/FirstLaunchScreen';
+import SmartRegistrationScreen from './components/SmartRegistrationScreen';
 import OfferScreen from './components/OfferScreen';
 import GlobalRippleEffect from './components/common/GlobalRippleEffect';
 import NotificationsScreen from './components/NotificationsScreen';
@@ -125,6 +126,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => databaseService.getActiveUser());
   const [isAuthChecking, setIsAuthChecking] = useState(() => !databaseService.getActiveUser());
   const [showSplash, setShowSplash] = useState(false);
+  const [showSmartRegistration, setShowSmartRegistration] = useState(false);
   const [hasCompletedFirstLaunch, setHasCompletedFirstLaunch] = useState(() => {
       return localStorage.getItem('filant_has_selected_profile') === 'true';
   });
@@ -569,8 +571,15 @@ const App: React.FC = () => {
   };
 
   const handleFirstLaunchComplete = () => {
-      localStorage.setItem('filant_has_selected_profile', 'true');
-      setHasCompletedFirstLaunch(true);
+    setShowSmartRegistration(true);
+  };
+
+  const handleSmartRegistrationComplete = (profileType: string) => {
+    localStorage.setItem('filant_user_role', 'Client'); // Default for now
+    localStorage.setItem('filant_selected_profile_type', profileType);
+    localStorage.setItem('filant_has_selected_profile', 'true');
+    setHasCompletedFirstLaunch(true);
+    setShowSmartRegistration(false);
   };
 
   const handleNavigateFromOffer = (view: 'worker_list' | 'location_hub') => {
@@ -633,7 +642,14 @@ const App: React.FC = () => {
           <div className="flex justify-center bg-white w-full h-full min-h-[100dvh]">
             <div className="w-full max-w-[480px] h-[100dvh] relative flex flex-col overflow-hidden bg-white shadow-2xl">
               <div className="flex-1 relative overflow-hidden">
-                <FirstLaunchScreen onComplete={handleFirstLaunchComplete} />
+                {!showSmartRegistration ? (
+                  <FirstLaunchScreen onComplete={handleFirstLaunchComplete} />
+                ) : (
+                  <SmartRegistrationScreen 
+                    onComplete={handleSmartRegistrationComplete} 
+                    onBack={() => setShowSmartRegistration(false)} 
+                  />
+                )}
               </div>
             </div>
           </div>

@@ -25,6 +25,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const tempName = localStorage.getItem('filant_temp_name');
+    const tempCity = localStorage.getItem('filant_temp_city');
+    if (tempName) setName(tempName);
+    if (tempCity) setCity(tempCity);
+  }, []);
   
   const handleRegister = async () => {
     const sanitizedPhone = phone.replace(/\s/g, '');
@@ -38,6 +45,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
     try {
         const { user, error: registerError } = await databaseService.registerUser(name, city, sanitizedPhone);
         if (user) {
+          // Clear temp data
+          localStorage.removeItem('filant_temp_name');
+          localStorage.removeItem('filant_temp_city');
           onLoginSuccess(user);
         } else {
           onShowPopup(registerError || "Erreur lors de l'inscription.", "alert");

@@ -391,7 +391,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-1.5">
-                    <div className={`px-3 py-1 border-2 border-blue-500 rounded-lg text-sm font-bold ${isClient ? 'text-slate-900 border-blue-500' : 'text-white border-white'} font-mono tracking-wider select-none bg-white/5 shadow-sm`}>
+                    <div className={`px-3 py-1 border-2 border-slate-200 rounded-lg text-sm font-bold ${isClient ? 'text-slate-900 border-slate-200' : 'text-white border-white'} font-mono tracking-wider select-none bg-white/5 shadow-sm`}>
                         {formattedDate}
                     </div>
                     {!isAdmin(user) && (

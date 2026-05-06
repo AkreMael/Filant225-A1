@@ -10,20 +10,20 @@ const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => 
 
   const handleStartRegister = () => {
     setIsLoading(true);
-    localStorage.setItem('filant_user_role', 'Client');
     
-    // Smooth transition
+    // Smooth transition to smart registration
     setTimeout(() => {
       onComplete();
-    }, 1200);
+      setIsLoading(false);
+    }, 800);
   };
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#FFA500] to-[#FF4500] text-white p-4">
-        <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-6 shadow-xl"></div>
-        <h2 className="text-2xl font-black uppercase tracking-tighter animate-pulse">Filant°225</h2>
-        <p className="text-xs text-white/80 mt-2 font-bold uppercase tracking-widest">Initialisation...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-4">
+        <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-6 shadow-xl"></div>
+        <h2 className="text-2xl font-black uppercase tracking-tighter animate-pulse text-orange-500">Filant°225</h2>
+        <p className="text-xs text-white/50 mt-2 font-bold uppercase tracking-widest">Initialisation...</p>
       </div>
     );
   }
@@ -74,13 +74,13 @@ const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => 
         <div className="mt-16 flex items-center gap-3 transition-all duration-1000 delay-700 animate-in fade-in slide-in-from-bottom-10 ease-out">
           <button
             onClick={handleStartRegister}
-            className="bg-white text-black text-xl font-black py-4 px-10 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:bg-gray-100 active:scale-95 transition-all duration-300 transform border-2 border-white/20"
+            className="bg-white text-black text-lg font-black py-3 px-8 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:bg-gray-100 active:scale-95 transition-all duration-300 transform border-2 border-white/20"
           >
             S'inscrire
           </button>
           
-          <button className="w-12 h-12 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform border-2 border-white/10 group">
-            <span className="text-white text-xl font-serif italic font-bold group-hover:scale-110 transition-transform">i</span>
+          <button className="w-10 h-10 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform border-2 border-white/10 group">
+            <span className="text-white text-lg font-serif italic font-bold group-hover:scale-110 transition-transform">i</span>
           </button>
         </div>
 

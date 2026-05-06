@@ -787,16 +787,18 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                             🎧 Clique ici pour écouter l’audio et comprendre tout clairement 👇
                         </p>
                         
-                        <button 
+                        <div 
                             onClick={() => {
                                 const audioText = `Tu cherches travail sérieux ? Écoute ça d’abord ! Chez FILANT 225, on est dans le concret. Pas besoin de diplôme compliqué. Pas besoin de connexion spéciale. Nous, on travaille avec : Travailleurs qualifiés, Agents mobiles pour nos activités, Agents immobiliers. Ici, c'est la mise en relation. Si tu es motivé, sérieux et prêt à bouger, tu peux avoir ta place avec nous.`;
                                 audioService.speak(audioText);
                             }}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm cursor-pointer"
                         >
-                            <SpeakerIcon className="w-6 h-6" />
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                            </svg>
                             <span>ÉCOUTER</span>
-                        </button>
+                        </div>
 
                         <button 
                             onClick={() => window.open('https://filant-225-inscription.vercel.app/', '_blank')}
