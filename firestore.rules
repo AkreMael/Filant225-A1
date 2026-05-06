@@ -29,11 +29,10 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    match /Agences immobilières/{id} {
+    match /AgencesImmobilieres/{id} {
       allow read, write: if isAuthenticated();
     }
-
-    match /Équipements/{id} {
+    match /Equipements/{id} {
       allow read, write: if isAuthenticated();
     }
 
@@ -50,6 +49,10 @@ service cloud.firestore {
     }
 
     match /offres_emploi/{id} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /Inscriptions/{id} {
       allow read, write: if isAuthenticated();
     }
 

@@ -20,6 +20,9 @@ export interface WorkerOffer {
     isUnblurred?: boolean;
 }
 
+import SmartRegistrationScreen from './SmartRegistrationScreen';
+import { motion, AnimatePresence } from 'motion/react';
+
 // --- Icons ---
 const PhoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>;
 const FacebookIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-2.2c0-.81.24-1.356 1.442-1.356h2.558v-4.148c-.443-.058-1.961-.191-3.727-.191-3.69 0-6.213 2.253-6.213 6.388v1.511z"/></svg>;
@@ -438,6 +441,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
   const [selectedServiceForPublication, setSelectedServiceForPublication] = useState('');
   const [publicationData, setPublicationData] = useState<any>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showSmartRegistration, setShowSmartRegistration] = useState(false);
 
   useEffect(() => {
     setIsLoadingOffers(false);
@@ -801,7 +805,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                         </div>
 
                         <button 
-                            onClick={() => window.open('https://filant-225-inscription.vercel.app/', '_blank')}
+                            onClick={() => setShowSmartRegistration(true)}
                             className="w-full bg-white text-[#16a34a] font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm border-2 border-white"
                         >
                             <span>S’inscrire</span>
@@ -809,6 +813,23 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                     </div>
                 </div>
              </div>
+
+             <AnimatePresence>
+                {showSmartRegistration && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 100 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 100 }}
+                        className="fixed inset-0 z-[100] bg-white flex flex-col"
+                    >
+                        <SmartRegistrationScreen 
+                            currentUser={user}
+                            onComplete={() => setShowSmartRegistration(false)}
+                            onBack={() => setShowSmartRegistration(false)}
+                        />
+                    </motion.div>
+                )}
+             </AnimatePresence>
           </div>
 
           {/* Agence Immobilière */}

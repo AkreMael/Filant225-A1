@@ -571,15 +571,12 @@ const App: React.FC = () => {
   };
 
   const handleFirstLaunchComplete = () => {
-    setShowSmartRegistration(true);
+    setHasCompletedFirstLaunch(true);
+    localStorage.setItem('filant_has_selected_profile', 'true');
   };
 
-  const handleSmartRegistrationComplete = (profileType: string) => {
-    localStorage.setItem('filant_user_role', 'Client'); // Default for now
-    localStorage.setItem('filant_selected_profile_type', profileType);
-    localStorage.setItem('filant_has_selected_profile', 'true');
-    setHasCompletedFirstLaunch(true);
-    setShowSmartRegistration(false);
+  const handleSmartRegistrationComplete = () => {
+    // This will be used from Site page now
   };
 
   const handleNavigateFromOffer = (view: 'worker_list' | 'location_hub') => {

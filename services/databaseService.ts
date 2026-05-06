@@ -647,6 +647,33 @@ export const databaseService = {
     }
   },
   
+  saveInscription: async (inscriptionData: any) => {
+    try {
+      await databaseService.ensureAuth();
+      const inscrRef = collection(db, 'Inscriptions');
+      await addDoc(inscrRef, {
+        ...inscriptionData,
+        timestamp: serverTimestamp(),
+        status: 'pending'
+      });
+      console.log("Inscription saved successfully");
+      return true;
+    } catch (e) {
+        handleFirestoreError(e, OperationType.WRITE, 'Inscriptions');
+        return false;
+    }
+  },
+
+  getInscriptions: async () => {
+    try {
+      const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.LIST, 'Inscriptions');
+    }
+  },
+
   getWorkers: async (): Promise<Worker[]> => {
     if (workersCache) return workersCache;
     try {

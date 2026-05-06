@@ -9,13 +9,8 @@ const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => 
   const [isLoading, setIsLoading] = useState(false);
 
   const handleStartRegister = () => {
-    setIsLoading(true);
-    
-    // Smooth transition to smart registration
-    setTimeout(() => {
-      onComplete();
-      setIsLoading(false);
-    }, 800);
+    // Lead directly to login/app as before
+    onComplete();
   };
 
   if (isLoading) {

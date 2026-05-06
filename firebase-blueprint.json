@@ -205,6 +205,21 @@
         "slots": { "type": "array", "items": { "type": "string" }, "description": "Liste des créneaux horaires (ex: 08:00)" }
       },
       "required": ["workerId", "date", "slots"]
+    },
+    "Inscription": {
+      "title": "Inscription",
+      "description": "Données d'une nouvelle inscription multi-catégorie.",
+      "type": "object",
+      "properties": {
+        "profileType": { "type": "string", "enum": ["Travailleur", "Propriétaire", "Agence", "Entreprise"] },
+        "name": { "type": "string" },
+        "city": { "type": "string" },
+        "phone": { "type": "string" },
+        "details": { "type": "object" },
+        "status": { "type": "string", "enum": ["pending", "validated", "rejected"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["profileType", "name", "city", "phone", "timestamp"]
     }
   },
   "firestore": {
@@ -255,6 +270,10 @@
     "/availabilities/{id}": {
       "schema": "Availability",
       "description": "Collection des disponibilités des travailleurs."
+    },
+    "/Inscriptions/{id}": {
+      "schema": "Inscription",
+      "description": "Nouvelles inscriptions provenant de l'interface Site."
     }
   }
 }

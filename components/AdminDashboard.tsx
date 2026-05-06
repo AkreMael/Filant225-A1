@@ -34,6 +34,7 @@ interface AdminDashboardProps {
 type AdminTab = 
   | 'overview' 
   | 'connections' 
+  | 'inscriptions'
   | 'private' 
   | 'scanner' 
   | 'payments';
@@ -46,6 +47,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   // Data States
   const [data, setData] = useState<Record<string, any[]>>({
     connections: [],
+    inscriptions: [],
     assistant: [],
     privateMsgs: [],
     scanner: [],
@@ -58,6 +60,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     // 1. Connexions
     const unsubConns = onSnapshot(query(collection(db, 'Connexions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
       setData(prev => ({ ...prev, connections: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+    });
+
+    // 2. Inscriptions
+    const unsubInscriptions = onSnapshot(query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
+      setData(prev => ({ ...prev, inscriptions: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
     // 3. Messagerie Privée (Manual Chats)
@@ -97,6 +104,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
     return () => {
       unsubConns();
+      unsubInscriptions();
       unsubPrivate();
       unsubScans();
       unsubPayments();
@@ -104,6 +112,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   }, []);
 
   const stats = [
+    { label: 'Inscriptions', value: data.inscriptions.length, icon: Briefcase, color: 'text-blue-500' },
     { label: 'Privé', value: data.privateMsgs.length, icon: Mail, color: 'text-green-500' },
     { label: 'Paiements', value: data.payments.length, icon: CreditCard, color: 'text-orange-500' },
     { label: 'Scanner', value: data.scanner.length, icon: Scan, color: 'text-purple-500' },
@@ -177,6 +186,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const menuItems: { id: AdminTab, label: string, icon: any }[] = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
     { id: 'connections', label: 'Connexions', icon: BarChart3 },
+    { id: 'inscriptions', label: 'Inscriptions', icon: Briefcase },
     { id: 'private', label: 'Messagerie Privée', icon: Mail },
     { id: 'scanner', label: 'Scanner', icon: Scan },
     { id: 'payments', label: 'Paiements', icon: CreditCard },
@@ -352,6 +362,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 ['Nom', 'Ville', 'Numéro', 'Date'],
                 ['name', 'city', 'phone', 'timestamp'],
                 data.connections
+              )}
+
+              {activeTab === 'inscriptions' && renderTable(
+                ['Profil', 'Nom', 'Ville', 'Numéro', 'Status', 'Date'],
+                ['profileType', 'name', 'city', 'phone', 'status', 'timestamp'],
+                data.inscriptions
               )}
 
               {activeTab === 'private' && (
