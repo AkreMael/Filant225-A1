@@ -132,6 +132,7 @@ const App: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Menu);
+  const [showFullRegistration, setShowFullRegistration] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map'>('hub');
   const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Assistant' | 'Privee' } | null>(null);
@@ -957,9 +958,31 @@ const App: React.FC = () => {
                       {...paymentConfirmationContext}
                       user={displayUser}
                       onBack={() => setPaymentConfirmationContext(null)}
+                      onModify={() => {
+                        setPaymentConfirmationContext(null);
+                        setShowFullRegistration(true);
+                      }}
                     />
                 </div>
             )}
+
+            <AnimatePresence>
+              {showFullRegistration && (
+                <motion.div 
+                  initial={{ opacity: 0, y: '100%' }}
+                  animate={{ opacity: 0, y: 0 }}
+                  exit={{ opacity: 0, y: '100%' }}
+                  className="absolute inset-0 z-[1100] bg-white transition-all duration-500"
+                  style={{ opacity: 1, transform: 'none' }} // Ensure it shows
+                >
+                  <SmartRegistrationScreen 
+                    currentUser={currentUser}
+                    onComplete={() => setShowFullRegistration(false)}
+                    onBack={() => setShowFullRegistration(false)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <AnimatePresence>
               {interactiveModalContext && (

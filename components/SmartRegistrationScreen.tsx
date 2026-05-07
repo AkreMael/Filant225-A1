@@ -653,11 +653,12 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                   </button>
                   <button
                     onClick={handleModify}
-                    className="w-full bg-slate-100 text-slate-500 font-black py-4 rounded-3xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+                    className="w-full py-4 rounded-3xl border-2 border-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                   >
+                    <Briefcase className="w-3 h-3" />
                     Modifier mes informations
                   </button>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Paiement sécurisé via Wave</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center mt-2">Paiement sécurisé via Wave</p>
                </div>
             </div>
           ) : step === 1 ? (

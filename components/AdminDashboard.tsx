@@ -411,8 +411,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               )}
 
               {activeTab === 'qrcodes' && renderTable(
-                ['Nom', 'Numéro', 'Ville', 'Étape actuelle'],
-                ['name', 'phone', 'city', 'status'],
+                ['Nom', 'Numéro', 'Ville', 'Étape actuelle (Tunnel)', 'Expiration'],
+                ['name', 'phone', 'city', 'status', 'expiryDate'],
                 data.qrCodes.map(q => {
                   let currentStatus = q.status;
                   const now = new Date();

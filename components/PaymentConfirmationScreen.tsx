@@ -12,6 +12,7 @@ interface PaymentConfirmationScreenProps {
   waveLink: string;
   onBack: () => void;
   onSuccess?: () => void;
+  onModify?: () => void;
   formData?: {
     formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service';
     formTitle: string;
@@ -97,6 +98,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     waveLink, 
     onBack, 
     onSuccess,
+    onModify,
     formData
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -134,7 +136,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     name: user.name,
                     phone: user.phone,
                     city: user.city,
-                    status: "En attente paiement frais (310 FCFA)", // Ensure it's back to correct status if re-entering
+                    status: "Frais payés - En attente activation (7 100 FCFA)", // Move to Statut 2
                     fraisDossierPayes: true
                 });
             } else if (amountToSave === "7100" || amountToSave === "500") {
@@ -145,7 +147,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     name: user.name,
                     phone: user.phone,
                     city: user.city,
-                    status: "Code QR Actif",
+                    status: "Code QR Actif", // Move to Statut 3
                     activationDate: new Date().toISOString(),
                     expiryDate: expiryDate.toISOString(),
                     fraisDossierPayes: true
@@ -232,6 +234,18 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             onValidate={handleValidate}
             isValidated={isValidated}
           />
+
+          {onModify && (
+            <button 
+              onClick={onModify}
+              className="mb-6 py-3 px-6 rounded-2xl border-2 border-gray-100 text-gray-400 font-black text-xs uppercase tracking-widest active:scale-95 transition-all hover:bg-gray-50 flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Modifier mes informations
+            </button>
+          )}
 
           <div className="space-y-5 px-1 text-center w-full">
               <p className="text-lg font-bold text-gray-900 leading-[1.35]">
