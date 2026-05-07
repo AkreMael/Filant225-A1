@@ -403,7 +403,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                                   key={opt.value}
                                   disabled={isWaitingNext}
                                   onClick={() => handleNext(opt.value)}
-                                  className="bg-gray-50 hover:bg-orange-50 border border-gray-100 rounded-xl p-3 text-xs font-bold text-gray-700 active:scale-95 transition-all flex items-center justify-center min-h-[44px]"
+                                  className="bg-gray-50 hover:bg-orange-50 border border-gray-100 rounded-xl p-2.5 text-[11px] font-black uppercase text-gray-700 active:scale-95 transition-all flex items-center justify-center min-h-[40px] tracking-tight"
                                 >
                                     {isWaitingNext ? <div className="w-4 h-4 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div> : opt.label}
                                 </button>
@@ -411,29 +411,29 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                         </div>
                     ) : currentQuestion.type === 'date' ? (
                         <div className="flex gap-2 items-stretch">
-                            <div className="flex-1 bg-gray-100 rounded-full flex items-center px-6 border-2 border-transparent focus-within:border-orange-200 shadow-inner">
+                            <div className="flex-1 bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
                                 <input 
                                     type="date" 
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
-                                    className="bg-transparent w-full py-4 text-sm font-bold text-gray-800 outline-none"
+                                    className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
                                 />
                             </div>
                             <button 
                                 onClick={() => handleNext()}
                                 disabled={isWaitingNext || !inputValue}
-                                className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[100px]"
+                                className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px]"
                             >
                                 {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
                             </button>
                         </div>
                     ) : currentQuestion.type === 'select' ? (
                         <div className="flex gap-2 items-stretch">
-                            <div className="flex-1 bg-gray-100 rounded-full flex items-center px-6 border-2 border-transparent focus-within:border-orange-200 shadow-inner">
+                            <div className="flex-1 bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
                                 <select 
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
-                                    className="bg-transparent w-full py-4 text-sm font-bold text-gray-800 outline-none appearance-none"
+                                    className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none appearance-none"
                                 >
                                     <option value="">Sélectionner...</option>
                                     {currentQuestion.options?.map(opt => (
@@ -444,7 +444,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                             <button 
                                 onClick={() => handleNext()}
                                 disabled={isWaitingNext || !inputValue}
-                                className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[100px]"
+                                className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px]"
                             >
                                 {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
                             </button>
@@ -452,7 +452,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                     ) : (
                       <div className="flex gap-2 items-stretch">
                           <div className="flex-1 flex flex-col gap-2">
-                              <div className="bg-gray-100 rounded-full flex items-center px-6 border-2 border-transparent focus-within:border-orange-200 shadow-inner">
+                              <div className="bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
                                   <input 
                                       ref={inputRef}
                                       type={currentQuestion.inputType === 'tel' ? 'text' : (currentQuestion.inputType || 'text')} 
@@ -462,7 +462,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                                       onClick={handleInputClick}
                                       onFocus={handleInputClick}
                                       onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                                      className="bg-transparent w-full py-4 text-sm font-bold text-gray-800 outline-none"
+                                      className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
                                       placeholder={currentQuestion.placeholder || "..."}
                                   />
                               </div>
@@ -475,9 +475,9 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                           <button 
                               onClick={() => handleNext()}
                               disabled={isWaitingNext}
-                              className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[100px]"
+                              className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px]"
                           >
-                              {isWaitingNext ? <Spinner /> : <span>{remainingFields} suivant</span>}
+                              {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
                           </button>
                       </div>
                     )}

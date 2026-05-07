@@ -28,10 +28,17 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({ onBack, user 
   const [email, setEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
 
+  const [errors, setErrors] = useState<string[]>([]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedOption || !email || (selectedOption === 'Autre' && !otherDetails)) {
-        console.warn("Veuillez remplir tous les champs obligatoires.");
+    const newErrors: string[] = [];
+    if (!selectedOption) newErrors.push('reason');
+    if (!email) newErrors.push('email');
+    if (selectedOption === 'Autre' && !otherDetails) newErrors.push('details');
+    
+    if (newErrors.length > 0) {
+        setErrors(newErrors);
         return;
     }
 
@@ -121,24 +128,27 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({ onBack, user 
                 </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-6 pb-12">
-            <div className="space-y-3">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sélectionnez le motif *</label>
+            <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5 pb-12">
+            <div className="space-y-2">
+                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1">Sélectionnez le motif *</label>
                 <div className="grid grid-cols-1 gap-2">
                     {options.map((opt) => (
                         <button
                             key={opt}
                             type="button"
-                            onClick={() => setSelectedOption(opt)}
-                            className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${
+                            onClick={() => {
+                                setSelectedOption(opt);
+                                if (errors.includes('reason')) setErrors(errors.filter(e => e !== 'reason'));
+                            }}
+                            className={`w-full text-left py-3 px-4 rounded-2xl border-2 transition-all flex items-center justify-between ${
                                 selectedOption === opt 
-                                ? 'bg-red-50 border-red-500 text-red-700 shadow-md' 
-                                : 'bg-gray-50 border-gray-100 text-gray-700'
+                                ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' 
+                                : errors.includes('reason') ? 'bg-red-50/30 border-red-200 text-red-400' : 'bg-gray-50 border-gray-100 text-gray-600'
                             }`}
                         >
-                            <span className="text-sm font-bold">{opt}</span>
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedOption === opt ? 'border-red-500 bg-red-500' : 'border-gray-300'}`}>
-                                {selectedOption === opt && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            <span className="text-xs font-bold uppercase">{opt}</span>
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedOption === opt ? 'border-red-500 bg-red-500' : 'border-gray-300'}`}>
+                                {selectedOption === opt && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                             </div>
                         </button>
                     ))}
@@ -146,26 +156,32 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({ onBack, user 
             </div>
 
             {selectedOption === 'Autre' && (
-                <div className="space-y-2 animate-in fade-in duration-300">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Précisez votre demande *</label>
+                <div className="space-y-1 animate-in fade-in duration-300">
+                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1">Précisez votre demande *</label>
                     <textarea
                         required
                         value={otherDetails}
-                        onChange={(e) => setOtherDetails(e.target.value)}
-                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 text-sm text-gray-800 focus:border-red-500 outline-none transition-all h-32"
+                        onChange={(e) => {
+                            setOtherDetails(e.target.value);
+                            if (errors.includes('details')) setErrors(errors.filter(e => e !== 'details'));
+                        }}
+                        className={`w-full bg-gray-50 border-2 rounded-2xl py-3 px-4 text-xs text-gray-800 font-bold focus:border-red-500 outline-none transition-all h-24 ${errors.includes('details') ? 'border-red-500 bg-red-50/30' : 'border-gray-100'}`}
                         placeholder="Détails de l'urgence..."
                     />
                 </div>
             )}
 
-            <div className="space-y-2">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Votre Email (Obligatoire) *</label>
+            <div className="space-y-1">
+                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1">Votre Email (Obligatoire) *</label>
                 <input
                     type="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl p-4 text-sm text-gray-800 focus:border-red-500 outline-none transition-all"
+                    onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.includes('email')) setErrors(errors.filter(e => e !== 'email'));
+                    }}
+                    className={`w-full bg-gray-50 border-2 rounded-2xl py-3 px-4 text-xs text-gray-800 font-bold focus:border-red-500 outline-none transition-all ${errors.includes('email') ? 'border-red-500 bg-red-50/30' : 'border-gray-100'}`}
                     placeholder="exemple@gmail.com"
                 />
             </div>

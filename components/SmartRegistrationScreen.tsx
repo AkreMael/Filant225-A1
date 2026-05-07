@@ -137,7 +137,61 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     }
   ];
 
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const validateForm = () => {
+    const newErrors: string[] = [];
+    
+    // Base fields (even if fixed, check them)
+    if (!formData.name) newErrors.push('name');
+    if (!formData.city) newErrors.push('city');
+    if (!formData.phone) newErrors.push('phone');
+
+    if (selectedProfile === 'Travailleur') {
+      if (!formData.job) newErrors.push('job');
+      if (!formData.domain) newErrors.push('domain');
+      if (!formData.specialty) newErrors.push('specialty');
+      if (!formData.learnedFrom) newErrors.push('learnedFrom');
+      if (!formData.skillsDescription) newErrors.push('skillsDescription');
+      if (!formData.availability) newErrors.push('availability');
+      if (!formData.movementZone) newErrors.push('movementZone');
+    } else if (selectedProfile === 'Propriétaire') {
+      if (!formData.equipmentType) newErrors.push('equipmentType');
+      if (!formData.equipmentCategory) newErrors.push('equipmentCategory');
+      if (!formData.equipmentDescription) newErrors.push('equipmentDescription');
+      if (!formData.quantity) newErrors.push('quantity');
+      if (!formData.equipmentCity) newErrors.push('equipmentCity');
+      if (!formData.availability) newErrors.push('availability');
+      if (!formData.rentalPrice) newErrors.push('rentalPrice');
+    } else if (selectedProfile === 'Agence') {
+      if (!formData.agencyName) newErrors.push('agencyName');
+      if (!formData.agencyCity) newErrors.push('agencyCity');
+      if (!formData.agencyAddress) newErrors.push('agencyAddress');
+      if (!formData.propertyTypes) newErrors.push('propertyTypes');
+      if (!formData.agencyServices) newErrors.push('agencyServices');
+      if (!formData.agencyZone) newErrors.push('agencyZone');
+    } else if (selectedProfile === 'Entreprise') {
+      if (!formData.companyName) newErrors.push('companyName');
+      if (!formData.companyCity) newErrors.push('companyCity');
+      if (!formData.companyAddress) newErrors.push('companyAddress');
+      if (!formData.companyDomain) newErrors.push('companyDomain');
+      if (!formData.companyServices) newErrors.push('companyServices');
+      if (!formData.companyNeeds) newErrors.push('companyNeeds');
+    }
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) {
+        const firstErrorField = document.querySelector('.border-red-500');
+        if (firstErrorField) {
+            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+
     setIsSubmitting(true);
     const inscriptionData = {
       profileType: selectedProfile,
@@ -229,11 +283,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
 
   const handleNext = () => {
     if (step === 1) {
-      setStep(2);
-    } else {
-      if (formData.name && formData.city) {
-        handleSubmit();
+      if (selectedProfile) {
+        setStep(2);
       }
+    } else {
+      handleSubmit();
     }
   };
 
@@ -259,46 +313,61 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     switch (selectedProfile) {
       case 'Travailleur':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Inscription Travailleur</h2>
+          <div className="space-y-3">
+            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Travailleur</h2>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Métier / profession</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Métier / profession *</label>
               <input 
+                id="job"
                 type="text"
                 value={formData.job}
-                onChange={(e) => setFormData({...formData, job: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, job: e.target.value});
+                    if (errors.includes('job')) setErrors(errors.filter(e => e !== 'job'));
+                }}
                 placeholder="Ex: Électricien, Menuisier..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('job') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Domaine de travail</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Domaine de travail *</label>
               <input 
+                id="domain"
                 type="text"
                 value={formData.domain}
-                onChange={(e) => setFormData({...formData, domain: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, domain: e.target.value});
+                    if (errors.includes('domain')) setErrors(errors.filter(e => e !== 'domain'));
+                }}
                 placeholder="Ex: Bâtiment, Service..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('domain') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Spécialité</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Spécialité *</label>
               <input 
+                id="specialty"
                 type="text"
                 value={formData.specialty}
-                onChange={(e) => setFormData({...formData, specialty: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, specialty: e.target.value});
+                    if (errors.includes('specialty')) setErrors(errors.filter(e => e !== 'specialty'));
+                }}
                 placeholder="Votre spécialité précise"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('specialty') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">A appris :</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">A appris : *</label>
               <div className="flex flex-wrap gap-2 mt-1">
                 {['Sur le tas', 'Formation professionnelle', 'Diplôme'].map((opt) => (
                   <button
                     key={opt}
-                    onClick={() => setFormData({...formData, learnedFrom: opt as any})}
-                    className={`px-4 py-2 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.learnedFrom === opt ? 'bg-orange-500 border-orange-500 text-white' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                    onClick={() => {
+                        setFormData({...formData, learnedFrom: opt as any});
+                        if (errors.includes('learnedFrom')) setErrors(errors.filter(e => e !== 'learnedFrom'));
+                    }}
+                    className={`px-3 py-1.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.learnedFrom === opt ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('learnedFrom') ? 'bg-red-50 border-red-200 text-red-400' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                   >
                     {opt}
                   </button>
@@ -306,269 +375,341 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               </div>
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description du savoir-faire</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Description du savoir-faire *</label>
               <textarea 
+                id="skillsDescription"
                 value={formData.skillsDescription}
-                onChange={(e) => setFormData({...formData, skillsDescription: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, skillsDescription: e.target.value});
+                    if (errors.includes('skillsDescription')) setErrors(errors.filter(e => e !== 'skillsDescription'));
+                }}
                 placeholder="Décrivez vos compétences..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors min-h-[80px]"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('skillsDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Disponibilité</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Disponibilité *</label>
               <input 
                 type="text"
                 value={formData.availability}
-                onChange={(e) => setFormData({...formData, availability: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, availability: e.target.value});
+                    if (errors.includes('availability')) setErrors(errors.filter(e => e !== 'availability'));
+                }}
                 placeholder="Ex: Lundi au Samedi, 8h-18h"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('availability') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Zone de déplacement</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Zone de déplacement *</label>
               <input 
+                id="movementZone"
                 type="text"
                 value={formData.movementZone}
-                onChange={(e) => setFormData({...formData, movementZone: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, movementZone: e.target.value});
+                    if (errors.includes('movementZone')) setErrors(errors.filter(e => e !== 'movementZone'));
+                }}
                 placeholder="Ex: Toute la ville, Cocody uniquement..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('movementZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
           </div>
+
         );
       case 'Propriétaire':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Inscription Propriétaire d’équipement</h2>
+          <div className="space-y-3">
+            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Propriétaire</h2>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Type d’équipement</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Type d’équipement *</label>
               <input 
                 type="text"
                 value={formData.equipmentType}
-                onChange={(e) => setFormData({...formData, equipmentType: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, equipmentType: e.target.value});
+                    if (errors.includes('equipmentType')) setErrors(errors.filter(e => e !== 'equipmentType'));
+                }}
                 placeholder="Ex: Bétonnière, Échafaudage..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentType') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Catégorie d’équipement</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Catégorie d’équipement *</label>
               <input 
                 type="text"
                 value={formData.equipmentCategory}
-                onChange={(e) => setFormData({...formData, equipmentCategory: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, equipmentCategory: e.target.value});
+                    if (errors.includes('equipmentCategory')) setErrors(errors.filter(e => e !== 'equipmentCategory'));
+                }}
                 placeholder="Ex: Construction, Transport..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentCategory') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Description de l’équipement</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Description de l’équipement *</label>
               <textarea 
                 value={formData.equipmentDescription}
-                onChange={(e) => setFormData({...formData, equipmentDescription: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, equipmentDescription: e.target.value});
+                    if (errors.includes('equipmentDescription')) setErrors(errors.filter(e => e !== 'equipmentDescription'));
+                }}
                 placeholder="Détails techniques, état..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors min-h-[80px]"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('equipmentDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantité disponible</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Quantité disponible *</label>
               <input 
                 type="number"
                 value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, quantity: e.target.value});
+                    if (errors.includes('quantity')) setErrors(errors.filter(e => e !== 'quantity'));
+                }}
                 placeholder="Ex: 1"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('quantity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ville où l’équipement est situé</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville de localisation *</label>
               <input 
                 type="text"
                 value={formData.equipmentCity}
-                onChange={(e) => setFormData({...formData, equipmentCity: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, equipmentCity: e.target.value});
+                    if (errors.includes('equipmentCity')) setErrors(errors.filter(e => e !== 'equipmentCity'));
+                }}
                 placeholder="Ville de localisation"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Disponibilité</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Disponibilité *</label>
               <input 
                 type="text"
                 value={formData.availability}
-                onChange={(e) => setFormData({...formData, availability: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, availability: e.target.value});
+                    if (errors.includes('availability')) setErrors(errors.filter(e => e !== 'availability'));
+                }}
                 placeholder="Ex: Immédiate, sur réservation..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('availability') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prix ou mode de location</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Prix ou mode de location *</label>
               <input 
                 type="text"
                 value={formData.rentalPrice}
-                onChange={(e) => setFormData({...formData, rentalPrice: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, rentalPrice: e.target.value});
+                    if (errors.includes('rentalPrice')) setErrors(errors.filter(e => e !== 'rentalPrice'));
+                }}
                 placeholder="Ex: 5000 CFA/jour"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('rentalPrice') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
           </div>
+
         );
       case 'Agence':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Inscription Agence immobilière</h2>
+          <div className="space-y-3">
+            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Agence</h2>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nom de l'agence</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Nom de l'agence *</label>
               <input 
                 type="text"
                 value={formData.agencyName}
-                onChange={(e) => setFormData({...formData, agencyName: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, agencyName: e.target.value});
+                    if (errors.includes('agencyName')) setErrors(errors.filter(e => e !== 'agencyName'));
+                }}
                 placeholder="Nom de votre agence"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('agencyName') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ville où l’agence est située</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville du siège *</label>
               <input 
                 type="text"
                 value={formData.agencyCity}
-                onChange={(e) => setFormData({...formData, agencyCity: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, agencyCity: e.target.value});
+                    if (errors.includes('agencyCity')) setErrors(errors.filter(e => e !== 'agencyCity'));
+                }}
                 placeholder="Ville du siège"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('agencyCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Adresse de l’agence</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Adresse de l’agence *</label>
               <input 
                 type="text"
                 value={formData.agencyAddress}
-                onChange={(e) => setFormData({...formData, agencyAddress: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, agencyAddress: e.target.value});
+                    if (errors.includes('agencyAddress')) setErrors(errors.filter(e => e !== 'agencyAddress'));
+                }}
                 placeholder="Adresse précise"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('agencyAddress') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Type de biens proposés</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Type de biens *</label>
               <input 
                 type="text"
                 value={formData.propertyTypes}
-                onChange={(e) => setFormData({...formData, propertyTypes: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, propertyTypes: e.target.value});
+                    if (errors.includes('propertyTypes')) setErrors(errors.filter(e => e !== 'propertyTypes'));
+                }}
                 placeholder="Ex: Studios, Appartements, Terrains..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('propertyTypes') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Services proposés</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Services proposés *</label>
               <textarea 
                 value={formData.agencyServices}
-                onChange={(e) => setFormData({...formData, agencyServices: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, agencyServices: e.target.value});
+                    if (errors.includes('agencyServices')) setErrors(errors.filter(e => e !== 'agencyServices'));
+                }}
                 placeholder="Vente, Location, Gestion..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors min-h-[80px]"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('agencyServices') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Zone d’activité</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Zone d’activité *</label>
               <input 
                 type="text"
                 value={formData.agencyZone}
-                onChange={(e) => setFormData({...formData, agencyZone: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, agencyZone: e.target.value});
+                    if (errors.includes('agencyZone')) setErrors(errors.filter(e => e !== 'agencyZone'));
+                }}
                 placeholder="Ex: Abidjan, Côte Ouest..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('agencyZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Documents de l’agence (optionnel)</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Documents de l’agence (optionnel)</label>
               <input 
                 type="text"
                 value={formData.agencyDocs}
                 onChange={(e) => setFormData({...formData, agencyDocs: e.target.value})}
                 placeholder="Précisez si documents disponibles"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm shadow-inner outline-none focus:border-orange-500 transition-all"
               />
             </div>
           </div>
+
         );
       case 'Entreprise':
         return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Inscription Entreprise</h2>
+          <div className="space-y-3">
+            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Entreprise</h2>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nom de l'entreprise</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Nom de l'entreprise *</label>
               <input 
                 type="text"
                 value={formData.companyName}
-                onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, companyName: e.target.value});
+                    if (errors.includes('companyName')) setErrors(errors.filter(e => e !== 'companyName'));
+                }}
                 placeholder="Ex: BTP Services CI"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('companyName') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ville de l’entreprise</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville de l’entreprise *</label>
               <input 
                 type="text"
                 value={formData.companyCity}
-                onChange={(e) => setFormData({...formData, companyCity: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, companyCity: e.target.value});
+                    if (errors.includes('companyCity')) setErrors(errors.filter(e => e !== 'companyCity'));
+                }}
                 placeholder="Ville du siège"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('companyCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Adresse de l’entreprise</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Adresse de l’entreprise *</label>
               <input 
                 type="text"
                 value={formData.companyAddress}
-                onChange={(e) => setFormData({...formData, companyAddress: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, companyAddress: e.target.value});
+                    if (errors.includes('companyAddress')) setErrors(errors.filter(e => e !== 'companyAddress'));
+                }}
                 placeholder="Adresse précise"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('companyAddress') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Domaine d'activité</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Domaine d'activité *</label>
               <input 
                 type="text"
                 value={formData.companyDomain}
-                onChange={(e) => setFormData({...formData, companyDomain: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, companyDomain: e.target.value});
+                    if (errors.includes('companyDomain')) setErrors(errors.filter(e => e !== 'companyDomain'));
+                }}
                 placeholder="Ex: Bâtiment, Transport..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('companyDomain') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Services proposés</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Services proposés *</label>
               <textarea 
                 value={formData.companyServices}
-                onChange={(e) => setFormData({...formData, companyServices: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, companyServices: e.target.value});
+                    if (errors.includes('companyServices')) setErrors(errors.filter(e => e !== 'companyServices'));
+                }}
                 placeholder="Décrivez vos services"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors min-h-[80px]"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('companyServices') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Besoins ou recherches</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Besoins ou recherches *</label>
               <textarea 
                 value={formData.companyNeeds}
-                onChange={(e) => setFormData({...formData, companyNeeds: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, companyNeeds: e.target.value});
+                    if (errors.includes('companyNeeds')) setErrors(errors.filter(e => e !== 'companyNeeds'));
+                }}
                 placeholder="Ce que l'entreprise recherche"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors min-h-[80px]"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('companyNeeds') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Salaire proposé par mois ou semaine</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Salaire proposé (Optionnel)</label>
               <input 
                 type="text"
                 value={formData.proposedSalary}
                 onChange={(e) => setFormData({...formData, proposedSalary: e.target.value})}
                 placeholder="Ex: 150 000 CFA / mois"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm shadow-inner outline-none focus:border-orange-500 transition-all"
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Documents professionnels (optionnel)</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Docs professionnels (Optionnel)</label>
               <input 
                 type="text"
                 value={formData.companyDocs}
                 onChange={(e) => setFormData({...formData, companyDocs: e.target.value})}
                 placeholder="Registre commerce, etc..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-bold outline-none focus:border-orange-500 transition-colors"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm shadow-inner outline-none focus:border-orange-500 transition-all"
               />
             </div>
           </div>
+
         );
       default:
         return null;
@@ -703,32 +844,32 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nom complet (fixé)</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Nom complet (fixé)</label>
                     <input 
                       type="text"
                       value={formData.name}
                       readOnly
-                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl p-4 text-slate-500 font-bold outline-none cursor-not-allowed"
+                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-3 px-4 text-slate-500 font-bold text-sm outline-none cursor-not-allowed opacity-80"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ville (fixée)</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville (fixée)</label>
                     <input 
                       type="text"
                       value={formData.city}
                       readOnly
-                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl p-4 text-slate-500 font-bold outline-none cursor-not-allowed"
+                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-3 px-4 text-slate-500 font-bold text-sm outline-none cursor-not-allowed opacity-80"
                     />
                   </div>
                 </div>
 
                 <div>
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Numéro (fixé)</label>
+                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Numéro (fixé)</label>
                    <input 
                      type="text"
                      value={formData.phone}
                      readOnly
-                     className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl p-4 text-slate-500 font-bold outline-none cursor-not-allowed"
+                     className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-3 px-4 text-slate-500 font-bold text-sm outline-none cursor-not-allowed opacity-80"
                    />
                 </div>
 
@@ -743,6 +884,23 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
 
         {!isSaved && (
           <div className="mt-auto pt-6 px-2">
+            <AnimatePresence>
+              {errors.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="mb-4 p-3 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3"
+                >
+                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-[10px] font-black">!</span>
+                  </div>
+                  <p className="text-red-600 text-[10px] font-bold uppercase tracking-tight">
+                    Veuillez remplir tous les champs obligatoires (*)
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <button
               onClick={handleNext}
               disabled={isSubmitting}
