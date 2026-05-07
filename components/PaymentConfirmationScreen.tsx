@@ -105,99 +105,94 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
   const [isManualMode] = useState(initialAmount === "custom");
   const [isValidated, setIsValidated] = useState(initialAmount !== "custom");
 
-    const handlePay = () => {
+    const handlePay = async () => {
         if (isProcessing) return;
         setIsProcessing(true);
         
         const finalLink = isManualMode ? `${waveLink}${currentAmount}` : waveLink;
         const amountToSave = isManualMode ? currentAmount : initialAmount;
 
-        // 1. Redirection immédiate pour éviter les bloqueurs de pop-up
-        // On tente d'ouvrir dans un nouvel onglet pour que l'app reste visible avec l'état "Paiement en cours"
+        // Perform all saves before redirecting
+        try {
+            if (paymentType === "Publication" && formData) {
+                try {
+                    await fetch('/api/publish-offer', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData.data),
+                    });
+                } catch (error) {
+                    console.error("Error publishing offer:", error);
+                }
+            }
+
+            // New Logic for QR Code Activation
+            if (amountToSave === "310") {
+                await databaseService.updateQRCodeActivation(user.phone, {
+                    name: user.name,
+                    phone: user.phone,
+                    city: user.city,
+                    status: "En attente paiement frais (310 FCFA)", // Ensure it's back to correct status if re-entering
+                    fraisDossierPayes: true
+                });
+            } else if (amountToSave === "7100" || amountToSave === "500") {
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                
+                await databaseService.updateQRCodeActivation(user.phone, {
+                    name: user.name,
+                    phone: user.phone,
+                    city: user.city,
+                    status: "Code QR Actif",
+                    activationDate: new Date().toISOString(),
+                    expiryDate: expiryDate.toISOString(),
+                    fraisDossierPayes: true
+                });
+            }
+
+            await databaseService.savePaymentToRTDB({
+              userId: user.phone.replace(/\D/g, ''),
+              userName: user.name,
+              phone: user.phone,
+              city: user.city,
+              amount: amountToSave,
+              title: title,
+              serviceType: title,
+              paymentType: paymentType,
+              timestamp: Date.now()
+            });
+
+            if (formData) {
+                await databaseService.saveFavorite(user.phone, {
+                    title: formData.formTitle,
+                    date: new Date().toISOString(),
+                    formType: formData.formType as any,
+                    answers: formData.data,
+                    userInfo: user,
+                    totalPrice: parseInt(amountToSave)
+                });
+                
+                await databaseService.saveFormSubmission({
+                    userPhone: user.phone,
+                    formType: formData.formType,
+                    formTitle: formData.formTitle,
+                    data: formData.data,
+                    whatsappMessage: formData.whatsappMessage
+                });
+            }
+        } catch (error) {
+            console.error("Erreur lors de la sauvegarde du paiement:", error);
+        }
+
+        // Redirection après sauvegarde
         const paymentWindow = window.open(finalLink, '_blank');
-        
-        // Si window.open est bloqué (retourne null), on redirige l'onglet actuel
         if (!paymentWindow) {
             window.location.href = finalLink;
         }
 
-        // 2. Sauvegardes en arrière-plan (non bloquantes pour la redirection)
-        const saveProcess = async () => {
-            try {
-                if (paymentType === "Publication" && formData) {
-                    try {
-                        await fetch('/api/publish-offer', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(formData.data),
-                        });
-                    } catch (error) {
-                        console.error("Error publishing offer from payment screen:", error);
-                    }
-                }
-
-                // New Logic for QR Code Activation
-                if (amountToSave === "310") {
-                    await databaseService.updateQRCodeActivation(user.phone, {
-                        name: user.name,
-                        phone: user.phone,
-                        city: user.city,
-                        status: "Frais payés - En attente activation (7 100 FCFA)",
-                        fraisDossierPayes: true
-                    });
-                } else if (amountToSave === "7100" || amountToSave === "500") {
-                    const expiryDate = new Date();
-                    expiryDate.setDate(expiryDate.getDate() + 30);
-                    
-                    await databaseService.updateQRCodeActivation(user.phone, {
-                        name: user.name,
-                        phone: user.phone,
-                        city: user.city,
-                        status: "Code QR Actif",
-                        activationDate: new Date().toISOString(),
-                        expiryDate: expiryDate.toISOString(),
-                        fraisDossierPayes: true
-                    });
-                }
-
-                databaseService.savePaymentToRTDB({
-                  userId: user.phone.replace(/\D/g, ''),
-                  userName: user.name,
-                  phone: user.phone,
-                  city: user.city,
-                  amount: amountToSave,
-                  title: title,
-                  serviceType: title,
-                  paymentType: paymentType,
-                  timestamp: Date.now()
-                });
-
-                if (formData) {
-                    databaseService.saveFavorite(user.phone, {
-                        title: formData.formTitle,
-                        date: new Date().toISOString(),
-                        formType: formData.formType as any,
-                        answers: formData.data,
-                        userInfo: user,
-                        totalPrice: parseInt(amountToSave)
-                    });
-                    
-                    databaseService.saveFormSubmission({
-                        userPhone: user.phone,
-                        formType: formData.formType,
-                        formTitle: formData.formTitle,
-                        data: formData.data,
-                        whatsappMessage: formData.whatsappMessage
-                    });
-                }
-            } catch (error) {
-                console.error("Erreur lors de la sauvegarde du paiement:", error);
-            }
-        };
-
-        saveProcess();
+        // We can keep isProcessing true so they see "Redirecting..." or similar
     };
 
   const handleManualValueChange = (val: string) => {

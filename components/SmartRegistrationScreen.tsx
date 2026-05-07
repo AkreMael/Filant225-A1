@@ -196,6 +196,8 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
         phone: formData.phone,
         city: formData.city,
         profileType: selectedProfile,
+        profession: formData.job || formData.equipmentType || formData.companyDomain || formData.propertyTypes,
+        domain: formData.domain || formData.equipmentCategory || formData.agencyServices || formData.companyServices,
         status: "En attente paiement frais (310 FCFA)",
         fraisDossierPayes: false
       });

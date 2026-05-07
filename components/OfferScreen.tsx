@@ -440,9 +440,8 @@ const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (
 
     const isEnrolled = activation?.fraisDossierPayes;
     if (!isEnrolled) return null;
-// ... (rest of the component)
 
-    const isActive = activation?.status === 'Activé';
+    const isActive = activation?.status === 'Code QR Actif';
     const isExpired = activation?.expiryDate && new Date(activation.expiryDate) < new Date();
     const showingStatus = (isActive && !isExpired) ? 'Activé' : 'Désactivé';
 
@@ -450,7 +449,9 @@ const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (
         nom: user.name,
         tel: user.phone,
         ville: user.city,
-        type: activation?.profileType || 'Professionnel',
+        metier: activation?.profession || 'Professionnel',
+        categorie: activation?.domain || 'Général',
+        profil: activation?.profileType || 'Professionnel',
         status: showingStatus
     });
 
@@ -505,7 +506,7 @@ const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (
                 <p className="text-sm font-bold text-slate-700 mb-1">{user.name}</p>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{user.phone}</p>
                 <p className="text-xs font-bold text-orange-600 mt-2">
-                    {(isActive && !isExpired) ? '✅ Votre code QR est maintenant activé' : '❌ Votre code QR est actuellement inactif'}
+                    {(isActive && !isExpired) ? '✅ Votre code QR est maintenant activé' : isExpired ? '❌ Votre code QR a expiré (Désactivé)' : '❌ Votre code QR est actuellement inactif'}
                 </p>
                 {(isActive && !isExpired) && activation.expiryDate && (
                     <p className="text-[10px] text-gray-500 mt-1 italic">
@@ -520,7 +521,7 @@ const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (
                         onClick={isExpired ? handleRenew : handleActivate}
                         className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex flex-col items-center justify-center gap-1 uppercase tracking-widest text-sm"
                     >
-                        <span>{isExpired ? 'Renouveler votre code QR (500 FCFA)' : 'Activer votre mise en relation (7 100 FCFA)'}</span>
+                        <span>{isExpired ? 'Renouveler votre mise en relation (500 FCFA)' : 'Activer votre mise en relation (7 100 FCFA)'}</span>
                         <span className="text-[10px] opacity-80 font-bold lowercase tracking-normal">Validation instantanée</span>
                     </button>
                     
