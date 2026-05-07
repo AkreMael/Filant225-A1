@@ -39,6 +39,7 @@ type AdminTab =
   | 'overview' 
   | 'connections' 
   | 'inscriptions'
+  | 'qrcodes'
   | 'private' 
   | 'scanner' 
   | 'payments';
@@ -54,6 +55,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [data, setData] = useState<Record<string, any[]>>({
     connections: [],
     inscriptions: [],
+    qrCodes: [],
     assistant: [],
     privateMsgs: [],
     scanner: [],
@@ -71,6 +73,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     // 2. Inscriptions
     const unsubInscriptions = onSnapshot(query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
       setData(prev => ({ ...prev, inscriptions: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+    });
+
+    // 2b. QR Codes
+    const unsubQRCodes = onSnapshot(query(collection(db, 'QRCodeActivations'), orderBy('updatedAt', 'desc'), limit(150)), (snap) => {
+      setData(prev => ({ ...prev, qrCodes: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
     // 3. Messagerie Privée (Manual Chats)
@@ -180,6 +187,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     if (key === 'timestamp' || key === 'lastConnection' || key === 'date' || key === 'syncedAt') {
                       val = formatDate(val);
                     }
+                    if (key === 'activationDate' || key === 'expiryDate') {
+                      val = val ? new Date(val).toLocaleDateString('fr-FR') : '-';
+                    }
+                    if (key === 'fraisDossierPayes') {
+                      val = val ? 'Payé (310)' : 'En attente';
+                    }
                     if (key === 'details' && typeof val === 'object' && val !== null) {
                       val = Object.entries(val)
                         .filter(([_, v]) => v !== '' && v !== null && v !== undefined)
@@ -213,6 +226,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
     { id: 'connections', label: 'Connexions', icon: BarChart3 },
     { id: 'inscriptions', label: 'Inscriptions', icon: Briefcase },
+    { id: 'qrcodes', label: 'Gestion QR Code', icon: QrCode },
     { id: 'private', label: 'Messagerie Privée', icon: Mail },
     { id: 'scanner', label: 'Scanner', icon: Scan },
     { id: 'payments', label: 'Paiements', icon: CreditCard },
@@ -394,6 +408,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 ['Profil', 'Nom', 'Ville', 'Numéro', 'Détails', 'Status', 'Date'],
                 ['profileType', 'name', 'city', 'phone', 'details', 'status', 'timestamp'],
                 data.inscriptions
+              )}
+
+              {activeTab === 'qrcodes' && renderTable(
+                ['Nom', 'Numéro', 'Ville', 'Étape actuelle'],
+                ['name', 'phone', 'city', 'status'],
+                data.qrCodes.map(q => {
+                  let currentStatus = q.status;
+                  const now = new Date();
+                  const isExpired = q.expiryDate && now > new Date(q.expiryDate);
+                  
+                  if (isExpired) {
+                    currentStatus = "En attente renouvellement (500 FCFA)";
+                  }
+                  
+                  return {
+                    ...q,
+                    status: currentStatus
+                  };
+                })
               )}
 
               {activeTab === 'private' && (

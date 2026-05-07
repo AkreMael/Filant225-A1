@@ -144,7 +144,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                         name: user.name,
                         phone: user.phone,
                         city: user.city,
-                        status: "Désactivé",
+                        status: "Frais payés - En attente activation (7 100 FCFA)",
                         fraisDossierPayes: true
                     });
                 } else if (amountToSave === "7100" || amountToSave === "500") {
@@ -155,10 +155,10 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                         name: user.name,
                         phone: user.phone,
                         city: user.city,
-                        status: "Activé",
+                        status: "Code QR Actif",
                         activationDate: new Date().toISOString(),
                         expiryDate: expiryDate.toISOString(),
-                        fraisDossierPayes: true // Should already be true if they reach here, but for safety
+                        fraisDossierPayes: true
                     });
                 }
 

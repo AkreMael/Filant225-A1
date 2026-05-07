@@ -68,6 +68,33 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
   const [isSaved, setIsSaved] = useState(false);
   const [paymentInitiated, setPaymentInitiated] = useState(false);
 
+  // Persistence logic
+  useEffect(() => {
+    const saved = localStorage.getItem('filant_registration_draft');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.formData) setFormData(parsed.formData);
+        if (parsed.profile) setSelectedProfile(parsed.profile);
+        if (parsed.step) setStep(parsed.step);
+        if (parsed.isSaved !== undefined) setIsSaved(parsed.isSaved);
+      } catch (e) {
+        console.error("Error loading draft:", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const draft = {
+      formData,
+      profile: selectedProfile,
+      step,
+      isSaved,
+      updatedAt: new Date().getTime()
+    };
+    localStorage.setItem('filant_registration_draft', JSON.stringify(draft));
+  }, [formData, selectedProfile, step, isSaved]);
+
   useEffect(() => {
     if (currentUser) {
       setFormData(prev => ({
@@ -163,6 +190,16 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     setIsSubmitting(false);
     
     if (success) {
+      // Initialize QR Code tracking status
+      await databaseService.updateQRCodeActivation(formData.phone, {
+        name: formData.name,
+        phone: formData.phone,
+        city: formData.city,
+        profileType: selectedProfile,
+        status: "En attente paiement frais (310 FCFA)",
+        fraisDossierPayes: false
+      });
+      
       setIsSaved(true);
     }
   };
@@ -179,11 +216,13 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
       });
       window.dispatchEvent(event);
       
-      // We will mark them as enrolled in databaseService after payment success
-      // But for UI feedback we can close eventually
-      setTimeout(() => {
-          onComplete();
-      }, 4000);
+      // Cleanup draft upon payment success is handled via a callback if possible, 
+      // but we'll leave it for now to ensure persistence until confirmed
+  };
+
+  const handleModify = () => {
+    setIsSaved(false);
+    setStep(2);
   };
 
   const handleNext = () => {
@@ -609,6 +648,12 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                   >
                     {paymentInitiated ? 'Redirection Wave...' : 'Payer les frais (310 FCFA)'}
                     {!paymentInitiated && <ArrowRight className="w-5 h-5" />}
+                  </button>
+                  <button
+                    onClick={handleModify}
+                    className="w-full bg-slate-100 text-slate-500 font-black py-4 rounded-3xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+                  >
+                    Modifier mes informations
                   </button>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Paiement sécurisé via Wave</p>
                </div>

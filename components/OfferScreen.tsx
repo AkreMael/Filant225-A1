@@ -415,7 +415,7 @@ const PublicationModal = ({ isOpen, onClose, onPublish, initialData }: {
 import { QRCodeSVG } from 'qrcode.react';
 import { CheckCircle2 } from 'lucide-react';
 
-const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (enrolled: boolean) => void }> = ({ user, onEnrolledChange }) => {
+const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (enrolled: boolean) => void, onModify: () => void }> = ({ user, onEnrolledChange, onModify }) => {
     const [activation, setActivation] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -505,7 +505,7 @@ const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (
                 <p className="text-sm font-bold text-slate-700 mb-1">{user.name}</p>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{user.phone}</p>
                 <p className="text-xs font-bold text-orange-600 mt-2">
-                    {(isActive && !isExpired) ? '✅ Votre code QR est maintenant activé pour 1 mois' : '❌ Votre code QR est actuellement inactif'}
+                    {(isActive && !isExpired) ? '✅ Votre code QR est maintenant activé' : '❌ Votre code QR est actuellement inactif'}
                 </p>
                 {(isActive && !isExpired) && activation.expiryDate && (
                     <p className="text-[10px] text-gray-500 mt-1 italic">
@@ -515,17 +515,34 @@ const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (
             </div>
 
             {(!isActive || isExpired) ? (
-                <button 
-                    onClick={isExpired ? handleRenew : handleActivate}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex flex-col items-center justify-center gap-1 uppercase tracking-widest text-sm"
-                >
-                    <span>{isExpired ? 'Renouveler votre code QR (500 FCFA)' : 'Activer votre mise en relation (7 100 FCFA)'}</span>
-                    <span className="text-[10px] opacity-80 font-bold lowercase tracking-normal">Validation instantanée</span>
-                </button>
+                <div className="w-full space-y-3">
+                    <button 
+                        onClick={isExpired ? handleRenew : handleActivate}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex flex-col items-center justify-center gap-1 uppercase tracking-widest text-sm"
+                    >
+                        <span>{isExpired ? 'Renouveler votre code QR (500 FCFA)' : 'Activer votre mise en relation (7 100 FCFA)'}</span>
+                        <span className="text-[10px] opacity-80 font-bold lowercase tracking-normal">Validation instantanée</span>
+                    </button>
+                    
+                    <button 
+                        onClick={onModify}
+                        className="w-full bg-slate-100 text-slate-500 font-bold py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all border border-gray-100"
+                    >
+                        Modifier mes informations
+                    </button>
+                </div>
             ) : (
-                <div className="w-full bg-green-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 uppercase tracking-widest text-xs">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Profil Actif</span>
+                <div className="w-full space-y-3">
+                    <div className="w-full bg-green-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 uppercase tracking-widest text-xs">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Profil Actif</span>
+                    </div>
+                    <button 
+                        onClick={onModify}
+                        className="w-full text-gray-400 font-bold py-2 text-[9px] uppercase tracking-[0.2em] hover:text-gray-600 transition-all"
+                    >
+                        Mettre à jour mon profil
+                    </button>
                 </div>
             )}
         </div>
@@ -853,6 +870,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
           <ProfessionalRegistrationStatus 
             user={user} 
             onEnrolledChange={setIsProfessionalEnrolled}
+            onModify={() => setShowSmartRegistration(true)}
           />
 
           {/* Demande d'embauche simplified section */}
