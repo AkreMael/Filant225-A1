@@ -220,6 +220,24 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["profileType", "name", "city", "phone", "timestamp"]
+    },
+    "QRCodeActivation": {
+      "title": "QRCodeActivation",
+      "description": "Gestion de l'activation des codes QR professionnels.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "status": { "type": "string", "enum": ["Activé", "Désactivé"] },
+        "activationDate": { "type": "string", "format": "date-time" },
+        "expiryDate": { "type": "string", "format": "date-time" },
+        "fraisDossierPayes": { "type": "boolean" },
+        "lastPaymentAmount": { "type": "number" },
+        "profileType": { "type": "string" }
+      },
+      "required": ["userId", "name", "phone", "city", "status"]
     }
   },
   "firestore": {
@@ -274,6 +292,10 @@
     "/Inscriptions/{id}": {
       "schema": "Inscription",
       "description": "Nouvelles inscriptions provenant de l'interface Site."
+    },
+    "/QRCodeActivations/{id}": {
+      "schema": "QRCodeActivation",
+      "description": "Collection pour la gestion des activations QR Code."
     }
   }
 }

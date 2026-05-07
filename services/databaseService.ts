@@ -664,6 +664,46 @@ export const databaseService = {
     }
   },
 
+  updateQRCodeActivation: async (userId: string, data: any) => {
+    try {
+      const sanitizedPhone = userId.replace(/\D/g, '');
+      const activationRef = doc(db, 'QRCodeActivations', sanitizedPhone);
+      await setDoc(activationRef, {
+        ...data,
+        userId: sanitizedPhone,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      
+      // Also update user profile for easy access
+      const userRef = doc(db, 'Clients', sanitizedPhone);
+      await updateDoc(userRef, {
+        qrCodeStatus: data.status,
+        fraisDossierPayes: data.fraisDossierPayes || false,
+        qrCodeExpiryDate: data.expiryDate || null
+      });
+      
+      return true;
+    } catch (e) {
+      console.error("Error updating QR Code Activation:", e);
+      return false;
+    }
+  },
+
+  getQRCodeActivation: async (userId: string) => {
+    try {
+      const sanitizedPhone = userId.replace(/\D/g, '');
+      const activationRef = doc(db, 'QRCodeActivations', sanitizedPhone);
+      const snap = await getDoc(activationRef);
+      if (snap.exists()) {
+        return { id: snap.id, ...snap.data() };
+      }
+      return null;
+    } catch (e) {
+      console.error("Error fetching QR Code Activation:", e);
+      return null;
+    }
+  },
+
   getInscriptions: async () => {
     try {
       const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));

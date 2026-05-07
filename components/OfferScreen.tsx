@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Tab } from '../types';
 import { databaseService } from '../services/databaseService';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import SpeakerIcon from './common/SpeakerIcon';
 import { audioService } from '../services/audioService';
@@ -412,6 +412,126 @@ const PublicationModal = ({ isOpen, onClose, onPublish, initialData }: {
 };
 
 
+import { QRCodeSVG } from 'qrcode.react';
+import { CheckCircle2 } from 'lucide-react';
+
+const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (enrolled: boolean) => void }> = ({ user, onEnrolledChange }) => {
+    const [activation, setActivation] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user?.phone) return;
+        const sanitizedPhone = user.phone.replace(/\D/g, '');
+        const unsub = onSnapshot(doc(db, 'QRCodeActivations', sanitizedPhone), (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                setActivation(data);
+                if (onEnrolledChange) onEnrolledChange(data.fraisDossierPayes === true);
+            } else {
+                if (onEnrolledChange) onEnrolledChange(false);
+            }
+            setIsLoading(false);
+        });
+        return () => unsub();
+    }, [user?.phone, onEnrolledChange]);
+
+    if (!user || (!activation && !isLoading)) return null;
+    if (isLoading) return <div className="p-10 flex justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>;
+
+    const isEnrolled = activation?.fraisDossierPayes;
+    if (!isEnrolled) return null;
+// ... (rest of the component)
+
+    const isActive = activation?.status === 'Activé';
+    const isExpired = activation?.expiryDate && new Date(activation.expiryDate) < new Date();
+    const showingStatus = (isActive && !isExpired) ? 'Activé' : 'Désactivé';
+
+    const qrData = JSON.stringify({
+        nom: user.name,
+        tel: user.phone,
+        ville: user.city,
+        type: activation?.profileType || 'Professionnel',
+        status: showingStatus
+    });
+
+    const handleActivate = () => {
+        const event = new CustomEvent('trigger-payment-view', {
+            detail: {
+                title: 'Activation Mise en Relation',
+                amount: '7100',
+                waveLink: 'https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=7100',
+                paymentType: 'Activation'
+            }
+        });
+        window.dispatchEvent(event);
+    };
+
+    const handleRenew = () => {
+        const event = new CustomEvent('trigger-payment-view', {
+            detail: {
+                title: 'Renouvellement Mise en Relation',
+                amount: '500',
+                waveLink: 'https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=500',
+                paymentType: 'Renouvellement'
+            }
+        });
+        window.dispatchEvent(event);
+    };
+
+    return (
+        <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden mx-4 mb-8 border border-gray-100 p-8 flex flex-col items-center">
+            <h2 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-tight text-center">Votre Code QR Professionnel</h2>
+            
+            <div className="relative p-6 bg-gray-50 rounded-3xl border-2 border-gray-100 shadow-inner mb-6">
+                <div className={`${(isActive && !isExpired) ? 'opacity-100' : 'opacity-20 grayscale'} transition-all duration-500`}>
+                    <QRCodeSVG 
+                        value={qrData} 
+                        size={200}
+                        level="H"
+                        includeMargin={true}
+                    />
+                </div>
+                
+                {(!isActive || isExpired) && (
+                    <div className="absolute inset-0 flex items-center justify-center p-4">
+                        <div className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl rotate-[-5deg]">
+                            Code QR non actif
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="text-center mb-8">
+                <p className="text-sm font-bold text-slate-700 mb-1">{user.name}</p>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{user.phone}</p>
+                <p className="text-xs font-bold text-orange-600 mt-2">
+                    {(isActive && !isExpired) ? '✅ Votre code QR est maintenant activé pour 1 mois' : '❌ Votre code QR est actuellement inactif'}
+                </p>
+                {(isActive && !isExpired) && activation.expiryDate && (
+                    <p className="text-[10px] text-gray-500 mt-1 italic">
+                        Expire le : {new Date(activation.expiryDate).toLocaleDateString('fr-FR')}
+                    </p>
+                )}
+            </div>
+
+            {(!isActive || isExpired) ? (
+                <button 
+                    onClick={isExpired ? handleRenew : handleActivate}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex flex-col items-center justify-center gap-1 uppercase tracking-widest text-sm"
+                >
+                    <span>{isExpired ? 'Renouveler votre code QR (500 FCFA)' : 'Activer votre mise en relation (7 100 FCFA)'}</span>
+                    <span className="text-[10px] opacity-80 font-bold lowercase tracking-normal">Validation instantanée</span>
+                </button>
+            ) : (
+                <div className="w-full bg-green-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 uppercase tracking-widest text-xs">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Profil Actif</span>
+                </div>
+            )}
+        </div>
+    );
+};
+
 interface OfferScreenProps {
   onNavigateToMenu: (view: 'worker_list' | 'location_hub') => void;
   setActiveTab: (tab: Tab) => void;
@@ -442,6 +562,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
   const [publicationData, setPublicationData] = useState<any>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSmartRegistration, setShowSmartRegistration] = useState(false);
+  const [isProfessionalEnrolled, setIsProfessionalEnrolled] = useState(false);
 
   useEffect(() => {
     setIsLoadingOffers(false);
@@ -722,15 +843,21 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
             </div>
         )}
           
-          {/* Intervention Rapide */}
+          {/* Interaction Rapide */}
           <InfoBox 
             title="Intervention rapide"
             description="Intervention rapide par des professionnels qualifiés for tous vos besoins de dépannage. Nos experts sont disponibles for résoudre vos problèmes efficacement et rapidement."
             onLinkClick={onOpenIntervention}
           />
 
+          <ProfessionalRegistrationStatus 
+            user={user} 
+            onEnrolledChange={setIsProfessionalEnrolled}
+          />
+
           {/* Demande d'embauche simplified section */}
-          <div className="bg-[#16a34a] pt-16 pb-16 mb-6 relative overflow-hidden transition-all duration-500">
+          {!isProfessionalEnrolled && (
+            <div className="bg-[#16a34a] pt-16 pb-16 mb-6 relative overflow-hidden transition-all duration-500">
              {/* Gradient Overlays for smooth transition */}
              <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-[#F8F9FB] to-transparent pointer-events-none z-10"></div>
              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#F8F9FB] to-transparent pointer-events-none z-10"></div>
@@ -741,59 +868,33 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                 </h2>
                 
                 <div className="bg-white/10 backdrop-blur-md rounded-[2rem] p-6 border border-white/20 shadow-2xl">
-                    <p className="text-white font-bold text-lg leading-tight mb-6">
-                        🔥 Tu cherches travail sérieux ? Écoute ça d’abord !
+                    <p className="text-white font-black text-xl leading-tight mb-6 uppercase tracking-tighter">
+                        Rejoignez la Révolution du Travail en Côte d’Ivoire avec Filan 225 !
                     </p>
                     
-                    <div className="space-y-4 mb-8">
-                        <p className="text-[#a3e635] font-black text-sm uppercase tracking-wide">Chez FILANT°225, on est dans le concret 👇</p>
+                    <div className="space-y-6 mb-8">
+                        <p className="text-[#a3e635] font-bold text-sm leading-relaxed">
+                            Vous êtes un travailleur qualifié, un propriétaire d'équipement, une agence immobilière ou une entreprise ambitieuse ? Ne restez plus dans l'ombre !
+                        </p>
                         
-                        <div className="space-y-2">
-                            <div className="flex items-start gap-3">
-                                <span className="text-xl">👉</span>
-                                <p className="text-white text-sm font-bold">Pas besoin de diplôme compliqué</p>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <span className="text-xl">👉</span>
-                                <p className="text-white text-sm font-bold">Pas besoin de connexion spéciale</p>
-                            </div>
-                        </div>
-
-                        <p className="text-white/80 text-xs font-black uppercase tracking-widest pt-2">Nous, on travaille avec :</p>
-                        <div className="grid grid-cols-1 gap-2">
-                            <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
-                                <span className="text-xl">🔧</span>
-                                <p className="text-white text-xs font-bold uppercase">Travailleurs qualifiés</p>
-                            </div>
-                            <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
-                                <span className="text-xl">🚗</span>
-                                <p className="text-white text-xs font-bold uppercase">Agents mobiles pour nos activités</p>
-                            </div>
-                            <div className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
-                                <span className="text-xl">🏠</span>
-                                <p className="text-white text-xs font-bold uppercase">Agents immobiliers</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-3 pt-2">
-                            <span className="text-xl">💼</span>
-                            <p className="text-white text-sm font-bold italic">Ici, c'est la mise en relation</p>
-                        </div>
-                        
-                        <div className="flex items-start gap-3">
-                            <span className="text-xl">👉</span>
-                            <p className="text-white text-sm font-bold">Si tu es motivé, sérieux et prêt à bouger, tu peux avoir ta place avec nous.</p>
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-4">
+                            <p className="text-white text-sm font-medium leading-relaxed">
+                                <span className="text-orange-500 font-black">Filan 225</span> vous ouvre les portes d'une visibilité nationale.
+                            </p>
+                            <p className="text-white text-sm font-bold leading-relaxed">
+                                Inscrivez-vous dès maintenant pour être mis en relation directe avec des clients sérieux, partout en Côte d’Ivoire.
+                            </p>
                         </div>
                     </div>
 
                     <div className="pt-6 border-t border-white/10 flex flex-col items-center space-y-4">
                         <p className="text-white/70 text-[10px] font-black uppercase tracking-widest mb-2 text-center">
-                            🎧 Clique ici pour écouter l’audio et comprendre tout clairement 👇
+                            🎧 Cliquez ici pour écouter l’audio et comprendre tout clairement 👇
                         </p>
                         
                         <div 
                             onClick={() => {
-                                const audioText = `Tu cherches travail sérieux ? Écoute ça d’abord ! Chez FILANT 225, on est dans le concret. Pas besoin de diplôme compliqué. Pas besoin de connexion spéciale. Nous, on travaille avec : Travailleurs qualifiés, Agents mobiles pour nos activités, Agents immobiliers. Ici, c'est la mise en relation. Si tu es motivé, sérieux et prêt à bouger, tu peux avoir ta place avec nous.`;
+                                const audioText = `Rejoignez la Révolution du Travail en Côte d’Ivoire avec Filan 225 ! Vous êtes un travailleur qualifié, un propriétaire d'équipement, une agence immobilière ou une entreprise ambitieuse ? Ne restez plus dans l'ombre ! Filan 225 vous ouvre les portes d'une visibilité nationale. Inscrivez-vous dès maintenant pour être mis en relation directe avec des clients sérieux, partout en Côte d’Ivoire.`;
                                 audioService.speak(audioText);
                             }}
                             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm cursor-pointer"
@@ -829,8 +930,9 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                         />
                     </motion.div>
                 )}
-             </AnimatePresence>
-          </div>
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* Agence Immobilière */}
           <div className="px-4 mb-6">

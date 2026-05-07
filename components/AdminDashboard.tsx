@@ -419,19 +419,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button 
-                                onClick={() => onOpenChat(userId, messages[0]?.userName || 'Utilisateur', 'Privee')}
-                                className="bg-blue-600/10 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all active:scale-95"
-                            >
-                                Répondre
-                            </button>
-                            <button 
-                                onClick={() => setViewingConversation({ id: userId, name: messages[0]?.userName || 'Utilisateur', messages })}
-                                className="bg-red-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-500/20"
-                            >
-                                {messages.length} Message(s)
-                            </button>
+                        <div className="flex items-center gap-4">
+                            <div className="relative group">
+                                <button 
+                                    onClick={() => onOpenChat(userId, messages[0]?.userName || 'Utilisateur', 'Privee')}
+                                    className="bg-blue-600/10 text-blue-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
+                                >
+                                    <MessageSquare size={14} />
+                                    Répondre
+                                </button>
+                                
+                                {messages.length > 0 && (
+                                    <button 
+                                        onClick={() => setViewingConversation({ id: userId, name: messages[0]?.userName || 'Utilisateur', messages })}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-lg animate-bounce"
+                                    >
+                                        {messages.length}
+                                    </button>
+                                )}
+                            </div>
                         </div>
                       </div>
                     </div>

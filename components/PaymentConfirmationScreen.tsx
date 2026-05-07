@@ -138,7 +138,29 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     }
                 }
 
-                // Card logic removed
+                // New Logic for QR Code Activation
+                if (amountToSave === "310") {
+                    await databaseService.updateQRCodeActivation(user.phone, {
+                        name: user.name,
+                        phone: user.phone,
+                        city: user.city,
+                        status: "Désactivé",
+                        fraisDossierPayes: true
+                    });
+                } else if (amountToSave === "7100" || amountToSave === "500") {
+                    const expiryDate = new Date();
+                    expiryDate.setDate(expiryDate.getDate() + 30);
+                    
+                    await databaseService.updateQRCodeActivation(user.phone, {
+                        name: user.name,
+                        phone: user.phone,
+                        city: user.city,
+                        status: "Activé",
+                        activationDate: new Date().toISOString(),
+                        expiryDate: expiryDate.toISOString(),
+                        fraisDossierPayes: true // Should already be true if they reach here, but for safety
+                    });
+                }
 
                 databaseService.savePaymentToRTDB({
                   userId: user.phone.replace(/\D/g, ''),

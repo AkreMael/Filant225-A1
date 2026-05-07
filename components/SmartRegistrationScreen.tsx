@@ -65,6 +65,8 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [paymentInitiated, setPaymentInitiated] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -161,11 +163,27 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     setIsSubmitting(false);
     
     if (success) {
-      setShowConfirmation(true);
-      setTimeout(() => {
-        onComplete();
-      }, 3000);
+      setIsSaved(true);
     }
+  };
+
+  const handlePayRegistration = () => {
+      setPaymentInitiated(true);
+      const event = new CustomEvent('trigger-payment-view', {
+          detail: {
+              title: `Frais Dossier (${selectedProfile})`,
+              amount: '310',
+              waveLink: 'https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=310',
+              paymentType: 'Inscription'
+          }
+      });
+      window.dispatchEvent(event);
+      
+      // We will mark them as enrolled in databaseService after payment success
+      // But for UI feedback we can close eventually
+      setTimeout(() => {
+          onComplete();
+      }, 4000);
   };
 
   const handleNext = () => {
@@ -564,7 +582,38 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             <h3 className="text-slate-400 font-bold text-sm tracking-widest uppercase">ÉTAPE {step} : {step === 1 ? 'PROFIL' : 'INFORMATION'}</h3>
           </div>
 
-          {step === 1 ? (
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-4">
+          {isSaved ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-8 animate-in fade-in zoom-in duration-500">
+               <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <Check className="w-12 h-12 text-green-600 stroke-[3]" />
+               </div>
+               <div className="space-y-4">
+                  <h3 className="text-2xl font-black text-slate-900 leading-tight uppercase tracking-tight">Validation Réussie !</h3>
+                  <p className="text-slate-500 font-medium leading-relaxed">
+                    Votre inscription en tant que <span className="text-orange-600 font-black">{selectedProfile}</span> a été enregistrée avec succès.
+                  </p>
+                  <div className="p-6 bg-orange-50 rounded-3xl border border-orange-100">
+                     <p className="text-orange-900 font-bold text-sm">
+                        Pour finaliser et activer votre mise en ligne, veuillez régler les frais de dossier de :
+                     </p>
+                     <p className="text-3xl font-black text-orange-600 mt-2">310 FCFA</p>
+                  </div>
+               </div>
+
+               <div className="w-full pt-8 space-y-4">
+                  <button
+                    onClick={handlePayRegistration}
+                    disabled={paymentInitiated}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-3xl flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest disabled:opacity-50"
+                  >
+                    {paymentInitiated ? 'Redirection Wave...' : 'Payer les frais (310 FCFA)'}
+                    {!paymentInitiated && <ArrowRight className="w-5 h-5" />}
+                  </button>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Paiement sécurisé via Wave</p>
+               </div>
+            </div>
+          ) : step === 1 ? (
             <div className="px-2 mb-6">
               <h4 className="text-slate-600 font-black text-xs uppercase tracking-[0.2em] mb-4">QUI ÊTES-VOUS ?</h4>
               
@@ -642,7 +691,9 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               </div>
             </div>
           )}
+        </div>
 
+        {!isSaved && (
           <div className="mt-auto pt-6 px-2">
             <button
               onClick={handleNext}
@@ -667,6 +718,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               </button>
             )}
           </div>
+        )}
         </motion.div>
       </main>
 
