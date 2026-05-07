@@ -22,8 +22,12 @@ import {
   Factory,
   Mail,
   Scan,
-  MoreVertical
+  MoreVertical,
+  Eye,
+  X,
+  FileText
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -43,6 +47,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItemForDetails, setSelectedItemForDetails] = useState<any>(null);
+  const [viewingConversation, setViewingConversation] = useState<{ id: string, name: string, messages: any[] } | null>(null);
   
   // Data States
   const [data, setData] = useState<Record<string, any[]>>({
@@ -157,6 +163,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 <tr key={i} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors">
                   {keys.map((key, j) => {
                     let val = item[key];
+                    if (key === 'details') {
+                      return (
+                        <td key={j} className="px-6 py-4">
+                          <button 
+                            onClick={() => setSelectedItemForDetails(item)}
+                            className="bg-blue-600/10 text-blue-600 p-2 rounded-xl hover:bg-blue-600 hover:text-white transition-all active:scale-90 flex items-center justify-center gap-2"
+                          >
+                            <Eye size={14} />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Voir</span>
+                          </button>
+                        </td>
+                      );
+                    }
+
                     if (key === 'timestamp' || key === 'lastConnection' || key === 'date' || key === 'syncedAt') {
                       val = formatDate(val);
                     }
@@ -399,32 +419,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
                            </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <button 
                                 onClick={() => onOpenChat(userId, messages[0]?.userName || 'Utilisateur', 'Privee')}
-                                className="bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase hover:bg-blue-600 hover:text-white transition-colors"
+                                className="bg-blue-600/10 text-blue-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all active:scale-95"
                             >
                                 Répondre
                             </button>
-                            <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">
-                                {messages.length} message(s)
-                            </span>
+                            <button 
+                                onClick={() => setViewingConversation({ id: userId, name: messages[0]?.userName || 'Utilisateur', messages })}
+                                className="bg-red-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-500/20"
+                            >
+                                {messages.length} Message(s)
+                            </button>
                         </div>
-                      </div>
-                      <div className="p-2 divide-y divide-gray-50 dark:divide-slate-800">
-                        {messages.map((m, idx) => (
-                          <div key={idx} className={`p-4 hover:bg-gray-50/50 dark:hover:bg-slate-800/20 transition-colors ${m.sender === 'admin' ? 'bg-blue-50/10' : ''}`}>
-                             <div className="flex justify-between mb-1">
-                                <span className={`text-[9px] font-black uppercase tracking-widest ${m.sender === 'admin' ? 'text-blue-500' : 'text-green-500'}`}>
-                                    {m.sender === 'admin' ? 'Admin' : 'Utilisateur'}
-                                </span>
-                                <span className="text-[9px] font-bold text-gray-300">{formatDate(m.timestamp)}</span>
-                             </div>
-                             <p className="text-xs font-medium text-slate-700 dark:text-gray-300 leading-relaxed">
-                                {m.text || m.message || 'Contenu vide'}
-                             </p>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   ))}
@@ -476,6 +484,197 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 <Search size={20} />
            </button>
       </div>
+
+      {/* Details Modal */}
+      <AnimatePresence>
+        {selectedItemForDetails && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedItemForDetails(null)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+            ></motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-white/10"
+            >
+              <div className="p-8 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                        <FileText size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Détails Inscription</h2>
+                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">{selectedItemForDetails.profileType}</span>
+                    </div>
+                 </div>
+                 <button 
+                   onClick={() => setSelectedItemForDetails(null)}
+                   className="p-3 bg-gray-100 dark:bg-slate-800 hover:bg-red-500 hover:text-white rounded-2xl transition-all active:scale-90"
+                 >
+                    <X size={20} />
+                 </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+                 {/* Personnel Info */}
+                 <div className="space-y-4">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Informations Personnelles</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Nom Complet</p>
+                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.name}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone</p>
+                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.phone}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Ville Actuelle</p>
+                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.city}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Date d'envoi</p>
+                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{formatDate(selectedItemForDetails.timestamp)}</p>
+                        </div>
+                    </div>
+                 </div>
+
+                 {/* Specific Details */}
+                 <div className="space-y-4">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Détails Spécifiques</h4>
+                    <div className="grid grid-cols-1 gap-4">
+                        {typeof selectedItemForDetails.details === 'object' && selectedItemForDetails.details !== null ? (
+                           Object.entries(selectedItemForDetails.details)
+                             .filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+                             .map(([key, val], idx) => (
+                               <div key={idx} className="p-5 bg-blue-50/30 dark:bg-blue-500/5 rounded-2xl border border-blue-100/50 dark:border-blue-500/10 flex justify-between items-center group hover:bg-blue-50 transition-colors">
+                                  <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.15em] shrink-0">{key}</span>
+                                  <span className="text-xs font-black text-slate-700 dark:text-gray-200 uppercase tracking-tight text-right ml-4">{String(val)}</span>
+                               </div>
+                             ))
+                        ) : (
+                          <div className="p-8 text-center text-gray-400 italic font-bold text-sm">
+                             Aucun détail supplémentaire.
+                          </div>
+                        )}
+                    </div>
+                 </div>
+
+                 {/* Status info */}
+                 <div className="p-6 bg-slate-900 rounded-[2rem] text-white flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center text-green-500">
+                          <LayoutDashboard size={20} />
+                       </div>
+                       <div>
+                          <p className="text-[9px] font-black text-white/50 uppercase tracking-widest">Statut du dossier</p>
+                          <p className="text-xs font-black uppercase">{selectedItemForDetails.status || 'En attente'}</p>
+                       </div>
+                    </div>
+                    <div className="px-4 py-2 bg-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest">
+                       ID: {selectedItemForDetails.id?.slice(0, 8)}
+                    </div>
+                 </div>
+              </div>
+
+              <div className="p-8 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-4">
+                 <button className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-green-600/20">
+                    Valider l'inscription
+                 </button>
+                 <button className="flex-1 bg-slate-900 dark:bg-slate-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95">
+                    Mettre en attente
+                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Messages Modal */}
+      <AnimatePresence>
+        {viewingConversation && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setViewingConversation(null)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+            ></motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-white/10"
+            >
+              <div className="p-8 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-red-500/20">
+                        <Mail size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{viewingConversation.name}</h2>
+                        <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em]">{viewingConversation.id}</span>
+                    </div>
+                 </div>
+                 <button 
+                   onClick={() => setViewingConversation(null)}
+                   className="p-3 bg-gray-100 dark:bg-slate-800 hover:bg-red-500 hover:text-white rounded-2xl transition-all active:scale-90"
+                 >
+                    <X size={20} />
+                 </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 space-y-4 scrollbar-hide">
+                 {viewingConversation.messages.map((m, idx) => (
+                   <div key={idx} className={`p-5 rounded-[2rem] border transition-all ${
+                     m.sender === 'admin' 
+                       ? 'bg-blue-50/50 dark:bg-blue-500/5 border-blue-100 dark:border-blue-500/10 ml-8' 
+                       : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800 mr-8'
+                   }`}>
+                      <div className="flex justify-between items-center mb-2">
+                         <span className={`text-[9px] font-black uppercase tracking-widest ${
+                           m.sender === 'admin' ? 'text-blue-500' : 'text-green-500'
+                         }`}>
+                           {m.sender === 'admin' ? 'Admin' : 'Utilisateur'}
+                         </span>
+                         <span className="text-[9px] font-bold text-gray-400 capitalize">{formatDate(m.timestamp)}</span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-700 dark:text-gray-200 leading-relaxed">
+                        {m.text || m.message || 'Contenu vide'}
+                      </p>
+                   </div>
+                 ))}
+                 {viewingConversation.messages.length === 0 && (
+                    <div className="py-20 text-center">
+                       <Mail size={48} className="mx-auto text-gray-200 mb-4" />
+                       <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Aucun message trouvé</p>
+                    </div>
+                 )}
+              </div>
+
+              <div className="p-8 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800">
+                 <button 
+                   onClick={() => {
+                     onOpenChat(viewingConversation.id, viewingConversation.name, 'Privee');
+                     setViewingConversation(null);
+                   }}
+                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-blue-600/20"
+                 >
+                    Répondre maintenant
+                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
