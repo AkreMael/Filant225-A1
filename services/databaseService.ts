@@ -212,10 +212,26 @@ export const databaseService = {
   },
 
   saveActiveUser: (user: User | null) => {
-    if (user) {
-        localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(user));
-        localStorage.setItem('filant_currentUserPhone', user.phone);
-    } else {
+    if (user && user.phone) {
+        const sanitizedPhone = user.phone.replace(/\D/g, '');
+        // Recovery logic: if we are saving a user with placeholders but we have better data in localStorage, merge it
+        const currentActive = databaseService.getActiveUser();
+        const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', 'N/A', ''].includes(val);
+        
+        let finalUser = { ...user };
+        
+        if (currentActive && currentActive.phone.replace(/\D/g, '') === sanitizedPhone) {
+            if (!isValid(finalUser.name) && isValid(currentActive.name)) {
+                finalUser.name = currentActive.name;
+            }
+            if (!isValid(finalUser.city) && isValid(currentActive.city)) {
+                finalUser.city = currentActive.city;
+            }
+        }
+        
+        localStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(finalUser));
+        localStorage.setItem('filant_currentUserPhone', sanitizedPhone);
+    } else if (!user) {
         localStorage.removeItem(ACTIVE_USER_KEY);
         localStorage.removeItem('filant_currentUserPhone');
     }
@@ -224,23 +240,25 @@ export const databaseService = {
   logConnection: async (user: User) => {
     try {
         const sanitizedPhone = user.phone.replace(/\D/g, '');
+        if (!sanitizedPhone) return;
         
         // Sync to Firestore 'Connexions' - One document per user (ligne dédiée)
         const connRef = doc(db, 'Connexions', sanitizedPhone);
-        const connData: any = {
+        
+        // Only update name and city if they are valid and not empty
+        const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', 'N/A', ''].includes(val);
+        
+        const updateData: any = {
             phone: user.phone,
             timestamp: serverTimestamp()
         };
 
-        // Only update name and city if they are valid and not empty
-        const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', ''].includes(val);
-        
-        if (isValid(user.name)) connData.name = user.name;
-        if (isValid(user.city)) connData.city = user.city;
+        if (isValid(user.name)) updateData.name = user.name;
+        if (isValid(user.city)) updateData.city = user.city;
 
-        await setDoc(connRef, connData, { merge: true });
+        await setDoc(connRef, updateData, { merge: true });
 
-        // Sync to Firestore 'Clients'
+        // Sync to Firestore 'Clients' or relevant collection
         databaseService.syncUserToFirestore(user);
     } catch (e) {
         console.error("Error logging connection", e);
@@ -272,13 +290,12 @@ export const databaseService = {
     try {
       const fbUser = await databaseService.ensureAuth();
 
-      // Find which collection this user belongs to by checking all potential collections
+      // Find which collection this user belongs to
       let targetCollection = 'Clients';
       let existingData: any = {};
       
-      const collections = ['Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin', 'Clients'];
+      const collections = ['Admin', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Clients'];
       
-      // Parallelize checking for existing records to be faster
       const checkPromises = collections.map(async (col) => {
           const ref = doc(db, col, sanitizedPhone);
           const snap = await getDoc(ref);
@@ -294,8 +311,9 @@ export const databaseService = {
       }
 
       const userRef = doc(db, targetCollection, sanitizedPhone);
+      const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', 'N/A', ''].includes(val);
 
-      // Construct update object with existing data preservation
+      // Construct update object
       const userData: any = {
         phone: sanitizedPhone,
         lastSeen: serverTimestamp()
@@ -303,18 +321,20 @@ export const databaseService = {
 
       if (fbUser?.uid) userData.userId = fbUser.uid;
       
-      const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', ''].includes(val);
-      
-      // Only include name and city if provided AND valid (not partial/generic)
+      // PERSISTENCE LOGIC: 
+      // 1. If incoming name is valid, use it.
+      // 2. If incoming name is NOT valid but existing is, do NOT overwrite with placeholder.
       if (isValid(user.name)) {
           userData.name = user.name;
-      } else if (existingData.name) {
-          // If provided is invalid, but we have existing, keep existing implicitly by not including it in the update
-          // or explicitly to ensure it's not lost if merge behavior is complex
+      } else if (existingData && isValid(existingData.name)) {
+          // Keep existing name from Firestore if incoming is placeholder
+          userData.name = existingData.name;
       }
 
       if (isValid(user.city)) {
           userData.city = user.city;
+      } else if (existingData && isValid(existingData.city)) {
+          userData.city = existingData.city;
       }
       
       if (user.role) userData.role = user.role;
@@ -379,7 +399,6 @@ export const databaseService = {
       await databaseService.ensureAuth();
       const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
       
-      // Check all collections in parallel for maximum speed
       const promises = collections.map(async (col) => {
           const userRef = doc(db, col, sanitizedPhone);
           const docSnap = await getDoc(userRef);
@@ -395,7 +414,16 @@ export const databaseService = {
       });
 
       const results = await Promise.all(promises);
-      return results.find(u => u !== null) || null;
+      const validUsers = results.filter((u): u is User => u !== null);
+      
+      if (validUsers.length === 0) return null;
+
+      // Prioritize the user with the most filled standard fields (name and city)
+      return validUsers.sort((a, b) => {
+          const scoreA = (a.name && !["Utilisateur", "Inconnu"].includes(a.name) ? 2 : 0) + (a.city && !["Non spécifiée", "N/A"].includes(a.city) ? 1 : 0);
+          const scoreB = (b.name && !["Utilisateur", "Inconnu"].includes(b.name) ? 2 : 0) + (b.city && !["Non spécifiée", "N/A"].includes(b.city) ? 1 : 0);
+          return scoreB - scoreA;
+      })[0];
       
     } catch (e) {
       console.error("Error in getUserByPhoneFromFirestore:", e);
@@ -843,7 +871,10 @@ export const databaseService = {
       // Sync to RTDB if user info is provided
       if (user) {
           try {
-              const sanitizedUserName = (user.name || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
+              const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', 'N/A', ''].includes(val);
+              const displayName = isValid(user.name) ? user.name : (localStorage.getItem('filant_last_valid_name') || 'Utilisateur');
+              
+              const sanitizedUserName = (displayName || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
               const sanitizedPhone = user.phone.replace(/\D/g, '');
               const userKey = `${sanitizedUserName}_${sanitizedPhone}`;
               const contactsRef = rtdbRef(rtdb, `Scanner/${userKey}`);
@@ -861,7 +892,7 @@ export const databaseService = {
 
               await set(contactsRef, {
                   contacts: contactsObject,
-                  lastUsername: user.name,
+                  lastUsername: displayName,
                   lastPhone: user.phone,
                   lastUpdated: rtdbTimestamp()
               });
@@ -1127,14 +1158,25 @@ export const databaseService = {
   saveTypedChatMessage: async (type: 'Assistant' | 'Privee', chatUserId: string, message: any) => {
     try {
       const userId = chatUserId.replace(/\D/g, '');
-      const user = databaseService.getUserByPhoneFromLocalStorage(userId);
+      const user = databaseService.getActiveUser();
       const collectionName = `Messagerie${type}`;
       
+      const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', 'N/A', ''].includes(val);
+      
+      let finalName = 'Utilisateur';
+      if (isValid(user?.name)) finalName = user!.name;
+      else if (isValid(message.userName)) finalName = message.userName;
+      
+      let finalCity = 'Non spécifiée';
+      if (isValid(user?.city)) finalCity = user!.city;
+      else if (isValid(message.city)) finalCity = message.city;
+
       const docData = {
         ...message,
         userId: userId,
-        userName: user?.name || message.userName || 'Utilisateur',
+        userName: finalName,
         phone: user?.phone || userId,
+        city: finalCity,
         timestamp: serverTimestamp(),
         isRead: false
       };

@@ -199,8 +199,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         .map(([k, v]) => `${k}: ${v}`)
                         .join(' | ');
                     }
+                    if (key === 'status') {
+                      const s = String(val);
+                      let badgeClass = 'bg-gray-100 text-gray-600';
+                      if (s === 'Code QR Actif') badgeClass = 'bg-green-100 text-green-600';
+                      else if (s.includes('310')) badgeClass = 'bg-orange-100 text-orange-600';
+                      else if (s.includes('7 100')) badgeClass = 'bg-blue-100 text-blue-600';
+                      else if (s.includes('500')) badgeClass = 'bg-red-100 text-red-600';
+                      
+                      return (
+                        <td key={j} className="px-6 py-4 text-center">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${badgeClass}`}>
+                            {s}
+                          </span>
+                        </td>
+                      );
+                    }
                     return (
-                      <td key={j} className="px-6 py-4">
+                        <td key={j} className="px-6 py-4">
                         <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">
                           {String(val || '-')}
                         </span>
@@ -422,6 +438,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     currentStatus = "En attente renouvellement (500 FCFA)";
                   }
                   
+                  // Wrap status in a badge-like object for renderTable to handle if we want
+                  // But renderTable handles strings. I'll modify renderTable to handle 'status' specially
                   return {
                     ...q,
                     status: currentStatus

@@ -326,7 +326,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('job')) setErrors(errors.filter(e => e !== 'job'));
                 }}
                 placeholder="Ex: Électricien, Menuisier..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('job') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('job') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -340,7 +340,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('domain')) setErrors(errors.filter(e => e !== 'domain'));
                 }}
                 placeholder="Ex: Bâtiment, Service..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('domain') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('domain') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -354,7 +354,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('specialty')) setErrors(errors.filter(e => e !== 'specialty'));
                 }}
                 placeholder="Votre spécialité précise"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('specialty') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('specialty') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -384,7 +384,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('skillsDescription')) setErrors(errors.filter(e => e !== 'skillsDescription'));
                 }}
                 placeholder="Décrivez vos compétences..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('skillsDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[60px] ${errors.includes('skillsDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -411,7 +411,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('movementZone')) setErrors(errors.filter(e => e !== 'movementZone'));
                 }}
                 placeholder="Ex: Toute la ville, Cocody uniquement..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('movementZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('movementZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
           </div>
@@ -431,7 +431,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('equipmentType')) setErrors(errors.filter(e => e !== 'equipmentType'));
                 }}
                 placeholder="Ex: Bétonnière, Échafaudage..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentType') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentType') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -444,7 +444,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('equipmentCategory')) setErrors(errors.filter(e => e !== 'equipmentCategory'));
                 }}
                 placeholder="Ex: Construction, Transport..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentCategory') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentCategory') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -456,7 +456,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('equipmentDescription')) setErrors(errors.filter(e => e !== 'equipmentDescription'));
                 }}
                 placeholder="Détails techniques, état..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('equipmentDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('equipmentDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -469,7 +469,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('quantity')) setErrors(errors.filter(e => e !== 'quantity'));
                 }}
                 placeholder="Ex: 1"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('quantity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('quantity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -482,7 +482,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('equipmentCity')) setErrors(errors.filter(e => e !== 'equipmentCity'));
                 }}
                 placeholder="Ville de localisation"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -508,7 +508,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('rentalPrice')) setErrors(errors.filter(e => e !== 'rentalPrice'));
                 }}
                 placeholder="Ex: 5000 CFA/jour"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('rentalPrice') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('rentalPrice') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
           </div>
@@ -528,7 +528,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyName')) setErrors(errors.filter(e => e !== 'agencyName'));
                 }}
                 placeholder="Nom de votre agence"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('agencyName') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyName') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -541,7 +541,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyCity')) setErrors(errors.filter(e => e !== 'agencyCity'));
                 }}
                 placeholder="Ville du siège"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('agencyCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -554,7 +554,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyAddress')) setErrors(errors.filter(e => e !== 'agencyAddress'));
                 }}
                 placeholder="Adresse précise"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('agencyAddress') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyAddress') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -567,7 +567,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('propertyTypes')) setErrors(errors.filter(e => e !== 'propertyTypes'));
                 }}
                 placeholder="Ex: Studios, Appartements, Terrains..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('propertyTypes') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('propertyTypes') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -579,7 +579,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyServices')) setErrors(errors.filter(e => e !== 'agencyServices'));
                 }}
                 placeholder="Vente, Location, Gestion..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('agencyServices') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('agencyServices') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -592,7 +592,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyZone')) setErrors(errors.filter(e => e !== 'agencyZone'));
                 }}
                 placeholder="Ex: Abidjan, Côte Ouest..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('agencyZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -602,7 +602,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                 value={formData.agencyDocs}
                 onChange={(e) => setFormData({...formData, agencyDocs: e.target.value})}
                 placeholder="Précisez si documents disponibles"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm shadow-inner outline-none focus:border-orange-500 transition-all"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-2 px-4 text-slate-800 font-bold text-[11px] shadow-inner outline-none focus:border-orange-500 transition-all"
               />
             </div>
           </div>
@@ -622,7 +622,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyName')) setErrors(errors.filter(e => e !== 'companyName'));
                 }}
                 placeholder="Ex: BTP Services CI"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('companyName') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyName') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -635,7 +635,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyCity')) setErrors(errors.filter(e => e !== 'companyCity'));
                 }}
                 placeholder="Ville du siège"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('companyCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -648,7 +648,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyAddress')) setErrors(errors.filter(e => e !== 'companyAddress'));
                 }}
                 placeholder="Adresse précise"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('companyAddress') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyAddress') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -661,7 +661,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyDomain')) setErrors(errors.filter(e => e !== 'companyDomain'));
                 }}
                 placeholder="Ex: Bâtiment, Transport..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('companyDomain') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyDomain') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -673,7 +673,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyServices')) setErrors(errors.filter(e => e !== 'companyServices'));
                 }}
                 placeholder="Décrivez vos services"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('companyServices') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('companyServices') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -685,7 +685,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyNeeds')) setErrors(errors.filter(e => e !== 'companyNeeds'));
                 }}
                 placeholder="Ce que l'entreprise recherche"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all min-h-[70px] ${errors.includes('companyNeeds') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('companyNeeds') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -695,7 +695,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                 value={formData.proposedSalary}
                 onChange={(e) => setFormData({...formData, proposedSalary: e.target.value})}
                 placeholder="Ex: 150 000 CFA / mois"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm shadow-inner outline-none focus:border-orange-500 transition-all"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-2 px-4 text-slate-800 font-bold text-[11px] shadow-inner outline-none focus:border-orange-500 transition-all"
               />
             </div>
             <div>
@@ -705,7 +705,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                 value={formData.companyDocs}
                 onChange={(e) => setFormData({...formData, companyDocs: e.target.value})}
                 placeholder="Registre commerce, etc..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm shadow-inner outline-none focus:border-orange-500 transition-all"
+                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-2 px-4 text-slate-800 font-bold text-[11px] shadow-inner outline-none focus:border-orange-500 transition-all"
               />
             </div>
           </div>
@@ -849,7 +849,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                       type="text"
                       value={formData.name}
                       readOnly
-                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-3 px-4 text-slate-500 font-bold text-sm outline-none cursor-not-allowed opacity-80"
+                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-2 px-4 text-slate-500 font-bold text-[11px] outline-none cursor-not-allowed opacity-80"
                     />
                   </div>
                   <div>
@@ -858,7 +858,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                       type="text"
                       value={formData.city}
                       readOnly
-                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-3 px-4 text-slate-500 font-bold text-sm outline-none cursor-not-allowed opacity-80"
+                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-2 px-4 text-slate-500 font-bold text-[11px] outline-none cursor-not-allowed opacity-80"
                     />
                   </div>
                 </div>
@@ -869,7 +869,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                      type="text"
                      value={formData.phone}
                      readOnly
-                     className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-3 px-4 text-slate-500 font-bold text-sm outline-none cursor-not-allowed opacity-80"
+                     className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-2 px-4 text-slate-500 font-bold text-[11px] outline-none cursor-not-allowed opacity-80"
                    />
                 </div>
 

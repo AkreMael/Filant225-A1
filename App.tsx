@@ -19,6 +19,7 @@ import NotificationsScreen from './components/NotificationsScreen';
 import EmergencyFormScreen from './components/EmergencyFormScreen';
 import ScannerOverlay, { extractQRInfo } from './components/ScannerOverlay';
 import AssistantQRScreen from './components/AssistantQRScreen';
+import MyQRCodeScreen from './components/MyQRCodeScreen';
 import PaymentConfirmationScreen from './components/PaymentConfirmationScreen';
 import ChatScreen from './components/ChatScreen';
 import LocationScreen from './components/LocationScreen';
@@ -321,7 +322,16 @@ const App: React.FC = () => {
           }
 
           if (userData && isMounted) {
-            const fullUser = { ...userData, userId: user.uid };
+            // Logic to preserve valid name/city if the recovered data is partial
+            const localUser = databaseService.getActiveUser();
+            let fullUser = { ...userData, userId: user.uid };
+            
+            if (localUser && localUser.phone === fullUser.phone) {
+                const isValid = (val: string | undefined) => val && !['Utilisateur', 'Inconnu', 'Non spécifiée', 'N/A', ''].includes(val);
+                if (!isValid(fullUser.name) && isValid(localUser.name)) fullUser.name = localUser.name;
+                if (!isValid(fullUser.city) && isValid(localUser.city)) fullUser.city = localUser.city;
+            }
+
             setCurrentUser(fullUser);
             databaseService.saveActiveUser(fullUser);
             if (isAuthChecking) {
@@ -769,6 +779,13 @@ const App: React.FC = () => {
           />;
           break;
       }
+      break;
+    case Tab.MyQRCode:
+      activeScreen = <MyQRCodeScreen 
+        user={displayUser!} 
+        onBack={() => setActiveTab(Tab.Menu)} 
+        onTriggerPayment={(context) => setPaymentConfirmationContext(context)}
+      />;
       break;
     case Tab.Offer:
         if (offerSubView === 'shop') {
