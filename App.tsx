@@ -785,6 +785,7 @@ const App: React.FC = () => {
         user={displayUser!} 
         onBack={() => setActiveTab(Tab.Menu)} 
         onTriggerPayment={(context) => setPaymentConfirmationContext(context)}
+        onStartRegistration={() => setShowFullRegistration(true)}
       />;
       break;
     case Tab.Offer:
@@ -986,15 +987,25 @@ const App: React.FC = () => {
             <AnimatePresence>
               {showFullRegistration && (
                 <motion.div 
-                  initial={{ opacity: 0, y: '100%' }}
-                  animate={{ opacity: 0, y: 0 }}
-                  exit={{ opacity: 0, y: '100%' }}
-                  className="absolute inset-0 z-[1100] bg-white transition-all duration-500"
-                  style={{ opacity: 1, transform: 'none' }} // Ensure it shows
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[1100] bg-white overflow-y-auto"
                 >
                   <SmartRegistrationScreen 
                     currentUser={currentUser}
-                    onComplete={() => setShowFullRegistration(false)}
+                    onComplete={() => {
+                        setShowFullRegistration(false);
+                        // Trigger payment process after registration
+                        window.dispatchEvent(new CustomEvent('trigger-payment-view', {
+                          detail: {
+                            title: "Frais de Dossier",
+                            amount: "310",
+                            waveLink: "https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=310",
+                            paymentType: "Inscription"
+                          }
+                        }));
+                    }}
                     onBack={() => setShowFullRegistration(false)}
                   />
                 </motion.div>

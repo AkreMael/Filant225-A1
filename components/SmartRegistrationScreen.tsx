@@ -257,6 +257,10 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
       });
       
       setIsSaved(true);
+      // Give a small delay so user can see the success state or just go directly
+      setTimeout(() => {
+        onComplete();
+      }, 1500);
     }
   };
 
@@ -811,7 +815,10 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                   <button
                     key={profile.id}
                     disabled={!profile.active}
-                    onClick={() => setSelectedProfile(profile.id as ProfileType)}
+                    onClick={() => {
+                      setSelectedProfile(profile.id as ProfileType);
+                      setStep(2);
+                    }}
                     className={`
                       relative p-4 rounded-3xl border-2 transition-all duration-300 text-left flex flex-col justify-between h-[120px]
                       ${!profile.active ? 'bg-slate-50 border-slate-100 opacity-60' : 
