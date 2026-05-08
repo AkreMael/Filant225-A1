@@ -238,6 +238,18 @@
         "profileType": { "type": "string" }
       },
       "required": ["userId", "name", "phone", "city", "status"]
+    },
+    "Mission": {
+      "title": "Mission",
+      "description": "Mission envoyée par un admin à un utilisateur.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "userId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "userId", "timestamp"]
     }
   },
   "firestore": {
@@ -296,6 +308,10 @@
     "/QRCodeActivations/{id}": {
       "schema": "QRCodeActivation",
       "description": "Collection pour la gestion des activations QR Code."
+    },
+    "/Missions/{id}": {
+      "schema": "Mission",
+      "description": "Collection des missions envoyées aux utilisateurs."
     }
   }
 }

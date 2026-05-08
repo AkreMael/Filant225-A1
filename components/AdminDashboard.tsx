@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db, rtdb } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as rtdbRef, onValue } from 'firebase/database';
 import { User } from '../types';
 import { 
@@ -25,7 +25,8 @@ import {
   MoreVertical,
   Eye,
   X,
-  FileText
+  FileText,
+  Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -49,6 +50,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<any>(null);
+  const [showMissionModal, setShowMissionModal] = useState(false);
+  const [missionForm, setMissionForm] = useState({ title: '', message: '' });
   const [viewingConversation, setViewingConversation] = useState<{ id: string, name: string, messages: any[] } | null>(null);
   
   // Data States
@@ -247,6 +250,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'scanner', label: 'Scanner', icon: Scan },
     { id: 'payments', label: 'Paiements', icon: CreditCard },
   ];
+
+  const handleSendMission = async () => {
+    if (!selectedItemForDetails || !missionForm.title || !missionForm.message) return;
+    
+    try {
+      await addDoc(collection(db, 'Missions'), {
+        title: missionForm.title,
+        message: missionForm.message,
+        userId: selectedItemForDetails.userId || selectedItemForDetails.phone,
+        timestamp: serverTimestamp()
+      });
+      
+      setShowMissionModal(false);
+      setMissionForm({ title: '', message: '' });
+      setSelectedItemForDetails(null);
+    } catch (error) {
+      console.error("Error sending mission:", error);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-slate-950 font-sans">
@@ -641,9 +663,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               </div>
 
               <div className="p-8 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-4">
-                 <button className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-green-600/20">
-                    Valider l'inscription
-                 </button>
+                  <button 
+                    onClick={() => setShowMissionModal(true)}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-green-600/20"
+                  >
+                     Message de mission
+                  </button>
                  <button 
                    onClick={() => {
                      onOpenChat(selectedItemForDetails.userId || selectedItemForDetails.phone, selectedItemForDetails.name || 'Utilisateur', 'Privee');
@@ -739,8 +764,73 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           </div>
         )}
       </AnimatePresence>
-    </div>
-  );
-};
+       {/* Mission Popup Modal */}
+       <AnimatePresence>
+         {showMissionModal && (
+           <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
+             <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setShowMissionModal(false)}
+               className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+             ></motion.div>
+             
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 border border-white/10"
+             >
+               <div className="flex justify-between items-center mb-8">
+                  <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center text-white">
+                        <Send size={20} />
+                     </div>
+                     <h3 className="text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white">Nouvelle Mission</h3>
+                  </div>
+                  <button onClick={() => setShowMissionModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl">
+                     <X size={20} />
+                  </button>
+               </div>
+
+               <div className="space-y-6">
+                  <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Titre de mission</label>
+                     <input 
+                        type="text"
+                        value={missionForm.title}
+                        onChange={(e) => setMissionForm({...missionForm, title: e.target.value})}
+                        placeholder="Ex: Mission plombier en cours"
+                        className="w-full bg-gray-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm font-bold shadow-inner outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                     />
+                  </div>
+
+                  <div>
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2 block">Message</label>
+                     <textarea 
+                        value={missionForm.message}
+                        onChange={(e) => setMissionForm({...missionForm, message: e.target.value})}
+                        placeholder="Détails de la mission..."
+                        rows={4}
+                        className="w-full bg-gray-50 dark:bg-slate-800 border-none rounded-2xl px-5 py-4 text-sm font-bold shadow-inner outline-none focus:ring-2 focus:ring-green-500/50 transition-all resize-none"
+                     ></textarea>
+                  </div>
+
+                  <button 
+                    onClick={handleSendMission}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
+                  >
+                     <Send size={16} />
+                     Envoyer la mission
+                  </button>
+               </div>
+             </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
+     </div>
+   );
+ };
 
 export default AdminDashboard;

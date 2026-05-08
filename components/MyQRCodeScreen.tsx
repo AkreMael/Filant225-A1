@@ -5,7 +5,8 @@ import { databaseService } from '../services/databaseService';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { Briefcase, Calendar, Clock, ChevronRight } from 'lucide-react';
 
 interface MyQRCodeScreenProps {
   user: User;
@@ -17,10 +18,27 @@ interface MyQRCodeScreenProps {
 const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTriggerPayment, onStartRegistration }) => {
   const [qrData, setQrData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showMissions, setShowMissions] = useState(false);
+  const [missions, setMissions] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user.phone) return;
     const sanitizedPhone = user.phone.replace(/\D/g, '');
+    
+    // Listen to missions for this user
+    const missionsQuery = query(
+      collection(db, 'Missions'),
+      where('userId', '==', user.phone), // Try both phone and sanitized if needed, but usually it's the raw phone
+      orderBy('timestamp', 'desc')
+    );
+
+    const unsubMissions = onSnapshot(missionsQuery, (snap) => {
+      setMissions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (err) => {
+      // Fallback if userId is different or query fails (e.g. missing index)
+      console.warn("Missions listener error:", err);
+    });
+
     const activationRef = doc(db, 'QRCodeActivations', sanitizedPhone);
     
     const unsubscribe = onSnapshot(activationRef, (doc) => {
@@ -38,7 +56,10 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubMissions();
+    };
   }, [user.phone]);
 
   const generateQRCodeValue = () => {
@@ -180,8 +201,16 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
                              </p>
                           </div>
                       </div>
-                      <button className="w-full mt-4 bg-orange-600 hover:bg-orange-700 text-white font-black py-5 rounded-[2rem] shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest">
+                      <button 
+                        onClick={() => setShowMissions(true)}
+                        className="w-full mt-4 bg-orange-600 hover:bg-orange-700 text-white font-black py-5 rounded-[2rem] shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3"
+                      >
                          Mes missions
+                         {missions.length > 0 && (
+                            <span className="w-5 h-5 bg-white text-orange-600 rounded-full flex items-center justify-center text-[10px]">
+                                {missions.length}
+                            </span>
+                         )}
                       </button>
                       </>
                   )}
@@ -197,6 +226,98 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
               </div>
           </div>
       </main>
+
+      {/* Missions Overlay */}
+      <AnimatePresence>
+        {showMissions && (
+          <motion.div 
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            className="fixed inset-0 z-[100] bg-white flex flex-col"
+          >
+            <header className="p-5 flex items-center bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10 transition-all">
+                <button onClick={() => setShowMissions(false)} className="p-2.5 bg-gray-50 rounded-full active:scale-90 transition-transform">
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <h1 className="flex-1 text-center font-black text-lg text-slate-900 uppercase tracking-tight mr-10 italic">MES MISSIONS</h1>
+            </header>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide pb-20">
+                <div className="flex justify-between items-center px-2">
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Missions</h2>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Historique de vos interventions</p>
+                    </div>
+                    <div className="bg-orange-500 text-white px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/20">
+                        Total: {missions.length}
+                    </div>
+                </div>
+
+                {missions.length > 0 ? (
+                    <div className="grid gap-6">
+                        {missions.map((mission, idx) => (
+                            <motion.div 
+                               initial={{ opacity: 0, y: 20 }}
+                               animate={{ opacity: 1, y: 0 }}
+                               transition={{ delay: idx * 0.1 }}
+                               key={mission.id} 
+                               className="bg-white rounded-[2.5rem] p-6 shadow-xl border border-gray-100 group relative overflow-hidden active:scale-[0.98] transition-all"
+                            >
+                                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-150 transition-transform duration-700">
+                                    <Briefcase size={80} className="text-orange-600" />
+                                </div>
+
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="bg-orange-100 text-orange-600 w-10 h-10 rounded-2xl flex items-center justify-center font-black">
+                                       {missions.length - idx}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                                        Validé
+                                    </div>
+                                </div>
+
+                                <h3 className="font-black text-lg text-slate-900 uppercase tracking-tight mb-2 leading-tight">
+                                    {mission.title}
+                                </h3>
+                                
+                                <p className="text-slate-600 text-sm font-medium leading-relaxed mb-6">
+                                    {mission.message}
+                                </p>
+
+                                <div className="flex items-center justify-between pt-4 border-t border-dashed border-gray-100">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-1.5 text-gray-400">
+                                            <Calendar size={12} />
+                                            <span className="text-[9px] font-black uppercase">{mission.timestamp ? new Date(mission.timestamp.seconds * 1000).toLocaleDateString('fr-FR') : 'Date...'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-gray-400">
+                                            <Clock size={12} />
+                                            <span className="text-[9px] font-black uppercase">{mission.timestamp ? new Date(mission.timestamp.seconds * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'Heure...'}</span>
+                                        </div>
+                                    </div>
+                                    <button className="text-orange-600 w-8 h-8 flex items-center justify-center hover:bg-orange-50 rounded-full transition-colors">
+                                        <ChevronRight size={18} />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 text-center">
+                        <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 scale-110">
+                            <Briefcase size={40} className="text-slate-200" />
+                        </div>
+                        <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] max-w-[200px] mx-auto leading-relaxed">
+                            Vous n'avez pas encore de mission assignée.
+                        </p>
+                    </div>
+                )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <footer className="p-8 text-center">
           <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">Signature Numérique • Filant°225</p>

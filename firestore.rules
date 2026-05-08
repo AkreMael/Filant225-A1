@@ -52,8 +52,13 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    match /Inscriptions/{id} {
+    match /QRCodeActivations/{id} {
       allow read, write: if isAuthenticated();
+    }
+
+    match /Missions/{id} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.auth.token.email == "filantmael225@gmail.com");
+      allow write: if isAuthenticated() && request.auth.token.email == "filantmael225@gmail.com";
     }
 
     // Default deny
