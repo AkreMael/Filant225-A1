@@ -272,9 +272,17 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
                                     <div className="bg-orange-100 text-orange-600 w-10 h-10 rounded-2xl flex items-center justify-center font-black">
                                        {missions.length - idx}
                                     </div>
-                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[9px] font-black uppercase tracking-widest">
-                                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                                        Validé
+                                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                        mission.status === 'MISSION EFFECTUÉE' ? 'bg-blue-50 text-blue-600' :
+                                        mission.status === 'MISSION EN COURS' ? 'bg-orange-50 text-orange-600' :
+                                        'bg-green-50 text-green-600'
+                                    }`}>
+                                        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                                            mission.status === 'MISSION EFFECTUÉE' ? 'bg-blue-500' :
+                                            mission.status === 'MISSION EN COURS' ? 'bg-orange-500' :
+                                            'bg-green-500'
+                                        }`}></div>
+                                        {mission.status || 'ENVOYÉ'}
                                     </div>
                                 </div>
 

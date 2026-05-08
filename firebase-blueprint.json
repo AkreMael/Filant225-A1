@@ -247,9 +247,10 @@
         "title": { "type": "string" },
         "message": { "type": "string" },
         "userId": { "type": "string" },
+        "status": { "type": "string", "enum": ["ENVOYÉ", "MISSION EN COURS", "MISSION EFFECTUÉE"] },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "message", "userId", "timestamp"]
+      "required": ["title", "message", "userId", "status", "timestamp"]
     }
   },
   "firestore": {

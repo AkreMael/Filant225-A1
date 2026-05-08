@@ -251,7 +251,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'payments', label: 'Paiements', icon: CreditCard },
   ];
 
-  const handleSendMission = async () => {
+  const handleSendMission = async (status: string) => {
     if (!selectedItemForDetails || !missionForm.title || !missionForm.message) return;
     
     try {
@@ -259,6 +259,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
         title: missionForm.title,
         message: missionForm.message,
         userId: selectedItemForDetails.userId || selectedItemForDetails.phone,
+        status: status,
         timestamp: serverTimestamp()
       });
       
@@ -817,13 +818,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                      ></textarea>
                   </div>
 
-                  <button 
-                    onClick={handleSendMission}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
-                  >
-                     <Send size={16} />
-                     Envoyer la mission
-                  </button>
+                  <div className="grid gap-3">
+                    <button 
+                      onClick={() => handleSendMission('ENVOYÉ')}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
+                    >
+                       <Send size={14} />
+                       Envoyer la mission
+                    </button>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <button 
+                        onClick={() => handleSendMission('MISSION EN COURS')}
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+                      >
+                         Mission en cours
+                      </button>
+                      <button 
+                        onClick={() => handleSendMission('MISSION EFFECTUÉE')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+                      >
+                         Mission effectuée
+                      </button>
+                    </div>
+                  </div>
                </div>
              </motion.div>
            </div>
