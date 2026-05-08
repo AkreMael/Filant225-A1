@@ -173,6 +173,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 <tr key={i} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors">
                   {keys.map((key, j) => {
                     let val = item[key];
+                    if (key === 'activity') {
+                      const profile = item.profileType;
+                      const d = item.details || {};
+                      let activityVal = '-';
+                      if (profile === 'Travailleur') activityVal = d.job;
+                      else if (profile === 'Entreprise') activityVal = d.companyName;
+                      else if (profile === 'Agence') activityVal = d.agencyName;
+                      else if (profile === 'Propriétaire') activityVal = d.equipmentType;
+                      
+                      return (
+                        <td key={j} className="px-6 py-4">
+                          <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight bg-blue-50 dark:bg-blue-600/10 px-3 py-1.5 rounded-xl border border-blue-100 dark:border-blue-500/20">
+                            {activityVal || '-'}
+                          </span>
+                        </td>
+                      );
+                    }
+
                     if (key === 'details') {
                       return (
                         <td key={j} className="px-6 py-4">
@@ -444,8 +462,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               )}
 
               {activeTab === 'inscriptions' && renderTable(
-                ['Profil', 'Nom', 'Ville', 'Numéro', 'Détails', 'Status', 'Date'],
-                ['profileType', 'name', 'city', 'phone', 'details', 'status', 'timestamp'],
+                ['Profil', 'Activité / Identité', 'Nom', 'Ville', 'Numéro', 'Détails', 'Status', 'Date'],
+                ['profileType', 'activity', 'name', 'city', 'phone', 'details', 'status', 'timestamp'],
                 data.inscriptions
               )}
 
