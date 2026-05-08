@@ -251,6 +251,23 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "message", "userId", "status", "timestamp"]
+    },
+    "ServiceRequest": {
+      "title": "ServiceRequest",
+      "description": "Une demande de service soumise par un client.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "serviceTitle": { "type": "string" },
+        "formType": { "type": "string" },
+        "answers": { "type": "object" },
+        "totalPrice": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "phone", "city", "serviceTitle", "formType", "answers", "timestamp"]
     }
   },
   "firestore": {
@@ -313,6 +330,10 @@
     "/Missions/{id}": {
       "schema": "Mission",
       "description": "Collection des missions envoyées aux utilisateurs."
+    },
+    "/ServiceRequests/{id}": {
+      "schema": "ServiceRequest",
+      "description": "Collection des demandes de services soumises par les clients."
     }
   }
 }

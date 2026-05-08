@@ -1147,6 +1147,19 @@ export const databaseService = {
     return databaseService.onUnreadPrivateMessagesCount(chatUserId, callback);
   },
 
+  saveServiceRequest: async (requestData: any) => {
+    try {
+      const docRef = await addDoc(collection(db, 'ServiceRequests'), {
+        ...requestData,
+        timestamp: serverTimestamp()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error("Error saving service request:", error);
+      throw error;
+    }
+  },
+
   saveAssistantChatMessage: async (chatUserId: string, message: any) => {
     return databaseService.saveTypedChatMessage('Assistant', chatUserId, message);
   },

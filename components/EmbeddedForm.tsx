@@ -208,6 +208,18 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     };
 
     try {
+        // Save as a service request for the admin dashboard
+        await databaseService.saveServiceRequest({
+            userId: chatUserId,
+            userName: user.name || 'Utilisateur',
+            phone: user.phone,
+            city: user.city || 'Non spécifiée',
+            serviceTitle: title,
+            formType,
+            answers,
+            totalPrice
+        });
+
         await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
         
         // Si on a explicitement demandé WhatsApp, on l'ouvre

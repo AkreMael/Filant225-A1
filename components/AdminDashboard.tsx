@@ -43,13 +43,15 @@ type AdminTab =
   | 'qrcodes'
   | 'private' 
   | 'scanner' 
-  | 'payments';
+  | 'payments'
+  | 'requests';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [showMissionModal, setShowMissionModal] = useState(false);
   const [missionForm, setMissionForm] = useState({ title: '', message: '' });
   const [viewingConversation, setViewingConversation] = useState<{ id: string, name: string, messages: any[] } | null>(null);
@@ -62,12 +64,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     assistant: [],
     privateMsgs: [],
     scanner: [],
-    payments: []
+    payments: [],
+    requests: []
   });
 
   useEffect(() => {
     setLoading(true);
     
+    // 0. Demandes Clients
+    const unsubRequests = onSnapshot(query(collection(db, 'ServiceRequests'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
+      setData(prev => ({ ...prev, requests: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+    });
     // 1. Connexions
     const unsubConns = onSnapshot(query(collection(db, 'Connexions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
       setData(prev => ({ ...prev, connections: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
@@ -124,6 +131,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       unsubPrivate();
       unsubScans();
       unsubPayments();
+      unsubRequests();
     };
   }, []);
 
@@ -131,6 +139,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { label: 'Inscriptions', value: data.inscriptions.length, icon: Briefcase, color: 'text-blue-500' },
     { label: 'Privé', value: data.privateMsgs.length, icon: Mail, color: 'text-green-500' },
     { label: 'Paiements', value: data.payments.length, icon: CreditCard, color: 'text-orange-500' },
+    { label: 'Demandes', value: data.requests.length, icon: FileText, color: 'text-rose-500' },
     { label: 'Scanner', value: data.scanner.length, icon: Scan, color: 'text-purple-500' },
   ];
 
@@ -267,6 +276,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'private', label: 'Messagerie Privée', icon: Mail },
     { id: 'scanner', label: 'Scanner', icon: Scan },
     { id: 'payments', label: 'Paiements', icon: CreditCard },
+    { id: 'requests', label: 'Demandes clients', icon: FileText },
   ];
 
   const handleSendMission = async (status: string) => {
@@ -548,6 +558,68 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 ['userName', 'userPhone', 'paymentType', 'amount', 'status', 'timestamp'],
                 data.payments
               )}
+
+              {activeTab === 'requests' && (
+                <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-slate-800">
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nom</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ville</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Numéro</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
+                        {filteredData(data.requests).length > 0 ? filteredData(data.requests).map((req, i) => (
+                          <tr key={i} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors">
+                            <td className="px-6 py-4 font-bold text-xs uppercase text-slate-800 dark:text-gray-200">
+                              {req.userName}
+                            </td>
+                            <td className="px-6 py-4 font-bold text-xs uppercase text-slate-600 dark:text-gray-400">
+                              {req.city}
+                            </td>
+                            <td className="px-6 py-4 font-bold text-xs uppercase text-slate-600 dark:text-gray-400">
+                              {req.phone}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="px-3 py-1 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase rounded-lg border border-rose-100 dark:border-rose-500/20">
+                                {req.serviceTitle}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-center gap-2">
+                                <button 
+                                  onClick={() => onOpenChat(req.userId || req.phone, req.userName, 'Privee')}
+                                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                                >
+                                  <MessageSquare size={14} />
+                                  Répondre
+                                </button>
+                                <button 
+                                  onClick={() => setSelectedRequest(req)}
+                                  className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-gray-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition-all active:scale-95"
+                                >
+                                  <FileText size={14} />
+                                  Détails
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-bold italic">
+                              Aucune demande trouvée
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </main>
@@ -783,6 +855,108 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           </div>
         )}
       </AnimatePresence>
+      
+      {/* Request Details Modal */}
+      <AnimatePresence>
+        {selectedRequest && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedRequest(null)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+            ></motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] border border-white/10"
+            >
+              <div className="p-8 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-600/20">
+                        <FileText size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Détails Demande</h2>
+                        <span className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em]">{selectedRequest.serviceTitle}</span>
+                    </div>
+                 </div>
+                 <button 
+                   onClick={() => setSelectedRequest(null)}
+                   className="p-3 bg-gray-100 dark:bg-slate-800 hover:bg-rose-500 hover:text-white rounded-2xl transition-all active:scale-90"
+                 >
+                    <X size={20} />
+                 </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+                 <div className="space-y-4">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Informations Client</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Nom</p>
+                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedRequest.userName}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone</p>
+                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedRequest.phone}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Ville</p>
+                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedRequest.city}</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total</p>
+                           <p className="text-sm font-bold text-rose-600 dark:text-rose-400 uppercase">{selectedRequest.totalPrice} CFA</p>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Date</p>
+                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{formatDate(selectedRequest.timestamp)}</p>
+                        </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-4">
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Réponses du Formulaire</h4>
+                    <div className="grid grid-cols-1 gap-4">
+                        {typeof selectedRequest.answers === 'object' && selectedRequest.answers !== null ? (
+                           Object.entries(selectedRequest.answers)
+                             .filter(([_, v]) => v !== '' && v !== null && v !== undefined)
+                             .map(([key, val], idx) => (
+                               <div key={idx} className="p-5 bg-rose-50/30 dark:bg-rose-500/5 rounded-2xl border border-rose-100/50 dark:border-rose-500/10 flex justify-between items-center">
+                                  <span className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.15em] shrink-0">{key}</span>
+                                  <span className="text-xs font-black text-slate-700 dark:text-gray-200 uppercase tracking-tight text-right ml-4">{String(val)}</span>
+                               </div>
+                             ))
+                        ) : (
+                          <div className="p-8 text-center text-gray-400 italic font-bold text-sm">
+                             Aucune information disponible.
+                          </div>
+                        )}
+                    </div>
+                 </div>
+              </div>
+
+              <div className="p-8 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-4">
+                 <button 
+                   onClick={() => {
+                     onOpenChat(selectedRequest.userId || selectedRequest.phone, selectedRequest.userName, 'Privee');
+                     setSelectedRequest(null);
+                   }}
+                   className="flex-1 bg-blue-600 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                 >
+                    <MessageSquare size={14} />
+                    Répondre
+                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
        {/* Mission Popup Modal */}
        <AnimatePresence>
          {showMissionModal && (
