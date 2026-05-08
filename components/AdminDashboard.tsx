@@ -644,8 +644,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                  <button className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-green-600/20">
                     Valider l'inscription
                  </button>
-                 <button className="flex-1 bg-slate-900 dark:bg-slate-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95">
-                    Mettre en attente
+                 <button 
+                   onClick={() => {
+                     onOpenChat(selectedItemForDetails.userId || selectedItemForDetails.phone, selectedItemForDetails.name || 'Utilisateur', 'Privee');
+                     setSelectedItemForDetails(null);
+                   }}
+                   className="flex-1 bg-slate-900 dark:bg-slate-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2"
+                 >
+                    <MessageSquare size={14} />
+                    Répondre
                  </button>
               </div>
             </motion.div>

@@ -169,6 +169,7 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
                           </button>
                       </div>
                   ) : (
+                      <>
                       <div className="bg-green-500 rounded-[2.5rem] p-6 text-white shadow-xl text-center relative overflow-hidden group">
                           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
                           <h3 className="font-black text-xl uppercase tracking-tighter mb-1">FÉLICITATIONS !</h3>
@@ -179,6 +180,10 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
                              </p>
                           </div>
                       </div>
+                      <button className="w-full mt-4 bg-orange-600 hover:bg-orange-700 text-white font-black py-5 rounded-[2rem] shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest">
+                         Mes missions
+                      </button>
+                      </>
                   )}
 
                   {step === 5 && (
