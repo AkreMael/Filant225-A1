@@ -265,9 +265,10 @@
         "formType": { "type": "string" },
         "answers": { "type": "object" },
         "totalPrice": { "type": "string" },
+        "readStatus": { "type": "string", "enum": ["NON LU", "LU"] },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "userName", "phone", "city", "serviceTitle", "formType", "answers", "timestamp"]
+      "required": ["userId", "userName", "phone", "city", "serviceTitle", "formType", "answers", "readStatus", "timestamp"]
     }
   },
   "firestore": {

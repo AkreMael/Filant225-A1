@@ -217,7 +217,8 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
             serviceTitle: title,
             formType,
             answers,
-            totalPrice
+            totalPrice,
+            readStatus: 'NON LU'
         });
 
         await databaseService.savePrivateChatMessage(chatUserId, chatMsg);

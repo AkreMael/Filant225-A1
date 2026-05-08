@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db, rtdb } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
 import { ref as rtdbRef, onValue } from 'firebase/database';
 import { User } from '../types';
 import { 
@@ -299,6 +299,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     }
   };
 
+  const handleViewRequestDetails = async (req: any) => {
+    setSelectedRequest(req);
+    if (req.readStatus === 'NON LU') {
+      try {
+        const reqRef = doc(db, 'ServiceRequests', req.id);
+        await updateDoc(reqRef, {
+          readStatus: 'LU'
+        });
+      } catch (error) {
+        console.error("Error updating read status:", error);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-slate-950 font-sans">
       {/* Top Header */}
@@ -569,6 +583,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ville</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Numéro</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Service</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</th>
                           <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Actions</th>
                         </tr>
                       </thead>
@@ -590,6 +605,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               </span>
                             </td>
                             <td className="px-6 py-4">
+                              {req.readStatus === 'NON LU' ? (
+                                <span className="px-3 py-1 bg-amber-100 text-amber-700 text-[9px] font-black uppercase rounded-full animate-pulse border border-amber-200 shadow-sm">
+                                  Non lu
+                                </span>
+                              ) : (
+                                <span className="px-3 py-1 bg-gray-100 text-gray-400 text-[9px] font-black uppercase rounded-full border border-gray-200">
+                                  Lu
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4">
                               <div className="flex items-center justify-center gap-2">
                                 <button 
                                   onClick={() => onOpenChat(req.userId || req.phone, req.userName, 'Privee')}
@@ -599,7 +625,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                   Répondre
                                 </button>
                                 <button 
-                                  onClick={() => setSelectedRequest(req)}
+                                  onClick={() => handleViewRequestDetails(req)}
                                   className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-gray-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-slate-200 transition-all active:scale-95"
                                 >
                                   <FileText size={14} />
