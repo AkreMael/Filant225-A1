@@ -43,7 +43,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [deleteConfirm, setDeleteConfirm] = useState<{show: boolean, messageId: string | null}>({show: false, messageId: null});
+  const [deleteConfirm, setDeleteConfirm] = useState<{show: boolean, messageId: string | null, isBulk?: boolean}>({show: false, messageId: null});
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +53,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     ? ((targetUser.phone || '').replace(/\D/g, '') || targetUser.userId || targetUser.id || `${targetUser.name}_${(targetUser.phone || '').replace(/\D/g, '')}`)
     : ((currentUser.phone || '').replace(/\D/g, '') || currentUser.userId || currentUser.id || `${currentUser.name}_${(currentUser.phone || '').replace(/\D/g, '')}`);
 
-  const chatTitle = isAdmin && targetUser ? `Chat ${chatTypeLabel} avec ${targetUser.name}` : `Message ${chatTypeLabel} (Filant 225)`;
+  const chatTitle = isAdmin && targetUser ? `${targetUser.name}` : `Messagerie (Filant 225)`;
 
   useEffect(() => {
     let unsubscribe: any;
@@ -64,27 +65,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         : databaseService.onPrivateChatUpdate;
 
       unsubscribe = onUpdate(chatUserId, (msgs) => {
-        setMessages(prev => {
-          const mergedMap = new Map();
-          
-          // Local messages
-          prev.forEach(m => {
-            const key = m.id || `${m.text}_${m.timestamp}`;
-            mergedMap.set(key, m);
-          });
-          
-          // Firebase messages
-          msgs.forEach(m => {
-            const key = m.id || `${m.text}_${m.timestamp}`;
-            mergedMap.set(key, m);
-          });
-          
-          return Array.from(mergedMap.values()).sort((a, b) => {
-            const timeDiff = (a.timestamp || 0) - (b.timestamp || 0);
-            if (timeDiff !== 0) return timeDiff;
-            return (a.id || "").localeCompare(b.id || "");
-          });
-        });
+        setMessages(msgs);
         setIsLoading(false);
         
         // Mark messages from the other side as read
@@ -110,7 +91,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         unsubscribe();
       }
     };
-  }, [chatUserId, type]);
+  }, [chatUserId, type, isAdmin]);
 
   const displayMessages = useMemo(() => {
     if (isAdmin) return messages;
@@ -176,6 +157,16 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   };
 
   const handleDeleteMessage = async () => {
+    if (deleteConfirm.isBulk) {
+        if (selectedIds.length === 0) return;
+        const success = await databaseService.deleteMultipleTypedChatMessages(type as any, chatUserId, selectedIds);
+        if (success) {
+            setSelectedIds([]);
+            setDeleteConfirm({show: false, messageId: null});
+        }
+        return;
+    }
+
     if (!deleteConfirm.messageId) return;
     
     const deleteFunction = type === 'Assistant'
@@ -186,6 +177,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     if (success) {
       setDeleteConfirm({show: false, messageId: null});
     }
+  };
+
+  const toggleSelection = (id: string) => {
+    if (!isAdmin) return;
+    setSelectedIds(prev => 
+        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
   const handleWhatsAppContact = (data: any) => {
@@ -211,17 +209,29 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
 
   return (
     <div className="flex flex-col h-full bg-slate-50 animate-in fade-in duration-300">
-      <header className="bg-white border-b border-slate-200 p-4 flex items-center gap-3 sticky top-0 z-20 shadow-sm">
-        <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
-          <BackIcon />
-        </button>
-        <div className="flex-1">
-          <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest truncate">{chatTitle}</h2>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">En ligne</span>
+      <header className="bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
+            <BackIcon />
+          </button>
+          <div>
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest truncate">{chatTitle}</h2>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">En ligne</span>
+            </div>
           </div>
         </div>
+
+        {isAdmin && selectedIds.length > 0 && (
+          <button 
+            onClick={() => setDeleteConfirm({show: true, messageId: null, isBulk: true})}
+            className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all active:scale-95 flex items-center gap-2"
+          >
+            <TrashIcon />
+            <span className="text-[10px] font-black uppercase tracking-widest">{selectedIds.length}</span>
+          </button>
+        )}
       </header>
 
       {isAdmin && (
@@ -259,15 +269,21 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
           displayMessages.map((msg, idx) => {
             const isMe = (isAdmin && msg.sender === 'admin') || (!isAdmin && msg.sender === 'user');
             const messageId = msg.id || `msg_${idx}`;
+            const isSelected = selectedIds.includes(messageId);
             
             // Handle special messages
             const messageText = msg.text || msg.message || msg.whatsappMessage || "";
             let content: React.ReactNode = <Linkify text={messageText} />;
-            let specialAction: React.ReactNode = null;
 
             return (
-              <div key={messageId} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300 group`}>
-                <div className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm relative select-text touch-auto overflow-hidden ${
+              <div 
+                key={messageId} 
+                onClick={() => isAdmin && toggleSelection(messageId)}
+                className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300 group ${isAdmin ? 'cursor-pointer' : ''}`}
+              >
+                <div className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm relative select-text touch-auto overflow-hidden transition-all duration-200 ${
+                  isSelected ? 'ring-2 ring-orange-400 ring-offset-2 scale-[0.98]' : ''
+                } ${
                   isMe 
                     ? 'bg-orange-500 text-white rounded-tr-none' 
                     : 'bg-white text-slate-800 rounded-tl-none border border-slate-100'
@@ -316,13 +332,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
                             <SpeakerIcon text={msg.text} className="p-1 opacity-50" />
                         )}
                     </div>
-                    <button 
-                      onClick={() => setDeleteConfirm({show: true, messageId: messageId})}
-                      className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-black/10 ${isMe ? 'text-white/40' : 'text-slate-300'}`}
-                      title="Supprimer ce message"
-                    >
-                      <TrashIcon />
-                    </button>
+                    
+                    {isAdmin && (
+                      <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirm({show: true, messageId: messageId});
+                        }}
+                        className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-black/10 ${isMe ? 'text-white/40' : 'text-slate-300'}`}
+                        title="Supprimer ce message"
+                      >
+                        <TrashIcon />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -370,9 +392,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <TrashIcon />
             </div>
-            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-2">Supprimer le message</h3>
+            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-2">
+              {deleteConfirm.isBulk ? `Supprimer ${selectedIds.length} messages` : 'Supprimer le message'}
+            </h3>
             <p className="text-xs font-bold text-slate-500 leading-relaxed mb-8">
-              Voulez-vous supprimer ce message ? Cette action est irréversible.
+              {deleteConfirm.isBulk 
+                ? "Voulez-vous supprimer ces messages ? Cette action est irréversible." 
+                : "Voulez-vous supprimer ce message ? Cette action est irréversible."}
             </p>
             <div className="flex flex-col gap-3">
               <button 
@@ -382,7 +408,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
                 Oui, supprimer
               </button>
               <button 
-                onClick={() => setDeleteConfirm({show: false, messageId: null})}
+                onClick={() => setDeleteConfirm({show: false, messageId: null, isBulk: false})}
                 className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] active:scale-95 transition-transform"
               >
                 Annuler

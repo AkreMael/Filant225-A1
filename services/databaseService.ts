@@ -739,7 +739,7 @@ export const databaseService = {
     try {
       const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
     } catch (e) {
       handleFirestoreError(e, OperationType.LIST, 'Inscriptions');
     }
@@ -1040,8 +1040,8 @@ export const databaseService = {
     const q = query(collection(db, 'Clients', sanitizedPhone, 'notifications'), orderBy('timestamp', 'desc'));
     return onSnapshot(q, (snapshot) => {
       const notifications = snapshot.docs.map(doc => ({
-          id: doc.id,
           ...doc.data(),
+          id: doc.id,
           timestamp: doc.data().timestamp?.toMillis() || Date.now()
       } as Notification));
       callback(notifications);
@@ -1202,20 +1202,50 @@ export const databaseService = {
       };
 
       // 1. Save to the user's specific conversation for sync across devices
-      await addDoc(collection(db, collectionName, userId, 'messages'), docData);
+      // If message has an ID, use it as the document ID for absolute consistency
+      if (message.id) {
+        await setDoc(doc(db, collectionName, userId, 'messages', message.id), docData);
+      } else {
+        await addDoc(collection(db, collectionName, userId, 'messages'), docData);
+      }
       
       // 2. Save to the global history for admin overview ONLY if it's from user or a form
       // This respects the rule: "Admin database must ONLY contain user-sent messages/forms"
       if (message.sender === 'user' || message.type === 'assistant_request' || message.type === 'form_submission' || message.type === 'status_submission') {
-        await addDoc(collection(db, collectionName), {
-          ...docData,
-          chatType: type
-        });
+        if (message.id) {
+          await setDoc(doc(db, collectionName, message.id), {
+            ...docData,
+            chatType: type
+          });
+        } else {
+          await addDoc(collection(db, collectionName), {
+            ...docData,
+            chatType: type
+          });
+        }
       }
 
       return true;
     } catch (e) {
       console.error(`Error saving ${type} chat message:`, e);
+      return false;
+    }
+  },
+
+  deleteMultipleTypedChatMessages: async (type: 'Assistant' | 'Privee', chatUserId: string, messageIds: string[]) => {
+    try {
+      const userId = chatUserId.replace(/\D/g, '');
+      const collectionName = `Messagerie${type}`;
+      const batch = writeBatch(db);
+      
+      messageIds.forEach(id => {
+        batch.delete(doc(db, collectionName, userId, 'messages', id));
+      });
+      
+      await batch.commit();
+      return true;
+    } catch (e) {
+      console.error(`Error deleting multiple ${type} messages:`, e);
       return false;
     }
   },
@@ -1240,7 +1270,7 @@ export const databaseService = {
         const data = doc.data();
         return {
           ...data,
-          id: data.id || doc.id,
+          id: doc.id, // Always use the Firestore document ID for CRUD operations
           timestamp: data.timestamp?.toMillis ? data.timestamp.toMillis() : (data.timestamp || Date.now())
         };
       });

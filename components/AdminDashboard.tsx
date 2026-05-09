@@ -90,24 +90,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
     // 2. Inscriptions
     const unsubInscriptions = onSnapshot(query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
-      setData(prev => ({ ...prev, inscriptions: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+      setData(prev => ({ ...prev, inscriptions: snap.docs.map(doc => ({ ...doc.data(), id: doc.id })) }));
     });
 
     // 2b. QR Codes
     const unsubQRCodes = onSnapshot(query(collection(db, 'QRCodeActivations'), orderBy('updatedAt', 'desc'), limit(150)), (snap) => {
-      setData(prev => ({ ...prev, qrCodes: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+      setData(prev => ({ ...prev, qrCodes: snap.docs.map(doc => ({ ...doc.data(), id: doc.id })) }));
     });
 
     // 3. Messagerie Privée (Manual Chats)
     const unsubPrivate = onSnapshot(query(collection(db, 'MessageriePrivee'), orderBy('timestamp', 'desc'), limit(300)), (snap) => {
-      setData(prev => ({ ...prev, privateMsgs: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+      setData(prev => ({ ...prev, privateMsgs: snap.docs.map(doc => ({ ...doc.data(), id: doc.id })) }));
     });
 
     // 3. Scanner (RTDB + Firestore History)
     const unsubScans = onSnapshot(query(collection(db, 'HistoriqueScans'), orderBy('syncedAt', 'desc'), limit(200)), (snap) => {
       const firestoreScans = snap.docs.map(doc => ({ 
-        id: doc.id, 
         ...doc.data(),
+        id: doc.id, 
         source: 'Firestore'
       }));
       setData(prev => {
@@ -133,7 +133,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
     // 5. Missions
     const unsubMissions = onSnapshot(query(collection(db, 'Missions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
-      setData(prev => ({ ...prev, missions: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+      setData(prev => ({ ...prev, missions: snap.docs.map(doc => ({ ...doc.data(), id: doc.id })) }));
     });
 
     setLoading(false);
@@ -203,18 +203,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       if (itemToDelete.rtdbPath) {
         const { remove, ref } = await import('firebase/database');
         await remove(rtdbRef(rtdb, itemToDelete.rtdbPath));
-      } else if (itemToDelete.collectionName === 'MessageriePrivee_Thread') {
-        const { deleteDoc, doc, getDocs, collection, query, where } = await import('firebase/firestore');
-        const q = query(collection(db, 'MessageriePrivee'), where('userId', '==', itemToDelete.id));
+      } else if (itemToDelete.collectionName === 'MessageriePrivee_Thread' || itemToDelete.collectionName === 'MessagerieAssistant_Thread') {
+        const { deleteDoc, doc, getDocs, collection, query, where, writeBatch } = await import('firebase/firestore');
+        
+        const type = itemToDelete.collectionName === 'MessageriePrivee_Thread' ? 'Privee' : 'Assistant';
+        const collectionName = `Messagerie${type}`;
+        
+        const batch = writeBatch(db);
+
+        // 1. Delete from global overview
+        const q = query(collection(db, collectionName), where('userId', '==', itemToDelete.id));
         const snap = await getDocs(q);
-        const batch = snap.docs.map(d => deleteDoc(doc(db, 'MessageriePrivee', d.id)));
+        snap.docs.forEach(d => batch.delete(d.ref));
         
-        // Also check if they used phone as ID
-        const q2 = query(collection(db, 'MessageriePrivee'), where('phone', '==', itemToDelete.id));
+        // Also check phone if userId search was empty or for redundancy
+        const q2 = query(collection(db, collectionName), where('phone', '==', itemToDelete.id));
         const snap2 = await getDocs(q2);
-        const batch2 = snap2.docs.map(d => deleteDoc(doc(db, 'MessageriePrivee', d.id)));
+        snap2.docs.forEach(d => batch.delete(d.ref));
         
-        await Promise.all([...batch, ...batch2]);
+        // 2. Delete the user's subcollection messages (this is what the user actually sees)
+        const userMessagesRef = collection(db, collectionName, itemToDelete.id, 'messages');
+        const userMessagesSnap = await getDocs(userMessagesRef);
+        userMessagesSnap.docs.forEach(d => batch.delete(d.ref));
+        
+        await batch.commit();
       } else {
         const { deleteDoc, doc } = await import('firebase/firestore');
         await deleteDoc(doc(db, itemToDelete.collectionName, itemToDelete.id));
@@ -434,12 +446,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           });
         } else {
           const docRef = doc(db, collectionName, docId);
+          // Check if document exists before updating to avoid "No document to update" error
+          // However, updateDoc is generally fine if we handle the error, but we can use setDoc with merge if we feel adventurous.
+          // Let's stick with updateDoc but add a descriptive error or silent fail if it's already gone.
           await updateDoc(docRef, {
             adminReadStatus: 'VU'
           });
         }
-      } catch (error) {
-        console.error(`Error updating read status for ${collectionName || rtdbPath}:`, error);
+      } catch (error: any) {
+        // Silently handle "No document to update" to avoid spamming console
+        if (error?.code === 'not-found' || error?.message?.includes('No document to update')) {
+          console.warn(`Document ${docId} in ${collectionName} was already deleted or doesn't exist.`);
+        } else {
+          console.error(`Error updating read status for ${collectionName || rtdbPath}:`, error);
+        }
       }
     }
   };
