@@ -26,7 +26,8 @@ import {
   Eye,
   X,
   FileText,
-  Send
+  Send,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -60,6 +61,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [showMissionModal, setShowMissionModal] = useState(false);
   const [missionForm, setMissionForm] = useState({ title: '', message: '' });
   const [viewingConversation, setViewingConversation] = useState<{ id: string, name: string, messages: any[] } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string, collectionName: string, rtdbPath?: string } | null>(null);
   
   // Data States
   const [data, setData] = useState<Record<string, any[]>>({
@@ -195,6 +197,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     );
   };
 
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      if (itemToDelete.rtdbPath) {
+        const { remove, ref } = await import('firebase/database');
+        await remove(rtdbRef(rtdb, itemToDelete.rtdbPath));
+      } else if (itemToDelete.collectionName === 'MessageriePrivee_Thread') {
+        const { deleteDoc, doc, getDocs, collection, query, where } = await import('firebase/firestore');
+        const q = query(collection(db, 'MessageriePrivee'), where('userId', '==', itemToDelete.id));
+        const snap = await getDocs(q);
+        const batch = snap.docs.map(d => deleteDoc(doc(db, 'MessageriePrivee', d.id)));
+        
+        // Also check if they used phone as ID
+        const q2 = query(collection(db, 'MessageriePrivee'), where('phone', '==', itemToDelete.id));
+        const snap2 = await getDocs(q2);
+        const batch2 = snap2.docs.map(d => deleteDoc(doc(db, 'MessageriePrivee', d.id)));
+        
+        await Promise.all([...batch, ...batch2]);
+      } else {
+        const { deleteDoc, doc } = await import('firebase/firestore');
+        await deleteDoc(doc(db, itemToDelete.collectionName, itemToDelete.id));
+      }
+      setItemToDelete(null);
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
+  };
+
   const renderTable = (headers: string[], keys: string[], sourceData: any[], collectionName?: string) => {
     const list = filteredData(sourceData);
     const headersWithStatus = [...headers];
@@ -206,6 +236,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       keysWithStatus.push('adminReadStatus');
     }
 
+    // Add Actions column
+    headersWithStatus.push('Actions');
+    keysWithStatus.push('actions_delete');
+
     return (
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-slate-800">
         <div className="overflow-x-auto scrollbar-hide">
@@ -213,7 +247,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
             <thead>
               <tr className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
                 {headersWithStatus.map((h, i) => (
-                  <th key={i} className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
+                  <th key={i} className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -227,6 +261,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                   className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
                 >
                   {keysWithStatus.map((key, j) => {
+                    if (key === 'actions_delete') {
+                      return (
+                        <td key={j} className="px-6 py-4 text-center">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setItemToDelete({ 
+                                id: item.id, 
+                                collectionName: collectionName || '', 
+                                rtdbPath: item.rtdbPath 
+                              });
+                            }}
+                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      );
+                    }
+
                     let val = item[key];
                     if (key === 'activity') {
                       const profile = item.profileType;
@@ -559,8 +613,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                     <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{conn.name}</p>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{conn.city} • {conn.phone}</p>
                                  </div>
-                                 <div className="text-right">
+                                 <div className="text-right flex flex-col items-end gap-2">
                                     <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{(formatDate(conn.timestamp) || '').split(' ')[1] || '-'}</p>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setItemToDelete({ id: conn.id, collectionName: 'Connexions' });
+                                      }}
+                                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
                                  </div>
                               </div>
                             ))}
@@ -589,12 +652,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                     <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{pay.userName}</p>
                                     <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{pay.paymentType} • {pay.amount} FCFA</p>
                                  </div>
-                                 <div className="text-right">
+                                 <div className="text-right flex flex-col items-end gap-2">
                                     <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{(formatDate(pay.timestamp) || '').split(' ')[1] || '-'}</p>
-                                    <div className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-1 inline-block ${
-                                       pay.status === 'success' || pay.status === 'Complété' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                                    }`}>
-                                        {pay.status}
+                                    <div className="flex items-center gap-2">
+                                       <button 
+                                         onClick={(e) => {
+                                           e.stopPropagation();
+                                           setItemToDelete({ id: pay.id, collectionName: 'Paiements', rtdbPath: pay.rtdbPath });
+                                         }}
+                                         className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                       >
+                                         <Trash2 size={12} />
+                                       </button>
+                                       <div className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full inline-block ${
+                                          pay.status === 'success' || pay.status === 'Complété' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                       }`}>
+                                           {pay.status}
+                                       </div>
                                     </div>
                                  </div>
                               </div>
@@ -672,7 +746,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
                              </div>
                           </div>
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
                               <div className="relative group">
                                   <button 
                                       onClick={() => {
@@ -692,9 +766,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                   >
                                       {messages.length}
                                   </button>
-                              )}
+                                )}
+                              </div>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setItemToDelete({ id: userId, collectionName: 'MessageriePrivee_Thread' });
+                                }}
+                                className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                              >
+                                <Trash2 size={16} />
+                              </button>
                           </div>
-                      </div>
                     </div>
                   </div>
                 );
@@ -811,6 +894,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                 >
                                   <FileText size={14} />
                                   Détails
+                                </button>
+                                <button 
+                                  onClick={() => setItemToDelete({ id: req.id, collectionName: 'ServiceRequests' })}
+                                  className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
+                                >
+                                  <Trash2 size={16} />
                                 </button>
                               </div>
                             </td>
@@ -1164,6 +1253,53 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
         )}
       </AnimatePresence>
 
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {itemToDelete && (
+          <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setItemToDelete(null)}
+              className="absolute inset-0 bg-slate-950/90 backdrop-blur-md"
+            ></motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden p-8 border border-white/10 text-center"
+            >
+              <div className="w-20 h-20 bg-red-100 dark:bg-red-500/10 rounded-3xl flex items-center justify-center text-red-500 mx-auto mb-6">
+                  <Trash2 size={32} />
+              </div>
+              <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white mb-2">
+                Confirmer la suppression ?
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-widest leading-relaxed mb-8">
+                Cette action est irréversible et l'élément sera définitivement retiré de la base de données.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                 <button 
+                   onClick={() => setItemToDelete(null)}
+                   className="py-4 rounded-2xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95"
+                 >
+                    Non
+                 </button>
+                 <button 
+                    onClick={handleConfirmDelete}
+                    className="py-4 rounded-2xl bg-red-500 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/20 hover:bg-red-600 transition-all active:scale-95"
+                 >
+                    Oui
+                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
        {/* Mission Popup Modal */}
        <AnimatePresence>
          {showMissionModal && (
