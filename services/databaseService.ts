@@ -250,7 +250,8 @@ export const databaseService = {
         
         const updateData: any = {
             phone: user.phone,
-            timestamp: serverTimestamp()
+            timestamp: serverTimestamp(),
+            adminReadStatus: 'NON LU'
         };
 
         if (isValid(user.name)) updateData.name = user.name;
@@ -682,7 +683,8 @@ export const databaseService = {
       await addDoc(inscrRef, {
         ...inscriptionData,
         timestamp: serverTimestamp(),
-        status: 'pending'
+        status: 'pending',
+        adminReadStatus: 'NON LU'
       });
       console.log("Inscription saved successfully");
       return true;
@@ -699,7 +701,8 @@ export const databaseService = {
       await setDoc(activationRef, {
         ...data,
         userId: sanitizedPhone,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        adminReadStatus: 'NON LU'
       }, { merge: true });
       
       // Also update user profile for easy access
@@ -912,7 +915,8 @@ export const databaseService = {
             scannerUser: user.name || 'Inconnu',
             scannerPhone: sanitizedPhone,
             timestamp: serverTimestamp(),
-            syncedAt: Date.now()
+            syncedAt: Date.now(),
+            adminReadStatus: 'NON LU'
         };
 
         // 1. Enregistrement dans Firestore (Base de données principale)
@@ -1112,6 +1116,7 @@ export const databaseService = {
         ...paymentData, 
         userPhone: phone || userId,
         status: 'Complété',
+        adminReadStatus: 'NON LU',
         timestamp: rtdbTimestamp() 
       });
       console.log("Payment synced to RTDB:", title);
@@ -1151,7 +1156,8 @@ export const databaseService = {
     try {
       const docRef = await addDoc(collection(db, 'ServiceRequests'), {
         ...requestData,
-        timestamp: serverTimestamp()
+        timestamp: serverTimestamp(),
+        adminReadStatus: 'NON LU'
       });
       return docRef.id;
     } catch (error) {
@@ -1191,7 +1197,8 @@ export const databaseService = {
         phone: user?.phone || userId,
         city: finalCity,
         timestamp: serverTimestamp(),
-        isRead: false
+        isRead: false,
+        adminReadStatus: 'NON LU'
       };
 
       // 1. Save to the user's specific conversation for sync across devices

@@ -217,9 +217,10 @@
         "phone": { "type": "string" },
         "details": { "type": "object" },
         "status": { "type": "string", "enum": ["pending", "validated", "rejected"] },
+        "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["profileType", "name", "city", "phone", "timestamp"]
+      "required": ["profileType", "name", "city", "phone", "adminReadStatus", "timestamp"]
     },
     "QRCodeActivation": {
       "title": "QRCodeActivation",
@@ -235,9 +236,10 @@
         "expiryDate": { "type": "string", "format": "date-time" },
         "fraisDossierPayes": { "type": "boolean" },
         "lastPaymentAmount": { "type": "number" },
-        "profileType": { "type": "string" }
+        "profileType": { "type": "string" },
+        "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] }
       },
-      "required": ["userId", "name", "phone", "city", "status"]
+      "required": ["userId", "name", "phone", "city", "status", "adminReadStatus"]
     },
     "Mission": {
       "title": "Mission",
@@ -248,9 +250,10 @@
         "message": { "type": "string" },
         "userId": { "type": "string" },
         "status": { "type": "string", "enum": ["ENVOYÉ", "MISSION EN COURS", "MISSION EFFECTUÉE"] },
+        "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "message", "userId", "status", "timestamp"]
+      "required": ["title", "message", "userId", "status", "adminReadStatus", "timestamp"]
     },
     "ServiceRequest": {
       "title": "ServiceRequest",
@@ -265,10 +268,38 @@
         "formType": { "type": "string" },
         "answers": { "type": "object" },
         "totalPrice": { "type": "string" },
-        "readStatus": { "type": "string", "enum": ["NON LU", "LU"] },
+        "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] },
         "timestamp": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "userName", "phone", "city", "serviceTitle", "formType", "answers", "readStatus", "timestamp"]
+      "required": ["userId", "userName", "phone", "city", "serviceTitle", "formType", "answers", "adminReadStatus", "timestamp"]
+    },
+    "Connexion": {
+      "title": "Connexion",
+      "description": "Enregistrement d'une connexion utilisateur.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone", "adminReadStatus", "timestamp"]
+    },
+    "ScannedHistory": {
+      "title": "ScannedHistory",
+      "description": "Historique des scans de QR code.",
+      "type": "object",
+      "properties": {
+        "scannerUser": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] },
+        "syncedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["scannerUser", "name", "phone", "adminReadStatus", "syncedAt"]
     }
   },
   "firestore": {

@@ -44,7 +44,12 @@ type AdminTab =
   | 'private' 
   | 'scanner' 
   | 'payments'
-  | 'requests';
+  | 'requests'
+  | 'missions'
+  | 'workers'
+  | 'equipments'
+  | 'agencies'
+  | 'companies';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -65,7 +70,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     privateMsgs: [],
     scanner: [],
     payments: [],
-    requests: []
+    requests: [],
+    missions: []
   });
 
   useEffect(() => {
@@ -114,13 +120,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       const val = snap.val();
       if (val) {
         const list: any[] = [];
-        Object.values(val).forEach((userPayments: any) => {
-          Object.values(userPayments).forEach((payment: any) => {
-            list.push(payment);
+        Object.entries(val).forEach(([userKey, userPayments]: [string, any]) => {
+          Object.entries(userPayments).forEach(([pushId, payment]: [string, any]) => {
+            list.push({ ...payment, id: pushId, rtdbPath: `Paiements/${userKey}/${pushId}` });
           });
         });
         setData(prev => ({ ...prev, payments: list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) }));
       }
+    });
+
+    // 5. Missions
+    const unsubMissions = onSnapshot(query(collection(db, 'Missions'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
+      setData(prev => ({ ...prev, missions: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
     setLoading(false);
@@ -132,15 +143,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       unsubScans();
       unsubPayments();
       unsubRequests();
+      unsubMissions();
+      unsubQRCodes();
     };
   }, []);
 
+  const getUnreadCount = (tabId: AdminTab) => {
+    switch (tabId) {
+      case 'connections': return data.connections.filter(i => i.adminReadStatus === 'NON LU').length;
+      case 'inscriptions': return data.inscriptions.filter(i => i.adminReadStatus === 'NON LU').length;
+      case 'qrcodes': return data.qrCodes.filter(i => i.adminReadStatus === 'NON LU').length;
+      case 'private': return data.privateMsgs.filter(i => i.adminReadStatus === 'NON LU').length;
+      case 'scanner': return data.scanner.filter(i => i.adminReadStatus === 'NON LU').length;
+      case 'payments': return data.payments.filter(i => i.adminReadStatus === 'NON LU').length;
+      case 'requests': return data.requests.filter(i => i.adminReadStatus === 'NON LU').length;
+      case 'missions': return data.missions.filter(i => i.adminReadStatus === 'NON LU').length;
+      case 'workers': return data.inscriptions.filter(i => i.profileType === 'Travailleur' && i.adminReadStatus === 'NON LU').length;
+      case 'equipments': return data.inscriptions.filter(i => i.profileType === 'Propriétaire' && i.adminReadStatus === 'NON LU').length;
+      case 'agencies': return data.inscriptions.filter(i => i.profileType === 'Agence' && i.adminReadStatus === 'NON LU').length;
+      case 'companies': return data.inscriptions.filter(i => i.profileType === 'Entreprise' && i.adminReadStatus === 'NON LU').length;
+      default: return 0;
+    }
+  };
+
   const stats = [
-    { label: 'Inscriptions', value: data.inscriptions.length, icon: Briefcase, color: 'text-blue-500' },
-    { label: 'Privé', value: data.privateMsgs.length, icon: Mail, color: 'text-green-500' },
-    { label: 'Paiements', value: data.payments.length, icon: CreditCard, color: 'text-orange-500' },
-    { label: 'Demandes', value: data.requests.length, icon: FileText, color: 'text-rose-500' },
-    { label: 'Scanner', value: data.scanner.length, icon: Scan, color: 'text-purple-500' },
+    { id: 'inscriptions' as AdminTab, label: 'Inscriptions', value: data.inscriptions.length, unread: getUnreadCount('inscriptions'), icon: Briefcase, color: 'text-blue-500' },
+    { id: 'private' as AdminTab, label: 'Privé', value: data.privateMsgs.length, unread: getUnreadCount('private'), icon: Mail, color: 'text-green-500' },
+    { id: 'payments' as AdminTab, label: 'Paiements', value: data.payments.length, unread: getUnreadCount('payments'), icon: CreditCard, color: 'text-orange-500' },
+    { id: 'requests' as AdminTab, label: 'Demandes', value: data.requests.length, unread: getUnreadCount('requests'), icon: FileText, color: 'text-rose-500' },
+    { id: 'scanner' as AdminTab, label: 'Scanner', value: data.scanner.length, unread: getUnreadCount('scanner'), icon: Scan, color: 'text-purple-500' },
   ];
 
   const formatDate = (val: any) => {
@@ -164,23 +195,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     );
   };
 
-  const renderTable = (headers: string[], keys: string[], sourceData: any[]) => {
+  const renderTable = (headers: string[], keys: string[], sourceData: any[], collectionName?: string) => {
     const list = filteredData(sourceData);
+    const headersWithStatus = [...headers];
+    const keysWithStatus = [...keys];
+    
+    // Add status column if not present
+    if (!keysWithStatus.includes('adminReadStatus') && collectionName) {
+      headersWithStatus.push('Statut (Admin)');
+      keysWithStatus.push('adminReadStatus');
+    }
+
     return (
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-slate-800">
         <div className="overflow-x-auto scrollbar-hide">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
-                {headers.map((h, i) => (
+                {headersWithStatus.map((h, i) => (
                   <th key={i} className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
               {list.length > 0 ? list.map((item, i) => (
-                <tr key={i} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors">
-                  {keys.map((key, j) => {
+                <tr 
+                  key={i} 
+                  onClick={() => {
+                    if (collectionName) handleUpdateReadStatus(collectionName, item.id, item.adminReadStatus, item.rtdbPath);
+                  }}
+                  className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
+                >
+                  {keysWithStatus.map((key, j) => {
                     let val = item[key];
                     if (key === 'activity') {
                       const profile = item.profileType;
@@ -204,12 +250,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                       return (
                         <td key={j} className="px-6 py-4">
                           <button 
-                            onClick={() => setSelectedItemForDetails(item)}
+                            onClick={() => {
+                              setSelectedItemForDetails(item);
+                              if (collectionName) handleUpdateReadStatus(collectionName, item.id, item.adminReadStatus, item.rtdbPath);
+                            }}
                             className="bg-blue-600/10 text-blue-600 p-2 rounded-xl hover:bg-blue-600 hover:text-white transition-all active:scale-90 flex items-center justify-center gap-2"
                           >
                             <Eye size={14} />
                             <span className="text-[9px] font-black uppercase tracking-widest">Voir</span>
                           </button>
+                        </td>
+                      );
+                    }
+
+                    if (key === 'adminReadStatus') {
+                      return (
+                        <td key={j} className="px-6 py-4">
+                          {val === 'NON LU' ? (
+                            <span className="px-3 py-1 bg-amber-100 text-amber-700 text-[9px] font-black uppercase rounded-full animate-pulse border border-amber-200">
+                              Non lu
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-gray-100 text-gray-400 text-[9px] font-black uppercase rounded-full border border-gray-200">
+                              Vu
+                            </span>
+                          )}
                         </td>
                       );
                     }
@@ -277,6 +342,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'scanner', label: 'Scanner', icon: Scan },
     { id: 'payments', label: 'Paiements', icon: CreditCard },
     { id: 'requests', label: 'Demandes clients', icon: FileText },
+    { id: 'missions', label: 'Missions', icon: Send },
+    { id: 'workers', label: 'Travailleurs', icon: HardHat },
+    { id: 'equipments', label: 'Équipements', icon: Factory },
+    { id: 'agencies', label: 'Agences Immobilières', icon: Home },
+    { id: 'companies', label: 'Entreprises', icon: Building2 },
   ];
 
   const handleSendMission = async (status: string) => {
@@ -288,6 +358,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
         message: missionForm.message,
         userId: selectedItemForDetails.userId || selectedItemForDetails.phone,
         status: status,
+        adminReadStatus: 'NON LU',
         timestamp: serverTimestamp()
       });
       
@@ -299,19 +370,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     }
   };
 
-  const handleViewRequestDetails = async (req: any) => {
-    setSelectedRequest(req);
-    if (req.readStatus === 'NON LU') {
+  const handleUpdateReadStatus = async (collectionName: string, docId: string, currentStatus?: string, rtdbPath?: string) => {
+    if (currentStatus === 'NON LU') {
       try {
-        const reqRef = doc(db, 'ServiceRequests', req.id);
-        await updateDoc(reqRef, {
-          readStatus: 'LU'
-        });
+        if (rtdbPath) {
+          const { update, ref } = await import('firebase/database');
+          await update(ref(rtdb, rtdbPath), {
+            adminReadStatus: 'VU'
+          });
+        } else {
+          const docRef = doc(db, collectionName, docId);
+          await updateDoc(docRef, {
+            adminReadStatus: 'VU'
+          });
+        }
       } catch (error) {
-        console.error("Error updating read status:", error);
+        console.error(`Error updating read status for ${collectionName || rtdbPath}:`, error);
       }
     }
   };
+
+  const handleViewRequestDetails = async (req: any) => {
+    setSelectedRequest(req);
+    handleUpdateReadStatus('ServiceRequests', req.id, req.adminReadStatus);
+  };
+
+  const handleOpenConversation = (userId: string, name: string, messages: any[]) => {
+    setViewingConversation({ id: userId, name, messages });
+    // Update status for all unread messages in this conversation if needed? 
+    // Actually the user wants to see if the "information" is read.
+    // Let's update the specific messages that are NON LU in MessageriePrivee collection
+    messages.forEach(async (msg) => {
+      if (msg.adminReadStatus === 'NON LU') {
+        handleUpdateReadStatus('MessageriePrivee', msg.id, 'NON LU');
+      }
+    });
+  };
+
+
 
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-slate-950 font-sans">
@@ -364,7 +460,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               >
                 <item.icon size={20} className={activeTab === item.id ? 'text-white' : 'group-hover:text-blue-500 transition-colors'} />
                 <span className="text-[11px] font-black uppercase tracking-widest">{item.label}</span>
-                {activeTab === item.id && <ChevronRight size={14} className="ml-auto" />}
+                {getUnreadCount(item.id) > 0 && (
+                  <span className={`ml-auto min-w-[20px] h-5 px-1.5 rounded-full text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-sm ${
+                    activeTab === item.id ? 'bg-amber-400 text-slate-900 border-blue-600' : 'bg-red-500 text-white'
+                  }`}>
+                    {getUnreadCount(item.id)}
+                  </span>
+                )}
+                {activeTab === item.id && getUnreadCount(item.id) === 0 && <ChevronRight size={14} className="ml-auto" />}
               </button>
             ))}
           </div>
@@ -414,8 +517,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                     {stats.map((stat, i) => (
-                      <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${stat.color} bg-current/10 font-bold`}>
+                      <div 
+                        key={i} 
+                        onClick={() => stat.id && setActiveTab(stat.id)}
+                        className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer relative group"
+                      >
+                        {stat.unread > 0 && (
+                          <div className="absolute top-4 right-4 flex items-center gap-1 bg-amber-500 text-white px-2 py-0.5 rounded-full text-[8px] font-black uppercase animate-bounce">
+                            {stat.unread} Non lu
+                          </div>
+                        )}
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${stat.color} bg-current/10 font-bold group-hover:scale-110 transition-transform`}>
                           <stat.icon size={22} className={stat.color} />
                         </div>
                         <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{stat.label}</p>
@@ -431,20 +543,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                             <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
                         </div>
                         <div className="p-4 space-y-4">
-                           {data.connections.slice(0, 6).map((conn, i) => (
-                             <div key={i} className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all group">
-                                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600 font-black">
-                                   {conn.name?.charAt(0) || 'U'}
-                                </div>
-                                <div className="flex-1">
-                                   <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{conn.name}</p>
-                                   <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{conn.city} • {conn.phone}</p>
-                                </div>
-                                <div className="text-right">
-                                   <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{(formatDate(conn.timestamp) || '').split(' ')[1] || '-'}</p>
-                                </div>
-                             </div>
-                           ))}
+                            {data.connections.slice(0, 6).map((conn, i) => (
+                              <div 
+                                key={i} 
+                                onClick={() => handleUpdateReadStatus('Connexions', conn.id, conn.adminReadStatus)}
+                                className={`flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all group cursor-pointer ${conn.adminReadStatus === 'NON LU' ? 'border-l-4 border-amber-400 bg-amber-50/10' : ''}`}
+                              >
+                                 <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600 font-black relative">
+                                    {conn.name?.charAt(0) || 'U'}
+                                    {conn.adminReadStatus === 'NON LU' && (
+                                       <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></span>
+                                    )}
+                                 </div>
+                                 <div className="flex-1">
+                                    <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{conn.name}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{conn.city} • {conn.phone}</p>
+                                 </div>
+                                 <div className="text-right">
+                                    <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{(formatDate(conn.timestamp) || '').split(' ')[1] || '-'}</p>
+                                 </div>
+                              </div>
+                            ))}
                         </div>
                      </div>
 
@@ -454,41 +573,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                             <CreditCard size={16} className="text-orange-500" />
                         </div>
                         <div className="p-4 space-y-4">
-                           {data.payments.slice(0, 6).map((pay, i) => (
-                             <div key={i} className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all">
-                                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600 font-bold">
-                                   <CreditCard size={18} />
-                                </div>
-                                <div className="flex-1">
-                                   <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{pay.userName}</p>
-                                   <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{pay.paymentType} • {pay.amount} FCFA</p>
-                                </div>
-                                <div className="text-right">
-                                   <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{(formatDate(pay.timestamp) || '').split(' ')[1] || '-'}</p>
-                                   <div className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-1 inline-block ${
-                                      pay.status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                                   }`}>
-                                       {pay.status}
-                                   </div>
-                                </div>
-                             </div>
-                           ))}
+                            {data.payments.slice(0, 6).map((pay, i) => (
+                              <div 
+                                key={i} 
+                                onClick={() => handleUpdateReadStatus('Paiements', pay.id, pay.adminReadStatus, pay.rtdbPath)}
+                                className={`flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all cursor-pointer ${pay.adminReadStatus === 'NON LU' ? 'border-l-4 border-amber-400 bg-amber-50/10' : ''}`}
+                              >
+                                 <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600 font-bold relative">
+                                    <CreditCard size={18} />
+                                    {pay.adminReadStatus === 'NON LU' && (
+                                       <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></span>
+                                    )}
+                                 </div>
+                                 <div className="flex-1">
+                                    <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{pay.userName}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{pay.paymentType} • {pay.amount} FCFA</p>
+                                 </div>
+                                 <div className="text-right">
+                                    <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{(formatDate(pay.timestamp) || '').split(' ')[1] || '-'}</p>
+                                    <div className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full mt-1 inline-block ${
+                                       pay.status === 'success' || pay.status === 'Complété' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                    }`}>
+                                        {pay.status}
+                                    </div>
+                                 </div>
+                              </div>
+                            ))}
                         </div>
                      </div>
                   </div>
                 </div>
               )}
-
               {activeTab === 'connections' && renderTable(
                 ['Nom', 'Ville', 'Numéro', 'Date'],
                 ['name', 'city', 'phone', 'timestamp'],
-                data.connections
+                data.connections,
+                'Connexions'
               )}
 
               {activeTab === 'inscriptions' && renderTable(
                 ['Profil', 'Activité / Identité', 'Nom', 'Ville', 'Numéro', 'Détails', 'Status', 'Date'],
                 ['profileType', 'activity', 'name', 'city', 'phone', 'details', 'status', 'timestamp'],
-                data.inscriptions
+                data.inscriptions,
+                'Inscriptions'
               )}
 
               {activeTab === 'qrcodes' && renderTable(
@@ -509,7 +636,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     ...q,
                     status: currentStatus
                   };
-                })
+                }),
+                'QRCodeActivations'
               )}
 
               {activeTab === 'private' && (
@@ -521,56 +649,106 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                       acc[key].push(msg);
                       return acc;
                     }, {})
-                  ).map(([userId, messages]: [string, any[]], i) => (
-                    <div key={i} className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
-                      <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
-                        <div className="flex items-center gap-3">
-                           <div className="bg-green-600 w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black">
-                             {messages[0]?.userName?.charAt(0) || 'U'}
-                           </div>
-                         <div className="flex flex-col">
-                              <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
-                                {messages[0]?.userName || 'Utilisateur'}
-                              </span>
-                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
-                           </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="relative group">
-                                <button 
-                                    onClick={() => onOpenChat(userId, messages[0]?.userName || 'Utilisateur', 'Privee')}
-                                    className="bg-blue-600/10 text-blue-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
-                                >
-                                    <MessageSquare size={14} />
-                                    Répondre
-                                </button>
-                                
-                                {messages.length > 0 && (
-                                    <button 
-                                        onClick={() => setViewingConversation({ id: userId, name: messages[0]?.userName || 'Utilisateur', messages })}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-lg animate-bounce"
-                                    >
-                                        {messages.length}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+                  ).map(([userId, messages]: [string, any[]], i) => {
+                    const hasUnread = messages.some(m => m.adminReadStatus === 'NON LU');
+                    return (
+                      <div key={i} className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border overflow-hidden transition-all ${hasUnread ? 'border-amber-400 shadow-amber-500/10' : 'border-gray-100 dark:border-slate-800'}`}>
+                        <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
+                          <div className="flex items-center gap-3">
+                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black ${hasUnread ? 'bg-amber-500 animate-pulse' : 'bg-green-600'}`}>
+                               {messages[0]?.userName?.charAt(0) || 'U'}
+                             </div>
+                           <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
+                                    {messages[0]?.userName || 'Utilisateur'}
+                                  </span>
+                                  {hasUnread && (
+                                    <span className="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded-full">
+                                      Nouveau
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
+                             </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                              <div className="relative group">
+                                  <button 
+                                      onClick={() => {
+                                        onOpenChat(userId, messages[0]?.userName || 'Utilisateur', 'Privee');
+                                        messages.forEach(m => handleUpdateReadStatus('MessageriePrivee', m.id, m.adminReadStatus));
+                                      }}
+                                      className="bg-blue-600/10 text-blue-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
+                                  >
+                                      <MessageSquare size={14} />
+                                      Répondre
+                                  </button>
+                                  
+                                  {messages.length > 0 && (
+                                  <button 
+                                      onClick={() => handleOpenConversation(userId, messages[0]?.userName || 'Utilisateur', messages)}
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-lg"
+                                  >
+                                      {messages.length}
+                                  </button>
+                              )}
+                          </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-              {activeTab === 'scanner' && renderTable(
-                ['Scanné par', 'Nom du contact', 'Numéro contact', 'Ville contact', 'Synchro'],
-                ['scannerUser', 'name', 'phone', 'city', 'syncedAt'],
-                data.scanner
-              )}
+          {activeTab === 'scanner' && renderTable(
+            ['Scanné par', 'Nom du contact', 'Numéro contact', 'Ville contact', 'Synchro'],
+            ['scannerUser', 'name', 'phone', 'city', 'syncedAt'],
+            data.scanner,
+            'HistoriqueScans'
+          )}
 
-              {activeTab === 'payments' && renderTable(
+          {activeTab === 'missions' && renderTable(
+            ['Titre', 'Message', 'Utilisateur (ID)', 'Statut', 'Date'],
+            ['title', 'message', 'userId', 'status', 'timestamp'],
+            data.missions,
+            'Missions'
+          )}
+
+          {activeTab === 'workers' && renderTable(
+            ['Nom', 'Activité', 'Ville', 'Numéro', 'Date'],
+            ['name', 'activity', 'city', 'phone', 'timestamp'],
+            data.inscriptions.filter(i => i.profileType === 'Travailleur'),
+            'Inscriptions'
+          )}
+
+          {activeTab === 'equipments' && renderTable(
+            ['Nom', 'Matériel', 'Ville', 'Numéro', 'Date'],
+            ['name', 'activity', 'city', 'phone', 'timestamp'],
+            data.inscriptions.filter(i => i.profileType === 'Propriétaire'),
+            'Inscriptions'
+          )}
+
+          {activeTab === 'agencies' && renderTable(
+            ['Nom Agence', 'Ville', 'Numéro', 'Date'],
+            ['activity', 'city', 'phone', 'timestamp'],
+            data.inscriptions.filter(i => i.profileType === 'Agence'),
+            'Inscriptions'
+          )}
+
+          {activeTab === 'companies' && renderTable(
+            ['Nom Entreprise', 'Ville', 'Numéro', 'Date'],
+            ['activity', 'city', 'phone', 'timestamp'],
+            data.inscriptions.filter(i => i.profileType === 'Entreprise'),
+            'Inscriptions'
+          )}
+
+          {activeTab === 'payments' && renderTable(
                 ['Nom', 'Numéro', 'Type', 'Montant', 'Statut', 'Date'],
                 ['userName', 'userPhone', 'paymentType', 'amount', 'status', 'timestamp'],
-                data.payments
+                data.payments,
+                'Paiements'
               )}
 
               {activeTab === 'requests' && (
@@ -605,20 +783,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               </span>
                             </td>
                             <td className="px-6 py-4">
-                              {req.readStatus === 'NON LU' ? (
+                              {req.adminReadStatus === 'NON LU' ? (
                                 <span className="px-3 py-1 bg-amber-100 text-amber-700 text-[9px] font-black uppercase rounded-full animate-pulse border border-amber-200 shadow-sm">
                                   Non lu
                                 </span>
                               ) : (
                                 <span className="px-3 py-1 bg-gray-100 text-gray-400 text-[9px] font-black uppercase rounded-full border border-gray-200">
-                                  Lu
+                                  Vu
                                 </span>
                               )}
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center justify-center gap-2">
                                 <button 
-                                  onClick={() => onOpenChat(req.userId || req.phone, req.userName, 'Privee')}
+                                  onClick={() => {
+                                    onOpenChat(req.userId || req.phone, req.userName, 'Privee');
+                                    handleUpdateReadStatus('ServiceRequests', req.id, req.adminReadStatus);
+                                  }}
                                   className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
                                 >
                                   <MessageSquare size={14} />
