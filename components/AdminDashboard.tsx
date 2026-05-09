@@ -446,20 +446,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           });
         } else {
           const docRef = doc(db, collectionName, docId);
-          // Check if document exists before updating to avoid "No document to update" error
-          // However, updateDoc is generally fine if we handle the error, but we can use setDoc with merge if we feel adventurous.
-          // Let's stick with updateDoc but add a descriptive error or silent fail if it's already gone.
-          await updateDoc(docRef, {
+          // Use setDoc with merge: true to avoid "No document to update" errors if doc was deleted
+          await setDoc(docRef, {
             adminReadStatus: 'VU'
-          });
+          }, { merge: true });
         }
       } catch (error: any) {
-        // Silently handle "No document to update" to avoid spamming console
-        if (error?.code === 'not-found' || error?.message?.includes('No document to update')) {
-          console.warn(`Document ${docId} in ${collectionName} was already deleted or doesn't exist.`);
-        } else {
-          console.error(`Error updating read status for ${collectionName || rtdbPath}:`, error);
-        }
+        // Silently ignore errors for document updating to keep console clean
       }
     }
   };
@@ -736,27 +729,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
               {activeTab === 'private' && (
                 <div className="space-y-6">
-                  {Object.entries(
-                    filteredData(data.privateMsgs).reduce((acc: Record<string, any[]>, msg) => {
+                  {(() => {
+                    const messagesByUser: Record<string, any[]> = {};
+                    data.privateMsgs.forEach(msg => {
                       const key = msg.userId || msg.phone || 'Inconnu';
-                      if (!acc[key]) acc[key] = [];
-                      acc[key].push(msg);
-                      return acc;
-                    }, {})
-                  ).map(([userId, messages]: [string, any[]], i) => {
-                    const hasUnread = messages.some(m => m.adminReadStatus === 'NON LU');
-                    return (
-                      <div key={i} className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border overflow-hidden transition-all ${hasUnread ? 'border-amber-400 shadow-amber-500/10' : 'border-gray-100 dark:border-slate-800'}`}>
-                        <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
-                          <div className="flex items-center gap-3">
-                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black ${hasUnread ? 'bg-amber-500 animate-pulse' : 'bg-green-600'}`}>
-                               {messages[0]?.userName?.charAt(0) || 'U'}
-                             </div>
-                           <div className="flex flex-col">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
-                                    {messages[0]?.userName || 'Utilisateur'}
-                                  </span>
+                      if (!messagesByUser[key]) messagesByUser[key] = [];
+                      messagesByUser[key].push(msg);
+                    });
+
+                    // Get all unique users from both connections and messages
+                    const allUserKeys = Array.from(new Set([
+                      ...data.connections.map(c => c.userId || c.phone),
+                      ...Object.keys(messagesByUser)
+                    ])).filter(key => key && key !== 'Inconnu');
+
+                    return allUserKeys.map(userId => {
+                        const messages = messagesByUser[userId] || [];
+                        const connection = data.connections.find(k => (k.userId || k.phone) === userId);
+                        const userName = connection?.name || messages[0]?.userName || 'Utilisateur';
+                        const lastActivity = Math.max(
+                          connection?.timestamp ? (typeof connection.timestamp === 'number' ? connection.timestamp : (connection.timestamp?.seconds ? connection.timestamp.seconds * 1000 : 0)) : 0,
+                          ...messages.map(m => m.timestamp?.toMillis ? m.timestamp.toMillis() : (m.timestamp || 0))
+                        );
+                        return { userId, userName, messages, lastActivity };
+                      })
+                      .filter(u => {
+                        if (!searchTerm) return true;
+                        const term = searchTerm.toLowerCase();
+                        return u.userName.toLowerCase().includes(term) || u.userId.toLowerCase().includes(term);
+                      })
+                      .sort((a, b) => b.lastActivity - a.lastActivity)
+                      .map((userGroup, i) => {
+                        const { userId, userName, messages } = userGroup;
+                        const hasUnread = messages.some(m => m.adminReadStatus === 'NON LU');
+                        return (
+                          <div key={i} className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border overflow-hidden transition-all ${hasUnread ? 'border-amber-400 shadow-amber-500/10' : 'border-gray-100 dark:border-slate-800'}`}>
+                            <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
+                              <div className="flex items-center gap-3">
+                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black ${hasUnread ? 'bg-amber-500 animate-pulse' : 'bg-green-600'}`}>
+                                   {userName?.charAt(0) || 'U'}
+                                 </div>
+                               <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
+                                        {userName || 'Utilisateur'}
+                                      </span>
                                   {hasUnread && (
                                     <span className="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded-full">
                                       Nouveau
@@ -770,8 +787,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               <div className="relative group">
                                   <button 
                                       onClick={() => {
-                                        onOpenChat(userId, messages[0]?.userName || 'Utilisateur', 'Privee');
-                                        messages.forEach(m => handleUpdateReadStatus('MessageriePrivee', m.id, m.adminReadStatus));
+                                        onOpenChat(userId, userName, 'Privee');
+                                        messages.forEach(m => {
+                                          if (m.adminReadStatus === 'NON LU') {
+                                            handleUpdateReadStatus('MessageriePrivee', m.id, 'NON LU');
+                                          }
+                                        });
                                       }}
                                       className="bg-blue-600/10 text-blue-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-blue-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
                                   >
@@ -779,12 +800,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                       Répondre
                                   </button>
                                   
-                                  {messages.length > 0 && (
+                                  {messages.filter(m => m.adminReadStatus === 'NON LU').length > 0 && (
                                   <button 
-                                      onClick={() => handleOpenConversation(userId, messages[0]?.userName || 'Utilisateur', messages)}
+                                      onClick={() => handleOpenConversation(userId, userName, messages)}
                                       className="absolute -top-2 -right-2 bg-red-500 text-white min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-lg"
                                   >
-                                      {messages.length}
+                                      {messages.filter(m => m.adminReadStatus === 'NON LU').length}
                                   </button>
                                 )}
                               </div>
@@ -798,12 +819,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                 <Trash2 size={16} />
                               </button>
                           </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+              </div>
+            )}
 
           {activeTab === 'scanner' && renderTable(
             ['Scanné par', 'Nom du contact', 'Numéro contact', 'Ville contact', 'Synchro'],

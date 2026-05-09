@@ -1239,7 +1239,10 @@ export const databaseService = {
       const batch = writeBatch(db);
       
       messageIds.forEach(id => {
+        // Delete from user subcollection
         batch.delete(doc(db, collectionName, userId, 'messages', id));
+        // Delete from global collection
+        batch.delete(doc(db, collectionName, id));
       });
       
       await batch.commit();
@@ -1292,16 +1295,31 @@ export const databaseService = {
       const collectionName = `Messagerie${type}`;
       const q = query(
         collection(db, collectionName, userId, 'messages'),
-        where('sender', '==', side === 'user' ? 'user' : 'admin'),
-        where('isRead', '==', false)
+        where('sender', '==', side),
+        where(side === 'user' ? 'adminReadStatus' : 'isRead', '==', side === 'user' ? 'NON LU' : false)
       );
       const snapshot = await getDocs(q);
       const batch = writeBatch(db);
+      
       snapshot.docs.forEach(d => {
-        batch.update(d.ref, { isRead: true });
+        const updateData: any = {};
+        if (side === 'user') {
+          updateData.adminReadStatus = 'VU';
+        } else {
+          updateData.isRead = true;
+        }
+        
+        // Update subcollection docs
+        batch.update(d.ref, updateData);
+        
+        // Update global collection docs
+        batch.update(doc(db, collectionName, d.id), updateData);
       });
+      
       await batch.commit();
-    } catch (e) {}
+    } catch (e) {
+      console.warn(`Error in markTypedMessagesAsRead for ${type}:`, e);
+    }
   },
 
   deleteAssistantChatMessage: async (chatUserId: string, messageId: string) => {
@@ -1331,7 +1349,10 @@ export const databaseService = {
     try {
       const userId = chatUserId.replace(/\D/g, '');
       const collectionName = `Messagerie${type}`;
-      await deleteDoc(doc(db, collectionName, userId, 'messages', messageId));
+      const batch = writeBatch(db);
+      batch.delete(doc(db, collectionName, userId, 'messages', messageId));
+      batch.delete(doc(db, collectionName, messageId));
+      await batch.commit();
       return true;
     } catch (e) { return false; }
   },
