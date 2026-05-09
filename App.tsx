@@ -508,13 +508,28 @@ const App: React.FC = () => {
       const sanitizedPhone = currentUser.phone.replace(/\D/g, '');
       const chatUserId = sanitizedPhone || currentUser.userId || currentUser.id || `${currentUser.name}_${sanitizedPhone}`;
       
+      let privateCount = 0;
+      let assistantCount = 0;
+
+      const updateTotal = () => {
+        setUnreadChatCount(privateCount + assistantCount);
+      };
+
       // Counter for Private Messages (Tab 4)
       const unsubPrivate = databaseService.onUnreadPrivateMessagesCount(chatUserId, (count) => {
-        setUnreadChatCount(count);
+        privateCount = count;
+        updateTotal();
+      });
+
+      // Counter for Assistant Messages
+      const unsubAssistant = databaseService.onUnreadAssistantMessagesCount(chatUserId, (count) => {
+        assistantCount = count;
+        updateTotal();
       });
 
       return () => {
         if (unsubPrivate) unsubPrivate();
+        if (unsubAssistant) unsubAssistant();
       };
     }
   }, [currentUser?.phone, currentUser?.userId, currentUser?.id, currentUser?.name]);
