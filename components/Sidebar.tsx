@@ -34,8 +34,8 @@ interface BottomNavProps {
 const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggleProfile, isProfileOpen, userRole, userPhone, isMiseEnRelationActive, unreadChatCount, onOpenScanner }) => {
   // Définition statique des onglets pour le Client uniquement
   const navItems = [
-    { id: Tab.Profile, icon: <ProfileIcon />, label: "Profil" },
     { id: Tab.Menu, icon: <MenuIcon />, label: "Menu" },
+    { id: Tab.Profile, icon: <ProfileIcon />, label: "Profil" },
     { id: Tab.MyQRCode, icon: <IdCardIcon />, label: "Ma Carte" },
     { id: Tab.Offer, icon: <SiteIcon />, label: "Site" },
     { id: Tab.UserChat, icon: <ChatBubbleIcon />, label: "Chat" },
@@ -44,66 +44,84 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
     { id: Tab.Payment, icon: <PaymentIcon />, label: "Paiement" },
   ];
 
+  const renderNavItem = (item: any, idx: number) => {
+    const isActive = item.id === Tab.Profile ? isProfileOpen : activeTab === item.id;
+    const isRestricted = (item as any).isRestricted;
+    const isBlue = (item as any).isBlue;
+    const hasUnread = item.id === Tab.UserChat && (unreadChatCount || 0) > 0;
+
+    return (
+      <button
+        key={item.id}
+        onClick={() => {
+          if (item.id === Tab.Profile) onToggleProfile();
+          else if (item.id === 'scanner') onOpenScanner();
+          else setActiveTab(item.id as Tab);
+        }}
+        className={`group relative flex flex-col items-center justify-center transition-all duration-300 flex-shrink-0 ${isActive ? 'scale-110' : 'hover:scale-105 active:scale-95'}`}
+      >
+        <div 
+          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg mb-1 relative overflow-hidden ${
+            isRestricted
+              ? 'bg-gray-700 grayscale'
+              : hasUnread
+                ? 'animate-blink-red-green'
+                : isActive 
+                  ? isBlue ? 'bg-blue-600 ring-4 ring-blue-600/30' : 'bg-[#008000] ring-4 ring-[#008000]/30 animate-pulse-green' 
+                  : isBlue ? 'bg-blue-500 opacity-90' : 'bg-[#FF4500] opacity-80 animate-float-subtle'
+          }`}
+          style={{ animationDelay: `${idx * 0.1}s` }}
+        >
+          {React.cloneElement(item.icon as React.ReactElement, { 
+            className: `h-6 w-6 sm:h-7 sm:w-7 transition-colors text-white` 
+          })}
+          
+          {item.id === Tab.UserChat && (unreadChatCount || 0) > 0 && (
+            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full border-2 border-white flex items-center justify-center px-1 bg-red-600 shadow-xl z-20">
+              <span className="text-[9px] font-black text-white leading-none">{unreadChatCount}</span>
+            </div>
+          )}
+
+          {isRestricted && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-full h-0.5 bg-red-500 rotate-45 absolute"></div>
+              <div className="w-full h-0.5 bg-red-500 -rotate-45 absolute"></div>
+            </div>
+          )}
+        </div>
+        
+        <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-tighter transition-all duration-300 ${isActive ? 'text-white' : 'text-white/60'}`}>
+          {item.label}
+        </span>
+      </button>
+    );
+  };
+
+  const menuButton = navItems[0];
+  const otherButtons = navItems.slice(1);
+
   return (
-    <div className="absolute bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-2">
-      <nav className="bg-[#0f172a]/90 backdrop-blur-md pointer-events-auto rounded-[2.5rem] py-3 px-4 flex items-center justify-center gap-3 sm:gap-5 shadow-[0_15px_35px_rgba(0,0,0,0.5)] border border-white/10 w-fit">
-        {navItems.map((item, idx) => {
-          const isActive = item.id === Tab.Profile ? isProfileOpen : activeTab === item.id;
-          const isRestricted = (item as any).isRestricted;
-          const isBlue = (item as any).isBlue;
-          const hasUnread = item.id === Tab.UserChat && (unreadChatCount || 0) > 0;
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (item.id === Tab.Profile) onToggleProfile();
-                else if (item.id === 'scanner') onOpenScanner();
-                else setActiveTab(item.id as Tab);
-              }}
-              className={`group relative flex flex-col items-center justify-center transition-all duration-300 ${isActive ? 'scale-110' : 'hover:scale-105 active:scale-95'}`}
-            >
-              <div 
-                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg mb-1 relative overflow-hidden ${
-                  isRestricted
-                    ? 'bg-gray-700 grayscale'
-                    : hasUnread
-                      ? 'animate-blink-red-green'
-                      : isActive 
-                        ? isBlue ? 'bg-blue-600 ring-4 ring-blue-600/30' : 'bg-[#008000] ring-4 ring-[#008000]/30 animate-pulse-green' 
-                        : isBlue ? 'bg-blue-500 opacity-90' : 'bg-[#FF4500] opacity-80 animate-float-subtle'
-                }`}
-                style={{ animationDelay: `${idx * 0.1}s` }}
-              >
-                {React.cloneElement(item.icon as React.ReactElement, { 
-                  className: `h-6 w-6 sm:h-7 sm:w-7 transition-colors text-white` 
-                })}
-                
-                {/* Badge pour les messages non lus */}
-                {item.id === Tab.UserChat && (unreadChatCount || 0) > 0 && (
-                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full border-2 border-white flex items-center justify-center px-1 bg-red-600 shadow-xl z-20">
-                    <span className="text-[9px] font-black text-white leading-none">{unreadChatCount}</span>
-                  </div>
-                )}
-
-                {/* Croix si restreint */}
-                {isRestricted && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-full h-0.5 bg-red-500 rotate-45 absolute"></div>
-                    <div className="w-full h-0.5 bg-red-500 -rotate-45 absolute"></div>
-                  </div>
-                )}
-              </div>
-              
-              <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-tighter transition-all duration-300 ${isActive ? 'text-white' : 'text-white/60'}`}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+    <div className="absolute bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+      <nav className="bg-[#0f172a]/90 backdrop-blur-md pointer-events-auto rounded-[2.5rem] py-3 px-4 flex items-center shadow-[0_15px_35px_rgba(0,0,0,0.5)] border border-white/10 w-full max-w-lg overflow-hidden">
+        {/* Menu fixe à gauche */}
+        <div className="flex-shrink-0 pr-3 border-r border-white/10 mr-3">
+          {renderNavItem(menuButton, 0)}
+        </div>
+        
+        {/* Autres boutons défilants */}
+        <div className="flex overflow-x-auto no-scrollbar gap-4 sm:gap-6 flex-grow py-1 pr-4">
+          {otherButtons.map((item, idx) => renderNavItem(item, idx + 1))}
+        </div>
       </nav>
       
       <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
         @keyframes float-subtle {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-2px); }

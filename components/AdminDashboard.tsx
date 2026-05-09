@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db, rtdb } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc, setDoc } from 'firebase/firestore';
 import { ref as rtdbRef, onValue } from 'firebase/database';
 import { User } from '../types';
 import { 
@@ -456,13 +456,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           });
         } else {
           const docRef = doc(db, collectionName, docId);
-          // Use setDoc with merge: true to avoid "No document to update" errors if doc was deleted
+          // Use setDoc with merge: true to ensure document exists
           await setDoc(docRef, {
             adminReadStatus: 'VU'
           }, { merge: true });
         }
       } catch (error: any) {
-        // Silently ignore errors for document updating to keep console clean
+        console.error(`Error updating read status:`, error);
       }
     }
   };
@@ -778,7 +778,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         const { userId, userName, messages } = userGroup;
                         const hasUnread = messages.some(m => m.adminReadStatus === 'NON LU');
                         return (
-                          <div key={i} className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border overflow-hidden transition-all ${hasUnread ? 'border-amber-400 shadow-amber-500/10' : 'border-gray-100 dark:border-slate-800'}`}>
+                          <div 
+                            key={i} 
+                            onClick={() => handleOpenConversation(userId, userName, messages, 'Assistant')}
+                            className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border overflow-hidden transition-all cursor-pointer hover:shadow-2xl active:scale-[0.99] ${hasUnread ? 'border-amber-400 shadow-amber-500/10' : 'border-gray-100 dark:border-slate-800'}`}
+                          >
                             <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
                               <div className="flex items-center gap-3">
                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black ${hasUnread ? 'bg-amber-500 animate-pulse' : 'bg-indigo-600'}`}>
@@ -871,7 +875,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         const { userId, userName, messages } = userGroup;
                         const hasUnread = messages.some(m => m.adminReadStatus === 'NON LU');
                         return (
-                          <div key={i} className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border overflow-hidden transition-all ${hasUnread ? 'border-amber-400 shadow-amber-500/10' : 'border-gray-100 dark:border-slate-800'}`}>
+                          <div 
+                            key={i} 
+                            onClick={() => handleOpenConversation(userId, userName, messages, 'Privee')}
+                            className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border overflow-hidden transition-all cursor-pointer hover:shadow-2xl active:scale-[0.99] ${hasUnread ? 'border-amber-400 shadow-amber-500/10' : 'border-gray-100 dark:border-slate-800'}`}
+                          >
                             <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
                               <div className="flex items-center gap-3">
                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black ${hasUnread ? 'bg-amber-500 animate-pulse' : 'bg-green-600'}`}>
@@ -993,7 +1001,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                       </thead>
                       <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
                         {filteredData(data.requests).length > 0 ? filteredData(data.requests).map((req, i) => (
-                          <tr key={i} className="hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors">
+                          <tr 
+                            key={i} 
+                            onClick={() => handleUpdateReadStatus('ServiceRequests', req.id, req.adminReadStatus)}
+                            className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer ${req.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
+                          >
                             <td className="px-6 py-4 font-bold text-xs uppercase text-slate-800 dark:text-gray-200">
                               {req.userName}
                             </td>
