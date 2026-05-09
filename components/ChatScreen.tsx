@@ -46,6 +46,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   const [deleteConfirm, setDeleteConfirm] = useState<{show: boolean, messageId: string | null, isBulk?: boolean}>({show: false, messageId: null});
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const chatTypeLabel = type === 'Assistant' ? 'Assistant' : 'Privé';
@@ -55,8 +56,29 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
 
   const chatTitle = isAdmin && targetUser ? `${targetUser.name}` : `Messagerie (Filant 225)`;
 
+  // Effect to handle sending our typing status
+  useEffect(() => {
+    if (!inputText.trim()) {
+      databaseService.setTypingStatus(type as 'Assistant' | 'Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
+      return;
+    }
+
+    databaseService.setTypingStatus(type as 'Assistant' | 'Privee', chatUserId, isAdmin ? 'admin' : 'user', true);
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      databaseService.setTypingStatus(type as 'Assistant' | 'Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
+    }, 3000);
+
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [inputText, chatUserId, isAdmin, type]);
+
   useEffect(() => {
     let unsubscribe: any;
+    let unsubscribeTyping: any;
     
     const setupChat = async () => {
       setIsLoading(true);
@@ -68,28 +90,38 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         setMessages(msgs);
         setIsLoading(false);
         
-        // Mark messages from the other side as read
+        // Mark messages from the OTHER side as read immediately
         const otherSide = isAdmin ? 'user' : 'admin';
-        if (type === 'Assistant') {
-            databaseService.markAssistantMessagesAsRead(chatUserId, otherSide);
-        } else {
-            databaseService.markPrivateMessagesAsRead(chatUserId, otherSide);
-        }
+        const hasUnreadFromOther = msgs.some(m => 
+          m.sender === otherSide && 
+          (isAdmin ? m.adminReadStatus === 'NON LU' : m.isRead === false)
+        );
 
-        // Simulate typing indicator when receiving a message
-        if (msgs.length > 0 && msgs[msgs.length - 1].sender !== (isAdmin ? 'admin' : 'user')) {
-            setIsTyping(true);
-            setTimeout(() => setIsTyping(false), 2000);
+        if (hasUnreadFromOther) {
+          if (type === 'Assistant') {
+            databaseService.markAssistantMessagesAsRead(chatUserId, otherSide);
+          } else {
+            databaseService.markPrivateMessagesAsRead(chatUserId, otherSide);
+          }
         }
       });
+
+      // Listen to the OTHER side's typing status
+      unsubscribeTyping = databaseService.onTypingStatusChange(
+        type as 'Assistant' | 'Privee', 
+        chatUserId, 
+        isAdmin ? 'user' : 'admin', 
+        (status) => setIsTyping(status)
+      );
     };
 
     setupChat();
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      if (unsubscribe) unsubscribe();
+      if (unsubscribeTyping) unsubscribeTyping();
+      // Ensure we clear our typing status on unmount
+      databaseService.setTypingStatus(type as 'Assistant' | 'Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
     };
   }, [chatUserId, type, isAdmin]);
 

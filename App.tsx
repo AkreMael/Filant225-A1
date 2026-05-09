@@ -507,7 +507,14 @@ const App: React.FC = () => {
     if (currentUser?.phone) {
       const sanitizedPhone = currentUser.phone.replace(/\D/g, '');
       const chatUserId = sanitizedPhone || currentUser.userId || currentUser.id || `${currentUser.name}_${sanitizedPhone}`;
-      
+      const isAdmin = currentUser.phone === '0705052632';
+
+      if (isAdmin) {
+        return databaseService.onTotalUnreadAdminMessagesCount((count) => {
+          setUnreadChatCount(count);
+        });
+      }
+
       let privateCount = 0;
       let assistantCount = 0;
 

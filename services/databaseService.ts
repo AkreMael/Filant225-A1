@@ -1190,8 +1190,12 @@ export const databaseService = {
       if (isValid(user?.city)) finalCity = user!.city;
       else if (isValid(message.city)) finalCity = message.city;
 
+      // Use a consistent ID across collections
+      const msgId = message.id || `${message.sender}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       const docData = {
         ...message,
+        id: msgId,
         userId: userId,
         userName: finalName,
         phone: user?.phone || userId,
@@ -1202,33 +1206,74 @@ export const databaseService = {
       };
 
       // 1. Save to the user's specific conversation for sync across devices
-      // If message has an ID, use it as the document ID for absolute consistency
-      if (message.id) {
-        await setDoc(doc(db, collectionName, userId, 'messages', message.id), docData);
-      } else {
-        await addDoc(collection(db, collectionName, userId, 'messages'), docData);
-      }
+      await setDoc(doc(db, collectionName, userId, 'messages', msgId), docData);
       
       // 2. Save to the global history for admin overview ONLY if it's from user or a form
-      // This respects the rule: "Admin database must ONLY contain user-sent messages/forms"
       if (message.sender === 'user' || message.type === 'assistant_request' || message.type === 'form_submission' || message.type === 'status_submission') {
-        if (message.id) {
-          await setDoc(doc(db, collectionName, message.id), {
-            ...docData,
-            chatType: type
-          });
-        } else {
-          await addDoc(collection(db, collectionName), {
-            ...docData,
-            chatType: type
-          });
-        }
+        await setDoc(doc(db, collectionName, msgId), {
+          ...docData,
+          chatType: type
+        });
       }
+
+      // 3. Reset typing status when a message is sent
+      const sender = message.sender || 'user';
+      databaseService.setTypingStatus(type, userId, sender, false);
 
       return true;
     } catch (e) {
       console.error(`Error saving ${type} chat message:`, e);
       return false;
+    }
+  },
+
+  onTotalUnreadAdminMessagesCount: (callback: (count: number) => void) => {
+    try {
+      // We listen to the global collections for 'NON LU' messages
+      const qAssistant = query(collection(db, 'MessagerieAssistant'), where('adminReadStatus', '==', 'NON LU'));
+      const qPrivate = query(collection(db, 'MessageriePrivee'), where('adminReadStatus', '==', 'NON LU'));
+      
+      let assistantUnread = 0;
+      let privateUnread = 0;
+
+      const unsubA = onSnapshot(qAssistant, (snap) => {
+        assistantUnread = snap.size;
+        callback(assistantUnread + privateUnread);
+      });
+
+      const unsubP = onSnapshot(qPrivate, (snap) => {
+        privateUnread = snap.size;
+        callback(assistantUnread + privateUnread);
+      });
+
+      return () => {
+        unsubA();
+        unsubP();
+      };
+    } catch (e) {
+      console.error("Error listening to total admin unread count:", e);
+      return () => {};
+    }
+  },
+
+  setTypingStatus: (type: 'Assistant' | 'Privee', userId: string, sender: 'user' | 'admin', isTyping: boolean) => {
+    try {
+      const typingRef = rtdbRef(rtdb, `TypingStatus/${type}/${userId}/${sender}`);
+      set(typingRef, isTyping);
+    } catch (e) {
+      console.error("Error setting typing status:", e);
+    }
+  },
+
+  onTypingStatusChange: (type: 'Assistant' | 'Privee', userId: string, sender: 'user' | 'admin', callback: (isTyping: boolean) => void) => {
+    try {
+      const typingRef = rtdbRef(rtdb, `TypingStatus/${type}/${userId}/${sender}`);
+      return onValue(typingRef, (snapshot) => {
+        callback(!!snapshot.val());
+      });
+    } catch (e) {
+      console.error("Error listening to typing status:", e);
+      return () => {};
     }
   },
 

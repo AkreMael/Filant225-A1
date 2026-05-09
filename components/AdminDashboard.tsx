@@ -4,6 +4,7 @@ import { db, rtdb } from '../firebase';
 import { collection, onSnapshot, query, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc, setDoc } from 'firebase/firestore';
 import { ref as rtdbRef, onValue } from 'firebase/database';
 import { User } from '../types';
+import { databaseService } from '../services/databaseService';
 import { 
   Users, 
   Briefcase, 
@@ -476,19 +477,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     setViewingConversation({ id: userId, name, messages });
     onOpenChat(userId, name, type);
     
-    // Update status for all unread messages in this conversation
-    messages.forEach(async (msg) => {
-      if (msg.adminReadStatus === 'NON LU') {
-        handleUpdateReadStatus(`Messagerie${type}`, msg.id, 'NON LU');
-        // Also update in subcollection
-        try {
-          const { setDoc, doc } = await import('firebase/firestore');
-          await setDoc(doc(db, `Messagerie${type}`, userId, 'messages', msg.id), {
-            adminReadStatus: 'VU'
-          }, { merge: true });
-        } catch (e) {}
-      }
-    });
+    // Use centralized database service to mark all as read
+    databaseService.markTypedMessagesAsRead(type, userId, 'user');
   };
 
 
