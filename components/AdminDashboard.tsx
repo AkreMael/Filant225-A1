@@ -61,7 +61,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<any>(null);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [showMissionModal, setShowMissionModal] = useState(false);
-  const [missionForm, setMissionForm] = useState({ title: '', message: '' });
+  const [missionForm, setMissionForm] = useState({ title: '', message: '', status: 'MISSION ENVOYÉE' });
+  const [sendingMission, setSendingMission] = useState(false);
   const [viewingConversation, setViewingConversation] = useState<{ id: string, name: string, messages: any[] } | null>(null);
   const [itemToDelete, setItemToDelete] = useState<{ id: string, collectionName: string, rtdbPath?: string } | null>(null);
   
@@ -277,9 +278,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               {list.length > 0 ? list.map((item, i) => (
                 <tr 
                   key={i} 
-                  onClick={() => {
-                    if (collectionName) handleUpdateReadStatus(collectionName, item.id, item.adminReadStatus, item.rtdbPath);
-                  }}
+                  onClick={() => openDetails(item, collectionName)}
                   className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
                 >
                   {keysWithStatus.map((key, j) => {
@@ -326,9 +325,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                       return (
                         <td key={j} className="px-6 py-4">
                           <button 
-                            onClick={() => {
-                              setSelectedItemForDetails(item);
-                              if (collectionName) handleUpdateReadStatus(collectionName, item.id, item.adminReadStatus, item.rtdbPath);
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDetails(item, collectionName);
                             }}
                             className="bg-blue-600/10 text-blue-600 p-2 rounded-xl hover:bg-blue-600 hover:text-white transition-all active:scale-90 flex items-center justify-center gap-2"
                           >
@@ -426,10 +425,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'companies', label: 'Entreprises', icon: Building2 },
   ];
 
-  const handleSendMission = async (status: string) => {
+  const openDetails = (item: any, collectionName: string) => {
+    setSelectedItemForDetails(item);
+    if (collectionName) {
+      handleUpdateReadStatus(collectionName, item.id, item.adminReadStatus, item.rtdbPath);
+    }
+  };
+
+  const handleSendMission = async (statusOverride?: string) => {
     if (!selectedItemForDetails || !missionForm.title || !missionForm.message) return;
     
+    setSendingMission(true);
     try {
+      const status = statusOverride || missionForm.status;
       await addDoc(collection(db, 'Missions'), {
         title: missionForm.title,
         message: missionForm.message,
@@ -440,10 +448,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       });
       
       setShowMissionModal(false);
-      setMissionForm({ title: '', message: '' });
+      setMissionForm({ title: '', message: '', status: 'MISSION ENVOYÉE' });
       setSelectedItemForDetails(null);
     } catch (error) {
       console.error("Error sending mission:", error);
+    } finally {
+      setSendingMission(false);
     }
   };
 
@@ -620,7 +630,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                             {data.connections.slice(0, 6).map((conn, i) => (
                               <div 
                                 key={i} 
-                                onClick={() => handleUpdateReadStatus('Connexions', conn.id, conn.adminReadStatus)}
+                                onClick={() => openDetails(conn, 'Connexions')}
                                 className={`flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all group cursor-pointer ${conn.adminReadStatus === 'NON LU' ? 'border-l-4 border-amber-400 bg-amber-50/10' : ''}`}
                               >
                                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-600 font-black relative">
@@ -659,7 +669,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                             {data.payments.slice(0, 6).map((pay, i) => (
                               <div 
                                 key={i} 
-                                onClick={() => handleUpdateReadStatus('Paiements', pay.id, pay.adminReadStatus, pay.rtdbPath)}
+                                onClick={() => openDetails(pay, 'Paiements')}
                                 className={`flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-2xl transition-all cursor-pointer ${pay.adminReadStatus === 'NON LU' ? 'border-l-4 border-amber-400 bg-amber-50/10' : ''}`}
                               >
                                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600 font-bold relative">
@@ -993,7 +1003,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         {filteredData(data.requests).length > 0 ? filteredData(data.requests).map((req, i) => (
                           <tr 
                             key={i} 
-                            onClick={() => handleUpdateReadStatus('ServiceRequests', req.id, req.adminReadStatus)}
+                            onClick={() => openDetails(req, 'ServiceRequests')}
                             className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer ${req.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
                           >
                             <td className="px-6 py-4 font-bold text-xs uppercase text-slate-800 dark:text-gray-200">
@@ -1133,28 +1143,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               </div>
 
               <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
-                 {/* Personnel Info */}
+                 {/* Header info */}
                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Informations Personnelles</h4>
+                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Informations Principales</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
-                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Nom Complet</p>
-                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.name}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
-                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone</p>
-                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.phone}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
-                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Ville Actuelle</p>
-                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.city}</p>
-                        </div>
-                        <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
-                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Date d'envoi</p>
-                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{formatDate(selectedItemForDetails.timestamp)}</p>
-                        </div>
+                        {selectedItemForDetails.title && (
+                          <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800 col-span-full">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Titre</p>
+                             <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.title}</p>
+                          </div>
+                        )}
+                        {(selectedItemForDetails.name || selectedItemForDetails.userName) && (
+                          <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Nom / Utilisateur</p>
+                             <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.name || selectedItemForDetails.userName}</p>
+                          </div>
+                        )}
+                        {(selectedItemForDetails.phone || selectedItemForDetails.userPhone) && (
+                          <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone</p>
+                             <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.phone || selectedItemForDetails.userPhone}</p>
+                          </div>
+                        )}
+                        {selectedItemForDetails.city && (
+                          <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Ville</p>
+                             <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.city}</p>
+                          </div>
+                        )}
+                        {selectedItemForDetails.timestamp && (
+                          <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Date</p>
+                             <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{formatDate(selectedItemForDetails.timestamp)}</p>
+                          </div>
+                        )}
                     </div>
                  </div>
+
+                 {/* Message/Description for Missions/Requests */}
+                 {(selectedItemForDetails.message || selectedItemForDetails.description) && (
+                   <div className="space-y-4">
+                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Message / Description</h4>
+                     <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700 italic text-sm text-slate-600 dark:text-gray-300 leading-relaxed shadow-inner">
+                       {selectedItemForDetails.message || selectedItemForDetails.description}
+                     </div>
+                   </div>
+                 )}
 
                  {/* Specific Details */}
                  <div className="space-y-4">
@@ -1195,22 +1229,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               </div>
 
               <div className="p-8 bg-gray-50/50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex gap-4">
-                  <button 
-                    onClick={() => setShowMissionModal(true)}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-green-600/20"
-                  >
-                     Message de mission
-                  </button>
-                 <button 
-                   onClick={() => {
-                     onOpenChat(selectedItemForDetails.userId || selectedItemForDetails.phone, selectedItemForDetails.name || 'Utilisateur', 'Privee');
+               <button 
+                 onClick={() => setShowMissionModal(true)}
+                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-[1.5rem] text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 shadow-lg shadow-green-600/20"
+               >
+                 Message de mission
+               </button>
+               <button 
+                 onClick={() => {
+                   const userId = selectedItemForDetails.userId || selectedItemForDetails.phone;
+                   const name = selectedItemForDetails.userName || selectedItemForDetails.name || 'Utilisateur';
+                   if (userId) {
+                     onOpenChat(userId, name, 'Privee');
                      setSelectedItemForDetails(null);
-                   }}
-                   className="flex-1 bg-slate-900 dark:bg-slate-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2"
-                 >
-                    <MessageSquare size={14} />
-                    Répondre
-                 </button>
+                   }
+                 }}
+                 className="flex-1 bg-slate-900 dark:bg-slate-700 text-white font-black py-4 rounded-[1.5rem] text-[10px] uppercase tracking-[0.1em] transition-all active:scale-95 flex items-center justify-center gap-2"
+               >
+                 <MessageSquare size={14} />
+                 Répondre
+               </button>
               </div>
             </motion.div>
           </div>
@@ -1500,23 +1538,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
                   <div className="grid gap-3">
                     <button 
-                      onClick={() => handleSendMission('ENVOYÉ')}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
+                      onClick={() => handleSendMission('MISSION ENVOYÉE')}
+                      disabled={sendingMission}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-5 rounded-[1.5rem] text-[11px] uppercase tracking-[0.15em] transition-all active:scale-95 shadow-xl shadow-green-600/20 flex items-center justify-center gap-3"
                     >
-                       <Send size={14} />
+                       {sendingMission ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Send size={18} />}
                        Envoyer la mission
                     </button>
                     
                     <div className="grid grid-cols-2 gap-3">
                       <button 
                         onClick={() => handleSendMission('MISSION EN COURS')}
-                        className="bg-orange-500 hover:bg-orange-600 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+                        disabled={sendingMission}
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-black py-4 rounded-[1.5rem] text-[9px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-orange-500/20"
                       >
                          Mission en cours
                       </button>
                       <button 
                         onClick={() => handleSendMission('MISSION EFFECTUÉE')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+                        disabled={sendingMission}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-[1.5rem] text-[9px] uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-blue-500/20"
                       >
                          Mission effectuée
                       </button>
