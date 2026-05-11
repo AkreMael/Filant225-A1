@@ -1265,6 +1265,66 @@ export const databaseService = {
     }
   },
 
+  uploadIdDocument: async (userId: string, side: 'front' | 'back', imageData: string) => {
+    try {
+      // In this environment, we use Firestore to store the base64 string directly 
+      // or we can simulate storage if needed. Since we don't have a dedicated storage service 
+      // initialized, we'll store the compressed base64 in a dedicated collection or field.
+      const sanitizedPhone = userId.replace(/\D/g, '');
+      const userRef = doc(db, 'Utilisateurs', sanitizedPhone);
+      
+      const fieldName = side === 'front' ? 'idCardFront' : 'idCardBack';
+      
+      // 1. Upload to Firebase Storage
+      const storagePath = `ID_Documents/${sanitizedPhone}/${side}_${Date.now()}.jpg`;
+      const downloadUrl = await databaseService.uploadFile(imageData, storagePath);
+      
+      // 2. Save URL to Firestore
+      await setDoc(userRef, {
+        [fieldName]: downloadUrl,
+        idCardUploadedAt: serverTimestamp(),
+        idCardStatus: 'EN ATTENTE'
+      }, { merge: true });
+
+      return downloadUrl;
+    } catch (e) {
+      console.error(`Error uploading ID document (${side}):`, e);
+      return null;
+    }
+  },
+
+  uploadUserProfileImage: async (phone: string, imageData: string) => {
+    try {
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      
+      // Find the user's collection (Clients, Travailleurs, etc.)
+      const userResult = await databaseService.getUserByPhoneFromFirestore(sanitizedPhone);
+      if (!userResult) throw new Error('User not found');
+      
+      const targetCollection = userResult.role === 'Admin 225' ? 'Admin' : 
+                             (userResult.role === 'Conseiller' ? 'Conseiller' : 
+                             (userResult.role === 'Agence immobilière' ? 'Agences immobilières' :
+                             (userResult.role === 'Équipements' ? 'Équipements' :
+                             (userResult.role === 'Entreprise' ? 'Entreprises' : 'Clients'))));
+
+      // 1. Upload to Firebase Storage
+      const storagePath = `Profiles/${sanitizedPhone}/avatar_${Date.now()}.jpg`;
+      const downloadUrl = await databaseService.uploadFile(imageData, storagePath);
+      
+      // 2. Save URL to Firestore
+      const userRef = doc(db, targetCollection, sanitizedPhone);
+      await updateDoc(userRef, {
+        profileImageUrl: downloadUrl,
+        updatedAt: serverTimestamp()
+      });
+
+      return downloadUrl;
+    } catch (e) {
+      console.error("Error uploading user profile image:", e);
+      return null;
+    }
+  },
+
   onTypingStatusChange: (type: 'Assistant' | 'Privee', userId: string, sender: 'user' | 'admin', callback: (isTyping: boolean) => void) => {
     try {
       const typingRef = rtdbRef(rtdb, `TypingStatus/${type}/${userId}/${sender}`);

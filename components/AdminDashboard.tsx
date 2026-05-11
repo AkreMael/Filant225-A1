@@ -76,11 +76,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     scanner: [],
     payments: [],
     requests: [],
-    missions: []
+    missions: [],
+    allUsers: [] // Unified user profile store
   });
 
   useEffect(() => {
     setLoading(true);
+    
+    // 0. Unified Profiles (Wait, we'll merge this from connections and inscriptions for now)
     
     // 0. Demandes Clients
     const unsubRequests = onSnapshot(query(collection(db, 'ServiceRequests'), orderBy('timestamp', 'desc'), limit(150)), (snap) => {
@@ -259,8 +262,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       keysWithStatus.push('adminReadStatus');
     }
 
+    // Add Mission column for user-centric tabs
+    const userTabs = ['connections', 'workers', 'equipments', 'agencies', 'companies', 'inscriptions', 'qrcodes'];
+    if (userTabs.includes(activeTab)) {
+      headersWithStatus.push('Missions');
+      keysWithStatus.push('actions_mission');
+    }
+
+    // Add Details column
+    headersWithStatus.push('Détails');
+    keysWithStatus.push('actions_details');
+
     // Add Actions column
-    headersWithStatus.push('Actions');
+    headersWithStatus.push('Suppr.');
     keysWithStatus.push('actions_delete');
 
     return (
@@ -282,6 +296,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                   className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
                 >
                   {keysWithStatus.map((key, j) => {
+                    if (key === 'actions_mission') {
+                      return (
+                        <td key={j} className="px-6 py-4 text-center">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedItemForDetails(item);
+                              setShowMissionModal(true);
+                            }}
+                            className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-xl transition-all active:scale-90"
+                          >
+                            <Send size={16} />
+                          </button>
+                        </td>
+                      );
+                    }
+
+                    if (key === 'actions_details') {
+                      return (
+                        <td key={j} className="px-6 py-4 text-center">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDetails(item, collectionName);
+                            }}
+                            className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all active:scale-90"
+                          >
+                            <Eye size={16} />
+                          </button>
+                        </td>
+                      );
+                    }
+
                     if (key === 'actions_delete') {
                       return (
                         <td key={j} className="px-6 py-4 text-center">
@@ -426,7 +473,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   ];
 
   const openDetails = (item: any, collectionName: string) => {
-    setSelectedItemForDetails(item);
+    // If it's a mission, try to attach user info from connections or inscriptions
+    let enhancedItem = { ...item };
+    const userId = item.userId || item.phone;
+    
+    if (userId) {
+      const sanitizedId = userId.replace(/\D/g, '');
+      const userProfile = data.connections.find(u => (u.id || u.phone || '').replace(/\D/g, '') === sanitizedId) ||
+                         data.inscriptions.find(u => (u.phone || '').replace(/\D/g, '') === sanitizedId) ||
+                         data.qrCodes.find(u => (u.phone || '').replace(/\D/g, '') === sanitizedId);
+      
+      if (userProfile) {
+        enhancedItem = { ...userProfile, ...enhancedItem };
+      }
+    }
+
+    setSelectedItemForDetails(enhancedItem);
     if (collectionName) {
       handleUpdateReadStatus(collectionName, item.id, item.adminReadStatus, item.rtdbPath);
     }
@@ -944,9 +1006,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           )}
 
           {activeTab === 'missions' && renderTable(
-            ['Titre', 'Message', 'Utilisateur (ID)', 'Statut', 'Date'],
-            ['title', 'message', 'userId', 'status', 'timestamp'],
-            data.missions,
+            ['Utilisateur', 'Titre', 'Statut', 'Date'],
+            ['userName', 'title', 'status', 'timestamp'],
+            data.missions.map(m => {
+              const sanitizedId = (m.userId || '').replace(/\D/g, '');
+              const profile = data.connections.find(c => (c.phone || '').replace(/\D/g, '') === sanitizedId) ||
+                              data.inscriptions.find(i => (i.phone || '').replace(/\D/g, '') === sanitizedId);
+              return { ...m, userName: profile?.name || m.userId || 'Inconnu' };
+            }),
             'Missions'
           )}
 
@@ -1186,6 +1253,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Message / Description</h4>
                      <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700 italic text-sm text-slate-600 dark:text-gray-300 leading-relaxed shadow-inner">
                        {selectedItemForDetails.message || selectedItemForDetails.description}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Identity Documents section */}
+                 {(selectedItemForDetails.idCardFront || selectedItemForDetails.idCardBack) && (
+                   <div className="space-y-4">
+                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Pièce d'Identité</h4>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                       {selectedItemForDetails.idCardFront && (
+                         <div className="space-y-2">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Avant</p>
+                           <div className="aspect-video bg-gray-100 dark:bg-slate-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 cursor-zoom-in" onClick={() => window.open(selectedItemForDetails.idCardFront)}>
+                             <img src={selectedItemForDetails.idCardFront} alt="ID Front" className="w-full h-full object-cover" />
+                           </div>
+                         </div>
+                       )}
+                       {selectedItemForDetails.idCardBack && (
+                         <div className="space-y-2">
+                           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Arrière</p>
+                           <div className="aspect-video bg-gray-100 dark:bg-slate-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 cursor-zoom-in" onClick={() => window.open(selectedItemForDetails.idCardBack)}>
+                             <img src={selectedItemForDetails.idCardBack} alt="ID Back" className="w-full h-full object-cover" />
+                           </div>
+                         </div>
+                       )}
                      </div>
                    </div>
                  )}

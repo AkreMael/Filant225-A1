@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { User, Tab } from '../types';
 import ScannerOverlay, { extractQRInfo } from './ScannerOverlay';
 import { databaseService, SavedContact } from '../services/databaseService';
+import { imageService } from '../services/imageService';
 import { getQuestionsForType, generateWhatsAppMessage } from './common/formDefinitions';
 
 // --- PROPS ---
@@ -34,7 +35,10 @@ const ContactIcon: React.FC<{className?: string}> = ({className}) => <svg classN
 const AdminIcon: React.FC<{className?: string}> = ({className}) => <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M29 32C33.4183 32 37 28.4183 37 24C37 19.5817 33.4183 16 29 16C24.5817 16 21 19.5817 21 24C21 28.4183 24.5817 32 29 32Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M29 48C21.268 48 15 41.732 15 34C15 33.364 15.054 32.738 15.16 32.124L11.83 30.084C9.722 28.776 9.428 25.896 11.21 24.114L13.17 22.154C14.952 20.372 17.832 20.666 19.14 22.774L21.18 26.1C21.794 26.054 22.42 26 23 26C23.636 26 24.262 26.054 24.876 26.16L26.916 22.83C28.224 20.722 31.104 20.428 32.886 22.21L34.846 24.17C36.628 25.952 36.334 28.832 34.226 30.14L30.9 32.18C30.946 32.794 31 33.42 31 34C31 41.732 36.732 48 44.464 48" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 const RechercheIcon: React.FC<{className?: string}> = ({className}) => <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 12H11V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M45 12H53V20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M19 52H11V44" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M45 52H53V44" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 32H52" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 const VideoIcon: React.FC<{className?: string}> = ({className}) => <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 52C43.0457 52 52 43.0457 52 32C52 20.9543 43.0457 12 32 12C20.9543 12 12 20.9543 12 32C12 43.0457 20.9543 52 32 52Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/><path d="M28 24L40 32L28 40V24Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+const IdIcon: React.FC<{className?: string}> = ({className}) => <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="18" width="40" height="28" rx="3" stroke="currentColor" strokeWidth="3"/><circle cx="22" cy="32" r="4" stroke="currentColor" strokeWidth="3"/><line x1="32" y1="28" x2="44" y2="28" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><line x1="32" y1="36" x2="44" y2="36" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>;
 const TrashIcon: React.FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
+const CameraIcon: React.FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>;
+const PhotoIcon: React.FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
 const UsersIcon: React.FC<{className?: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>;
 
 // --- HELPERS ---
@@ -193,8 +197,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   const [view, setView] = useState<'main' | 'contacts'>('main');
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [showScanner, setShowScanner] = useState(false);
+  const [showIdModal, setShowIdModal] = useState(false);
+  const [idImages, setIdImages] = useState({ front: user.idCardFront || '', back: user.idCardBack || '' });
+  const [isUploading, setIsUploading] = useState(false);
+  const [activeSide, setActiveSide] = useState<'front' | 'back' | null>(null);
   
   const touchStartX = useRef<number | null>(null);
+  const idFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
@@ -250,22 +259,33 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     setTimeout(onClose, 300);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isProfileLocked) return;
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        const base64 = event.target?.result as string;
-        const now = Date.now();
-        setProfileImage(base64);
-        if (user?.phone) {
-            localStorage.setItem(`${PROFILE_IMAGE_KEY_PREFIX}${user.phone}`, base64);
-            localStorage.setItem(`${PROFILE_TS_KEY_PREFIX}${user.phone}`, now.toString());
-        }
-    };
-    reader.readAsDataURL(file);
+    onShowPopup("Compression et envoi de l'image sur Firebase...", "alert");
+    
+    try {
+      // 1. Compress image
+      const compressedBase64 = await imageService.compressImage(file, 800, 0.7);
+      
+      // 2. Upload to Firebase Storage and update Firestore
+      const downloadUrl = await databaseService.uploadUserProfileImage(user.phone, compressedBase64);
+      
+      if (downloadUrl) {
+          const now = Date.now();
+          setProfileImage(downloadUrl);
+          localStorage.setItem(`${PROFILE_IMAGE_KEY_PREFIX}${user.phone}`, downloadUrl);
+          localStorage.setItem(`${PROFILE_TS_KEY_PREFIX}${user.phone}`, now.toString());
+          onShowPopup("Photo de profil mise à jour avec succès !", "alert");
+      } else {
+          onShowPopup("Erreur lors de l'envoi de l'image.", "alert");
+      }
+    } catch (err) {
+      console.error("Profile image upload error:", err);
+      onShowPopup("Impossible de traiter l'image.", "alert");
+    }
   };
 
   const handleScanResult = (data: string) => {
@@ -337,9 +357,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                 <div className="h-px bg-gray-50 mx-4"></div>
                 <ProfileRow icon={<ContactIcon className="w-10 h-10 text-orange-500" />} title="Assistance QR" subtitle="Contacts intégrés" onClick={() => setView('contacts')} />
             </div>
+            
             <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-gray-100">
-                <div className="h-px bg-gray-50 mx-4"></div>
-                <ProfileRow icon={<RechercheIcon className="w-10 h-10 text-gray-700" />} title="Scanner QR" subtitle="Intégrer information" onClick={() => setShowScanner(true)} />
+                <ProfileRow icon={<IdIcon className="w-10 h-10 text-blue-600" />} title="Intégration de la pièce d'identité" subtitle={idImages.front && idImages.back ? "DOCUMENTS SOUMIS" : "CNI / CARTE PROF / OFFICIEL"} onClick={() => setShowIdModal(true)} rightElement={idImages.front && idImages.back ? <div className="bg-green-100 px-2 pl-1 rounded-full flex items-center gap-1"><div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"><svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path d="M5 13l4 4L19 7" /></svg></div><span className="text-[9px] font-black text-green-700 uppercase tracking-tighter mr-1">OK</span></div> : undefined} />
                 <div className="h-px bg-gray-50 mx-4"></div>
                 <ProfileRow icon={<VideoIcon className="w-10 h-10 text-red-500" />} title="Vidéos Tuto" subtitle="Tutoriels FILANT°225" onClick={() => window.open('https://www.youtube.com/@FILANT225', '_blank')} />
             </div>
@@ -377,6 +397,129 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
       databaseService.saveContacts(user.phone, updated, user);
   };
 
+  const handleIdFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!activeSide) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      // 1. Compress image
+      const compressedBase64 = await imageService.compressImage(file, 1000, 0.6);
+      
+      // 2. Upload to Firebase Storage and update Firestore
+      const downloadUrl = await databaseService.uploadIdDocument(user.phone, activeSide, compressedBase64);
+      
+      if (downloadUrl) {
+          setIdImages(prev => ({ ...prev, [activeSide]: downloadUrl }));
+      }
+      
+      setIsUploading(false);
+      setActiveSide(null);
+    } catch (err) {
+      console.error("ID upload error:", err);
+      setIsUploading(false);
+    }
+  };
+
+  const renderIdModal = () => (
+    <div className="fixed inset-0 z-[200] flex flex-col bg-[#F3F3F3] animate-in slide-in-from-bottom duration-300">
+      <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100">
+        <button onClick={() => setShowIdModal(false)} className="p-2 -ml-2 text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
+          <BackIcon />
+        </button>
+        <h1 className="flex-1 text-center font-black uppercase text-sm tracking-tight mr-10">Intégration Pièce d'Identité</h1>
+      </header>
+      
+      <div className="flex-1 p-6 space-y-8 overflow-y-auto">
+        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+          <h3 className="text-blue-800 font-bold text-xs uppercase mb-1">Documents acceptés</h3>
+          <p className="text-[10px] text-blue-600 uppercase font-bold leading-relaxed">
+            CNI • CARTE PROFESSIONNELLE • DOCUMENT OFFICIEL AUTORISÉ • PIÈCE NUMÉRISÉE
+          </p>
+        </div>
+
+        <div className="grid gap-6">
+          {/* Face Avant */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Avant de la pièce</label>
+            <div 
+              onClick={() => { setActiveSide('front'); idFileInputRef.current?.click(); }}
+              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group ${idImages.front ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
+            >
+              {idImages.front ? (
+                <>
+                  <img src={idImages.front} className="w-full h-full object-cover" alt="ID Front" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <p className="text-white text-[10px] font-black uppercase bg-blue-600 px-4 py-2 rounded-full">Modifier</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <CameraIcon className="w-8 h-8 text-gray-300 mb-2" />
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Prendre / Importer</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Face Arrière */}
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Arrière de la pièce</label>
+            <div 
+              onClick={() => { setActiveSide('back'); idFileInputRef.current?.click(); }}
+              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group ${idImages.back ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
+            >
+              {idImages.back ? (
+                <>
+                  <img src={idImages.back} className="w-full h-full object-cover" alt="ID Back" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <p className="text-white text-[10px] font-black uppercase bg-blue-600 px-4 py-2 rounded-full">Modifier</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <CameraIcon className="w-8 h-8 text-gray-300 mb-2" />
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Prendre / Importer</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {idImages.front && idImages.back && (
+          <div className="bg-green-50 p-5 rounded-3xl border border-green-100 flex items-center gap-4 animate-in zoom-in duration-300">
+            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <div>
+              <h4 className="text-green-800 font-black text-[10px] uppercase tracking-widest">Documents ajoutés</h4>
+              <p className="text-[10px] text-green-600 uppercase font-bold">Ils sont maintenant liés à votre profil.</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="p-4 bg-white border-t border-gray-100">
+        <button 
+          onClick={() => setShowIdModal(false)}
+          className="w-full py-4 bg-slate-900 text-white font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl shadow-xl shadow-slate-900/20 active:scale-95 transition-all"
+        >
+          {idImages.front && idImages.back ? "Fermer et Valider" : "Continuer plus tard"}
+        </button>
+      </div>
+
+      <input 
+        type="file" 
+        ref={idFileInputRef} 
+        onChange={handleIdFileChange} 
+        className="hidden" 
+        accept="image/*" 
+        capture={activeSide === 'front' || activeSide === 'back' ? 'environment' : undefined}
+      />
+    </div>
+  );
+
   return (
     <div className="absolute inset-0 z-[100] flex justify-end" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div ref={overlayRef} className="absolute inset-0 bg-black/40 transition-opacity duration-300 opacity-0" onClick={handleClose}></div>
@@ -392,6 +535,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
             </main>
         </div>
         {showScanner && <ScannerOverlay onScan={handleScanResult} onClose={() => setShowScanner(false)} />}
+        {showIdModal && renderIdModal()}
     </div>
   );
 };

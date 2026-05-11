@@ -25,6 +25,10 @@ export interface User {
   status?: 'active' | 'pending' | 'blocked';
   activeSessionId?: string;
   pin?: string; // 4-digit PIN
+  idCardFront?: string;
+  idCardBack?: string;
+  idCardUploadedAt?: any;
+  idCardStatus?: string;
 }
 
 export interface Notification {
