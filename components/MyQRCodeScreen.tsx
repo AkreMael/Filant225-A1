@@ -46,7 +46,7 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
         setQrData(doc.data());
       } else {
         setQrData({
-            status: "S'inscrire pour obtenir un code QR",
+            status: "Inscrivez-vous maintenant pour accéder aux missions, services et mises en relation disponibles sur FILANT°225.\n\n📌 Travailleurs\n📌 Équipements\n📌 Agences immobilières\n📌 Entreprises\n\n💳 Inscription : 310 FCFA seulement",
             requiresRegistration: true
         });
       }
@@ -67,7 +67,7 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
     return `Poste: ${user.role || 'Client'}\nNom: ${user.name}\nTél: ${user.phone}\nVille: ${user.city}\nDetails: FILANT225 - COMPTE ACTIF`;
   };
 
-  const currentStatus = qrData?.status || "S'inscrire pour obtenir un code QR";
+  const currentStatus = qrData?.status || "Inscrivez-vous maintenant pour accéder aux missions, services et mises en relation disponibles sur FILANT°225.\n\n📌 Travailleurs\n📌 Équipements\n📌 Agences immobilières\n📌 Entreprises\n\n💳 Inscription : 310 FCFA seulement";
   const isActive = currentStatus === "Code QR Actif";
   
   const getStepNumber = () => {
@@ -147,9 +147,26 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
 
               <div className="mt-8 p-5 bg-slate-50 rounded-3xl border border-dashed border-gray-200">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Statut Actuel</p>
-                  <p className={`text-center font-black text-sm uppercase leading-tight ${isActive ? 'text-green-600' : 'text-orange-600'}`}>
-                      {currentStatus}
-                  </p>
+                  {qrData?.requiresRegistration || (currentStatus && currentStatus.includes("Inscrivez-vous")) ? (
+                    <div className="text-center space-y-2">
+                      <p className="text-[11px] font-bold text-slate-900 leading-tight">
+                        Inscrivez-vous maintenant pour accéder aux missions, services et mises en relation disponibles sur FILANT°225.
+                      </p>
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-tighter">📌 Travailleurs</p>
+                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-tighter">📌 Équipements</p>
+                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-tighter">📌 Agences immobilières</p>
+                        <p className="text-[10px] font-black text-orange-600 uppercase tracking-tighter">📌 Entreprises</p>
+                      </div>
+                      <p className="text-[11px] font-black text-orange-600 uppercase mt-2">
+                        💳 Inscription : 310 FCFA seulement
+                      </p>
+                    </div>
+                  ) : (
+                    <p className={`text-center font-black text-sm leading-tight whitespace-pre-line ${isActive ? 'text-green-600 uppercase' : 'text-orange-600'}`}>
+                        {currentStatus}
+                    </p>
+                  )}
                   {qrData?.expiryDate && isActive && (
                       <p className="text-center text-[10px] font-bold text-gray-400 mt-2">
                           Expire le : {new Date(qrData.expiryDate).toLocaleDateString('fr-FR')}
