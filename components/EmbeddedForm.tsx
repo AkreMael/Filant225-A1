@@ -44,18 +44,43 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
 
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
+  const isLoaded = useRef(false);
+
+  // Persistance des données
+  const storageKey = useMemo(() => `form_data_${user.phone || user.id}_${title}_${serviceMode}`, [user.id, user.phone, title, serviceMode]);
+
+  useEffect(() => {
+    isLoaded.current = false;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setAnswers(parsed.answers || {});
+        setStep(parsed.step || 0);
+      } catch (e) {
+        console.error("Error loading saved form data:", e);
+        setAnswers({});
+        setStep(0);
+      }
+    } else {
+      setStep(0);
+      setAnswers({});
+    }
+    isLoaded.current = true;
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (isLoaded.current) {
+       localStorage.setItem(storageKey, JSON.stringify({ answers, step }));
+    }
+  }, [answers, step, storageKey]);
+
   const [inputValue, setInputValue] = useState('');
   const [count, setCount] = useState(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isWaitingNext, setIsWaitingNext] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setStep(0);
-    setAnswers({});
-    setInputValue('');
-  }, [serviceMode]);
 
   const currentQuestion = questions[step];
 
@@ -65,6 +90,12 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     }
     return answers;
   }, [answers, currentQuestion, inputValue]);
+
+  useEffect(() => {
+    if (currentQuestion) {
+        setInputValue((answers[currentQuestion.key] as string) || currentQuestion.defaultValue || '');
+    }
+  }, [step, currentQuestion, answers]);
 
   const totalPrice = useMemo(() => calculateTotalPrice(formType, currentAnswers, serviceMode, count, title), [formType, currentAnswers, serviceMode, count, title]);
   const isWorker = formType === 'worker' || formType === 'personal_worker' || formType === 'rapid_building_service';
@@ -222,6 +253,9 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
         });
 
         await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
+        
+        // Note: We keep the form data fixed as per user request, so we don't clear localStorage here
+        // localStorage.removeItem(storageKey);
         
         // Si on a explicitement demandé WhatsApp, on l'ouvre
         if (target === 'whatsapp') {
@@ -432,13 +466,23 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                                     className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
                                 />
                             </div>
-                            <button 
-                                onClick={() => handleNext()}
-                                disabled={isWaitingNext || !inputValue}
-                                className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px]"
-                            >
-                                {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
-                            </button>
+                            <div className="flex flex-col gap-2">
+                                <button 
+                                    onClick={() => handleNext()}
+                                    disabled={isWaitingNext || !inputValue}
+                                    className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
+                                >
+                                    {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
+                                </button>
+                                {step > 0 && (
+                                    <button 
+                                        onClick={() => setStep(prev => prev - 1)}
+                                        className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
+                                    >
+                                        Retour
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ) : currentQuestion.type === 'select' ? (
                         <div className="flex gap-2 items-stretch">
@@ -454,13 +498,23 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                                     ))}
                                 </select>
                             </div>
-                            <button 
-                                onClick={() => handleNext()}
-                                disabled={isWaitingNext || !inputValue}
-                                className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px]"
-                            >
-                                {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
-                            </button>
+                            <div className="flex flex-col gap-2">
+                                <button 
+                                    onClick={() => handleNext()}
+                                    disabled={isWaitingNext || !inputValue}
+                                    className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
+                                >
+                                    {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
+                                </button>
+                                {step > 0 && (
+                                    <button 
+                                        onClick={() => setStep(prev => prev - 1)}
+                                        className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
+                                    >
+                                        Retour
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     ) : (
                       <div className="flex gap-2 items-stretch">
@@ -485,26 +539,69 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                                 </p>
                               )}
                           </div>
-                          <button 
-                              onClick={() => handleNext()}
-                              disabled={isWaitingNext}
-                              className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px]"
-                          >
-                              {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
-                          </button>
+                          <div className="flex flex-col gap-2">
+                              <button 
+                                  onClick={() => handleNext()}
+                                  disabled={isWaitingNext}
+                                  className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
+                              >
+                                  {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
+                              </button>
+                              {step > 0 && (
+                                <button 
+                                    onClick={() => setStep(prev => prev - 1)}
+                                    className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
+                                >
+                                    Retour
+                                </button>
+                              )}
+                          </div>
                       </div>
                     )}
                 </div>
             )}
 
             {isFormComplete && (
-                <div className="w-full max-w-sm mb-10 animate-in zoom-in-95 duration-500">
+                <div className="w-full max-w-sm mb-10 animate-in zoom-in-95 duration-500 flex flex-col items-center">
+                    <div className="w-full bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100 space-y-4">
+                        <div className="flex items-center justify-between border-b border-gray-200 pb-2 mb-2">
+                            <span className="text-[10px] font-black uppercase text-gray-400">Résumé de votre demande</span>
+                            <button 
+                                onClick={() => setStep(questions.length - 1)}
+                                className="text-orange-500 font-black text-[10px] uppercase"
+                            >
+                                Modifier
+                            </button>
+                        </div>
+                        {questions.map((q, i) => {
+                            if (q.condition && !q.condition(answers)) return null;
+                            return (
+                                <div key={q.key} className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">{q.text(answers).replace(/\?$/, '')}</span>
+                                    <span className="text-sm font-black text-gray-900 leading-tight">{answers[q.key] || 'Non renseigné'}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+
                     <button 
                       onClick={() => handleAction('assistant')}
                       disabled={isSending}
                       className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-5 rounded-3xl text-xl uppercase tracking-wider shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 min-h-[68px]"
                     >
                         {isSending ? <Spinner /> : <span>Confirmé</span>}
+                    </button>
+                    
+                    <button 
+                        onClick={() => {
+                            localStorage.removeItem(storageKey);
+                            setAnswers({});
+                            setStep(0);
+                            setInputValue('');
+                        }}
+                        className="mt-4 text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
+                    >
+                        Recommencer le formulaire
                     </button>
                 </div>
             )}

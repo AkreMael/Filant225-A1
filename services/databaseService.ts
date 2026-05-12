@@ -1063,6 +1063,24 @@ export const databaseService = {
     }
   },
 
+  markAllNotificationsAsRead: async (phone: string) => {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    try {
+      const notifRef = collection(db, 'Clients', sanitizedPhone, 'notifications');
+      const q = query(notifRef, where('isRead', '==', false));
+      const snapshot = await getDocs(q);
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((doc) => batch.update(doc.ref, { isRead: true }));
+      await batch.commit();
+      
+      const current = databaseService.getNotifications(phone);
+      const updated = current.map(n => ({ ...n, isRead: true }));
+      databaseService.saveNotifications(phone, updated);
+    } catch (e) {
+      console.error("Error marking all notifications as read:", e);
+    }
+  },
+
   deleteNotificationFromFirestore: async (phone: string, notificationId: string) => {
     const sanitizedPhone = phone.replace(/\D/g, '');
     try {
@@ -1204,7 +1222,7 @@ export const databaseService = {
 
       if (userId) {
         const msg = {
-          text: `❌ Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) n'a pas pu être validé par l'administrateur. Veuillez vérifier les informations de votre transaction ou contacter le support.`,
+          text: `Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) est en cours de traitement. Veuillez patienter jusqu’à la validation finale. Vous recevrez un message une fois la transaction confirmée. En cas de validation, votre paiement sera pris en compte et nous pourrons vous contacter si nécessaire.`,
           sender: 'admin',
           timestamp: new Date().toISOString(),
           isRead: false,

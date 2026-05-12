@@ -27,6 +27,7 @@ import InterventionShopScreen from './components/InterventionShopScreen';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import { motion, AnimatePresence } from 'motion/react';
+import { isAdmin } from './utils/authUtils';
 import { databaseService, SavedContact } from './services/databaseService';
 import { messagingService } from './services/messagingService';
 import app from './firebase';
@@ -183,7 +184,15 @@ const App: React.FC = () => {
   });
 
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [privateUnreadCount, setPrivateUnreadCount] = useState(0);
+  const [assistantUnreadCount, setAssistantUnreadCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+
+  useEffect(() => {
+    if (!isAdmin(currentUser)) {
+      setUnreadChatCount(privateUnreadCount + assistantUnreadCount);
+    }
+  }, [privateUnreadCount, assistantUnreadCount, currentUser]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
@@ -392,6 +401,13 @@ const App: React.FC = () => {
 
 // Real-time synchronization logic removed
 
+  useEffect(() => {
+    if (activeTab === Tab.UserChat && currentUser) {
+      const sanitizedPhone = currentUser.phone.replace(/\D/g, '');
+      databaseService.markAllNotificationsAsRead(sanitizedPhone).catch(e => console.error("Error marking notifications as read:", e));
+    }
+  }, [activeTab, currentUser]);
+
   const [lastNotificationId, setLastNotificationId] = useState<string | null>(null);
   const [locationInitialTab, setLocationInitialTab] = useState<'appartement' | 'equipement'>('appartement');
   const [interactiveModalContext, setInteractiveModalContext] = useState<InteractiveModalContext | null>(null);
@@ -419,7 +435,8 @@ const App: React.FC = () => {
   const isFullScreenView = (activeTab === Tab.Menu && FULL_SCREEN_MENU_VIEWS.includes(menuView)) || 
                            (activeTab === Tab.Offer && offerSubView === 'shop') ||
                            activeTab === Tab.Emergency ||
-                           activeTab === Tab.Admin;
+                           activeTab === Tab.Admin ||
+                           activeTab === Tab.UserChat;
 
   const displayUser: User = {
     name: currentUser?.name ? currentUser.name.charAt(0).toUpperCase() + currentUser.name.slice(1) : '',
@@ -507,36 +524,27 @@ const App: React.FC = () => {
     if (currentUser?.phone) {
       const sanitizedPhone = currentUser.phone.replace(/\D/g, '');
       const chatUserId = sanitizedPhone || currentUser.userId || currentUser.id || `${currentUser.name}_${sanitizedPhone}`;
-      const isAdmin = currentUser.phone === '0705052632';
+      const isUserAdmin = isAdmin(currentUser);
 
-      if (isAdmin) {
+      if (isUserAdmin) {
         return databaseService.onTotalUnreadAdminMessagesCount((count) => {
           setUnreadChatCount(count);
         });
       }
 
-      let privateCount = 0;
-      let assistantCount = 0;
-
-      const updateTotal = () => {
-        setUnreadChatCount(privateCount + assistantCount);
-      };
-
       // Counter for Private Messages (Tab 4)
       const unsubPrivate = databaseService.onUnreadPrivateMessagesCount(chatUserId, (count) => {
-        privateCount = count;
-        updateTotal();
+        setPrivateUnreadCount(count);
       });
 
       // Counter for Assistant Messages
       const unsubAssistant = databaseService.onUnreadAssistantMessagesCount(chatUserId, (count) => {
-        assistantCount = count;
-        updateTotal();
+        setAssistantUnreadCount(count);
       });
 
       return () => {
-        if (unsubPrivate) unsubPrivate();
-        if (unsubAssistant) unsubAssistant();
+        unsubPrivate();
+        unsubAssistant();
       };
     }
   }, [currentUser?.phone, currentUser?.userId, currentUser?.id, currentUser?.name]);
@@ -1064,6 +1072,7 @@ const App: React.FC = () => {
             userRole="Client"
             isMiseEnRelationActive={false}
             unreadChatCount={unreadChatCount}
+            isHidden={isFullScreenView}
           />
         </div>
       </div>

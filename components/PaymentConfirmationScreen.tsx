@@ -272,18 +272,13 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               <div className="text-lg font-bold text-gray-900 leading-[1.35]">
                 {isSuccess ? (
                   <span className="text-green-600 animate-bounce block">Paiement validé avec succès ! Redirection...</span>
-                ) : isNonValidated ? (
-                  <div className="text-red-600 block bg-red-50 p-4 rounded-2xl border-2 border-red-100 animate-in shake duration-500 space-y-2">
-                    <p className="font-black">❌ PAIEMENT NON VALIDÉ PAR L'ADMINISTRATEUR</p>
-                    <p className="text-xs font-medium">Votre transaction n'a pas pu être confirmée. Veuillez vérifier votre application Wave ou contacter le support.</p>
-                  </div>
-                ) : isProcessing ? (
+                ) : (isProcessing || isNonValidated) ? (
                   <div className="text-blue-600 block bg-blue-50 p-6 rounded-2xl border-2 border-blue-100 animate-pulse space-y-3 shadow-sm">
                     <p className="font-black text-sm uppercase tracking-wider">Traitement en cours</p>
-                    <div className="space-y-2 text-xs font-bold leading-relaxed text-blue-800/80">
+                    <div className="space-y-4 text-xs font-bold leading-relaxed text-blue-800/80">
                       <p>Votre paiement est en cours de traitement. Veuillez patienter jusqu’à la validation finale.</p>
                       <p>Vous recevrez un message une fois la transaction confirmée.</p>
-                      <p>En cas de validation, votre paiement sera pris en compte et nous pourrons vous contacter</p>
+                      <p>En cas de validation, votre paiement sera pris en compte et nous pourrons vous contacter si nécessaire.</p>
                     </div>
                   </div>
                 ) : (
@@ -300,14 +295,14 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                 className={`flex-1 font-black py-4 px-6 rounded-2xl shadow-xl transform active:scale-95 transition-all text-2xl uppercase tracking-wider min-h-[72px] flex items-center justify-center ${
                     isSuccess
                         ? 'bg-green-500 text-white'
-                        : isProcessing 
+                        : (isProcessing || isNonValidated) 
                             ? 'bg-gray-100 cursor-default' 
                             : (isValidated && waveNumber.length === 10) 
                                 ? 'bg-[#33C4F3] hover:bg-[#2bb2dd] text-white'
                                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                {isProcessing ? (
+                {(isProcessing || isNonValidated) ? (
                     <div className="flex items-center gap-3">
                         <div className="w-5 h-5 border-3 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
                         <span className="text-blue-600 text-lg">PAIEMENT EN COURS</span>

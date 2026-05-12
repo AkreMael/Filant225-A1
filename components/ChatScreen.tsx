@@ -48,6 +48,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    // We are at bottom if distance to bottom is less than 50px
+    const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
+    
+    // Only update state if it changed to avoid unnecessary re-renders
+    if (shouldAutoScroll !== isAtBottom) {
+      setShouldAutoScroll(isAtBottom);
+    }
+  };
 
   const chatTypeLabel = type === 'Assistant' ? 'Assistant' : 'Privé';
   const chatUserId = isAdmin && targetUser 
@@ -132,8 +145,15 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   }, [messages, isAdmin]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [displayMessages]);
+    if (shouldAutoScroll && messagesEndRef.current) {
+      // Use 'auto' for initial or very fast scrolls, 'smooth' for casual additions
+      const isInitial = displayMessages.length <= 1;
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: isInitial ? 'auto' : 'smooth',
+        block: 'end'
+      });
+    }
+  }, [displayMessages, shouldAutoScroll]);
 
   const handleSendMessage = async (textOverride?: any, senderOverride?: 'user' | 'admin') => {
     const textToSend = (typeof textOverride === 'string' ? textOverride : inputText).trim();
@@ -280,7 +300,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide bg-slate-50/50 overscroll-contain">
+      <div 
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide bg-slate-50/50 overscroll-contain"
+      >
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-full space-y-4">
             <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>

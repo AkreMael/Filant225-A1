@@ -28,10 +28,12 @@ interface BottomNavProps {
   userPhone?: string;
   isMiseEnRelationActive?: boolean;
   unreadChatCount?: number;
-  onOpenScanner: () => void;
+  isHidden?: boolean;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggleProfile, isProfileOpen, userRole, userPhone, isMiseEnRelationActive, unreadChatCount, onOpenScanner }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggleProfile, isProfileOpen, userRole, userPhone, isMiseEnRelationActive, unreadChatCount, onOpenScanner, isHidden }) => {
+  if (isHidden) return null;
+  
   // Définition statique des onglets pour le Client uniquement
   const navItems = [
     { id: Tab.Menu, icon: <MenuIcon />, label: "Menu" },
