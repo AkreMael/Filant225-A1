@@ -278,9 +278,13 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     <p className="text-xs font-medium">Votre transaction n'a pas pu être confirmée. Veuillez vérifier votre application Wave ou contacter le support.</p>
                   </div>
                 ) : isProcessing ? (
-                  <div className="text-blue-600 block animate-pulse space-y-2">
-                    <p>En attente de la validation de votre paiement par l'administrateur...</p>
-                    <p className="text-xs font-medium">Vous pouvez quitter cette page une fois le paiement via Wave terminé, mais restez ici pour la redirection automatique.</p>
+                  <div className="text-blue-600 block bg-blue-50 p-6 rounded-2xl border-2 border-blue-100 animate-pulse space-y-3 shadow-sm">
+                    <p className="font-black text-sm uppercase tracking-wider">Traitement en cours</p>
+                    <div className="space-y-2 text-xs font-bold leading-relaxed text-blue-800/80">
+                      <p>Votre paiement est en cours de traitement. Veuillez patienter jusqu’à la validation finale.</p>
+                      <p>Vous recevrez un message une fois la transaction confirmée.</p>
+                      <p>En cas de validation, votre paiement sera pris en compte et nous pourrons vous contacter</p>
+                    </div>
                   </div>
                 ) : (
                   "Cliquez sur le bouton ci-dessous pour procéder au paiement sécurisé via Wave."
@@ -306,7 +310,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                 {isProcessing ? (
                     <div className="flex items-center gap-3">
                         <div className="w-5 h-5 border-3 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                        <span className="text-blue-500 text-lg">Paiement en cours...</span>
+                        <span className="text-blue-600 text-lg">PAIEMENT EN COURS</span>
                     </div>
                 ) : isSuccess ? (
                     <div className="flex items-center gap-3 animate-in zoom-in duration-300">
