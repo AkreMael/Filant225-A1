@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { databaseService } from '../services/databaseService';
 import { getCardType } from '../utils/authUtils';
+import { rtdb } from '../firebase';
+import { ref as rtdbRef, onValue, off } from 'firebase/database';
 
 interface PaymentConfirmationScreenProps {
   title: string;
@@ -103,14 +105,42 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isNonValidated, setIsNonValidated] = useState(false);
+  const [paymentPath, setPaymentPath] = useState<string | null>(null);
   const [waveNumber, setWaveNumber] = useState('');
   const [currentAmount, setCurrentAmount] = useState(initialAmount);
   const [isManualMode] = useState(initialAmount === "custom");
   const [isValidated, setIsValidated] = useState(initialAmount !== "custom");
 
+  useEffect(() => {
+    if (!paymentPath) return;
+
+    const statusRef = rtdbRef(rtdb, paymentPath);
+    const unsub = onValue(statusRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        if (data.status === 'Paiement validé') {
+            setIsSuccess(true);
+            setIsProcessing(false);
+            setIsNonValidated(false);
+            // Redirection vers l'étape suivante après un court délai
+            if (onSuccess) setTimeout(onSuccess, 1500);
+        } else if (data.status === 'Paiement non validé' && isProcessing) {
+            setIsNonValidated(true);
+            // On reste en "processing" mais on affiche l'erreur
+        } else {
+            setIsNonValidated(false);
+        }
+      }
+    });
+
+    return () => off(statusRef);
+  }, [paymentPath, isProcessing, onSuccess]);
+
     const handlePay = async () => {
-        if (isProcessing) return;
+        if (isProcessing && !isNonValidated) return;
         setIsProcessing(true);
+        setIsNonValidated(false);
         
         const finalLink = isManualMode ? `${waveLink}${currentAmount}` : waveLink;
         const amountToSave = isManualMode ? currentAmount : initialAmount;
@@ -155,7 +185,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                 });
             }
 
-            await databaseService.savePaymentToRTDB({
+            const path = await databaseService.savePaymentToRTDB({
               userId: user.phone.replace(/\D/g, ''),
               userName: user.name,
               phone: user.phone,
@@ -167,6 +197,8 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               waveNumber: waveNumber ? `+225 ${waveNumber}` : 'N/A',
               timestamp: Date.now()
             });
+
+            if (path) setPaymentPath(path);
 
             if (formData) {
                 await databaseService.saveFavorite(user.phone, {
@@ -190,13 +222,8 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             console.error("Erreur lors de la sauvegarde du paiement:", error);
         }
 
-        // Redirection après sauvegarde
-        const paymentWindow = window.open(finalLink, '_blank');
-        if (!paymentWindow) {
-            window.location.href = finalLink;
-        }
-
-        // We can keep isProcessing true so they see "Redirecting..." or similar
+        // Redirection vers Wave
+        window.open(finalLink, '_blank');
     };
 
   const handleManualValueChange = (val: string) => {
@@ -265,10 +292,24 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             )}
           </div>
 
-          <div className="space-y-5 px-1 text-center w-full">
-              <p className="text-lg font-bold text-gray-900 leading-[1.35]">
-                Cliquez sur le bouton ci-dessous pour procéder au paiement sécurisé via Wave.
-              </p>
+          <div className="space-y-5 px-4 text-center w-full">
+              <div className="text-lg font-bold text-gray-900 leading-[1.35]">
+                {isSuccess ? (
+                  <span className="text-green-600 animate-bounce block">Paiement validé avec succès ! Redirection...</span>
+                ) : isNonValidated ? (
+                  <div className="text-orange-600 block bg-orange-50 p-4 rounded-2xl border-2 border-orange-100 animate-pulse space-y-2">
+                    <p>⚠️ Votre paiement n'a pas encore été validé par l'administrateur.</p>
+                    <p className="text-xs font-medium">Veuillez patienter ou réessayer si vous avez déjà payé.</p>
+                  </div>
+                ) : isProcessing ? (
+                  <div className="text-blue-600 block animate-pulse space-y-2">
+                    <p>En attente de la validation de votre paiement par l'administrateur...</p>
+                    <p className="text-xs font-medium">Vous pouvez quitter cette page une fois le paiement via Wave terminé, mais restez ici pour la redirection automatique.</p>
+                  </div>
+                ) : (
+                  "Cliquez sur le bouton ci-dessous pour procéder au paiement sécurisé via Wave."
+                )}
+              </div>
           </div>
 
           <div className="mt-auto w-full pt-8 pb-4 flex items-center justify-between gap-6">

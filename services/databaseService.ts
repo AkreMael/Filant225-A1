@@ -1103,7 +1103,7 @@ export const databaseService = {
     });
   },
 
-  savePaymentToRTDB: async (paymentData: any) => {
+  savePaymentToRTDB: async (paymentData: any): Promise<string | null> => {
     try {
       const { userName, userId, amount, title, paymentType, phone, city, waveNumber } = paymentData;
       const sanitizedName = (userName || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
@@ -1124,8 +1124,10 @@ export const databaseService = {
         timestamp: rtdbTimestamp() 
       });
       console.log("Payment synced to RTDB:", title);
+      return rtdbPath;
     } catch (e) {
       console.error("Error saving payment to RTDB:", e);
+      return null;
     }
   },
 
@@ -1138,18 +1140,35 @@ export const databaseService = {
       });
 
       // Send automatic message to user
-      const userId = (payment.userPhone || payment.userId || '').replace(/\D/g, '');
+      const userPhone = (payment.userPhone || '').replace(/\D/g, '');
+      const userId = (payment.userId || userPhone).replace(/\D/g, '');
+      
       if (userId) {
-        await databaseService.saveTypedChatMessage('Assistant', userId, {
+        // Send to BOTH Assistant and Privee to be sure user sees it
+        const msg = {
           text: "Votre paiement a été validé avec succès. Votre mise en relation est maintenant active.",
           sender: 'admin',
           timestamp: new Date().toISOString(),
           isRead: false,
           adminReadStatus: 'LU'
-        });
+        };
+        await databaseService.saveTypedChatMessage('Assistant', userId, msg);
+        await databaseService.saveTypedChatMessage('Privee', userId, msg);
       }
     } catch (e) {
       console.error("Error validating payment:", e);
+    }
+  },
+
+  invalidatePaymentStatus: async (payment: any) => {
+    if (!payment.rtdbPath) return;
+    try {
+      await update(rtdbRef(rtdb, payment.rtdbPath), {
+        status: 'Paiement non validé',
+        adminReadStatus: 'LU'
+      });
+    } catch (e) {
+      console.error("Error invalidating payment:", e);
     }
   },
 
