@@ -1105,23 +1105,51 @@ export const databaseService = {
 
   savePaymentToRTDB: async (paymentData: any) => {
     try {
-      const { userName, userId, amount, title, paymentType, phone, city } = paymentData;
+      const { userName, userId, amount, title, paymentType, phone, city, waveNumber } = paymentData;
       const sanitizedName = (userName || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
       const userKey = sanitizedName + "_" + (userId || phone || 'Inconnu').replace(/\D/g, '');
       const paymentsRef = rtdbRef(rtdb, `Paiements/${userKey}`);
       const newPaymentRef = push(paymentsRef);
       
+      const rtdbPath = `Paiements/${userKey}/${newPaymentRef.key}`;
+
       // Ensure key names match what AdminDashboard expects
       await set(newPaymentRef, { 
         ...paymentData, 
         userPhone: phone || userId,
-        status: 'Complété',
+        waveNumber: waveNumber || 'N/A',
+        status: 'Paiement non validé',
         adminReadStatus: 'NON LU',
+        rtdbPath: rtdbPath,
         timestamp: rtdbTimestamp() 
       });
       console.log("Payment synced to RTDB:", title);
     } catch (e) {
       console.error("Error saving payment to RTDB:", e);
+    }
+  },
+
+  validatePaymentStatus: async (payment: any) => {
+    if (!payment.rtdbPath) return;
+    try {
+      await update(rtdbRef(rtdb, payment.rtdbPath), {
+        status: 'Paiement validé',
+        adminReadStatus: 'LU'
+      });
+
+      // Send automatic message to user
+      const userId = (payment.userPhone || payment.userId || '').replace(/\D/g, '');
+      if (userId) {
+        await databaseService.saveTypedChatMessage('Assistant', userId, {
+          text: "Votre paiement a été validé avec succès. Votre mise en relation est maintenant active.",
+          sender: 'admin',
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          adminReadStatus: 'LU'
+        });
+      }
+    } catch (e) {
+      console.error("Error validating payment:", e);
     }
   },
 

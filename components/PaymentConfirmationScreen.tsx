@@ -103,6 +103,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [waveNumber, setWaveNumber] = useState('');
   const [currentAmount, setCurrentAmount] = useState(initialAmount);
   const [isManualMode] = useState(initialAmount === "custom");
   const [isValidated, setIsValidated] = useState(initialAmount !== "custom");
@@ -163,6 +164,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               title: title,
               serviceType: title,
               paymentType: paymentType,
+              waveNumber: waveNumber ? `+225 ${waveNumber}` : 'N/A',
               timestamp: Date.now()
             });
 
@@ -235,17 +237,33 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             isValidated={isValidated}
           />
 
-          {onModify && (
-            <button 
-              onClick={onModify}
-              className="mb-6 py-3 px-6 rounded-2xl border-2 border-gray-100 text-gray-400 font-black text-xs uppercase tracking-widest active:scale-95 transition-all hover:bg-gray-50 flex items-center justify-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Modifier mes informations
-            </button>
-          )}
+          <div className="mb-6 w-full max-w-[340px] px-2">
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-4">
+              Insérez votre numéro Wave
+            </label>
+            <div className="relative group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                <span className="text-lg">🇨🇮</span>
+                <span className="text-sm font-black text-slate-400">+225</span>
+              </div>
+              <input 
+                type="tel"
+                maxLength={10}
+                placeholder="00 00 00 00 00"
+                value={waveNumber}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  if (val.length <= 10) setWaveNumber(val);
+                }}
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-[#33C4F3] rounded-[1.5rem] pl-24 pr-6 py-4 text-lg font-black text-slate-900 outline-none transition-all placeholder-slate-200 shadow-inner"
+              />
+            </div>
+            {waveNumber.length > 0 && waveNumber.length < 10 && (
+              <p className="text-[9px] font-bold text-orange-500 mt-2 ml-4 animate-pulse">
+                Veuillez saisir les 10 chiffres de votre numéro
+              </p>
+            )}
+          </div>
 
           <div className="space-y-5 px-1 text-center w-full">
               <p className="text-lg font-bold text-gray-900 leading-[1.35]">
@@ -257,13 +275,13 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               <WaveLogo />
               <button 
                 onClick={handlePay}
-                disabled={isProcessing || isSuccess || !isValidated}
+                disabled={isProcessing || isSuccess || !isValidated || waveNumber.length !== 10}
                 className={`flex-1 font-black py-4 px-6 rounded-2xl shadow-xl transform active:scale-95 transition-all text-2xl uppercase tracking-wider min-h-[72px] flex items-center justify-center ${
                     isProcessing 
                     ? 'bg-gray-100 cursor-default' 
                     : isSuccess
                         ? 'bg-green-500 text-white'
-                        : isValidated 
+                        : (isValidated && waveNumber.length === 10) 
                             ? 'bg-[#33C4F3] hover:bg-[#2bb2dd] text-white'
                             : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}

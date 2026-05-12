@@ -251,6 +251,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     }
   };
 
+  const handleValidatePayment = async (payment: any) => {
+    try {
+      await databaseService.validatePaymentStatus(payment);
+    } catch (error) {
+      console.error("Error validating payment:", error);
+    }
+  };
+
   const renderTable = (headers: string[], keys: string[], sourceData: any[], collectionName?: string) => {
     const list = filteredData(sourceData);
     const headersWithStatus = [...headers];
@@ -418,6 +426,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     }
                     if (key === 'status') {
                       const s = String(val);
+                      if (activeTab === 'payments') {
+                         const isValidated = s === 'Paiement validé';
+                         return (
+                           <td key={j} className="px-6 py-4">
+                             <div className="flex flex-col gap-2 min-w-[140px]">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isValidated) handleValidatePayment(item);
+                                  }}
+                                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 flex items-center justify-center gap-2 border-2 ${
+                                    isValidated 
+                                      ? 'bg-green-600 text-white border-green-500 shadow-lg shadow-green-600/20' 
+                                      : 'bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700 hover:border-green-400 hover:text-green-600'
+                                  }`}
+                                >
+                                  {isValidated ? (
+                                    <>
+                                      <ShieldCheck size={14} />
+                                      Paiement validé
+                                    </>
+                                  ) : 'Paiement validé'}
+                                </button>
+                                {!isValidated && (
+                                  <div className="px-4 py-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-2 border-amber-100 dark:border-amber-500/20 rounded-xl text-[10px] font-black uppercase text-center flex items-center justify-center gap-2">
+                                    Paiement non validé
+                                  </div>
+                                )}
+                             </div>
+                           </td>
+                         );
+                      }
+                      
                       let badgeClass = 'bg-gray-100 text-gray-600';
                       if (s === 'Code QR Actif') badgeClass = 'bg-green-100 text-green-600';
                       else if (s.includes('310')) badgeClass = 'bg-orange-100 text-orange-600';
@@ -1046,8 +1087,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           )}
 
           {activeTab === 'payments' && renderTable(
-                ['Nom', 'Numéro', 'Type', 'Montant', 'Statut', 'Date'],
-                ['userName', 'userPhone', 'paymentType', 'amount', 'status', 'timestamp'],
+                ['Nom', 'Ville', 'Numéro', 'Wave', 'Montant', 'Statut', 'Date'],
+                ['userName', 'city', 'userPhone', 'waveNumber', 'amount', 'status', 'timestamp'],
                 data.payments,
                 'Paiements'
               )}
