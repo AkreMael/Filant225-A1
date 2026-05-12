@@ -125,9 +125,9 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             setIsNonValidated(false);
             // Redirection vers l'étape suivante après un court délai
             if (onSuccess) setTimeout(onSuccess, 1500);
-        } else if (data.status === 'Paiement non validé' && isProcessing) {
+        } else if (data.status === 'Paiement non validé') {
             setIsNonValidated(true);
-            // On reste en "processing" mais on affiche l'erreur
+            setIsProcessing(false);
         } else {
             setIsNonValidated(false);
         }
@@ -159,30 +159,6 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                 } catch (error) {
                     console.error("Error publishing offer:", error);
                 }
-            }
-
-            // New Logic for QR Code Activation
-            if (amountToSave === "310") {
-                await databaseService.updateQRCodeActivation(user.phone, {
-                    name: user.name,
-                    phone: user.phone,
-                    city: user.city,
-                    status: "Frais payés - En attente activation (7 100 FCFA)", // Move to Statut 2
-                    fraisDossierPayes: true
-                });
-            } else if (amountToSave === "7100" || amountToSave === "500") {
-                const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + 30);
-                
-                await databaseService.updateQRCodeActivation(user.phone, {
-                    name: user.name,
-                    phone: user.phone,
-                    city: user.city,
-                    status: "Code QR Actif", // Move to Statut 3
-                    activationDate: new Date().toISOString(),
-                    expiryDate: expiryDate.toISOString(),
-                    fraisDossierPayes: true
-                });
             }
 
             const path = await databaseService.savePaymentToRTDB({
@@ -297,9 +273,9 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                 {isSuccess ? (
                   <span className="text-green-600 animate-bounce block">Paiement validé avec succès ! Redirection...</span>
                 ) : isNonValidated ? (
-                  <div className="text-orange-600 block bg-orange-50 p-4 rounded-2xl border-2 border-orange-100 animate-pulse space-y-2">
-                    <p>⚠️ Votre paiement n'a pas encore été validé par l'administrateur.</p>
-                    <p className="text-xs font-medium">Veuillez patienter ou réessayer si vous avez déjà payé.</p>
+                  <div className="text-red-600 block bg-red-50 p-4 rounded-2xl border-2 border-red-100 animate-in shake duration-500 space-y-2">
+                    <p className="font-black">❌ PAIEMENT NON VALIDÉ PAR L'ADMINISTRATEUR</p>
+                    <p className="text-xs font-medium">Votre transaction n'a pas pu être confirmée. Veuillez vérifier votre application Wave ou contacter le support.</p>
                   </div>
                 ) : isProcessing ? (
                   <div className="text-blue-600 block animate-pulse space-y-2">
@@ -318,13 +294,13 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                 onClick={handlePay}
                 disabled={isProcessing || isSuccess || !isValidated || waveNumber.length !== 10}
                 className={`flex-1 font-black py-4 px-6 rounded-2xl shadow-xl transform active:scale-95 transition-all text-2xl uppercase tracking-wider min-h-[72px] flex items-center justify-center ${
-                    isProcessing 
-                    ? 'bg-gray-100 cursor-default' 
-                    : isSuccess
+                    isSuccess
                         ? 'bg-green-500 text-white'
-                        : (isValidated && waveNumber.length === 10) 
-                            ? 'bg-[#33C4F3] hover:bg-[#2bb2dd] text-white'
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : isProcessing 
+                            ? 'bg-gray-100 cursor-default' 
+                            : (isValidated && waveNumber.length === 10) 
+                                ? 'bg-[#33C4F3] hover:bg-[#2bb2dd] text-white'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
                 {isProcessing ? (

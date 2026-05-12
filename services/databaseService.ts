@@ -1139,14 +1139,45 @@ export const databaseService = {
         adminReadStatus: 'LU'
       });
 
-      // Send automatic message to user
-      const userPhone = (payment.userPhone || '').replace(/\D/g, '');
+      const userPhone = (payment.userPhone || payment.phone || '').replace(/\D/g, '');
       const userId = (payment.userId || userPhone).replace(/\D/g, '');
-      
+
+      // --- LOGIQUE DE DÉBLOCAGE PAR TYPE DE PAIEMENT ---
       if (userId) {
-        // Send to BOTH Assistant and Privee to be sure user sees it
+        if (payment.paymentType === 'Inscription' || payment.amount === '310') {
+          // Étape 2 -> 3
+          await databaseService.updateQRCodeActivation(userId, {
+            status: "En attente paiement activation (7 100 FCFA)",
+            fraisDossierPayes: true,
+            updatedAt: serverTimestamp()
+          });
+        } else if (payment.paymentType === 'Activation' || payment.amount === '7100') {
+          // Étape 3 -> 4 (Actif)
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+          
+          await databaseService.updateQRCodeActivation(userId, {
+            status: "Code QR Actif",
+            isVerified: true,
+            expiryDate: expiryDate.toISOString(),
+            activationDate: new Date().toISOString(),
+            updatedAt: serverTimestamp()
+          });
+        } else if (payment.paymentType === 'Renouvellement' || payment.amount === '500') {
+           const expiryDate = new Date();
+           expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+           await databaseService.updateQRCodeActivation(userId, {
+              status: "Code QR Actif",
+              expiryDate: expiryDate.toISOString(),
+              updatedAt: serverTimestamp()
+           });
+        }
+      }
+
+      // Send automatic message to user
+      if (userId) {
         const msg = {
-          text: "Votre paiement a été validé avec succès. Votre mise en relation est maintenant active.",
+          text: `✅ Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) a été validé avec succès par l'administrateur. L'étape suivante est maintenant débloquée.`,
           sender: 'admin',
           timestamp: new Date().toISOString(),
           isRead: false,
@@ -1167,6 +1198,21 @@ export const databaseService = {
         status: 'Paiement non validé',
         adminReadStatus: 'LU'
       });
+
+      const userPhone = (payment.userPhone || payment.phone || '').replace(/\D/g, '');
+      const userId = (payment.userId || userPhone).replace(/\D/g, '');
+
+      if (userId) {
+        const msg = {
+          text: `❌ Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) n'a pas pu être validé par l'administrateur. Veuillez vérifier les informations de votre transaction ou contacter le support.`,
+          sender: 'admin',
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          adminReadStatus: 'LU'
+        };
+        await databaseService.saveTypedChatMessage('Assistant', userId, msg);
+        await databaseService.saveTypedChatMessage('Privee', userId, msg);
+      }
     } catch (e) {
       console.error("Error invalidating payment:", e);
     }
