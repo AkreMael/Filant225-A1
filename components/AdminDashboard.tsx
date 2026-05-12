@@ -441,15 +441,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                          
                          return (
                            <td key={j} className="px-6 py-4">
-                             <div className="flex flex-col gap-2 min-w-[150px]">
+                             <div className="flex flex-col gap-2 min-w-[160px]">
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     if (!isValidated) handleValidatePayment(item);
                                   }}
-                                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 flex items-center justify-center gap-2 border-2 ${
+                                  className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 border-2 ${
                                     isValidated 
-                                      ? 'bg-green-600 text-white border-green-500 shadow-lg shadow-green-600/20' 
+                                      ? 'bg-green-600 text-white border-green-500 shadow-lg shadow-green-600/30 scale-[1.02]' 
                                       : 'bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700 hover:border-green-400 hover:text-green-600'
                                   }`}
                                 >
@@ -460,11 +460,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                 <button 
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleInvalidatePayment(item);
+                                    if (!isNotValidated) handleInvalidatePayment(item);
                                   }}
-                                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all active:scale-95 flex items-center justify-center gap-2 border-2 ${
+                                  className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 border-2 ${
                                     isNotValidated 
-                                      ? 'bg-orange-600 text-white border-orange-500 shadow-lg shadow-orange-600/20' 
+                                      ? 'bg-slate-700 text-white border-slate-600 shadow-lg shadow-slate-700/30 scale-[1.02]' 
                                       : 'bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700 hover:border-orange-400 hover:text-orange-600'
                                   }`}
                                 >
