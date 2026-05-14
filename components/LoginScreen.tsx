@@ -95,22 +95,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
 
   return (
     <div className="flex flex-col h-full bg-white font-sans overflow-y-auto">
-      <div className="relative h-[180px] sm:h-[220px] w-full flex-shrink-0">
-        <img 
-          src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/48d49f0b-5f3e-4468-8f3a-b536ad980302.jpg" 
-          alt="header" 
-          className="w-full h-full object-cover grayscale-[0.2]" 
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-orange-600/40"></div>
+      <div className="relative h-[180px] sm:h-[220px] w-full flex-shrink-0 bg-orange-600">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
-            <img 
-              src="https://i.supaimg.com/5cd01a23-e101-4415-9e28-ff02a617cd11.png" 
-              alt="Logo" 
-              className="w-14 h-14 object-contain"
-              referrerPolicy="no-referrer"
-            />
+            <span className="text-orange-600 font-black text-5xl">F</span>
           </div>
         </div>
       </div>

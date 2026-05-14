@@ -46,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({ user, onToggleProfile, setActiveTab }) 
                     <button onClick={() => setActiveTab(Tab.Map)} className="flex flex-col items-center">
                         <div className="w-16 h-10 bg-black rounded-lg flex items-center justify-center text-white text-xs font-mono shadow-lg overflow-hidden relative p-1">
                            <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center">
-                               <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/343956e5-aaed-4531-85f6-a07422df385b.png" alt="logo" className="w-4 h-4 object-contain" referrerPolicy="no-referrer"/>
+                               <span className="text-white font-black text-[10px]">F</span>
                            </div>
                            <div className="absolute right-1 bottom-1">
                                <svg className="w-5 h-5 fill-current text-gray-400" viewBox="0 0 100 100"><path d="M0 0h20v20H0z m20 0h20v20H20z m20 0h20v20H40z m20 0h20v20H60z m20 0h20v20H80z M0 20h20v20H0z m80 0h20v20H80z M0 40h20v20H0z m80 0h20v20H80z M0 60h20v20H0z m80 0h20v20H80z M0 80h20v20H0z m20 0h20v20H20z m20 0h20v20H40z m20 0h20v20H60z m20 0h20v20H80z"/></svg>

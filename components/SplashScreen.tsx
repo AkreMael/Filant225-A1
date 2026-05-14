@@ -37,13 +37,8 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ userName, onFinish }) => {
 
       {/* Center Logo Icon */}
       <div className={`transition-all duration-1000 delay-300 ease-in-out transform ${textVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-50 translate-y-4'}`}>
-          <div className="bg-orange-500/5 p-4 rounded-full border-2 border-orange-500/10 shadow-sm">
-             <img 
-                src="https://i.supaimg.com/5cd01a23-e101-4415-9e28-ff02a617cd11.png" 
-                alt="FILANT225 Logo" 
-                className="w-24 h-24 object-contain"
-                referrerPolicy="no-referrer"
-             />
+          <div className="w-24 h-24 bg-orange-600 rounded-full flex items-center justify-center p-4 border-2 border-orange-500/10 shadow-sm">
+             <span className="text-white font-black text-6xl">F</span>
           </div>
       </div>
 

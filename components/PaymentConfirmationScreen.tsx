@@ -5,6 +5,7 @@ import { databaseService } from '../services/databaseService';
 import { getCardType } from '../utils/authUtils';
 import { rtdb } from '../firebase';
 import { ref as rtdbRef, onValue, off } from 'firebase/database';
+import { CreditCard } from 'lucide-react';
 
 interface PaymentConfirmationScreenProps {
   title: string;
@@ -36,9 +37,9 @@ const BackIcon = () => (
 const WaveLogo = () => (
   <div className="flex flex-col items-center">
     <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden border border-gray-100">
-        <img src="https://i.supaimg.com/ff5dee1c-8ed5-426e-8fb7-eba013e98837.png" alt="Wave" className="w-8 h-8 object-contain" />
+        <CreditCard className="w-6 h-6 text-cyan-400" />
     </div>
-    <span className="text-[10px] font-black uppercase text-blue-400 mt-1">wave</span>
+    <span className="text-[10px] font-black uppercase text-cyan-400 mt-1">Paiement</span>
   </div>
 );
 

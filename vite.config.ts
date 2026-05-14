@@ -28,19 +28,19 @@ export default defineConfig(({ mode }) => {
             orientation: 'any',
             icons: [
               {
-                src: 'https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/343956e5-aaed-4531-85f6-a07422df385b.png',
+                src: 'https://drive.google.com/uc?id=1myMpRrCfTKA4nnpV8U-plF7LFRcxKU5C',
                 sizes: '192x192',
                 type: 'image/png',
                 purpose: 'any'
               },
               {
-                src: 'https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/343956e5-aaed-4531-85f6-a07422df385b.png',
+                src: 'https://drive.google.com/uc?id=1myMpRrCfTKA4nnpV8U-plF7LFRcxKU5C',
                 sizes: '512x512',
                 type: 'image/png',
                 purpose: 'any'
               },
               {
-                src: 'https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/343956e5-aaed-4531-85f6-a07422df385b.png',
+                src: 'https://drive.google.com/uc?id=1myMpRrCfTKA4nnpV8U-plF7LFRcxKU5C',
                 sizes: '512x512',
                 type: 'image/png',
                 purpose: 'maskable'

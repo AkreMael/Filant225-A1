@@ -11,7 +11,9 @@ import {
   ArrowRight,
   ArrowLeft,
   Briefcase,
-  CheckCircle2
+  CheckCircle2,
+  Camera,
+  Upload
 } from 'lucide-react';
 import { databaseService } from '../services/databaseService';
 
@@ -30,6 +32,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     name: currentUser?.name || '', 
     city: currentUser?.city || '', 
     phone: currentUser?.phone || '',
+    profileImageUrl: currentUser?.profileImageUrl || '',
     // Travailleur
     job: '',
     domain: '',
@@ -67,6 +70,9 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [paymentInitiated, setPaymentInitiated] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>(currentUser?.profileImageUrl || '');
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Persistence logic
   useEffect(() => {
@@ -183,6 +189,18 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     return newErrors.length === 0;
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfileImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
         const firstErrorField = document.querySelector('.border-red-500');
@@ -193,11 +211,27 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     }
 
     setIsSubmitting(true);
+    let currentProfileImageUrl = formData.profileImageUrl;
+
+    // Upload image if selected
+    if (profileImageFile) {
+      try {
+        currentProfileImageUrl = await databaseService.uploadFile(
+          profileImageFile, 
+          `Profiles/${formData.phone}_${Date.now()}`
+        );
+      } catch (error) {
+        console.error("Error uploading profile image:", error);
+        // We could show an error, but let's try to proceed with registration even if image fails
+      }
+    }
+
     const inscriptionData = {
       profileType: selectedProfile,
       name: formData.name,
       city: formData.city,
       phone: formData.phone,
+      profileImageUrl: currentProfileImageUrl,
       details: {
           // Fields vary by profileType
           ...(selectedProfile === 'Travailleur' && {
@@ -883,6 +917,44 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                 <div className="h-[2px] bg-slate-100 my-4"></div>
 
                 <h4 className="text-slate-600 font-black text-[10px] uppercase tracking-[0.2em]">Spécificités {selectedProfile}</h4>
+
+                {/* Profile Image Upload */}
+                <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-2">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-2 block text-center">Photo de profil / Logo *</label>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative group">
+                      <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-slate-200 flex items-center justify-center">
+                        {imagePreview ? (
+                          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-10 h-10 text-slate-400" />
+                        )}
+                      </div>
+                      <label 
+                        htmlFor="profile-image" 
+                        className="absolute bottom-0 right-0 bg-orange-500 p-2 rounded-full shadow-md cursor-pointer active:scale-90 transition-all border-2 border-white"
+                      >
+                        <Camera className="w-4 h-4 text-white" />
+                      </label>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-slate-400 font-bold mb-2">
+                        {profileImageFile ? 'Image sélectionnée' : 'Cliquez sur l\'icône pour ajouter une photo'}
+                      </p>
+                      <input 
+                        id="profile-image"
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                      {!profileImageFile && !imagePreview && (
+                        <p className="text-[9px] text-orange-500 font-medium">Recommandé pour être plus visible</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {renderCategoryFields()}
               </div>
             </div>

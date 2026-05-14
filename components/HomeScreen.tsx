@@ -87,25 +87,25 @@ const LargeCarteProIcon: React.FC = () => (
     </IconWrapper>
 );
 
-const ASSISTANT_IMAGE_URL = "https://i.supaimg.com/c2d87a7d-60e1-4de2-abce-69cbdf1a2aac.png";
-const TIKTOK_IMAGE_URL = "https://i.supaimg.com/5ee5d84d-9220-451a-95a6-a1a75146158d.png";
+// Removed ASSISTANT_IMAGE_URL and TIKTOK_IMAGE_URL
 
 // --- DATA TRAVAILLEURS BATIMENT ---
 const batimentWorkers = [
-    { title: 'Plombier rapide', description: 'Réparation fuites d’eau et installations.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
-    { title: 'Électricien rapide', description: 'Dépannage électrique sécurisé.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
-    { title: 'Carreleur rapide', description: 'Pose de carreaux tous formats.', img: "https://i.supaimg.com/06e7bd93-4222-4631-aeee-6516870145ef.jpg" },
-    { title: 'Charpentier rapide', description: 'Menuiserie et charpente bois.', img: "https://i.supaimg.com/017f0261-3cac-4fa3-b519-c5e93cdc1dd1.jpg" },
-    { title: 'Maçon rapide', description: 'Maçonnerie et rénovation rapide.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
-    { title: 'Soudeur rapide', description: 'Travaux de soudure et ferronnerie.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
-    { title: 'Peintre rapide', description: 'Peinture et finitions intérieures.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Laveur de vitres Rapide', description: 'Nettoyage professionnel de vitres.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
-    { title: 'Technicien entretien climatisation Rapide', description: 'Entretien et recharge clim.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
-    { title: 'Installateur de caméras de surveillance Rapide', description: 'Installation vidéosurveillance.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
-    { title: 'Fabricant de poufs Rapide', description: 'Création et réparation de poufs.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg" },
-    { title: 'Installateur de fenêtres et portes vitrées Rapide', description: 'Pose menuiserie et vitrerie.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
-    { title: 'Menuisier Rapide', description: 'Menuiserie bois et meubles.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg" },
+    { title: 'Plombier rapide', description: 'Réparation fuites d’eau et installations.' },
+    { title: 'Électricien rapide', description: 'Dépannage électrique sécurisé.' },
+    { title: 'Carreleur rapide', description: 'Pose de carreaux tous formats.' },
+    { title: 'Charpentier rapide', description: 'Menuiserie et charpente bois.' },
+    { title: 'Maçon rapide', description: 'Maçonnerie et rénovation rapide.' },
+    { title: 'Soudeur rapide', description: 'Travaux de soudure et ferronnerie.' },
+    { title: 'Peintre rapide', description: 'Peinture et finitions intérieures.' },
+    { title: 'Laveur de vitres Rapide', description: 'Nettoyage professionnel de vitres.' },
+    { title: 'Technicien entretien climatisation Rapide', description: 'Entretien et recharge clim.' },
+    { title: 'Installateur de caméras de surveillance Rapide', description: 'Installation vidéosurveillance.' },
+    { title: 'Fabricant de poufs Rapide', description: 'Création et réparation de poufs.' },
+    { title: 'Installateur de fenêtres et portes vitrées Rapide', description: 'Pose menuiserie et vitrerie.' },
+    { title: 'Menuisier Rapide', description: 'Menuiserie bois et meubles.' },
 ];
+
 
 // --- COMPONENT CAROUSEL ---
 const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onSelectItem }) => {
@@ -147,8 +147,8 @@ const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onS
                         className="flex-shrink-0 w-[160px] bg-white rounded-[2rem] overflow-hidden shadow-xl flex flex-col transition-all relative border border-gray-100"
                     >
                         <div className="p-2">
-                            <div className="h-[100px] w-full rounded-2xl overflow-hidden relative shadow-inner bg-slate-50 border border-gray-100">
-                                <img src={item.img} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
+                            <div className="h-[100px] w-full rounded-2xl overflow-hidden relative shadow-inner bg-slate-50 border border-gray-100 flex items-center justify-center">
+                                <UserCircleIcon className="w-12 h-12 text-slate-400" />
                             </div>
                         </div>
                         <div className="px-4 pb-4 flex flex-col text-left">
@@ -385,7 +385,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="flex justify-between items-center px-4 h-20">
                 <div className="flex items-center gap-1.5 relative flex-1">
                     <div className="flex items-center gap-2">
-                         <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/343956e5-aaed-4531-85f6-a07422df385b.png" alt="Logo" className="w-12 h-12 object-contain" referrerPolicy="no-referrer" />
+                         <div className="w-12 h-12 flex items-center justify-center bg-orange-600 text-white rounded-xl shadow-lg">
+                             <span className="font-black text-2xl">F</span>
+                         </div>
                          <h2 className="text-xl font-black text-[#1e293b] uppercase tracking-tighter">FILANT°225</h2>
                     </div>
                 </div>
@@ -429,12 +431,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className={`bg-white/10 backdrop-blur-md my-4 p-6 border-y ${isClient ? 'border-slate-200' : 'border-white/10'} overflow-hidden`}>
                 <div className="flex flex-col items-center">
                     <h1 className="text-5xl sm:text-6xl font-black tracking-tighter flex items-center justify-center flex-nowrap whitespace-nowrap">
-                        <img 
-                            src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/343956e5-aaed-4531-85f6-a07422df385b.png" 
-                            alt="Logo" 
-                            className="w-14 h-14 sm:w-20 sm:h-20 object-contain mr-3"
-                            referrerPolicy="no-referrer"
-                        />
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center bg-orange-600 text-white rounded-2xl shadow-xl mr-3">
+                            <span className="font-black text-4xl sm:text-5xl">F</span>
+                        </div>
                         <div className="flex">
                             {"FILANT".split("").map((letter, idx) => (
                                 <span 
@@ -462,8 +461,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
             <div className="flex items-start space-x-3">
                 <a href="https://www.tiktok.com/@filant225" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center space-y-1 group">
-                    <div className="w-12 h-12 transform group-hover:scale-110 transition-transform flex items-center justify-center">
-                        <img src={TIKTOK_IMAGE_URL} alt="TikTok" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    <div className="w-12 h-12 transform group-hover:scale-110 transition-transform flex items-center justify-center bg-black rounded-full text-white">
+                        <span className="font-bold text-sm">TT</span>
                     </div>
                     <span className="text-[8px] font-black uppercase text-slate-600">TikTok</span>
                 </a>
@@ -520,12 +519,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-110 transition-transform duration-700"></div>
                         <div className="relative z-10 flex items-center gap-4">
                             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg transform -rotate-6 group-hover:rotate-0 transition-transform duration-300">
-                                <img 
-                                    src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/343956e5-aaed-4531-85f6-a07422df385b.png" 
-                                    alt="Logo" 
-                                    className="w-10 h-10 object-contain"
-                                    referrerPolicy="no-referrer"
-                                />
+                                <span className="text-orange-600 font-black text-3xl">F</span>
                             </div>
                             <div className="flex-1">
                                 <h3 className="text-white font-black text-lg uppercase leading-tight tracking-tighter">Installer l'application</h3>
@@ -548,12 +542,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                         onClick={() => handleMainServiceClick('worker_list')} 
                         className={`aspect-square bg-white text-slate-900 rounded-3xl p-4 flex flex-col items-center justify-center text-center shadow-2xl transform active:scale-95 transition-all border-2 border-green-500 relative overflow-hidden group`}
                     >
-                        <img 
-                            src="https://i.supaimg.com/2681e7cd-50eb-4001-a420-79f8832470c3.jpg" 
-                            alt="" 
-                            className="absolute inset-0 w-full h-full object-cover opacity-15"
-                            referrerPolicy="no-referrer"
-                        />
                         <div className="relative z-10 flex flex-col items-center">
                             <div className="absolute top-[-16px] left-[-16px] right-[-16px] h-1.5 bg-green-500"></div>
                             <ServiceRapideIcon />

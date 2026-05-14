@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
 import WavePaymentScreen from './WavePaymentScreen';
+import { CreditCard } from 'lucide-react';
 
 const BackIcon: React.FC = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>;
-const PAYMENT_LOGO_URL = "https://i.supaimg.com/ff5dee1c-8ed5-426e-8fb7-eba013e98837.png";
 
 interface PaymentScreenProps {
   onBack: () => void;
@@ -41,7 +41,7 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({ onBack }) => {
                 </button>
                 <div className="flex items-center gap-2 ml-4">
                     <h1 className="text-xl font-bold text-white">Paiement</h1>
-                    <img src={PAYMENT_LOGO_URL} alt="Logo" className="w-6 h-6 object-contain" referrerPolicy="no-referrer" />
+                    <CreditCard className="w-6 h-6 text-white" />
                 </div>
             </header>
 
@@ -58,7 +58,7 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({ onBack }) => {
                     </div>
                     <button onClick={() => handlePaymentClick('Montant d’expédition', null, 'Service')} className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg whitespace-nowrap text-sm sm:text-base transform hover:scale-105 transition-transform flex items-center gap-2">
                         <span>Payer</span>
-                        <img src={PAYMENT_LOGO_URL} alt="" className="w-4 h-4 object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                        <CreditCard className="w-4 h-4 text-white" />
                     </button>
                 </div>
 
@@ -73,7 +73,7 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({ onBack }) => {
                             <span>Payer</span>
                             <span>100 CFA</span>
                         </div>
-                        <img src={PAYMENT_LOGO_URL} alt="" className="w-5 h-5 object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                        <CreditCard className="w-5 h-5 text-white" />
                     </button>
                 </div>
 
@@ -88,7 +88,7 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({ onBack }) => {
                             <span>Payer</span>
                             <span>310 CFA</span>
                         </div>
-                        <img src={PAYMENT_LOGO_URL} alt="" className="w-5 h-5 object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                        <CreditCard className="w-5 h-5 text-white" />
                     </button>
                 </div>
                 
@@ -104,7 +104,7 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({ onBack }) => {
                                 <span>Payer</span>
                                 <span>7100 CFA</span>
                             </div>
-                            <img src={PAYMENT_LOGO_URL} alt="" className="w-5 h-5 object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                            <CreditCard className="w-5 h-5 text-white" />
                         </button>
                         <button onClick={() => setShowWavePayment(true)} className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg text-sm sm:text-base transform hover:scale-105 transition-transform">
                             Autre
@@ -123,7 +123,7 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({ onBack }) => {
                             <span>Payer</span>
                             <span>500 CFA</span>
                         </div>
-                        <img src={PAYMENT_LOGO_URL} alt="" className="w-5 h-5 object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                        <CreditCard className="w-5 h-5 text-white" />
                     </button>
                 </div>
             </main>

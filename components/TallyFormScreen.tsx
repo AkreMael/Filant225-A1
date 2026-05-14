@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
+import { FileText } from 'lucide-react';
 import { getFormImage } from './common/formDefinitions';
 
 const BackIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>;
@@ -12,8 +13,6 @@ interface TallyFormScreenProps {
 }
 
 const TallyFormScreen: React.FC<TallyFormScreenProps> = ({ formUrl, formTitle = "Service FILANT°225", onBack }) => {
-  const headerImage = getFormImage(formTitle) || "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=1000";
-
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -27,15 +26,10 @@ const TallyFormScreen: React.FC<TallyFormScreenProps> = ({ formUrl, formTitle = 
           initial={{ y: -50, opacity: 0, scale: 1.1 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          className="relative h-[200px] w-full flex-shrink-0"
+          className="relative h-[200px] w-full flex-shrink-0 bg-orange-600 flex items-center justify-center"
         >
-            <img 
-              src={headerImage} 
-              alt={formTitle} 
-              className="w-full h-full object-cover grayscale-[0.2]" 
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-black/40"></div>
+            <FileText className="w-16 h-16 text-white/50" />
+            <div className="absolute inset-0 bg-black/10"></div>
             <button 
               onClick={onBack} 
               className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20"

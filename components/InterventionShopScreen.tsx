@@ -181,29 +181,11 @@ const generalLocationDataList = [
 // --- COMPONENTS ---
 
 const EquipmentVisual: React.FC<{ title: string, fallbackImg?: string, category?: string }> = ({ title, fallbackImg, category }) => {
-    const images = EQUIPMENT_IMAGES[title];
-    const [index, setIndex] = useState(0);
-
-    useEffect(() => {
-        if (Array.isArray(images) && images.length > 1) {
-            const interval = setInterval(() => {
-                setIndex(prev => (prev + 1) % images.length);
-            }, 3000);
-            return () => clearInterval(interval);
-        }
-    }, [images]);
-
-    if (images) {
-        const src = Array.isArray(images) ? images[index] : images;
-        return <img src={src} alt={title} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out" referrerPolicy="no-referrer" />;
-    }
-
-    if (fallbackImg) {
-        return <img src={fallbackImg} alt={title} className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" />;
-    }
-
-    const iconClass = "w-16 h-16 text-white";
-    return category === 'appartement' ? <HouseIcon className={iconClass} /> : <ToolIcon className={iconClass} />;
+    return (
+        <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+            {category === 'appartement' ? <HouseIcon className="w-16 h-16 text-blue-400" /> : <ToolIcon className="w-16 h-16 text-orange-400" />}
+        </div>
+    );
 };
 
 const RapidSectionCard: React.FC<{ 
@@ -322,9 +304,11 @@ const ClassicCard: React.FC<ClassicCardProps> = ({ item, user, category, onOpenF
             onClick={handleOpen}
         >
             <div className="flex flex-col">
-                <div className={`aspect-[4/3] w-full flex items-center justify-center relative ${colorStyle.bg} ${colorStyle.border || ''} overflow-hidden`}>
+                <div className={`aspect-[4/3] w-full flex items-center justify-center relative ${colorStyle.bg} ${colorStyle.border || ''} overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200`}>
                     {isWorker ? (
-                        <img src={img as string} alt="" className="absolute inset-0 w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <UserCircleIcon className="w-16 h-16 text-slate-400" />
+                        </div>
                     ) : (
                         <EquipmentVisual title={item.title} category={(item as any).category} />
                     )}
@@ -409,15 +393,10 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
                     initial={{ y: -50, opacity: 0, scale: 1.1 }}
                     animate={{ y: 0, opacity: 1, scale: 1 }}
                     transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                    className="relative h-[220px] w-full flex-shrink-0"
+                    className="relative h-[220px] w-full flex-shrink-0 bg-orange-600 flex items-center justify-center"
                 >
-                    <img 
-                        src={headerImage} 
-                        alt="header" 
-                        className="w-full h-full object-cover grayscale-[0.2]" 
-                        referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-black/40"></div>
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <span className="text-white/20 font-black text-6xl">F</span>
                     <button 
                         onClick={onBack} 
                         className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20"

@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
+import { CreditCard } from 'lucide-react';
 
 const BackIcon: React.FC = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>;
-const PAYMENT_LOGO_URL = "https://i.supaimg.com/ff5dee1c-8ed5-426e-8fb7-eba013e98837.png";
 
 interface WavePaymentScreenProps {
   onBack: () => void;
@@ -50,7 +50,7 @@ const WavePaymentScreen: React.FC<WavePaymentScreenProps> = ({ onBack }) => {
                 </button>
                 <div className="flex items-center gap-2 ml-4">
                     <h1 className="text-xl font-bold">Autre Paiement</h1>
-                    <img src={PAYMENT_LOGO_URL} alt="Logo" className="w-6 h-6 object-contain" referrerPolicy="no-referrer" />
+                    <CreditCard className="w-6 h-6 text-blue-400" />
                 </div>
             </header>
 
@@ -98,7 +98,7 @@ const WavePaymentScreen: React.FC<WavePaymentScreenProps> = ({ onBack }) => {
                                     <span className="text-3xl tracking-tight">{selectedAmount} CFA</span>
                                     <div className="flex items-center justify-center gap-2 mt-1">
                                         <span className="text-[10px] uppercase tracking-[0.2em] opacity-80">Transmettre à l'assistant</span>
-                                        <img src={PAYMENT_LOGO_URL} alt="Logo" className="w-4 h-4 object-contain" referrerPolicy="no-referrer" />
+                                        <CreditCard className="w-4 h-4 text-white" />
                                     </div>
                                 </>
                             )}

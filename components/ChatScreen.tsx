@@ -4,8 +4,7 @@ import { User } from '../types';
 import { databaseService } from '../services/databaseService';
 import { Linkify } from '../utils/textUtils';
 import SpeakerIcon from './common/SpeakerIcon';
-
-const WAVE_LOGO_URL = "https://i.supaimg.com/ff5dee1c-8ed5-426e-8fb7-eba013e98837.png";
+import { CreditCard } from 'lucide-react';
 
 interface ChatMessage {
   id?: string;
@@ -355,12 +354,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
                                   onClick={() => handleOpenPaymentView(msg.paymentInfo!, msg.text)}
                                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                               >
-                                  <img 
-                                      src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/756a216c-cba5-487d-8e2f-aa9312795945.png" 
-                                      alt="Wave" 
-                                      className="w-5 h-5 object-contain"
-                                      referrerPolicy="no-referrer"
-                                  />
+                                  <CreditCard className="w-5 h-5 text-white" />
                                   <span className="uppercase tracking-widest text-[11px]">
                                       {msg.paymentInfo.amount === 'custom' ? 'Payer (Wave)' : `Payer (Wave) – ${msg.paymentInfo.amount.replace(/\B(?=(\d{3})+(?!\d))/g, " ")} F`}
                                   </span>

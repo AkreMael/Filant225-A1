@@ -10,8 +10,8 @@ const BackArrowIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 const LogoWithWhatsApp = () => (
     <div className="relative w-16 h-16">
-        <div className="absolute inset-0 bg-white rounded-full border-[4px] border-red-600 overflow-hidden flex items-center justify-center p-1 shadow-2xl">
-            <img src="https://i.supaimg.com/5cd01a23-e101-4415-9e28-ff02a617cd11.png" alt="Filant Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+        <div className="absolute inset-0 bg-orange-600 rounded-full border-[4px] border-red-600 overflow-hidden flex items-center justify-center p-1 shadow-2xl">
+            <span className="text-white font-black text-3xl">F</span>
         </div>
         <div className="absolute -top-1 -left-1 w-6 h-6 bg-[#25D366] rounded-full flex items-center justify-center border-2 border-white shadow-lg z-10">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-white fill-current" viewBox="0 0 24 24">

@@ -225,13 +225,18 @@ const InterventionCard: React.FC<{ item: WorkerOffer, currentUser?: any }> = ({ 
                     <span className="text-white text-[10px] font-black uppercase tracking-widest">Informations copiées !</span>
                 </div>
             )}
-            <div className="h-[120px] w-full relative">
-                <img 
-                    src={item.img || "https://i.supaimg.com/c3c14402-3c1f-4484-bfe1-774bcc4ac6de.png"} 
-                    alt={item.title} 
-                    className={`w-full h-full object-cover transition-all duration-500 ${isUnblurred ? 'blur-0' : 'blur-[15px]'}`} 
-                    referrerPolicy="no-referrer" 
-                />
+            <div className="h-[120px] w-full relative bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center">
+                {item.title.toLowerCase().includes('louer') || item.title.toLowerCase().includes('vendre') ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="8" r="5" />
+                        <path d="M20 21a8 8 0 0 0-16 0" />
+                    </svg>
+                )}
                 {!isUnblurred && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/30 backdrop-blur-[2px]">
                         <span className="text-white text-[12px] font-black uppercase tracking-[0.3em] text-center px-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">masqué</span>
@@ -694,12 +699,9 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
       {/* --- HEADER --- */}
       <header className="sticky top-0 z-30 bg-white shadow-sm px-4 py-3 flex justify-between items-center border-b border-gray-100">
         <div className="flex items-center gap-2">
-          <img 
-            src="https://i.supaimg.com/5cd01a23-e101-4415-9e28-ff02a617cd11.png" 
-            alt="Logo" 
-            className="w-10 h-10 object-contain"
-            referrerPolicy="no-referrer"
-          />
+          <div className="w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-black text-xl">F</span>
+          </div>
           <span className="font-black text-xl text-slate-900 tracking-tight">
             FILANT<span className="text-orange-500 font-black">°225</span>
           </span>

@@ -187,19 +187,6 @@ const LocationCard: React.FC<LocationCardProps> = ({ item, user, onPropose, onOp
   };
 
   const renderVisual = () => {
-      if (equipmentImgData) {
-          const src = Array.isArray(equipmentImgData) ? equipmentImgData[currentImgIndex] : equipmentImgData;
-          return (
-              <div className="w-24 h-24 rounded-3xl border-2 border-orange-500 overflow-hidden flex-shrink-0 relative bg-gray-50 shadow-inner">
-                  <img 
-                    src={src} 
-                    alt={item.title} 
-                    className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out" 
-                    referrerPolicy="no-referrer"
-                  />
-              </div>
-          );
-      }
       return <OrangeAvatar icon={item.category === 'appartement' ? <BuildingIcon /> : <FlashlightIcon />} />;
   };
 
@@ -277,12 +264,9 @@ const LocationScreen: React.FC<LocationScreenProps> = ({ onBack, user, onPropose
       <header className="bg-white pt-2 pb-2 px-4 sticky top-0 z-20 border-b border-gray-100 shadow-sm">
         <div className="flex flex-row items-center gap-3 mb-3">
             <div className="flex items-center gap-1.5 flex-shrink-0">
-                <img 
-                    src="https://i.supaimg.com/5cd01a23-e101-4415-9e28-ff02a617cd11.png" 
-                    alt="Logo" 
-                    className="w-10 h-10 object-contain"
-                    referrerPolicy="no-referrer"
-                />
+                <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-black text-xl">F</span>
+                </div>
                 <h1 className="text-xl font-black text-orange-500 tracking-tight whitespace-nowrap">
                     FILANT<span className="text-lg align-top">°</span>225
                 </h1>

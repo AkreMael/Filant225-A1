@@ -7,8 +7,7 @@ import { getQuestionsForType, generateWhatsAppMessage, calculateTotalPrice, Answ
 import { databaseService } from '../services/databaseService';
 import { audioService } from '../services/audioService';
 
-const LOGO_URL = "https://i.supaimg.com/5cd01a23-e101-4415-9e28-ff02a617cd11.png";
-const WHATSAPP_LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg";
+import { Phone } from 'lucide-react';
 
 const Spinner = () => (
     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -283,12 +282,9 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
         <div className="w-full max-w-[320px] flex flex-col items-center">
             {/* Logo area from the image */}
             <div className="relative w-48 h-48 mb-8">
-                <img 
-                  src={resolvedImage || LOGO_URL} 
-                  alt={title} 
-                  className="w-full h-full object-cover rounded-[2rem] shadow-2xl border-4 border-orange-50" 
-                  referrerPolicy="no-referrer"
-                />
+                <div className="w-full h-full bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2rem] shadow-2xl border-4 border-orange-50 flex items-center justify-center">
+                    <span className="text-white font-black text-6xl">F</span>
+                </div>
             </div>
 
             <div className="space-y-6 mb-12">
@@ -366,18 +362,13 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
           initial={{ y: -50, opacity: 0, scale: 1.1 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          className="relative h-[220px] w-full flex-shrink-0"
+          className="relative h-[220px] w-full flex-shrink-0 bg-orange-600 flex items-center justify-center"
         >
-            <img 
-              src={resolvedImage || "https://i.supaimg.com/ed09fd1b-87c1-4297-bab2-6f5e2f39baf0.jpg"} 
-              alt="header" 
-              className={`w-full h-full object-cover grayscale-[0.2] ${isBlurredImage ? 'blur-[15px]' : ''}`} 
-              referrerPolicy="no-referrer"
-            />
-            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
+            <span className="text-white/20 font-black text-8xl relative z-0 mt-4">F</span>
             {isBlurredImage && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-white/60 text-lg font-black uppercase tracking-[0.3em] drop-shadow-lg">MASQUÉ</span>
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <span className="text-white text-lg font-black uppercase tracking-[0.3em] drop-shadow-lg">MASQUÉ</span>
                 </div>
             )}
             <button onClick={onClose} className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20">
@@ -623,7 +614,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                       disabled={isSending}
                       className="w-14 h-14 bg-white border-2 border-gray-100 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform overflow-hidden p-1.5"
                     >
-                        {isSending ? <div className="w-6 h-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div> : <img src={LOGO_URL} alt="Assistant" className="w-full h-full object-contain" referrerPolicy="no-referrer" />}
+                        {isSending ? <div className="w-6 h-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div> : <div className="w-full h-full bg-orange-600 rounded-full flex items-center justify-center text-white"><span className="font-black text-xl">F</span></div>}
                     </button>
                     
                     <span className="text-gray-400 font-black text-[9px] uppercase tracking-tighter w-24 text-center leading-tight">
@@ -635,7 +626,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                       disabled={isSending}
                       className="w-14 h-14 bg-[#16a34a] rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform p-3"
                     >
-                        {isSending ? <Spinner /> : <img src={WHATSAPP_LOGO_URL} alt="WhatsApp" className="w-full h-full object-contain brightness-0 invert" referrerPolicy="no-referrer" />}
+                        {isSending ? <Spinner /> : <Phone className="w-full h-full text-white" fill="currentColor" />}
                     </button>
                 </div>
             </div>

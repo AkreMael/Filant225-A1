@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { databaseService } from '../services/databaseService';
-import { Worker, User } from '../types';
+import { Worker, User as UserType } from '../types';
 import EmbeddedForm from './EmbeddedForm';
+import { User } from 'lucide-react';
 
 // --- ICONS (Matching the provided mockup) ---
 const BackIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>;
@@ -130,7 +131,7 @@ const workerTallyLinks: Record<string, string> = {
 
 interface WorkerCardProps {
   worker: Worker;
-  user: User;
+  user: UserType;
   onScheduleService: (url?: string, title?: string) => void;
   onOpenForm: (context: { formType: 'worker' | 'location' | 'night_service' | 'rapid_building_service', title: string, imageUrl?: string, description?: string }) => void;
 }
@@ -168,14 +169,8 @@ const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, onScheduleService
     <div className={`bg-white rounded-[2.5rem] p-5 flex flex-col transition-all relative overflow-hidden animate-in zoom-in-95 duration-300 shadow-xl`}>
       <div className="flex gap-4">
         {/* Profile Image - Large Rounded Rectangle */}
-        <div className="w-24 h-24 rounded-3xl border-2 border-orange-500 overflow-hidden flex-shrink-0 relative bg-gray-50 shadow-inner">
-            <img 
-                src={imageSrc} 
-                alt={displayName} 
-                className="absolute inset-0 w-full h-full object-cover block"
-                loading="eager"
-                referrerPolicy="no-referrer"
-            />
+        <div className="w-24 h-24 rounded-3xl border-2 border-orange-500 overflow-hidden flex-shrink-0 relative bg-gray-50 flex items-center justify-center shadow-inner">
+            <User className="w-12 h-12 text-slate-400" strokeWidth={1.5} />
             {worker.isVerified && <VerifiedBadge />}
         </div>
         
@@ -236,7 +231,7 @@ const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, onScheduleService
 
 interface WorkerListScreenProps {
   onBack: () => void;
-  user: User;
+  user: UserType;
   onScheduleService: (url?: string, title?: string) => void;
   onOpenSiteWorkers: () => void;
   onOpenForm: (context: { formType: 'worker' | 'location' | 'night_service' | 'rapid_building_service', title: string, imageUrl?: string, description?: string }) => void;
@@ -293,12 +288,9 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
         <header className="bg-white pt-2 pb-2 px-4 sticky top-0 z-20 border-b border-gray-100 shadow-sm">
             <div className="flex flex-row items-center gap-3 mb-3">
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <img 
-                        src="https://i.supaimg.com/5cd01a23-e101-4415-9e28-ff02a617cd11.png" 
-                        alt="Logo" 
-                        className="w-10 h-10 object-contain"
-                        referrerPolicy="no-referrer"
-                    />
+                    <div className="w-10 h-10 flex items-center justify-center bg-orange-600 text-white rounded-xl shadow-sm">
+                        <span className="font-black text-xl">F</span>
+                    </div>
                     <h1 className="text-xl font-black text-orange-500 tracking-tight whitespace-nowrap">
                         FILANT<span className="text-lg align-top">°</span>225
                     </h1>
