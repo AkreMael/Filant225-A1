@@ -954,34 +954,6 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
               </AnimatePresence>
             </div>
           )}
-
-          {/* Agence Immobilière */}
-          <div className="px-4 mb-6">
-              <button 
-                onClick={() => onOpenCategory('immobilier')}
-                className="w-full bg-white text-gray-900 p-7 rounded-[2.5rem] flex justify-between items-center shadow-md border border-gray-100 active:scale-[0.98] transition-all"
-              >
-                  <span className="text-xl font-black">Agence Immobilière</span>
-                  <div className="bg-blue-100 p-2 rounded-full text-blue-600"><ArrowRightIcon /></div>
-              </button>
-          </div>
-
-          <div className="px-4 space-y-4 mb-12">
-              <button 
-                onClick={() => onOpenCategory('travailleurs')}
-                className="w-full bg-slate-900 text-white p-7 rounded-[2.5rem] flex justify-between items-center shadow-lg active:scale-[0.98] transition-all"
-              >
-                  <span className="text-xl font-black">Travailleurs Qualifiés</span>
-                  <div className="bg-white/20 p-2 rounded-full"><ArrowRightIcon /></div>
-              </button>
-              <button 
-                onClick={() => onOpenCategory('equipement')}
-                className="w-full bg-white text-gray-900 p-7 rounded-[2.5rem] flex justify-between items-center shadow-md border border-gray-100 active:scale-[0.98] transition-all"
-              >
-                  <span className="text-xl font-black">Location d'équipements</span>
-                  <div className="bg-gray-100 p-2 rounded-full"><ArrowRightIcon /></div>
-              </button>
-          </div>
       </main>
     </div>
   );
