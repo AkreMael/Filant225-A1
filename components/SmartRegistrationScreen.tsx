@@ -35,43 +35,35 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     profileImageUrl: currentUser?.profileImageUrl || '',
     // Travailleur
     job: '',
-    domain: '',
-    specialty: '',
     learnedFrom: '' as 'Sur le tas' | 'Formation professionnelle' | 'Diplôme' | '',
-    skillsDescription: '',
     availability: '',
     movementZone: '',
+    skillsDescription: '',
     // Propriétaire
     equipmentType: '',
     equipmentCategory: '',
-    equipmentDescription: '',
     quantity: '',
     equipmentCity: '',
     rentalPrice: '',
+    equipmentDescription: '',
     // Agence
     agencyName: '',
     agencyCity: '',
-    agencyAddress: '',
-    propertyTypes: '',
-    agencyServices: '',
+    agencyPhone: '',
+    propertyTypes: '' as 'Appartement' | 'Terrain' | 'Automobile' | '',
     agencyZone: '',
-    agencyDocs: '',
     // Entreprise
     companyName: '',
     companyCity: '',
-    companyAddress: '',
+    companyPhone: '',
     companyDomain: '',
     companyServices: '',
-    companyNeeds: '',
     proposedSalary: '',
-    companyDocs: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [paymentInitiated, setPaymentInitiated] = useState(false);
-  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>(currentUser?.profileImageUrl || '');
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // Persistence logic
@@ -155,50 +147,34 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
 
     if (selectedProfile === 'Travailleur') {
       if (!formData.job) newErrors.push('job');
-      if (!formData.domain) newErrors.push('domain');
-      if (!formData.specialty) newErrors.push('specialty');
       if (!formData.learnedFrom) newErrors.push('learnedFrom');
-      if (!formData.skillsDescription) newErrors.push('skillsDescription');
       if (!formData.availability) newErrors.push('availability');
       if (!formData.movementZone) newErrors.push('movementZone');
+      if (!formData.skillsDescription) newErrors.push('skillsDescription');
     } else if (selectedProfile === 'Propriétaire') {
       if (!formData.equipmentType) newErrors.push('equipmentType');
       if (!formData.equipmentCategory) newErrors.push('equipmentCategory');
-      if (!formData.equipmentDescription) newErrors.push('equipmentDescription');
       if (!formData.quantity) newErrors.push('quantity');
       if (!formData.equipmentCity) newErrors.push('equipmentCity');
-      if (!formData.availability) newErrors.push('availability');
       if (!formData.rentalPrice) newErrors.push('rentalPrice');
+      if (!formData.equipmentDescription) newErrors.push('equipmentDescription');
     } else if (selectedProfile === 'Agence') {
       if (!formData.agencyName) newErrors.push('agencyName');
       if (!formData.agencyCity) newErrors.push('agencyCity');
-      if (!formData.agencyAddress) newErrors.push('agencyAddress');
+      if (!formData.agencyPhone) newErrors.push('agencyPhone');
       if (!formData.propertyTypes) newErrors.push('propertyTypes');
-      if (!formData.agencyServices) newErrors.push('agencyServices');
       if (!formData.agencyZone) newErrors.push('agencyZone');
     } else if (selectedProfile === 'Entreprise') {
       if (!formData.companyName) newErrors.push('companyName');
       if (!formData.companyCity) newErrors.push('companyCity');
-      if (!formData.companyAddress) newErrors.push('companyAddress');
+      if (!formData.companyPhone) newErrors.push('companyPhone');
       if (!formData.companyDomain) newErrors.push('companyDomain');
       if (!formData.companyServices) newErrors.push('companyServices');
-      if (!formData.companyNeeds) newErrors.push('companyNeeds');
+      if (!formData.proposedSalary) newErrors.push('proposedSalary');
     }
 
     setErrors(newErrors);
     return newErrors.length === 0;
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProfileImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleSubmit = async () => {
@@ -213,19 +189,6 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     setIsSubmitting(true);
     let currentProfileImageUrl = formData.profileImageUrl;
 
-    // Upload image if selected
-    if (profileImageFile) {
-      try {
-        currentProfileImageUrl = await databaseService.uploadFile(
-          profileImageFile, 
-          `Profiles/${formData.phone}_${Date.now()}`
-        );
-      } catch (error) {
-        console.error("Error uploading profile image:", error);
-        // We could show an error, but let's try to proceed with registration even if image fails
-      }
-    }
-
     const inscriptionData = {
       profileType: selectedProfile,
       name: formData.name,
@@ -236,40 +199,33 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
           // Fields vary by profileType
           ...(selectedProfile === 'Travailleur' && {
               job: formData.job,
-              domain: formData.domain,
-              specialty: formData.specialty,
               learnedFrom: formData.learnedFrom,
-              skillsDescription: formData.skillsDescription,
               availability: formData.availability,
-              movementZone: formData.movementZone
+              movementZone: formData.movementZone,
+              skillsDescription: formData.skillsDescription
           }),
           ...(selectedProfile === 'Propriétaire' && {
               equipmentType: formData.equipmentType,
               equipmentCategory: formData.equipmentCategory,
-              equipmentDescription: formData.equipmentDescription,
               quantity: formData.quantity,
               equipmentCity: formData.equipmentCity,
-              availability: formData.availability,
-              rentalPrice: formData.rentalPrice
+              rentalPrice: formData.rentalPrice,
+              equipmentDescription: formData.equipmentDescription
           }),
           ...(selectedProfile === 'Agence' && {
               agencyName: formData.agencyName,
               agencyCity: formData.agencyCity,
-              agencyAddress: formData.agencyAddress,
+              agencyPhone: formData.agencyPhone,
               propertyTypes: formData.propertyTypes,
-              agencyServices: formData.agencyServices,
-              agencyZone: formData.agencyZone,
-              agencyDocs: formData.agencyDocs
+              agencyZone: formData.agencyZone
           }),
           ...(selectedProfile === 'Entreprise' && {
               companyName: formData.companyName,
               companyCity: formData.companyCity,
-              companyAddress: formData.companyAddress,
+              companyPhone: formData.companyPhone,
               companyDomain: formData.companyDomain,
               companyServices: formData.companyServices,
-              companyNeeds: formData.companyNeeds,
-              proposedSalary: formData.proposedSalary,
-              companyDocs: formData.companyDocs
+              proposedSalary: formData.proposedSalary
           })
       }
     };
@@ -284,8 +240,8 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
         phone: formData.phone,
         city: formData.city,
         profileType: selectedProfile,
-        profession: formData.job || formData.equipmentType || formData.companyDomain || formData.propertyTypes,
-        domain: formData.domain || formData.equipmentCategory || formData.agencyServices || formData.companyServices,
+        profession: formData.job || formData.equipmentType || formData.agencyName || formData.companyName,
+        domain: formData.skillsDescription || formData.equipmentCategory || formData.propertyTypes || formData.companyDomain,
         status: "En attente paiement frais (310 FCFA)",
         fraisDossierPayes: false
       });
@@ -354,7 +310,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
           <div className="space-y-3">
             <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Travailleur</h2>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Métier / profession *</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Métier *</label>
               <input 
                 id="job"
                 type="text"
@@ -365,34 +321,6 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                 }}
                 placeholder="Ex: Électricien, Menuisier..."
                 className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('job') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Domaine de travail *</label>
-              <input 
-                id="domain"
-                type="text"
-                value={formData.domain}
-                onChange={(e) => {
-                    setFormData({...formData, domain: e.target.value});
-                    if (errors.includes('domain')) setErrors(errors.filter(e => e !== 'domain'));
-                }}
-                placeholder="Ex: Bâtiment, Service..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('domain') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Spécialité *</label>
-              <input 
-                id="specialty"
-                type="text"
-                value={formData.specialty}
-                onChange={(e) => {
-                    setFormData({...formData, specialty: e.target.value});
-                    if (errors.includes('specialty')) setErrors(errors.filter(e => e !== 'specialty'));
-                }}
-                placeholder="Votre spécialité précise"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('specialty') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -413,19 +341,6 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               </div>
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Description du savoir-faire *</label>
-              <textarea 
-                id="skillsDescription"
-                value={formData.skillsDescription}
-                onChange={(e) => {
-                    setFormData({...formData, skillsDescription: e.target.value});
-                    if (errors.includes('skillsDescription')) setErrors(errors.filter(e => e !== 'skillsDescription'));
-                }}
-                placeholder="Décrivez vos compétences..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[60px] ${errors.includes('skillsDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
-            </div>
-            <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Disponibilité *</label>
               <input 
                 type="text"
@@ -435,7 +350,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('availability')) setErrors(errors.filter(e => e !== 'availability'));
                 }}
                 placeholder="Ex: Lundi au Samedi, 8h-18h"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('availability') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('availability') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -450,6 +365,19 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                 }}
                 placeholder="Ex: Toute la ville, Cocody uniquement..."
                 className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('movementZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+              />
+            </div>
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Description du savoir-faire *</label>
+              <textarea 
+                id="skillsDescription"
+                value={formData.skillsDescription}
+                onChange={(e) => {
+                    setFormData({...formData, skillsDescription: e.target.value});
+                    if (errors.includes('skillsDescription')) setErrors(errors.filter(e => e !== 'skillsDescription'));
+                }}
+                placeholder="Décrivez vos compétences..."
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[60px] ${errors.includes('skillsDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
           </div>
@@ -486,18 +414,6 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Description de l’équipement *</label>
-              <textarea 
-                value={formData.equipmentDescription}
-                onChange={(e) => {
-                    setFormData({...formData, equipmentDescription: e.target.value});
-                    if (errors.includes('equipmentDescription')) setErrors(errors.filter(e => e !== 'equipmentDescription'));
-                }}
-                placeholder="Détails techniques, état..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('equipmentDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
-            </div>
-            <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Quantité disponible *</label>
               <input 
                 type="number"
@@ -511,7 +427,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville de localisation *</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville où l'équipement est situé *</label>
               <input 
                 type="text"
                 value={formData.equipmentCity}
@@ -524,20 +440,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Disponibilité *</label>
-              <input 
-                type="text"
-                value={formData.availability}
-                onChange={(e) => {
-                    setFormData({...formData, availability: e.target.value});
-                    if (errors.includes('availability')) setErrors(errors.filter(e => e !== 'availability'));
-                }}
-                placeholder="Ex: Immédiate, sur réservation..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-3 px-4 text-slate-900 font-bold text-sm outline-none focus:border-orange-500 transition-all ${errors.includes('availability') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Prix ou mode de location *</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Prix de location en 1 jour *</label>
               <input 
                 type="text"
                 value={formData.rentalPrice}
@@ -545,8 +448,20 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     setFormData({...formData, rentalPrice: e.target.value});
                     if (errors.includes('rentalPrice')) setErrors(errors.filter(e => e !== 'rentalPrice'));
                 }}
-                placeholder="Ex: 5000 CFA/jour"
+                placeholder="Ex: 5000 CFA"
                 className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('rentalPrice') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+              />
+            </div>
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Description de l’équipement *</label>
+              <textarea 
+                value={formData.equipmentDescription}
+                onChange={(e) => {
+                    setFormData({...formData, equipmentDescription: e.target.value});
+                    if (errors.includes('equipmentDescription')) setErrors(errors.filter(e => e !== 'equipmentDescription'));
+                }}
+                placeholder="Détails techniques, état..."
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('equipmentDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
           </div>
@@ -570,7 +485,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville du siège *</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville où l'agence est située *</label>
               <input 
                 type="text"
                 value={formData.agencyCity}
@@ -583,42 +498,34 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Adresse de l’agence *</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Numéro de l’agence *</label>
               <input 
                 type="text"
-                value={formData.agencyAddress}
+                value={formData.agencyPhone}
                 onChange={(e) => {
-                    setFormData({...formData, agencyAddress: e.target.value});
-                    if (errors.includes('agencyAddress')) setErrors(errors.filter(e => e !== 'agencyAddress'));
+                    setFormData({...formData, agencyPhone: e.target.value});
+                    if (errors.includes('agencyPhone')) setErrors(errors.filter(e => e !== 'agencyPhone'));
                 }}
-                placeholder="Adresse précise"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyAddress') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                placeholder="Téléphone de l'agence"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyPhone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Type de biens *</label>
-              <input 
-                type="text"
-                value={formData.propertyTypes}
-                onChange={(e) => {
-                    setFormData({...formData, propertyTypes: e.target.value});
-                    if (errors.includes('propertyTypes')) setErrors(errors.filter(e => e !== 'propertyTypes'));
-                }}
-                placeholder="Ex: Studios, Appartements, Terrains..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('propertyTypes') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Services proposés *</label>
-              <textarea 
-                value={formData.agencyServices}
-                onChange={(e) => {
-                    setFormData({...formData, agencyServices: e.target.value});
-                    if (errors.includes('agencyServices')) setErrors(errors.filter(e => e !== 'agencyServices'));
-                }}
-                placeholder="Vente, Location, Gestion..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('agencyServices') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Type de biens proposés : *</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {['Appartement', 'Terrain', 'Automobile'].map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                        setFormData({...formData, propertyTypes: opt as any});
+                        if (errors.includes('propertyTypes')) setErrors(errors.filter(e => e !== 'propertyTypes'));
+                    }}
+                    className={`px-3 py-1.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.propertyTypes === opt ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('propertyTypes') ? 'bg-red-50 border-red-200 text-red-400' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Zone d’activité *</label>
@@ -631,16 +538,6 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                 }}
                 placeholder="Ex: Abidjan, Côte Ouest..."
                 className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Documents de l’agence (optionnel)</label>
-              <input 
-                type="text"
-                value={formData.agencyDocs}
-                onChange={(e) => setFormData({...formData, agencyDocs: e.target.value})}
-                placeholder="Précisez si documents disponibles"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-2 px-4 text-slate-800 font-bold text-[11px] shadow-inner outline-none focus:border-orange-500 transition-all"
               />
             </div>
           </div>
@@ -677,16 +574,16 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Adresse de l’entreprise *</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Numéro de l’entreprise *</label>
               <input 
                 type="text"
-                value={formData.companyAddress}
+                value={formData.companyPhone}
                 onChange={(e) => {
-                    setFormData({...formData, companyAddress: e.target.value});
-                    if (errors.includes('companyAddress')) setErrors(errors.filter(e => e !== 'companyAddress'));
+                    setFormData({...formData, companyPhone: e.target.value});
+                    if (errors.includes('companyPhone')) setErrors(errors.filter(e => e !== 'companyPhone'));
                 }}
-                placeholder="Adresse précise"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyAddress') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                placeholder="Téléphone de l'entreprise"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyPhone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
             <div>
@@ -715,35 +612,16 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Besoins ou recherches *</label>
-              <textarea 
-                value={formData.companyNeeds}
-                onChange={(e) => {
-                    setFormData({...formData, companyNeeds: e.target.value});
-                    if (errors.includes('companyNeeds')) setErrors(errors.filter(e => e !== 'companyNeeds'));
-                }}
-                placeholder="Ce que l'entreprise recherche"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('companyNeeds') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Salaire proposé (Optionnel)</label>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Salaire proposé par mois ou semaine *</label>
               <input 
                 type="text"
                 value={formData.proposedSalary}
-                onChange={(e) => setFormData({...formData, proposedSalary: e.target.value})}
+                onChange={(e) => {
+                    setFormData({...formData, proposedSalary: e.target.value});
+                    if (errors.includes('proposedSalary')) setErrors(errors.filter(e => e !== 'proposedSalary'));
+                }}
                 placeholder="Ex: 150 000 CFA / mois"
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-2 px-4 text-slate-800 font-bold text-[11px] shadow-inner outline-none focus:border-orange-500 transition-all"
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Docs professionnels (Optionnel)</label>
-              <input 
-                type="text"
-                value={formData.companyDocs}
-                onChange={(e) => setFormData({...formData, companyDocs: e.target.value})}
-                placeholder="Registre commerce, etc..."
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-2 px-4 text-slate-800 font-bold text-[11px] shadow-inner outline-none focus:border-orange-500 transition-all"
+                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('proposedSalary') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
               />
             </div>
           </div>
@@ -894,7 +772,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville (fixée)</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville actuelle (fixée)</label>
                     <input 
                       type="text"
                       value={formData.city}
@@ -905,7 +783,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                 </div>
 
                 <div>
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Numéro (fixé)</label>
+                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Numéro personnel (fixé)</label>
                    <input 
                      type="text"
                      value={formData.phone}
@@ -916,44 +794,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
 
                 <div className="h-[2px] bg-slate-100 my-4"></div>
 
-                <h4 className="text-slate-600 font-black text-[10px] uppercase tracking-[0.2em]">Spécificités {selectedProfile}</h4>
-
-                {/* Profile Image Upload */}
-                <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-2">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-2 block text-center">Photo de profil / Logo *</label>
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="relative group">
-                      <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-slate-200 flex items-center justify-center">
-                        {imagePreview ? (
-                          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <User className="w-10 h-10 text-slate-400" />
-                        )}
-                      </div>
-                      <label 
-                        htmlFor="profile-image" 
-                        className="absolute bottom-0 right-0 bg-orange-500 p-2 rounded-full shadow-md cursor-pointer active:scale-90 transition-all border-2 border-white"
-                      >
-                        <Camera className="w-4 h-4 text-white" />
-                      </label>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-slate-400 font-bold mb-2">
-                        {profileImageFile ? 'Image sélectionnée' : 'Cliquez sur l\'icône pour ajouter une photo'}
-                      </p>
-                      <input 
-                        id="profile-image"
-                        type="file" 
-                        accept="image/*" 
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                      {!profileImageFile && !imagePreview && (
-                        <p className="text-[9px] text-orange-500 font-medium">Recommandé pour être plus visible</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <h4 className="text-slate-600 font-black text-[10px] uppercase tracking-[0.2em] mb-4">Spécificités {selectedProfile}</h4>
 
                 {renderCategoryFields()}
               </div>
