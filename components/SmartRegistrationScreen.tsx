@@ -182,78 +182,109 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
         const firstErrorField = document.querySelector('.border-red-500');
         if (firstErrorField) {
             firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            alert("Veuillez remplir tous les champs obligatoires (indiqués par une étoile).");
         }
         return;
     }
 
     setIsSubmitting(true);
-    let currentProfileImageUrl = formData.profileImageUrl;
-
-    const inscriptionData = {
-      profileType: selectedProfile,
-      name: formData.name,
-      city: formData.city,
-      phone: formData.phone,
-      profileImageUrl: currentProfileImageUrl,
-      // Fields vary by profileType but should be flattened (each in its own column)
-      ...(selectedProfile === 'Travailleur' && {
-          job: formData.job,
-          learnedFrom: formData.learnedFrom,
-          availability: formData.availability,
-          movementZone: formData.movementZone,
-          skillsDescription: formData.skillsDescription
-      }),
-      ...(selectedProfile === 'Propriétaire' && {
-          equipmentType: formData.equipmentType,
-          equipmentCategory: formData.equipmentCategory,
-          quantity: formData.quantity,
-          equipmentCity: formData.equipmentCity,
-          rentalPrice: formData.rentalPrice,
-          equipmentDescription: formData.equipmentDescription
-      }),
-      ...(selectedProfile === 'Agence' && {
-          agencyName: formData.agencyName,
-          agencyCity: formData.agencyCity,
-          agencyPhone: formData.agencyPhone,
-          propertyTypes: formData.propertyTypes,
-          agencyZone: formData.agencyZone
-      }),
-      ...(selectedProfile === 'Entreprise' && {
-          companyName: formData.companyName,
-          companyCity: formData.companyCity,
-          companyPhone: formData.companyPhone,
-          companyDomain: formData.companyDomain,
-          companyServices: formData.companyServices,
-          proposedSalary: formData.proposedSalary
-      })
-    };
+    
+    // Safety timer to prevent stuck loading state (20s)
+    const safetyTimer = setTimeout(() => {
+        setIsSubmitting(false);
+        // We don't alert here to avoid double alerts if it eventually finishes or fails
+        console.warn("Submission is taking longer than expected...");
+    }, 20000);
 
     try {
-      const success = await databaseService.saveInscription(inscriptionData);
-      if (success) {
-        // Initialize QR Code tracking status
-        await databaseService.updateQRCodeActivation(formData.phone, {
-          name: formData.name,
-          phone: formData.phone,
-          city: formData.city,
+        let currentProfileImageUrl = formData.profileImageUrl;
+
+        const inscriptionData: any = {
           profileType: selectedProfile,
-          profession: formData.job || formData.equipmentType || formData.agencyName || formData.companyName,
-          domain: formData.skillsDescription || formData.equipmentCategory || formData.propertyTypes || formData.companyDomain,
-          status: "En attente paiement frais (310 FCFA)",
-          fraisDossierPayes: false
-        });
+          name: formData.name,
+          city: formData.city,
+          phone: formData.phone,
+          profileImageUrl: currentProfileImageUrl,
+          registrationStatus: 'pending',
+          submissionType: 'SmartRegistration',
+          submittedAt: new Date().toISOString(),
+          ...(selectedProfile === 'Travailleur' && {
+              job: formData.job,
+              learnedFrom: formData.learnedFrom,
+              availability: formData.availability,
+              movementZone: formData.movementZone,
+              skillsDescription: formData.skillsDescription
+          }),
+          ...(selectedProfile === 'Propriétaire' && {
+              equipmentType: formData.equipmentType,
+              equipmentCategory: formData.equipmentCategory,
+              quantity: formData.quantity,
+              equipmentCity: formData.equipmentCity,
+              rentalPrice: formData.rentalPrice,
+              equipmentDescription: formData.equipmentDescription
+          }),
+          ...(selectedProfile === 'Agence' && {
+              agencyName: formData.agencyName,
+              agencyCity: formData.agencyCity,
+              agencyPhone: formData.agencyPhone,
+              propertyTypes: formData.propertyTypes,
+              agencyZone: formData.agencyZone
+          }),
+          ...(selectedProfile === 'Entreprise' && {
+              companyName: formData.companyName,
+              companyCity: formData.companyCity,
+              companyPhone: formData.companyPhone,
+              companyDomain: formData.companyDomain,
+              companyServices: formData.companyServices,
+              proposedSalary: formData.proposedSalary
+          })
+        };
+
+        // Sanitize to prevent Firestore 'undefined value' crash
+        const cleanedInscriptionData = Object.fromEntries(
+          Object.entries(inscriptionData).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+        );
+
+        console.log("Submitting inscription data:", cleanedInscriptionData);
+        const success = await databaseService.saveInscription(cleanedInscriptionData);
         
-        setIsSaved(true);
-        // Give a small delay so user can see the success state or just go directly
-        setTimeout(() => {
-          onComplete();
-        }, 1500);
-      }
+        if (success) {
+            console.log("Inscription saved successfully, updating QR code activation...");
+            try {
+              await databaseService.updateQRCodeActivation(formData.phone, {
+                name: formData.name,
+                phone: formData.phone,
+                city: formData.city,
+                profileType: selectedProfile,
+                profession: formData.job || formData.equipmentType || formData.agencyName || formData.companyName || '',
+                domain: formData.skillsDescription || formData.equipmentCategory || formData.propertyTypes || formData.companyDomain || '',
+                status: "En attente paiement frais (310 FCFA)",
+                fraisDossierPayes: false,
+                updatedAt: new Date().toISOString()
+              });
+            } catch (e) {
+              console.warn("Could not update QR code activation right now:", e);
+            }
+            
+            clearTimeout(safetyTimer);
+            setIsSubmitting(false); 
+            setIsSaved(true);
+            localStorage.removeItem('filant_registration_draft');
+            
+            setTimeout(() => {
+              onComplete();
+            }, 1200);
+        } else {
+            clearTimeout(safetyTimer);
+            setIsSubmitting(false);
+            alert("Une erreur est survenue lors de l'enregistrement de l'inscription. Veuillez vérifier votre connexion.");
+        }
     } catch (e) {
-      console.error("Error saving inscription:", e);
-      // Even if there's an error, we need to stop the spinner
-    } finally {
-      setIsSubmitting(false);
+        clearTimeout(safetyTimer);
+        console.error("Critical error saving inscription:", e);
+        setIsSubmitting(false);
+        alert("Une erreur inattendue est survenue. Veuillez réessayer.");
     }
   };
 

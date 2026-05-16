@@ -707,11 +707,11 @@ export const databaseService = {
       
       // Also update user profile for easy access
       const userRef = doc(db, 'Clients', sanitizedPhone);
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
         qrCodeStatus: data.status,
         fraisDossierPayes: data.fraisDossierPayes || false,
         qrCodeExpiryDate: data.expiryDate || null
-      });
+      }, { merge: true });
       
       return true;
     } catch (e) {
