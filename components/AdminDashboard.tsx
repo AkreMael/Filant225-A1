@@ -369,12 +369,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     let val = item[key];
                     if (key === 'activity') {
                       const profile = item.profileType;
-                      const d = item.details || {};
                       let activityVal = '-';
-                      if (profile === 'Travailleur') activityVal = d.job;
-                      else if (profile === 'Entreprise') activityVal = d.companyName;
-                      else if (profile === 'Agence') activityVal = d.agencyName;
-                      else if (profile === 'Propriétaire') activityVal = d.equipmentType;
+                      if (profile === 'Travailleur') activityVal = item.job || (item.details && item.details.job);
+                      else if (profile === 'Entreprise') activityVal = item.companyName || (item.details && item.details.companyName);
+                      else if (profile === 'Agence') activityVal = item.agencyName || (item.details && item.details.agencyName);
+                      else if (profile === 'Propriétaire') activityVal = item.equipmentType || (item.details && item.details.equipmentType);
                       
                       return (
                         <td key={j} className="px-6 py-4">
@@ -427,8 +426,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     if (key === 'fraisDossierPayes') {
                       val = val ? 'Payé (310)' : 'En attente';
                     }
-                    if (key === 'details' && typeof val === 'object' && val !== null) {
-                      val = Object.entries(val)
+                    if (key === 'details') {
+                      const profile = item.profileType;
+                      const details = item.details || {};
+                      let detailsObj: any = {};
+                      if (profile === 'Travailleur') detailsObj = { métier: item.job || details.job, dispo: item.availability || details.availability };
+                      else if (profile === 'Propriétaire') detailsObj = { type: item.equipmentType || details.equipmentType, prix: item.rentalPrice || details.rentalPrice };
+                      else if (profile === 'Agence') detailsObj = { nom: item.agencyName || details.agencyName, ville: item.agencyCity || details.agencyCity };
+                      else if (profile === 'Entreprise') detailsObj = { nom: item.companyName || details.companyName, domaine: item.companyDomain || details.companyDomain };
+                      else detailsObj = details;
+
+                      val = Object.entries(detailsObj)
                         .filter(([_, v]) => v !== '' && v !== null && v !== undefined)
                         .map(([k, v]) => `${k}: ${v}`)
                         .join(' | ');
@@ -1344,20 +1352,63 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                  <div className="space-y-4">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Détails Spécifiques</h4>
                     <div className="grid grid-cols-1 gap-4">
-                        {typeof selectedItemForDetails.details === 'object' && selectedItemForDetails.details !== null ? (
-                           Object.entries(selectedItemForDetails.details)
-                             .filter(([_, v]) => v !== '' && v !== null && v !== undefined)
-                             .map(([key, val], idx) => (
+                        {(() => {
+                           const profile = selectedItemForDetails.profileType;
+                           let detailsObj: any = {};
+                           const oldD = selectedItemForDetails.details || {};
+                           if (profile === 'Travailleur') {
+                             detailsObj = {
+                               'Métier': selectedItemForDetails.job || oldD.job,
+                               'Apprentissage': selectedItemForDetails.learnedFrom || oldD.learnedFrom,
+                               'Disponibilité': selectedItemForDetails.availability || oldD.availability,
+                               'Zone de déplacement': selectedItemForDetails.movementZone || oldD.movementZone,
+                               'Description': selectedItemForDetails.skillsDescription || oldD.skillsDescription
+                             };
+                           } else if (profile === 'Propriétaire') {
+                             detailsObj = {
+                               'Type Matériel': selectedItemForDetails.equipmentType || oldD.equipmentType,
+                               'Catégorie': selectedItemForDetails.equipmentCategory || oldD.equipmentCategory,
+                               'Quantité': selectedItemForDetails.quantity || oldD.quantity,
+                               'Ville Matériel': selectedItemForDetails.equipmentCity || oldD.equipmentCity,
+                               'Prix Location': selectedItemForDetails.rentalPrice || oldD.rentalPrice,
+                               'Description': selectedItemForDetails.equipmentDescription || oldD.equipmentDescription
+                             };
+                           } else if (profile === 'Agence') {
+                             detailsObj = {
+                               'Nom Agence': selectedItemForDetails.agencyName || oldD.agencyName,
+                               'Ville Agence': selectedItemForDetails.agencyCity || oldD.agencyCity,
+                               'Téléphone Agence': selectedItemForDetails.agencyPhone || oldD.agencyPhone,
+                               'Types de biens': selectedItemForDetails.propertyTypes || oldD.propertyTypes,
+                               'Zone couverte': selectedItemForDetails.agencyZone || oldD.agencyZone
+                             };
+                           } else if (profile === 'Entreprise') {
+                             detailsObj = {
+                               'Nom Entreprise': selectedItemForDetails.companyName || oldD.companyName,
+                               'Ville Entreprise': selectedItemForDetails.companyCity || oldD.companyCity,
+                               'Téléphone Entreprise': selectedItemForDetails.companyPhone || oldD.companyPhone,
+                               'Domaine': selectedItemForDetails.companyDomain || oldD.companyDomain,
+                               'Services': selectedItemForDetails.companyServices || oldD.companyServices,
+                               'Salaire proposé': selectedItemForDetails.proposedSalary || oldD.proposedSalary
+                             };
+                           } else {
+                             detailsObj = oldD;
+                           }
+
+                           const validEntries = Object.entries(detailsObj).filter(([_, v]) => v !== '' && v !== null && v !== undefined);
+
+                           return validEntries.length > 0 ? (
+                             validEntries.map(([key, val], idx) => (
                                <div key={idx} className="p-5 bg-blue-50/30 dark:bg-blue-500/5 rounded-2xl border border-blue-100/50 dark:border-blue-500/10 flex justify-between items-center group hover:bg-blue-50 transition-colors">
                                   <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-[0.15em] shrink-0">{key}</span>
                                   <span className="text-xs font-black text-slate-700 dark:text-gray-200 uppercase tracking-tight text-right ml-4">{String(val)}</span>
                                </div>
                              ))
-                        ) : (
-                          <div className="p-8 text-center text-gray-400 italic font-bold text-sm">
-                             Aucun détail supplémentaire.
-                          </div>
-                        )}
+                           ) : (
+                             <div className="p-8 text-center text-gray-400 italic font-bold text-sm">
+                                Aucun détail supplémentaire.
+                             </div>
+                           );
+                        })()}
                     </div>
                  </div>
 

@@ -195,62 +195,65 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
       city: formData.city,
       phone: formData.phone,
       profileImageUrl: currentProfileImageUrl,
-      details: {
-          // Fields vary by profileType
-          ...(selectedProfile === 'Travailleur' && {
-              job: formData.job,
-              learnedFrom: formData.learnedFrom,
-              availability: formData.availability,
-              movementZone: formData.movementZone,
-              skillsDescription: formData.skillsDescription
-          }),
-          ...(selectedProfile === 'Propriétaire' && {
-              equipmentType: formData.equipmentType,
-              equipmentCategory: formData.equipmentCategory,
-              quantity: formData.quantity,
-              equipmentCity: formData.equipmentCity,
-              rentalPrice: formData.rentalPrice,
-              equipmentDescription: formData.equipmentDescription
-          }),
-          ...(selectedProfile === 'Agence' && {
-              agencyName: formData.agencyName,
-              agencyCity: formData.agencyCity,
-              agencyPhone: formData.agencyPhone,
-              propertyTypes: formData.propertyTypes,
-              agencyZone: formData.agencyZone
-          }),
-          ...(selectedProfile === 'Entreprise' && {
-              companyName: formData.companyName,
-              companyCity: formData.companyCity,
-              companyPhone: formData.companyPhone,
-              companyDomain: formData.companyDomain,
-              companyServices: formData.companyServices,
-              proposedSalary: formData.proposedSalary
-          })
-      }
+      // Fields vary by profileType but should be flattened (each in its own column)
+      ...(selectedProfile === 'Travailleur' && {
+          job: formData.job,
+          learnedFrom: formData.learnedFrom,
+          availability: formData.availability,
+          movementZone: formData.movementZone,
+          skillsDescription: formData.skillsDescription
+      }),
+      ...(selectedProfile === 'Propriétaire' && {
+          equipmentType: formData.equipmentType,
+          equipmentCategory: formData.equipmentCategory,
+          quantity: formData.quantity,
+          equipmentCity: formData.equipmentCity,
+          rentalPrice: formData.rentalPrice,
+          equipmentDescription: formData.equipmentDescription
+      }),
+      ...(selectedProfile === 'Agence' && {
+          agencyName: formData.agencyName,
+          agencyCity: formData.agencyCity,
+          agencyPhone: formData.agencyPhone,
+          propertyTypes: formData.propertyTypes,
+          agencyZone: formData.agencyZone
+      }),
+      ...(selectedProfile === 'Entreprise' && {
+          companyName: formData.companyName,
+          companyCity: formData.companyCity,
+          companyPhone: formData.companyPhone,
+          companyDomain: formData.companyDomain,
+          companyServices: formData.companyServices,
+          proposedSalary: formData.proposedSalary
+      })
     };
 
-    const success = await databaseService.saveInscription(inscriptionData);
-    setIsSubmitting(false);
-    
-    if (success) {
-      // Initialize QR Code tracking status
-      await databaseService.updateQRCodeActivation(formData.phone, {
-        name: formData.name,
-        phone: formData.phone,
-        city: formData.city,
-        profileType: selectedProfile,
-        profession: formData.job || formData.equipmentType || formData.agencyName || formData.companyName,
-        domain: formData.skillsDescription || formData.equipmentCategory || formData.propertyTypes || formData.companyDomain,
-        status: "En attente paiement frais (310 FCFA)",
-        fraisDossierPayes: false
-      });
-      
-      setIsSaved(true);
-      // Give a small delay so user can see the success state or just go directly
-      setTimeout(() => {
-        onComplete();
-      }, 1500);
+    try {
+      const success = await databaseService.saveInscription(inscriptionData);
+      if (success) {
+        // Initialize QR Code tracking status
+        await databaseService.updateQRCodeActivation(formData.phone, {
+          name: formData.name,
+          phone: formData.phone,
+          city: formData.city,
+          profileType: selectedProfile,
+          profession: formData.job || formData.equipmentType || formData.agencyName || formData.companyName,
+          domain: formData.skillsDescription || formData.equipmentCategory || formData.propertyTypes || formData.companyDomain,
+          status: "En attente paiement frais (310 FCFA)",
+          fraisDossierPayes: false
+        });
+        
+        setIsSaved(true);
+        // Give a small delay so user can see the success state or just go directly
+        setTimeout(() => {
+          onComplete();
+        }, 1500);
+      }
+    } catch (e) {
+      console.error("Error saving inscription:", e);
+      // Even if there's an error, we need to stop the spinner
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
