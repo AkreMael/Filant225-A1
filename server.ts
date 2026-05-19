@@ -329,9 +329,20 @@ async function startServer() {
       }
 
       const sanitizedPhone = phone.replace(/\D/g, '');
-      const userDoc = await firestore.collection("Clients").doc(sanitizedPhone).get();
-      const userData = userDoc.data();
-      const fcmToken = userData?.fcmToken;
+      let fcmToken = null;
+      let userData = null;
+
+      const collectionsToCheck = ["Clients", "users", "Travailleurs", "AgencesImmobilieres", "Equipements", "Entreprises", "Admin"];
+      for (const col of collectionsToCheck) {
+        const docRef = await firestore.collection(col).doc(sanitizedPhone).get();
+        if (docRef.exists) {
+          userData = docRef.data();
+          if (userData?.fcmToken) {
+            fcmToken = userData.fcmToken;
+            break;
+          }
+        }
+      }
 
       if (!fcmToken) {
         console.warn(`No FCM token found for user ${sanitizedPhone}`);

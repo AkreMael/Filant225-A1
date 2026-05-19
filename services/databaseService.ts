@@ -295,7 +295,7 @@ export const databaseService = {
       let targetCollection = 'Clients';
       let existingData: any = {};
       
-      const collections = ['Admin', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Clients'];
+      const collections = ['Admin', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Clients', 'users'];
       
       const checkPromises = collections.map(async (col) => {
           const ref = doc(db, col, sanitizedPhone);
@@ -349,7 +349,7 @@ export const databaseService = {
 
   getUserByUidFromFirestore: async (uid: string): Promise<User | null> => {
     try {
-      const collections = ['Clients', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Admin'];
+      const collections = ['Clients', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Admin', 'users'];
       for (const col of collections) {
           const q = query(collection(db, col), where('userId', '==', uid), limit(1));
           const snapshot = await withTimeout(getDocs(q));
@@ -370,23 +370,10 @@ export const databaseService = {
   },
 
   getUserFromFirestore: async (name: string, phone: string): Promise<User | null> => {
-    const sanitizedPhone = phone.replace(/\D/g, '');
-    const userRef = doc(db, 'Clients', sanitizedPhone);
-    
     try {
-      await databaseService.ensureAuth();
-      const docSnap = await withTimeout(getDoc(userRef));
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        // Strict verification: Name must match (case insensitive)
-        if (data.name.trim().toLowerCase() === name.trim().toLowerCase()) {
-            return {
-              name: data.name,
-              phone: data.phone,
-              city: data.city,
-              role: data.role
-            } as User;
-        }
+      const user = await databaseService.getUserByPhoneFromFirestore(phone);
+      if (user && user.name && user.name.trim().toLowerCase() === name.trim().toLowerCase()) {
+        return user;
       }
     } catch (e) {
       console.error("Error in getUserFromFirestore:", e);
@@ -398,7 +385,7 @@ export const databaseService = {
     const sanitizedPhone = phone.replace(/\D/g, '');
     try {
       await databaseService.ensureAuth();
-      const collections = ['Clients', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Admin'];
+      const collections = ['Clients', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Admin', 'users'];
       
       const promises = collections.map(async (col) => {
           const userRef = doc(db, col, sanitizedPhone);
@@ -1575,10 +1562,34 @@ export const databaseService = {
 
   saveFormSubmission: async (formData: any) => {
     const userId = (formData.userPhone || formData.phone || '').replace(/\D/g, '');
-    return databaseService.saveTypedChatMessage('Privee', userId, {
+    
+    // 1. Save as a private conversation message so it displays in user/admin chats
+    await databaseService.saveTypedChatMessage('Privee', userId, {
       ...formData,
       type: formData.type || 'form_submission'
     });
+
+    // 2. Mirror/back up directly to 'ServiceRequests' collection so it synchronizes with administration tables instantly
+    try {
+      await databaseService.ensureAuth();
+      const docRef = await addDoc(collection(db, 'ServiceRequests'), {
+        userId,
+        userName: formData.userName || "Utilisateur",
+        phone: formData.userPhone || formData.phone || userId,
+        city: formData.city || formData.data?.city || "Non spécifiée",
+        serviceTitle: formData.formTitle || formData.serviceTitle || "Demande de service",
+        formType: formData.formType || "other",
+        answers: formData.data || formData.answers || {},
+        totalPrice: formData.totalPrice || formData.price || formData.data?.price || formData.amount || "N/A",
+        adminReadStatus: 'NON LU',
+        timestamp: serverTimestamp()
+      });
+      console.log("Form submission synchronized inside 'ServiceRequests' with ID:", docRef.id);
+      return { success: true, id: docRef.id };
+    } catch (e) {
+      console.error("Error backing up form submission to ServiceRequests:", e);
+      return { success: false, error: e };
+    }
   },
 
   getCardData: (phone: string, role: string) => {
