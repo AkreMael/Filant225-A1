@@ -9,7 +9,7 @@ import firebaseConfig from './firebase-applet-config.json';
 // Initialisation de Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const rtdb = getDatabase(app);
 export const storage = getStorage(app, firebaseConfig.storageBucket);
 export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;

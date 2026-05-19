@@ -130,8 +130,10 @@ const workerTallyLinks: Record<string, string> = {
 };
 
 interface WorkerCardProps {
-  worker: Worker;
+  worker: any;
   user: UserType;
+  isFavorite: boolean;
+  onToggleFavorite: (e: React.MouseEvent) => void;
   onScheduleService: (url?: string, title?: string) => void;
   onOpenForm: (context: { formType: 'worker' | 'location' | 'night_service' | 'rapid_building_service', title: string, imageUrl?: string, description?: string }) => void;
 }
@@ -144,19 +146,20 @@ const VerifiedBadge = () => (
   </div>
 );
 
-const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, onScheduleService, onOpenForm }) => {
-  const isDisponible = worker.category === 'Disponible';
-  const imageSrc = getSynchronizedWorkerImage(worker.name);
+const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, isFavorite, onToggleFavorite, onScheduleService, onOpenForm }) => {
+  const isDisponible = worker.category === 'Disponible' || true;
+  const imageSrc = getSynchronizedWorkerImage(worker.name || worker.title);
   
-  // Use the full name as provided in the data
-  const displayName = worker.name;
+  const displayName = worker.name || worker.title;
 
-  const handleExigeClick = () => {
-      const url = workerTallyLinks[worker.name];
+  const handleExigeClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const url = workerTallyLinks[displayName];
       onScheduleService(url, displayName);
   };
 
-  const handleDemandeClick = () => {
+  const handleDemandeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onOpenForm({
       formType: 'worker',
       title: displayName,
@@ -165,23 +168,38 @@ const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, onScheduleService
     });
   };
 
+  const handleAppelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className={`bg-white rounded-[2.5rem] p-5 flex flex-col transition-all relative overflow-hidden animate-in zoom-in-95 duration-300 shadow-xl`}>
+    <div className={`bg-white rounded-[2.5rem] p-5 flex flex-col transition-all relative overflow-hidden animate-in zoom-in-95 duration-300 shadow-xl border border-gray-100`}>
       <div className="flex gap-4">
         {/* Profile Image - Large Rounded Rectangle */}
         <div className="w-24 h-24 rounded-3xl border-2 border-orange-500 overflow-hidden flex-shrink-0 relative bg-gray-50 flex items-center justify-center shadow-inner">
+             {/* If we have an image link, we could use it, but keeping the User icon as requested by design consistency */}
             <User className="w-12 h-12 text-slate-400" strokeWidth={1.5} />
             {worker.isVerified && <VerifiedBadge />}
         </div>
         
         {/* Info Area */}
         <div className="flex-1 flex flex-col justify-start">
-            <h3 className="font-black text-black text-lg leading-none mb-2 uppercase tracking-tighter">
-              {displayName}
-            </h3>
+            <div className="flex justify-between items-start">
+                <h3 className="font-black text-black text-lg leading-none mb-2 uppercase tracking-tighter pr-8">
+                  {displayName}
+                </h3>
+                <button 
+                  onClick={onToggleFavorite}
+                  className={`absolute top-5 right-12 p-1 transition-colors ${isFavorite ? 'text-yellow-400' : 'text-gray-300'}`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 fill-current" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.603 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </button>
+            </div>
             {isDisponible && (
                 <div className="flex items-center gap-2 mb-2">
-                    <StarRating rating={worker.rating} />
+                    <StarRating rating={worker.rating || 4.5} />
                 </div>
             )}
             <p className="text-gray-600 text-[11px] leading-tight font-medium line-clamp-3">
@@ -200,6 +218,7 @@ const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, onScheduleService
         >
           <PersonIcon />
         </button>
+
 
         {/* Demander - Send/Plane Icon (Orange Outline) */}
         <button
@@ -243,6 +262,135 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Disponible');
+  const [selectedSubCategory, setSelectedSubCategory] = useState<'all' | 'depannage' | 'construction' | 'nettoyage' | 'evenementiel' | 'transport' | 'location'>('all');
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    const saved = localStorage.getItem('filant_worker_favorites');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Individual section collapses
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    depannage: false,
+    construction: false,
+    nettoyage: false,
+    evenementiel: false,
+    transport: false,
+    location: false
+  });
+
+  useEffect(() => {
+    localStorage.setItem('filant_worker_favorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (e: React.MouseEvent, title: string) => {
+    e.stopPropagation();
+    setFavorites(prev => 
+        prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+    );
+  };
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const depannageWorkers = [
+    { title: 'Plombier rapide', description: 'Expert en fuites et canalisations.' },
+    { title: 'Électricien rapide', description: 'Installations et dépannages électriques.' },
+    { title: 'Serrurier rapide', description: 'Ouverture de portes et serrures.' },
+    { title: 'Vitrier rapide', description: 'Pose et réparation de vitrages.' },
+    { title: 'Réparation climatiseur rapide', description: 'Maintenance clim habitations.' },
+    { title: 'Réparation frigo rapide', description: 'Spécialiste froid ménager.' },
+    { title: 'Réparation télévision rapide', description: 'Maintenance TV et écrans.' },
+    { title: 'Réparation machine à laver rapide', description: 'Dépannage gros électroménager.' },
+    { title: 'Réparation pompe à eau rapide', description: 'Entretien systèmes pompage.' },
+    { title: 'Réparation fuite d’eau rapide', description: 'Interventions plomberie d’urgence.' },
+    { title: 'Dépannage Internet rapide', description: 'Réseaux WiFi et connexion.' },
+    { title: 'Dépannage parabole rapide', description: 'Installation antennes satellite.' },
+    { title: 'Dépannage électroménager rapide', description: 'Fours, micro-ondes, aspirateurs.' },
+    { title: 'Dépannage groupe électrogène rapide', description: 'Maintenance sources secours.' },
+    { title: 'Dépannage auto rapide', description: 'Mécanique et assistance route.' },
+  ];
+
+  const constructionWorkers = [
+    { title: 'Maçon rapide', description: 'Gros œuvre et maçonnerie.' },
+    { title: 'Ferrailleur rapide', description: 'Armatures acier bâtiment.' },
+    { title: 'Coffreur rapide', description: 'Structures bois pour béton.' },
+    { title: 'Carreleur rapide', description: 'Pose carrelage et dallage.' },
+    { title: 'Peintre bâtiment rapide', description: 'Revêtements murs et plafonds.' },
+    { title: 'Électricien bâtiment rapide', description: 'Réseau complet installations.' },
+    { title: 'Plombier bâtiment rapide', description: 'Installation sanitaire bâtiment.' },
+    { title: 'Soudeur rapide', description: 'Chaudronnerie et soudures fer.' },
+    { title: 'Charpentier rapide', description: 'Structures bois toitures.' },
+    { title: 'Menuisier aluminium rapide', description: 'Baies et portes alu.' },
+    { title: 'Menuisier bois rapide', description: 'Conception meubles bois.' },
+    { title: 'Staffeur rapide', description: 'Plâtre et déco plafonds.' },
+    { title: 'Étancheur rapide', description: 'Isolation eau toitures.' },
+    { title: 'Poseur de portail rapide', description: 'Sécurité accès maisons.' },
+    { title: 'Poseur de caméra rapide', description: 'Sécurité électronique.' },
+    { title: 'Climatisation bâtiment rapide', description: 'Installations clim centralisées.' },
+    { title: 'Technicien forage rapide', description: 'Eaux souterraines puits.' },
+    { title: 'Constructeur maison rapide', description: 'Maître d’œuvre bâtiment.' },
+    { title: 'Finition bâtiment rapide', description: 'Peinture, carrelage, déco.' },
+  ];
+
+  const nettoyageWorkers = [
+    { title: 'Technicien de surface rapide', description: 'Nettoyage professionnel bureaux.' },
+    { title: 'Nettoyage maison rapide', description: 'Entretien complet domicile.' },
+    { title: 'Nettoyage bureau rapide', description: 'Hygiène espaces travail.' },
+    { title: 'Nettoyage chantier rapide', description: 'Retrait gravats après travaux.' },
+    { title: 'Lavage automobile rapide', description: 'Propreté véhicule express.' },
+    { title: 'Désinfection rapide', description: 'Traitement anti-germes pro.' },
+    { title: 'Entretien jardin rapide', description: 'Tonte et entretien vert.' },
+    { title: 'Entretien piscine rapide', description: 'Nettoyage bassins et filtres.' },
+  ];
+
+  const evenementielWorkers = [
+    { title: 'Cuisinier rapide', description: 'Traiteur événements privés.' },
+    { title: 'Serveur rapide', description: 'Service buffet et accueil.' },
+    { title: 'Décorateur rapide', description: 'Ambiance salles de fête.' },
+    { title: 'DJ rapide', description: 'Ambiance musicale pro.' },
+    { title: 'Sonorisateur rapide', description: 'Installation audio events.' },
+    { title: 'Organisateur événementiel rapide', description: 'Gestion complète mariages.' },
+    { title: 'Photographe rapide', description: 'Couverture photo événement.' },
+    { title: 'Vidéaste rapide', description: 'Film et montage souvenir.' },
+  ];
+
+  const transportWorkers = [
+    { title: 'Chauffeur rapide', description: 'Transport privé personnes.' },
+    { title: 'Déménageur rapide', description: 'Manutention objets lourds.' },
+    { title: 'Transport marchandises rapide', description: 'Logistique colis lourds.' },
+    { title: 'Transport matériaux rapide', description: 'Livraison ciment, sable.' },
+    { title: 'Transport déménagement rapide', description: 'Logistique déménagement pro.' },
+  ];
+
+  const locationEquipmentWorkers = [
+    { title: 'Camion benne', description: 'Transport sable, gravier pro.' },
+    { title: 'Camion de campagne', description: 'Camion podium sonorisé.' },
+    { title: 'Bâche à louer', description: 'Toutes tailles dispo.' },
+    { title: 'Chaise à louer', description: 'Chaises confortables.' },
+    { title: 'Table à louer', description: 'Tables réception pro.' },
+    { title: 'Groupe électrogène', description: 'Puissance garantie.' },
+    { title: 'Bétonnière', description: 'Mélange efficace BTP.' },
+    { title: 'Échafaudage', description: 'Travaux hauteur safe.' },
+    { title: 'Tracteur', description: 'Labourage agricole.' },
+    { title: 'Mini pelle', description: 'Accès restreint.' },
+    { title: 'Pelle mécanique', description: 'Terrassement pro.' },
+    { title: 'Marteau piqueur', description: 'Démolition béton.' },
+    { title: 'Compresseur', description: 'Outils pneumatiques.' },
+    { title: 'Sonorisation', description: 'Full audio events.' },
+    { title: 'Tente événementielle', description: 'Grands formats dispo.' },
+    { title: 'Véhicule de transport', description: 'Utilitaires déménagement.' },
+    { title: 'Engin de chantier', description: 'BTP lourds.' },
+  ];
+
+  const workersCategorized = [
+    { id: 'depannage', title: 'DÉPANNAGE RAPIDE', items: depannageWorkers, btnLabel: 'Tous les dépannages' },
+    { id: 'construction', title: 'SERVICES CONSTRUCTION', items: constructionWorkers, btnLabel: 'Tous les services construction' },
+    { id: 'nettoyage', title: 'NETTOYAGE & ENTRETIEN (TECHNICIENS DE SURFACE)', items: nettoyageWorkers, btnLabel: 'Tous les services nettoyage' },
+    { id: 'evenementiel', title: 'CUISINE ET ÉVÉNEMENTIELS', items: evenementielWorkers, btnLabel: 'Tous les services événementiels' },
+    { id: 'transport', title: 'TRANSPORT ET LIVRAISON', items: transportWorkers, btnLabel: 'Tous les services transport' },
+    { id: 'location', title: 'SERVICES DE LOCATION D’ÉQUIPEMENTS', items: locationEquipmentWorkers, btnLabel: 'Tous les équipements' },
+  ];
 
   useEffect(() => {
     const fetchWorkers = async () => {
@@ -268,19 +416,44 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
     const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = w.category === selectedCategory;
     
+    // Sub-category matching logic
+    const matchesSubCategory = (() => {
+        if (selectedSubCategory === 'all') return true;
+        const nameLower = w.name.toLowerCase();
+        const descLower = (w.description || '').toLowerCase();
+        const t = `${nameLower} ${descLower}`;
+
+        if (selectedSubCategory === 'depannage') {
+            return t.includes('plombier') || t.includes('électri') || t.includes('serrurier') || t.includes('vitrier') || 
+                   t.includes('réparation') || t.includes('clim') || t.includes('frigo') || t.includes('télévision') || 
+                   t.includes('machine à laver') || t.includes('pompe') || t.includes('fuite') || t.includes('internet') || 
+                   t.includes('parabole') || t.includes('électroménager') || t.includes('groupe') || t.includes('auto');
+        }
+        if (selectedSubCategory === 'construction') {
+            return t.includes('maçon') || t.includes('ferrailleur') || t.includes('coffreur') || t.includes('carreleur') || 
+                   t.includes('peintre') || t.includes('menuisier') || t.includes('charpentier') || t.includes('staff') || 
+                   t.includes('étanch') || t.includes('portail') || t.includes('caméra') || t.includes('forage') || t.includes('bâti') || t.includes('déco');
+        }
+        if (selectedSubCategory === 'nettoyage') {
+            return t.includes('surface') || t.includes('ménage') || t.includes('entretien') || t.includes('lavage') || 
+                   t.includes('désinfection') || t.includes('jardin') || t.includes('piscine') || t.includes('vitre');
+        }
+        if (selectedSubCategory === 'evenementiel') {
+            return t.includes('cuisin') || t.includes('serveur') || t.includes('décorat') || t.includes('dj') || 
+                   t.includes('sono') || t.includes('organisat') || t.includes('photom') || t.includes('vidéaste') || 
+                   t.includes('hôtesse') || t.includes('maquillage') || t.includes('massage');
+        }
+        if (selectedSubCategory === 'transport') {
+            return t.includes('chauffeur') || t.includes('déménageur') || t.includes('livreur');
+        }
+        if (selectedSubCategory === 'location') {
+            return t.includes('magasinier') || t.includes('manutentionnaire');
+        }
+        return true;
+    })();
+
     // Titles to exclude
-    const excludedTitles = [
-      'fabricant de poufs',
-      'entretien climatisation',
-      'caméras de surveillance',
-      'fenêtres et portes vitrées',
-      'menuisier',
-      'garde malade'
-    ];
-    
-    const isExcluded = excludedTitles.some(title => w.name.toLowerCase().includes(title));
-    
-    return matchesSearch && matchesCategory && !isExcluded;
+    return matchesSearch && matchesCategory && matchesSubCategory;
   });
 
   return (
@@ -322,13 +495,16 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
                 <p className="text-xs font-bold text-black truncate">Trouvez rapidement le service dont vous avez besoin</p>
             </div>
 
-            <div className="flex items-center gap-2 pb-2">
+            <div className="flex items-center gap-3 pb-3 overflow-x-auto scrollbar-hide">
                 <button 
-                    onClick={() => setSelectedCategory('Disponible')}
-                    className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 relative shadow-lg active:scale-95 ${
-                        selectedCategory === 'Disponible' 
+                    onClick={() => {
+                        setSelectedCategory('Disponible');
+                        setSelectedSubCategory('all');
+                    }}
+                    className={`flex-shrink-0 px-5 py-2 rounded-full text-[12px] font-black uppercase whitespace-nowrap transition-all flex items-center gap-2 relative shadow-lg active:scale-95 ${
+                        selectedCategory === 'Disponible' && selectedSubCategory === 'all'
                             ? 'bg-green-600 text-white border-2 border-white/20' 
-                            : 'bg-green-500/80 text-white hover:bg-green-600'
+                            : 'bg-gray-100 text-gray-400'
                     }`}
                 >
                     <span>Disponible</span>
@@ -338,9 +514,33 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
                     </span>
                 </button>
 
+                {[
+                    { id: 'depannage', label: 'Dépannage' },
+                    { id: 'construction', label: 'Construction' },
+                    { id: 'nettoyage', label: 'Nettoyage' },
+                    { id: 'evenementiel', label: 'Événementiel' },
+                    { id: 'transport', label: 'Transport' },
+                    { id: 'location', label: 'Location' }
+                ].map(sub => (
+                    <button
+                        key={sub.id}
+                        onClick={() => {
+                            setSelectedCategory('Disponible');
+                            setSelectedSubCategory(sub.id as any);
+                        }}
+                        className={`flex-shrink-0 px-5 py-2 rounded-full font-black text-[12px] uppercase transition-all whitespace-nowrap ${
+                            selectedSubCategory === sub.id 
+                            ? 'bg-orange-500 text-white shadow-lg scale-105' 
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                    >
+                        {sub.label}
+                    </button>
+                ))}
+
                 <button 
                     onClick={onOpenSiteWorkers}
-                    className="px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors flex-shrink-0 bg-orange-500 text-white hover:bg-orange-600 shadow-sm"
+                    className="px-5 py-2 bg-orange-600 text-white rounded-full font-black text-[12px] uppercase whitespace-nowrap shadow-md hover:bg-orange-700 active:scale-95 transition-all flex-shrink-0"
                 >
                     Option site travailleur
                 </button>
@@ -355,20 +555,76 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
         ) : error ? (
             <div className="p-4 text-center text-red-500 h-full">{error}</div>
         ) : (
-            <div className="flex flex-col gap-6">
-                {filteredWorkers.map(worker => (
-                    <WorkerCard 
-                        key={worker.id} 
-                        worker={worker} 
-                        user={user}
-                        onScheduleService={onScheduleService}
-                        onOpenForm={onOpenForm}
-                    />
-                ))}
-                {filteredWorkers.length === 0 && (
-                    <div className="text-center mt-10">
-                        <p className="text-gray-500 mb-2">Aucun professionnel trouvé pour cette catégorie.</p>
-                        <p className="text-xs text-gray-400">Essayez une autre catégorie ou modifiez votre recherche.</p>
+            <div className="flex flex-col gap-10">
+                {workersCategorized.filter(s => selectedSubCategory === 'all' || selectedSubCategory === s.id).map(section => {
+                    const filtered = section.items.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase()));
+                    if (filtered.length === 0 && searchTerm) return null;
+
+                    const isExpanded = expandedSections[section.id];
+                    const displayItems = isExpanded ? filtered : filtered.slice(0, 3);
+
+                    return (
+                        <div key={section.id} className="space-y-4">
+                            <div className="flex justify-between items-center px-1">
+                                <div className="bg-[#f97316] px-4 py-1.5 rounded-full shadow-md">
+                                    <h2 className="text-[11px] font-black text-white uppercase tracking-tight">
+                                        {section.title}
+                                    </h2>
+                                </div>
+                                <button 
+                                    onClick={() => toggleSection(section.id)} 
+                                    className="text-orange-600 text-[11px] font-black uppercase hover:opacity-80 active:scale-95 transition-all"
+                                >
+                                    {isExpanded ? 'Réduire' : 'Plus'}
+                                </button>
+                            </div>
+
+                            <div className="flex flex-col gap-6">
+                                {displayItems.map((worker: any, idx: number) => (
+                                    <WorkerCard 
+                                        key={`${section.id}-${idx}`} 
+                                        worker={{...worker, category: 'Disponible', rating: 4.8, isVerified: true, phone: '0101010101'}} 
+                                        user={user}
+                                        isFavorite={favorites.includes(worker.title)}
+                                        onToggleFavorite={(e) => toggleFavorite(e, worker.title)}
+                                        onScheduleService={onScheduleService}
+                                        onOpenForm={onOpenForm}
+                                    />
+                                ))}
+                            </div>
+
+                            {!isExpanded && filtered.length > 3 && (
+                                <button 
+                                    onClick={() => toggleSection(section.id)}
+                                    className="w-full py-2 bg-white rounded-2xl text-orange-500 font-black text-[11px] uppercase border border-dashed border-orange-200 active:scale-[0.98] transition-all shadow-sm"
+                                >
+                                    {section.btnLabel}
+                                </button>
+                            )}
+                        </div>
+                    );
+                })}
+
+                {selectedSubCategory === 'all' && searchTerm === '' && filteredWorkers.length > 0 && (
+                    <div className="space-y-4 mt-4">
+                        <div className="bg-green-600 px-4 py-1.5 rounded-full shadow-md w-fit inline-block">
+                            <h2 className="text-[11px] font-black text-white uppercase tracking-tight">
+                                AUTRES PROFESSIONNELS DISPONIBLES
+                            </h2>
+                        </div>
+                        {filteredWorkers
+                            .filter(w => !workersCategorized.some(s => s.items.some(i => i.title.toLowerCase() === w.name.toLowerCase())))
+                            .map(worker => (
+                            <WorkerCard 
+                                key={worker.id} 
+                                worker={worker} 
+                                user={user}
+                                isFavorite={favorites.includes(worker.name)}
+                                onToggleFavorite={(e) => toggleFavorite(e, worker.name)}
+                                onScheduleService={onScheduleService}
+                                onOpenForm={onOpenForm}
+                            />
+                        ))}
                     </div>
                 )}
             </div>

@@ -315,19 +315,19 @@
       "schema": "Message",
       "description": "Collection des messages de chat."
     },
-    "/travailleurs/{id}": {
+    "/Travailleurs/{id}": {
       "schema": "Travailleur",
       "description": "Collection des inscriptions détaillées des travailleurs."
     },
-    "/agences/{id}": {
+    "/AgencesImmobilieres/{id}": {
       "schema": "AgenceImmobiliere",
       "description": "Collection des inscriptions des agences immobilières."
     },
-    "/proprietaires/{id}": {
+    "/Equipements/{id}": {
       "schema": "ProprietaireEquipement",
       "description": "Collection des inscriptions des propriétaires d'équipement."
     },
-    "/entreprises/{id}": {
+    "/Entreprises/{id}": {
       "schema": "Entreprise",
       "description": "Collection des inscriptions des entreprises."
     },

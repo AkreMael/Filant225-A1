@@ -20,7 +20,7 @@ if (!admin.apps.length) {
     projectId: process.env.GCP_PROJECT_ID || firebaseConfig.projectId,
   });
 }
-const firestore = admin.firestore();
+const firestore = admin.firestore(firebaseConfig.firestoreDatabaseId);
 console.log("Firestore initialized successfully with project:", admin.app().options.projectId);
 
 async function startServer() {
@@ -122,7 +122,7 @@ async function startServer() {
   app.get("/api/workers", async (req, res) => {
     try {
       // Fetch from multiple collections in parallel to provide a comprehensive list quickly
-      const collections = ["Travailleurs", "Agences immobilières", "Équipements", "Entreprises"];
+      const collections = ["Travailleurs", "AgencesImmobilieres", "Equipements", "Entreprises"];
       
       const snapshots = await Promise.all(
         collections.map(col => firestore.collection(col).get())

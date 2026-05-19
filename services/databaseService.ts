@@ -295,7 +295,7 @@ export const databaseService = {
       let targetCollection = 'Clients';
       let existingData: any = {};
       
-      const collections = ['Admin', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Clients'];
+      const collections = ['Admin', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Clients'];
       
       const checkPromises = collections.map(async (col) => {
           const ref = doc(db, col, sanitizedPhone);
@@ -349,7 +349,7 @@ export const databaseService = {
 
   getUserByUidFromFirestore: async (uid: string): Promise<User | null> => {
     try {
-      const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
+      const collections = ['Clients', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Admin'];
       for (const col of collections) {
           const q = query(collection(db, col), where('userId', '==', uid), limit(1));
           const snapshot = await withTimeout(getDocs(q));
@@ -398,7 +398,7 @@ export const databaseService = {
     const sanitizedPhone = phone.replace(/\D/g, '');
     try {
       await databaseService.ensureAuth();
-      const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
+      const collections = ['Clients', 'Travailleurs', 'AgencesImmobilieres', 'Equipements', 'Entreprises', 'Admin'];
       
       const promises = collections.map(async (col) => {
           const userRef = doc(db, col, sanitizedPhone);
@@ -610,8 +610,8 @@ export const databaseService = {
         'Scanner',
         'Paiements',
         'Travailleurs',
-        'Agences immobilières',
-        'Équipements',
+        'AgencesImmobilieres',
+        'Equipements',
         'Entreprises'
       ];
 
@@ -1414,8 +1414,8 @@ export const databaseService = {
       
       const targetCollection = userResult.role === 'Admin 225' ? 'Admin' : 
                              (userResult.role === 'Conseiller' ? 'Conseiller' : 
-                             (userResult.role === 'Agence immobilière' ? 'Agences immobilières' :
-                             (userResult.role === 'Équipements' ? 'Équipements' :
+                             (userResult.role === 'Agence immobilière' ? 'AgencesImmobilieres' :
+                             (userResult.role === 'Équipements' ? 'Equipements' :
                              (userResult.role === 'Entreprise' ? 'Entreprises' : 'Clients'))));
 
       // 1. Upload to Firebase Storage
