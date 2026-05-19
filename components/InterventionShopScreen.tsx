@@ -26,7 +26,23 @@ import {
     Sparkles,
     ShieldCheck,
     Monitor,
-    Wrench
+    Wrench,
+    Star,
+    ZapOff,
+    Wind,
+    Thermometer,
+    Tv2,
+    HardDrive,
+    Car,
+    Trees,
+    ChefHat,
+    Music,
+    Camera,
+    Video,
+    UserCheck,
+    Package,
+    Building2,
+    Waves
 } from 'lucide-react';
 import { getSynchronizedWorkerImage } from './WorkerListScreen';
 import { User } from '../types';
@@ -127,95 +143,95 @@ const classicCardColors = [
 ];
 
 // --- APP DATA ---
-const batimentIntervItems = [
+const depannageItems = [
     { title: 'Plombier rapide', description: 'Réparation fuites d’eau et installations.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
     { title: 'Électricien rapide', description: 'Dépannage électrique sécurisé.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
+    { title: 'Serrurier rapide', description: 'Ouverture de porte et serrurerie.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
+    { title: 'Vitrier rapide', description: 'Remplacement de vitres et miroiterie.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
+    { title: 'Réparation climatiseur rapide', description: 'Entretien et recharge clim express.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
+    { title: 'Réparation frigo rapide', description: 'Dépannage frigo et systèmes froid.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
+    { title: 'Réparation télévision rapide', description: 'Dépannage TV toutes marques.', img: "https://i.supaimg.com/cdec5321-e464-4e04-b04e-7b03b2b59500.jpg" },
+    { title: 'Réparation machine à laver rapide', description: 'Dépannage lave-linge express.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
+    { title: 'Réparation pompe à eau rapide', description: 'Dépannage pompes hydrauliques.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
+    { title: 'Réparation fuite d’eau rapide', description: 'Dépannage plomberie express.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
+    { title: 'Dépannage Internet rapide', description: 'Configuration WiFi et Fibre.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
+    { title: 'Dépannage parabole rapide', description: 'Réglage antennes satellite.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
+    { title: 'Dépannage électroménager rapide', description: 'Réparation micro-ondes, fours, etc.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
+    { title: 'Dépannage groupe électrogène rapide', description: 'Maintenance groupes secours.', img: "https://i.supaimg.com/2944eab0-2074-4e61-a759-dca478289e4b.jpg" },
+    { title: 'Dépannage auto rapide', description: 'Assistance mécanique rapide.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg" },
+];
+
+const constructionItems = [
     { title: 'Maçon rapide', description: 'Maçonnerie et rénovation rapide.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
+    { title: 'Ferrailleur rapide', description: 'Travaux de ferraillage bâtiment.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
+    { title: 'Coffreur rapide', description: 'Réalisation de coffrages béton.', img: "https://i.supaimg.com/06e7bd93-4222-4631-aeee-6516870145ef.jpg" },
     { title: 'Carreleur rapide', description: 'Pose de carreaux tous formats.', img: "https://i.supaimg.com/06e7bd93-4222-4631-aeee-6516870145ef.jpg" },
-    { title: 'Peintre bâtiment', description: 'Peinture bâtiment et finitions.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Soudeur rapide', description: 'Travaux de soudure et ferronnerie.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
-    { title: 'Menuisier aluminium', description: 'Installation portes et fenêtres alu.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
-    { title: 'Menuisier bois', description: 'Menuiserie bois et fabrication meubles.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg" },
-    { title: 'Vitrier', description: 'Remplacement de vitres et miroiterie.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
-    { title: 'Staffeur', description: 'Décoration staff et faux plafonnement.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Frigoriste professionnel', description: 'Dépannage frigo et systèmes de froid.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
-    { title: 'Jardinier & Espaces verts', description: 'Entretien jardin et pose de gazon.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
-    { title: 'Nettoyage fin de chantier', description: 'Propreté parfaite après vos travaux.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Réparation électroménager', description: 'Dépannage machines à laver et divers.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
-    { title: 'Traitement anti-insectes', description: 'Désinsectisation et dératisation rapide.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Installation chauffe-eau', description: 'Pose et maintenance de chauffe-eau.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
-    { title: 'Vernissage & Laquage', description: 'Embellissement de vos meubles bois.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg" },
-    { title: 'Forage de puits', description: 'Réalisation de puits et forages eau.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
-    { title: 'Réparation pompe maison', description: 'Dépannage pompes hydrauliques.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
-    { title: 'Pose papier peint', description: 'Décoration murale et pose papier.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Réparation climatiseur', description: 'Dépannage et maintenance clim rapide.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
-    { title: 'Réparation château d’eau', description: 'Maintenance et étanchéité châteaux d’eau.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
-    { title: 'Pose de portail', description: 'Installation de portails et clôtures.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
-    { title: 'Réparation toiture', description: 'Réparation fuites et charpentes.', img: "https://i.supaimg.com/017f0261-3cac-4fa3-b519-c5e93cdc1dd1.jpg" },
-    { title: 'Réparation fuite d’eau', description: 'Dépannage plomberie express.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
-    { title: 'Dépannage maison', description: 'Petits travaux et bricolage maison.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
-    { title: 'Construction maison', description: 'Gros œuvre et construction complète.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
-    { title: 'Finition bâtiment', description: 'Peinture, carrelage et décoration.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Travaux publics', description: 'Travaux de voirie et terrassement.', img: "https://i.supaimg.com/06e7bd93-4222-4631-aeee-6516870145ef.jpg" },
-    { title: 'Réparation serrure', description: 'Ouverture de porte et serrurerie.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
-    { title: 'Installation parabole', description: 'Pose et réglage antennes satellite.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
-    { title: 'Installation Internet maison', description: 'Configuration réseau et WiFi domicile.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
-    { title: 'Charpentier rapide', description: 'Menuiserie et charpente bois.', img: "https://i.supaimg.com/017f0261-3cac-4fa3-b519-c5e93cdc1dd1.jpg" },
-    { title: 'Laveur de vitres Rapide', description: 'Nettoyage professionnel de vitres.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
-    { title: 'Installateur de caméras Rapide', description: 'Installation vidéosurveillance.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
-    { title: 'Fabricant de poufs Rapide', description: 'Création et réparation de poufs.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg" },
+    { title: 'Peintre bâtiment rapide', description: 'Peinture et finitions bâtiment.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
+    { title: 'Électricien bâtiment rapide', description: 'Installation électrique bâtiment.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
+    { title: 'Plombier bâtiment rapide', description: 'Plomberie et réseaux bâtiment.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
+    { title: 'Soudeur rapide', description: 'Soudure aluminium et fer.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
+    { title: 'Charpentier rapide', description: 'Charpente bois et couverture.', img: "https://i.supaimg.com/017f0261-3cac-4fa3-b519-c5e93cdc1dd1.jpg" },
+    { title: 'Menuisier aluminium rapide', description: 'Menuiserie alu pro.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
+    { title: 'Menuisier bois rapide', description: 'Fabrication meubles bois.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg" },
+    { title: 'Staffeur rapide', description: 'Décoration staff et plâtre.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
+    { title: 'Étancheur rapide', description: 'Traitement fuites et humidité.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
+    { title: 'Poseur de portail rapide', description: 'Installation portails.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
+    { title: 'Poseur de caméra rapide', description: 'Installation vidéosurveillance.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
+    { title: 'Climatisation bâtiment rapide', description: 'Installation systèmes split.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
+    { title: 'Technicien forage rapide', description: 'Réalisation forages eau.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
+    { title: 'Constructeur maison rapide', description: 'Gros œuvre et construction.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
+    { title: 'Finition bâtiment rapide', description: 'Peinture, carrelage, déco.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
+];
+
+const nettoyageItems = [
+    { title: 'Technicien de surface rapide', description: 'Entretien pro bureaux.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
+    { title: 'Nettoyage maison rapide', description: 'Entretien complet domicile.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
+    { title: 'Nettoyage bureau rapide', description: 'Propreté espaces pro.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
+    { title: 'Nettoyage chantier rapide', description: 'Nettoyage après travaux.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
+    { title: 'Lavage automobile rapide', description: 'Lavage complet véhicule.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg" },
+    { title: 'Désinfection rapide', description: 'Traitement anti-nuisibles.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
+    { title: 'Entretien jardin rapide', description: 'Jardinage et espaces verts.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
+    { title: 'Entretien piscine rapide', description: 'Nettoyage et traitement eau.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
+];
+
+const evenementielItems = [
+    { title: 'Cuisinier rapide', description: 'Service cuisine pour événements.', img: "https://i.supaimg.com/ed09fd1b-87c1-4297-bab2-6f5e2f39baf0.jpg" },
+    { title: 'Serveur rapide', description: 'Accueil et service buffet.', img: "https://i.supaimg.com/ed09fd1b-87c1-4297-bab2-6f5e2f39baf0.jpg" },
+    { title: 'Décorateur rapide', description: 'Aménagement salles de fête.', img: "https://i.supaimg.com/ea6ed055-cb21-4552-a7c2-ecdf4b3bb2e5.jpg" },
+    { title: 'DJ rapide', description: 'Animation musicale live.', img: "https://i.supaimg.com/acf51f49-b736-4a0c-b377-401e8d3a11b9.jpg" },
+    { title: 'Sonorisateur rapide', description: 'Installation sono pro.', img: "https://i.supaimg.com/03ee9f0b-9978-48aa-a0c1-a4ee2b0efb74.jpg" },
+    { title: 'Organisateur événementiel rapide', description: 'Planning complet fêtes.', img: "https://i.supaimg.com/5bbb535f-94c7-4c8a-bf51-7953e69e516e.jpg" },
+    { title: 'Photographe rapide', description: 'Couverture photo pro.', img: "https://i.supaimg.com/cdec5321-e464-4e04-b04e-7b03b2b59500.jpg" },
+    { title: 'Vidéaste rapide', description: 'Tournage et montage vidéo.', img: "https://i.supaimg.com/cdec5321-e464-4e04-b04e-7b03b2b59500.jpg" },
+];
+
+const transportItems = [
+    { title: 'Chauffeur rapide', description: 'Service chauffeur privé.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg" },
+    { title: 'Déménageur rapide', description: 'Transport et manutention domicile.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg" },
+    { title: 'Livreur rapide', description: 'Livraison colis et repas.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg" },
+    { title: 'Transport marchandises rapide', description: 'Logistique marchandises.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg" },
+    { title: 'Transport matériaux rapide', description: 'Sable, bois, ciment.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg" },
+    { title: 'Transport déménagement rapide', description: 'Camions déménagement pro.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg" },
 ];
 
 const locationRapideIntervItems = [
-    { title: 'Camion de campagne à louer', description: 'Camion podium sonorisé pour vos campagnes.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Camion benne à louer', description: 'Transport de sable, gravier et agrégats.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Bâche à louer', description: 'Bâches de toutes tailles pour vos fêtes.', img: EQUIPMENT_IMAGES['Bâche à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Chaise à louer', description: 'Chaises confortables pour événements.', img: "https://i.supaimg.com/90d4d927-ad54-471b-9238-d57d11233758.jpg", price: DESIGNATED_PRICE },
-    { title: 'Table à louer', description: 'Tables de réception pour vos invités.', img: "https://i.supaimg.com/6a3225ae-bdd4-40ea-95aa-51511076ec44.jpg", price: DESIGNATED_PRICE },
-    { title: 'Groupe électrogène à louer', description: 'Puissance garantie pour vos événements.', img: (EQUIPMENT_IMAGES['Groupe électrogène à louer'] as string[])[0], price: DESIGNATED_PRICE },
-    { title: 'Bétonnière à louer', description: 'Mélange efficace pour vos travaux béton.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Échafaudage à louer', description: 'Structure sécurisée pour travaux hauteur.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Tracteur à louer', description: 'Matériel agricole pour labourage.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Mini pelle à louer', description: 'Travaux d’excavation en accès restreint.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Pelle mécanique à louer', description: 'Gros terrassement et démolition.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Sonorisation à louer', description: 'Matériel son complet pour ambiance.', img: EQUIPMENT_IMAGES['Sonorisation à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Tente événementielle à louer', description: 'Tentes grand format pour réceptions.', img: "https://i.supaimg.com/85a7fcdf-42cb-4725-821c-1e209ebabfbc.jpg", price: DESIGNATED_PRICE },
-    { title: 'Véhicule de transport', description: 'Location de véhicules pour déménagement.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Engin de chantier', description: 'Divers engins pour chantiers BTP.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Machine de forage', description: 'Équipement pour puits et forages.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Marteau piqueur à louer', description: 'Démolition béton et roches.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Compresseur à louer', description: 'Air comprimé pour outils pneumatiques.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Espace d’événement à louer', description: 'Salles et espaces en plein air.', img: (EQUIPMENT_IMAGES['Espace d’événement à louer'] as string[])[0], price: DESIGNATED_PRICE },
-    { title: 'Écran géant à louer', description: 'Écrans LED haute définition.', img: EQUIPMENT_IMAGES['Écran géant à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Podium à louer', description: 'Scènes modulables pour discours.', img: EQUIPMENT_IMAGES['Podium à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Poubelle mobile à louer', description: 'Collecte et gestion des déchets.', img: "https://i.supaimg.com/5d50ad37-c869-47dd-ab0a-7439425189ca.jpg", price: DESIGNATED_PRICE },
-    { title: 'Mégaphone à louer', description: 'Amplification sonore mobile.', img: "https://i.supaimg.com/9bbdf54f-ff0f-4290-ad44-4b65e6615b87.jpg", price: DESIGNATED_PRICE },
-    { title: 'Échelle pliante (petite) à louer', description: 'Accès en hauteur sécurisé.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Corde / rallonge corde à louer', description: 'Câbles et cordages divers.', img: "https://i.supaimg.com/b52890f2-773e-4dbf-9fbb-384abb717ddc.jpg", price: DESIGNATED_PRICE },
-    { title: 'Nappe de table à louer', description: 'Habillage pour tables de réception.', img: "https://i.supaimg.com/8b8a3693-887c-46ca-8407-3385f5797391.jpg", price: DESIGNATED_PRICE },
-    { title: 'Tapis à louer', description: 'Revêtement de sol pour allées.', img: "https://i.supaimg.com/327c6247-8170-45a3-87a9-0188227b6160.jpg", price: DESIGNATED_PRICE },
-    { title: 'Distributeur d’eau à louer', description: 'Service d’eau fraîche pour invités.', img: "https://i.supaimg.com/2a8fce06-7284-40d6-9721-42bfa3ece75b.jpg", price: DESIGNATED_PRICE },
-    { title: 'Plateau de service', description: 'Accessoire indispensable traiteur.', img: "https://i.supaimg.com/4fde8630-fb44-45a2-9579-d21df1774416.jpg", price: DESIGNATED_PRICE },
-    { title: 'Microphone événement à louer', description: 'Système microphone haute qualité.', img: "https://i.supaimg.com/58dab9a6-0116-44ac-9087-40599ee37a3d.jpg", price: DESIGNATED_PRICE },
-    { title: 'Haut-parleur / baffle Bluetooth à louer', description: 'Sonorisation mobile connectée.', img: "https://i.supaimg.com/a6f9700d-7f3f-45ee-b5e8-490beea8bfb9.jpg", price: DESIGNATED_PRICE },
-    { title: 'Projecteur LED portable à louer', description: 'Éclairage puissant et mobile.', img: "https://i.supaimg.com/8930c037-58e6-4114-8407-a23ac25b94cb.jpg", price: DESIGNATED_PRICE },
-    { title: 'Lampe éclairage forte à louer', description: 'Éclairage haute intensité.', img: "https://i.supaimg.com/97ce3a8d-4768-4a67-9939-98fdd67ece99.jpg", price: DESIGNATED_PRICE },
-    { title: 'Glacière à louer', description: 'Glacière isotherme pour conservation au frais.', img: "https://i.supaimg.com/a2bf7832-311c-40ee-a8ac-c045311105d5.jpg", price: DESIGNATED_PRICE },
-    { title: 'Tente pliante (petite) à louer', description: 'Abri rapide contre soleil/pluie.', img: "https://i.supaimg.com/85a7fcdf-42cb-4725-821c-1e209ebabfbc.jpg", price: DESIGNATED_PRICE },
-    { title: 'Parasol à louer', description: 'Protection solaire de jardin.', img: "https://i.supaimg.com/566f8800-9907-4a76-b623-eb55af66be2e.jpg", price: DESIGNATED_PRICE },
-    { title: 'Banc à louer', description: 'Assises collectives robustes.', img: "https://i.supaimg.com/d0e3fa50-b9ce-4812-9ff6-c60ad02adebc.jpg", price: DESIGNATED_PRICE },
-    { title: 'Chaise pliante à louer', description: 'Chaises légères et pratiques.', img: "https://i.supaimg.com/d3aa47ce-cd82-415e-b3f6-83fef44587d2.jpg", price: DESIGNATED_PRICE },
-    { title: 'Table en bois à louer', description: 'Table robuste en bois pour repas.', img: "https://i.supaimg.com/b30c95a6-c5c1-421c-9977-0867018a1aa2.jpg", price: DESIGNATED_PRICE },
-    { title: 'Bâche (petite / moyenne) à louer', description: 'Protection étanche moyenne.', img: "https://i.supaimg.com/774b9edd-9be5-4396-90bc-6211999e7acc.jpg", price: DESIGNATED_PRICE },
-    { title: 'Matelas une place à louer', description: 'Couchage d’appoint confortable.', img: "https://i.supaimg.com/8faa86d6-3417-4b28-be02-5f67b136341c.jpg", price: DESIGNATED_PRICE },
-    { title: 'Vidéoprojecteur à louer', description: 'Projection haute qualité événements.', img: "https://i.supaimg.com/8930c037-58e6-4114-8407-a23ac25b94cb.jpg", price: DESIGNATED_PRICE },
-    { title: 'Tronçonneuse à louer', description: 'Abattage et découpe de bois.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Nettoyeur haute pression', description: 'Lavage professionnel sols et murs.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Aspirateur industriel', description: 'Nettoyage puissant gros volumes.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Perforateur à louer', description: 'Forage béton et maçonnerie.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Tondeuse à gazon à louer', description: 'Entretien pelouse et espaces verts.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Broyeur de végétaux', description: 'Réduction déchets verts jardin.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Dameuse à louer', description: 'Compactage sols et terrassement.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
+    { title: 'Camion benne', description: 'Transport sable, gravier pro.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
+    { title: 'Camion de campagne', description: 'Camion podium sonorisé.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
+    { title: 'Bâche à louer', description: 'Toutes tailles dispo.', img: EQUIPMENT_IMAGES['Bâche à louer'] as string, price: DESIGNATED_PRICE },
+    { title: 'Chaise à louer', description: 'Chaises confortables.', img: "https://i.supaimg.com/90d4d927-ad54-471b-9238-d57d11233758.jpg", price: DESIGNATED_PRICE },
+    { title: 'Table à louer', description: 'Tables réception pro.', img: "https://i.supaimg.com/6a3225ae-bdd4-40ea-95aa-51511076ec44.jpg", price: DESIGNATED_PRICE },
+    { title: 'Groupe électrogène', description: 'Puissance garantie.', img: (EQUIPMENT_IMAGES['Groupe électrogène à louer'] as string[])[0], price: DESIGNATED_PRICE },
+    { title: 'Bétonnière', description: 'Mélange efficace BTP.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
+    { title: 'Échafaudage', description: 'Travaux hauteur safe.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
+    { title: 'Tracteur', description: 'Labourage agricole.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
+    { title: 'Mini pelle', description: 'Accès restreint.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
+    { title: 'Pelle mécanique', description: 'Terrassement pro.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
+    { title: 'Marteau piqueur', description: 'Démolition béton.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
+    { title: 'Compresseur', description: 'Outils pneumatiques.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
+    { title: 'Sonorisation', description: 'Full audio events.', img: EQUIPMENT_IMAGES['Sonorisation à louer'] as string, price: DESIGNATED_PRICE },
+    { title: 'Tente événementielle', description: 'Grands formats dispo.', img: "https://i.supaimg.com/85a7fcdf-42cb-4725-821c-1e209ebabfbc.jpg", price: DESIGNATED_PRICE },
+    { title: 'Véhicule de transport', description: 'Utilitaires déménagement.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
+    { title: 'Engin de chantier', description: 'BTP lourds.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
 ];
 
 const generalWorkerDataList = [
@@ -256,19 +272,28 @@ const EquipmentVisual: React.FC<{ title: string, fallbackImg?: string, category?
     const iconSize = "w-16 h-16";
     
     // Choose dynamic icon based on keywords
-    if (t.includes('plombier') || t.includes('eau') || t.includes('fuite') || t.includes('château')) 
-        return <Droplets className={`${iconSize} text-blue-400`} />;
+    if (t.includes('plombier') || t.includes('eau') || t.includes('fuite') || t.includes('château') || t.includes('piscine')) 
+        return <Waves className={`${iconSize} text-blue-400`} />;
     
-    if (t.includes('électr') || t.includes('clim') || t.includes('parabole') || t.includes('internet')) 
+    if (t.includes('clim') || t.includes('climatiseur'))
+        return <Wind className={`${iconSize} text-cyan-400`} />;
+
+    if (t.includes('frigo') || t.includes('congélateur') || t.includes('réfrigérateur'))
+        return <Thermometer className={`${iconSize} text-blue-300`} />;
+
+    if (t.includes('machine à laver') || t.includes('lave-linge'))
+        return <Waves className={`${iconSize} text-slate-400`} />;
+
+    if (t.includes('électr') || t.includes('parabole') || t.includes('internet') || t.includes('groupe électrogène')) 
         return <Zap className={`${iconSize} text-yellow-400`} />;
     
     if (t.includes('peintre') || t.includes('déco') || t.includes('finition') || t.includes('staff')) 
         return <Paintbrush className={`${iconSize} text-pink-400`} />;
     
-    if (t.includes('maçon') || t.includes('carreleur') || t.includes('beton') || t.includes('construction') || t.includes('bétonnière') || t.includes('pelle') || t.includes('engin')) 
+    if (t.includes('maçon') || t.includes('carreleur') || t.includes('beton') || t.includes('construction') || t.includes('bétonnière') || t.includes('pelle') || t.includes('coffreur')) 
         return <Hammer className={`${iconSize} text-orange-400`} />;
     
-    if (t.includes('camion') || t.includes('véhicule') || t.includes('tracteur')) 
+    if (t.includes('camion') || t.includes('véhicule') || t.includes('tracteur') || t.includes('auto') || t.includes('livreur')) 
         return <Truck className={`${iconSize} text-red-500`} />;
     
     if (t.includes('chantier') || t.includes('forage') || t.includes('piqueur') || t.includes('compresseur') || t.includes('échafaudage') || t.includes('marteau')) 
@@ -280,32 +305,41 @@ const EquipmentVisual: React.FC<{ title: string, fallbackImg?: string, category?
     if (t.includes('insecte') || t.includes('termites') || t.includes('rat') || t.includes('désinfection'))
         return <Bug className={`${iconSize} text-amber-900`} />;
 
-    if (t.includes('nettoyage') || t.includes('aspirateur') || t.includes('propreté') || t.includes('laveur') || t.includes('pression'))
+    if (t.includes('nettoyage') || t.includes('aspirateur') || t.includes('propreté') || t.includes('laveur') || t.includes('pression') || t.includes('surface'))
         return <Sparkles className={`${iconSize} text-sky-300`} />;
 
     if (t.includes('sécurité') || t.includes('alarme') || t.includes('vidéosurveillance'))
         return <ShieldCheck className={`${iconSize} text-blue-600`} />;
 
-    if (t.includes('vidéo') || t.includes('écran') || t.includes('projecteur') || t.includes('tv'))
+    if (t.includes('vidéo') || t.includes('écran') || t.includes('projecteur') || t.includes('télévision') || t.includes('tv'))
         return <Monitor className={`${iconSize} text-slate-700`} />;
 
-    if (t.includes('menuisier') || t.includes('soudeur') || t.includes('ferron') || t.includes('charpentier') || t.includes('portail') || t.includes('aluminium')) 
+    if (t.includes('menuisier') || t.includes('soudeur') || t.includes('ferron') || t.includes('charpentier') || t.includes('portail') || t.includes('aluminium') || t.includes('ferrailleur')) 
         return <Scaling className={`${iconSize} text-indigo-400`} />;
     
     if (t.includes('vitr') || t.includes('fenêtre') || t.includes('porte')) 
         return <Fence className={`${iconSize} text-cyan-400`} />;
     
-    if (t.includes('serrure') || t.includes('clé')) 
+    if (t.includes('serrure') || t.includes('clé') || t.includes('serrurier')) 
         return <Key className={`${iconSize} text-amber-500`} />;
 
     if (t.includes('camera') || t.includes('surveillance'))
         return <Tv className={`${iconSize} text-slate-600`} />;
 
-    if (t.includes('sono') || t.includes('haut-parleur') || t.includes('baffle') || t.includes('micro') || t.includes('mégaphone'))
-        return <Mic className={`${iconSize} text-purple-400`} />;
+    if (t.includes('sono') || t.includes('haut-parleur') || t.includes('baffle') || t.includes('micro') || t.includes('mégaphone') || t.includes('dj'))
+        return <Music className={`${iconSize} text-purple-400`} />;
 
-    if (t.includes('chaise') || t.includes('table') || t.includes('banc') || t.includes('matelas') || t.includes('nappe'))
+    if (t.includes('cuisinier') || t.includes('chef') || t.includes('traiteur'))
+        return <ChefHat className={`${iconSize} text-orange-500`} />;
+
+    if (t.includes('serveur') || t.includes('chaise') || t.includes('table') || t.includes('banc') || t.includes('matelas') || t.includes('nappe'))
         return <Utensils className={`${iconSize} text-emerald-400`} />;
+
+    if (t.includes('photo') || t.includes('camera'))
+        return <Camera className={`${iconSize} text-slate-500`} />;
+
+    if (t.includes('vidéaste') || t.includes('tournage'))
+        return <Video className={`${iconSize} text-red-500`} />;
 
     if (t.includes('poubelle'))
         return <Trash2 className={`${iconSize} text-green-600`} />;
@@ -322,14 +356,20 @@ const EquipmentVisual: React.FC<{ title: string, fallbackImg?: string, category?
 
 const RapidSectionCard: React.FC<{ 
     item: any, 
-    type: 'batiment' | 'location', 
+    type: 'depannage' | 'construction' | 'nettoyage' | 'evenementiel' | 'transport' | 'location', 
     user: User,
     variant?: 'square' | 'horizontal',
+    isFavorite: boolean,
+    onToggleFavorite: (e: React.MouseEvent) => void,
     onOpenForm: (context: any) => void
-}> = ({ item, type, user, variant = 'square', onOpenForm }) => {
+}> = ({ item, type, user, variant = 'square', isFavorite, onToggleFavorite, onOpenForm }) => {
     const handleOpen = () => {
+        let formType = 'rapid_building_service';
+        if (type === 'location') formType = 'location';
+        if (type === 'transport') formType = 'location'; // Transport usually requires details similar to location/service
+
         onOpenForm({
-            formType: type === 'batiment' ? 'rapid_building_service' : 'location',
+            formType: formType,
             title: item.title,
             imageUrl: EQUIPMENT_IMAGES[item.title] || item.img,
             description: item.description,
@@ -348,14 +388,16 @@ const RapidSectionCard: React.FC<{
                         <EquipmentVisual title={item.title} fallbackImg={item.img} />
                     </div>
                     <div className="ml-4 flex-1 flex flex-col text-left">
-                        <h4 className="text-[13px] font-black text-gray-900 uppercase leading-tight mb-0.5 tracking-tight line-clamp-1">{item.title}</h4>
-                        {type === 'batiment' ? (
+                        <div className="flex justify-between items-start">
+                            <h4 className="text-[13px] font-black text-gray-900 uppercase leading-tight mb-0.5 tracking-tight line-clamp-1 pr-6">{item.title}</h4>
+                        </div>
+                        {type !== 'location' && type !== 'transport' ? (
                             <p className="text-[#ef4444] font-black text-[11px] leading-tight uppercase">
-                                H. Descente : <span className="text-black">18h30</span>
+                                H. Descente : <span className="text-black">18H30</span>
                             </p>
                         ) : (
                             <p className="text-[#ef4444] font-black text-[11px] leading-tight uppercase">
-                                Prix par jour : <span className="text-black text-[9px] leading-tight">{item.price}</span>
+                                Prix par jour : <span className="text-black text-[9px] leading-tight">{item.price || "Contactez-nous"}</span>
                             </p>
                         )}
                         <div className="flex items-center justify-between mt-1 pt-1 border-t border-gray-50">
@@ -363,7 +405,12 @@ const RapidSectionCard: React.FC<{
                                 <ShopIconSmall />
                                 <span className="text-[8px] font-black uppercase tracking-wider">Filant Services</span>
                             </div>
-                            <div className="flex h-3 w-3 rounded-full border-2 border-white shadow-lg animate-flash-green-red"></div>
+                            <button 
+                                onClick={onToggleFavorite}
+                                className={`p-1 rounded-full transition-colors ${isFavorite ? 'text-yellow-500' : 'text-gray-300'}`}
+                            >
+                                <Star className="w-4 h-4 fill-current" />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -382,14 +429,14 @@ const RapidSectionCard: React.FC<{
                 </div>
             </div>
             <div className="px-4 pb-5 flex flex-col flex-1 text-left relative">
-                <h4 className="text-[13px] font-black text-gray-900 uppercase leading-tight mb-1.5 tracking-tight line-clamp-1">{item.title}</h4>
-                {type === 'batiment' ? (
+                <h4 className="text-[13px] font-black text-gray-900 uppercase leading-tight mb-1.5 tracking-tight line-clamp-1 pr-4">{item.title}</h4>
+                {type !== 'location' && type !== 'transport' ? (
                     <p className="text-[#ef4444] font-black text-[12px] leading-tight mb-2 uppercase">
-                        Heure de descente : <span className="text-black">18h30</span>
+                        Heure de descente : <span className="text-black">18H30</span>
                     </p>
                 ) : (
                     <p className="text-[#ef4444] font-black text-[11px] leading-tight mb-2 uppercase">
-                        Prix par jour : <br/><span className="text-black text-[10px] leading-tight italic">{item.price}</span>
+                        Prix par jour : <br/><span className="text-black text-[10px] leading-tight italic">{item.price || "Désigné par le propriétaire"}</span>
                     </p>
                 )}
                 <p className="text-[10px] text-gray-400 leading-snug italic line-clamp-2 mt-auto mb-3">
@@ -400,7 +447,12 @@ const RapidSectionCard: React.FC<{
                         <ShopIconSmall />
                         <span className="text-[9px] font-black uppercase tracking-wider">Filant Services</span>
                     </div>
-                    <div className="flex h-3.5 w-3.5 rounded-full border-2 border-white shadow-lg animate-flash-green-red"></div>
+                    <button 
+                        onClick={onToggleFavorite}
+                        className={`p-1 rounded-full transition-colors ${isFavorite ? 'text-yellow-500' : 'text-gray-300'}`}
+                    >
+                        <Star className="w-5 h-5 fill-current" />
+                    </button>
                 </div>
             </div>
         </div>
@@ -468,26 +520,51 @@ interface InterventionShopScreenProps {
 
 const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack, user, category, onOpenForm }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [showAllBatiment, setShowAllBatiment] = useState(false);
-    const [showAllLocation, setShowAllLocation] = useState(false);
+    const [selectedTab, setSelectedTab] = useState<'all' | 'depannage' | 'construction' | 'nettoyage' | 'evenementiel' | 'transport' | 'location'>(category === 'intervention' ? 'all' : 'all');
+    const [favorites, setFavorites] = useState<string[]>(() => {
+        const saved = localStorage.getItem('filant_favorites');
+        return saved ? JSON.parse(saved) : [];
+    });
     
-    const mainScrollRef = useRef<HTMLDivElement>(null);
+    // Individual section collapses
+    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+        depannage: false,
+        construction: false,
+        nettoyage: false,
+        evenementiel: false,
+        transport: false,
+        location: false
+    });
+
+    useEffect(() => {
+        localStorage.setItem('filant_favorites', JSON.stringify(favorites));
+    }, [favorites]);
+
+    const toggleFavorite = (e: React.MouseEvent, title: string) => {
+        e.stopPropagation();
+        setFavorites(prev => 
+            prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+        );
+    };
+
+    const toggleSection = (section: string) => {
+        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    };
+
     const isInterventionView = category === 'intervention';
 
-    const headerImage = useMemo(() => {
-        if (category === 'intervention') return "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg";
-        if (category === 'travailleurs') return "https://i.supaimg.com/ed09fd1b-87c1-4297-bab2-6f5e2f39baf0.jpg";
-        if (category === 'immobilier') return "https://i.supaimg.com/7dd280ea-2d80-472d-9997-d6c5b3d3c53c.jpg";
-        if (category === 'equipement') return "https://i.supaimg.com/03ee9f0b-9978-48aa-a0c1-a4ee2b0efb74.jpg";
-        return "https://i.supaimg.com/ed09fd1b-87c1-4297-bab2-6f5e2f39baf0.jpg";
-    }, [category]);
+    // Filters
+    const filterItems = (items: any[]) => 
+        items.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const filteredIntervBat = useMemo(() => 
-        batimentIntervItems.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase())),
-    [searchTerm]);
-    const filteredIntervLoc = useMemo(() => 
-        locationRapideIntervItems.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase())),
-    [searchTerm]);
+    const sections = [
+        { id: 'depannage', title: 'DÉPANNAGE RAPIDE', items: depannageItems, btnLabel: 'Tous les dépannages' },
+        { id: 'construction', title: 'SERVICES CONSTRUCTION', items: constructionItems, btnLabel: 'Tous les services construction' },
+        { id: 'nettoyage', title: 'NETTOYAGE & ENTRETIEN', items: nettoyageItems, btnLabel: 'Tous les services nettoyage' },
+        { id: 'evenementiel', title: 'CUISINE & ÉVÉNEMENTIEL', items: evenementielItems, btnLabel: 'Tous les services événementiels' },
+        { id: 'transport', title: 'TRANSPORT & LIVRAISON', items: transportItems, btnLabel: 'Tous les services transport' },
+        { id: 'location', title: 'LOCATION D’ÉQUIPEMENTS', items: locationRapideIntervItems, btnLabel: 'Tous les équipements' },
+    ];
 
     const classicItems = useMemo(() => {
         if (category === 'travailleurs') return generalWorkerDataList;
@@ -499,9 +576,6 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
     const filteredClassic = useMemo(() => 
         classicItems.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase())),
     [classicItems, searchTerm]);
-
-    const displayBat = showAllBatiment ? filteredIntervBat : filteredIntervBat.slice(0, 3);
-    const displayLoc = showAllLocation ? filteredIntervLoc : filteredIntervLoc.slice(0, 3);
 
     const getTitle = () => {
         if (category === 'intervention') return "Intervention Rapide";
@@ -520,7 +594,7 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
         >
             <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-hide">
                 
-                {/* Header Image Section - Matching EmbeddedForm */}
+                {/* Header Image Section */}
                 <motion.div 
                     initial={{ y: -50, opacity: 0, scale: 1.1 }}
                     animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -540,7 +614,7 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
                     </div>
                 </motion.div>
 
-                {/* Content Container - Matching EmbeddedForm */}
+                {/* Content Container */}
                 <motion.div 
                     initial={{ y: "100%" }}
                     animate={{ y: 0 }}
@@ -553,6 +627,33 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
                         <h2 className="text-xl font-black text-black uppercase tracking-tight text-center">{getTitle()}</h2>
                         <div className="h-1 w-20 bg-orange-500 mt-1 rounded-full"></div>
                     </div>
+
+                    {/* Category Tabs (Horizontal Scroll) */}
+                    {isInterventionView && (
+                        <div className="flex gap-4 overflow-x-auto pb-4 mb-6 scrollbar-hide">
+                            {[
+                                { id: 'all', label: 'Tout' },
+                                { id: 'depannage', label: 'Dépannage' },
+                                { id: 'construction', label: 'Construction' },
+                                { id: 'nettoyage', label: 'Nettoyage' },
+                                { id: 'evenementiel', label: 'Événementiel' },
+                                { id: 'transport', label: 'Transport' },
+                                { id: 'location', label: 'Location' }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setSelectedTab(tab.id as any)}
+                                    className={`flex-shrink-0 px-4 py-2 rounded-full font-extrabold text-[12px] uppercase transition-all ${
+                                        selectedTab === tab.id 
+                                        ? 'bg-orange-500 text-white shadow-lg scale-105' 
+                                        : 'bg-gray-100 text-gray-400'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Search Bar */}
                     <div className="relative mb-6">
@@ -570,59 +671,62 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
 
                     {isInterventionView ? (
                         <div className="space-y-10 pb-24">
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center px-1">
-                                    <div className="bg-[#f97316] px-4 py-1.5 rounded-full shadow-md">
-                                        <h2 className="text-[13px] font-bold text-white uppercase tracking-tight">
-                                            Service du bâtiment maison rapide
-                                        </h2>
+                            {sections.filter(s => selectedTab === 'all' || selectedTab === s.id).map(section => {
+                                const filtered = filterItems(section.items);
+                                if (filtered.length === 0 && searchTerm) return null;
+                                
+                                const isExpanded = expandedSections[section.id];
+                                const displayItems = isExpanded ? filtered : filtered.slice(0, 3);
+
+                                return (
+                                    <div key={section.id} className="space-y-4">
+                                        <div className="flex justify-between items-center px-1">
+                                            <div className="bg-[#f97316] px-4 py-1.5 rounded-full shadow-md">
+                                                <h2 className="text-[11px] font-black text-white uppercase tracking-tight">
+                                                    {section.title}
+                                                </h2>
+                                            </div>
+                                            <button 
+                                                onClick={() => toggleSection(section.id)} 
+                                                className="text-orange-600 text-[11px] font-black uppercase hover:opacity-80 active:scale-95 transition-all"
+                                            >
+                                                {isExpanded ? 'Réduire' : 'Plus'}
+                                            </button>
+                                        </div>
+                                        
+                                        <div className={`${isExpanded ? 'grid grid-cols-1 gap-4' : 'flex gap-4 overflow-x-auto pb-4 scrollbar-hide'}`}>
+                                            {displayItems.map((item, idx) => (
+                                                <RapidSectionCard 
+                                                    key={`${section.id}-${idx}`} 
+                                                    item={item} 
+                                                    type={section.id as any} 
+                                                    user={user}
+                                                    variant={isExpanded ? 'horizontal' : 'square'}
+                                                    isFavorite={favorites.includes(item.title)}
+                                                    onToggleFavorite={(e) => toggleFavorite(e, item.title)}
+                                                    onOpenForm={onOpenForm}
+                                                />
+                                            ))}
+                                            {filtered.length === 0 && <p className="text-gray-400 text-xs italic p-4">Aucun résultat.</p>}
+                                        </div>
+                                        
+                                        {!isExpanded && filtered.length > 3 && (
+                                            <button 
+                                                onClick={() => toggleSection(section.id)}
+                                                className="w-full py-2 bg-gray-50 rounded-xl text-orange-500 font-black text-[11px] uppercase border border-dashed border-orange-200 active:scale-[0.98] transition-all"
+                                            >
+                                                {section.btnLabel}
+                                            </button>
+                                        )}
                                     </div>
-                                    <button onClick={() => setShowAllBatiment(!showAllBatiment)} className="text-orange-600 text-sm font-black uppercase hover:opacity-80 active:scale-95 transition-all">{showAllBatiment ? 'Moins' : 'Plus'}</button>
-                                </div>
-                                <div className={`${showAllBatiment ? 'grid grid-cols-1 gap-4' : 'flex gap-4 overflow-x-auto pb-4 scrollbar-hide'}`}>
-                                    {displayBat.map((item, idx) => (
-                                        <RapidSectionCard 
-                                            key={idx} 
-                                            item={item} 
-                                            type="batiment" 
-                                            user={user}
-                                            variant={showAllBatiment ? 'horizontal' : 'square'}
-                                            onOpenForm={onOpenForm}
-                                        />
-                                    ))}
-                                    {filteredIntervBat.length === 0 && <p className="text-gray-400 text-xs italic p-4">Aucun résultat.</p>}
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center px-1">
-                                    <div className="bg-[#f97316] px-4 py-1.5 rounded-full shadow-md">
-                                        <h2 className="text-[13px] font-bold text-white uppercase tracking-tight">
-                                            Service location équipement rapide
-                                        </h2>
-                                    </div>
-                                    <button onClick={() => setShowAllLocation(!showAllLocation)} className="text-orange-600 text-sm font-black uppercase hover:opacity-80 active:scale-95 transition-all">{showAllLocation ? 'Moins' : 'Plus'}</button>
-                                </div>
-                                <div className={`${showAllLocation ? 'grid grid-cols-1 gap-4' : 'flex gap-4 overflow-x-auto pb-4 scrollbar-hide'}`}>
-                                    {displayLoc.map((item, idx) => (
-                                        <RapidSectionCard 
-                                            key={idx} 
-                                            item={item} 
-                                            type="location" 
-                                            user={user}
-                                            variant={showAllLocation ? 'horizontal' : 'square'}
-                                            onOpenForm={onOpenForm}
-                                        />
-                                    ))}
-                                    {filteredIntervLoc.length === 0 && <p className="text-gray-400 text-xs italic p-4">Aucun résultat.</p>}
-                                </div>
-                            </div>
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 gap-4 pb-24">
                             {filteredClassic.map((item, index) => (
                                 <ClassicCard 
-                                    key={index}
+                                    key={item.title + index}
                                     item={item}
                                     user={user}
                                     category={category}
