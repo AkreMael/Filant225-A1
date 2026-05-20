@@ -374,8 +374,8 @@ const WhatsAppRow: React.FC<WhatsAppRowProps> = ({ item, tabId, onOpen }) => {
     const desc = item.description || "Service rapide et structuré de confiance.";
 
     const getRightLabel = () => {
-        if (tabId === 'depannage') return "18h30";
-        if (tabId === 'construction') return "18:30";
+        if (tabId === 'depannage') return "service";
+        if (tabId === 'construction') return "service";
         if (item.price) return item.price;
         if (tabId === 'appartements') return "Exclusif";
         if (tabId === 'equipement') return "Tarif Prop.";
