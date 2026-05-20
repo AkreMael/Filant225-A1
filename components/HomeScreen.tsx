@@ -385,8 +385,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="flex justify-between items-center px-4 h-20">
                 <div className="flex items-center gap-1.5 relative flex-1">
                     <div className="flex items-center gap-2">
-                         <div className="w-12 h-12 flex items-center justify-center bg-orange-600 text-white rounded-xl shadow-lg">
-                             <span className="font-black text-2xl">F</span>
+                         <div className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-lg border border-orange-500/10 p-0.5 overflow-hidden">
+                             <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                          </div>
                          <h2 className="text-xl font-black text-[#1e293b] uppercase tracking-tighter">FILANT°225</h2>
                     </div>

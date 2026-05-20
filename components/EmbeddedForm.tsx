@@ -282,8 +282,8 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
         <div className="w-full max-w-[320px] flex flex-col items-center">
             {/* Logo area from the image */}
             <div className="relative w-48 h-48 mb-8">
-                <div className="w-full h-full bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2rem] shadow-2xl border-4 border-orange-50 flex items-center justify-center">
-                    <span className="text-white font-black text-6xl">F</span>
+                <div className="w-full h-full bg-white rounded-[2.3rem] shadow-2xl border-4 border-orange-50 flex items-center justify-center p-2.5 overflow-hidden">
+                    <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                 </div>
             </div>
 

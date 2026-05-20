@@ -48,9 +48,9 @@ const WavePaymentScreen: React.FC<WavePaymentScreenProps> = ({ onBack }) => {
                 <button onClick={onBack} className="p-2.5 bg-slate-800/50 backdrop-blur-md rounded-full shadow-md hover:bg-slate-800/70 transition-all active:scale-95 flex-shrink-0 border border-slate-700">
                     <BackIcon className="h-6 w-6 text-white" />
                 </button>
-                <div className="flex items-center gap-2 ml-4">
-                    <h1 className="text-xl font-bold">Autre Paiement</h1>
-                    <CreditCard className="w-6 h-6 text-blue-400" />
+                <div className="flex items-center gap-2.5 ml-4">
+                    <h1 className="text-xl font-bold">Autre Paiement Wave</h1>
+                    <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/73da4ae5-abba-4c0a-8da6-c3d9b2ca23e2.png" alt="Wave Logo" className="w-8 h-8 object-contain rounded-full bg-white p-0.5" referrerPolicy="no-referrer" />
                 </div>
             </header>
 
@@ -84,6 +84,11 @@ const WavePaymentScreen: React.FC<WavePaymentScreenProps> = ({ onBack }) => {
                             <p className="text-sm text-gray-400 pl-6 leading-relaxed">
                                 {selectedOption.description || "Service professionnel FILANT°225"}
                             </p>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-2 bg-[#1f2937] py-3 px-4 rounded-xl border border-slate-800">
+                             <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/73da4ae5-abba-4c0a-8da6-c3d9b2ca23e2.png" alt="Wave Logo" className="w-5 h-5 object-contain" referrerPolicy="no-referrer" />
+                             <span className="text-[10px] uppercase font-bold tracking-widest text-[#33C4F3]">Paiement sécurisé via Wave</span>
                         </div>
 
                         <button 

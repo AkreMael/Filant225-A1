@@ -36,10 +36,10 @@ const BackIcon = () => (
 
 const WaveLogo = () => (
   <div className="flex flex-col items-center">
-    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden border border-gray-100">
-        <CreditCard className="w-6 h-6 text-cyan-400" />
+    <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden border border-gray-100 p-0.5">
+        <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/73da4ae5-abba-4c0a-8da6-c3d9b2ca23e2.png" alt="Wave Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
     </div>
-    <span className="text-[10px] font-black uppercase text-cyan-400 mt-1">Paiement</span>
+    <span className="text-[10px] font-black uppercase text-[#33C4F3] mt-1">Wave</span>
   </div>
 );
 
