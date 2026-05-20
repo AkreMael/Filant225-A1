@@ -317,216 +317,128 @@ const categoriesConfig = [
     }
 ];
 
-// --- COMPONENTS ---
-const EquipmentVisual: React.FC<{ title: string, fallbackImg?: string, category?: string }> = ({ title, fallbackImg, category }) => {
-    return (
-        <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            {category === 'appartement' ? <HouseIcon className="w-16 h-16 text-blue-400" /> : <ToolIcon className="w-16 h-16 text-orange-400" />}
-        </div>
-    );
-};
+// --- HELPER FUNCTION FOR SERVICE IMAGES ---
+const getServiceItemImage = (title: string): string => {
+    // 1. Try WorkerListScreen name mapper first
+    const workerImg = getSynchronizedWorkerImage(title);
+    if (workerImg && !workerImg.includes('placeholder')) return workerImg;
 
-const RapidSectionCard: React.FC<{ 
-    item: any, 
-    type: 'batiment' | 'location', 
-    user: User,
-    variant?: 'square' | 'horizontal',
-    onOpenForm: (context: any) => void
-}> = ({ item, type, user, variant = 'square', onOpenForm }) => {
-    const handleOpen = () => {
-        onOpenForm({
-            formType: type === 'batiment' ? 'rapid_building_service' : 'location',
-            title: item.title,
-            imageUrl: EQUIPMENT_IMAGES[item.title] || item.img,
-            description: item.description,
-            price: item.price
-        });
-    };
-    
-    if (variant === 'horizontal') {
-        return (
-            <div 
-                className="w-full bg-white rounded-3xl overflow-hidden shadow-lg flex flex-col p-3 transition-all relative border border-gray-100/50 active:scale-95 cursor-pointer"
-                onClick={handleOpen}
-            >
-                <div className="flex flex-row items-center">
-                    <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-orange-500/20 shadow-inner bg-slate-50 relative">
-                        <EquipmentVisual title={item.title} fallbackImg={item.img} />
-                    </div>
-                    <div className="ml-4 flex-1 flex flex-col text-left">
-                        <h4 className="text-[13px] font-black text-gray-900 uppercase leading-tight mb-0.5 tracking-tight line-clamp-1">{item.title}</h4>
-                        {type === 'batiment' ? (
-                            <p className="text-[#ef4444] font-black text-[11px] leading-tight uppercase">
-                                H. Descente : <span className="text-black">18h30</span>
-                            </p>
-                        ) : (
-                            <p className="text-[#ef4444] font-black text-[11px] leading-tight uppercase">
-                                Prix par jour : <span className="text-black text-[9px] leading-tight">{item.price}</span>
-                            </p>
-                        )}
-                        <div className="flex items-center justify-between mt-1 pt-1 border-t border-gray-50">
-                            <div className="flex items-center gap-1 opacity-40">
-                                <ShopIconSmall />
-                                <span className="text-[8px] font-black uppercase tracking-wider">Filant Services</span>
-                            </div>
-                            <button 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    const savedKey = `fav_${item.title}`;
-                                    const nextFav = localStorage.getItem(savedKey) !== 'true';
-                                    localStorage.setItem(savedKey, String(nextFav));
-                                    window.dispatchEvent(new Event('favourites-updated'));
-                                }}
-                                className="bg-white p-1 rounded-full shadow-md border border-gray-100 flex items-center justify-center transition-all active:scale-90"
-                            >
-                                <StarIconPassive title={item.title} />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+    // 2. Try simple mapping of common terms
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes('plombier')) return "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg";
+    if (titleLower.includes('électricien') || titleLower.includes('electricien')) return "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg";
+    if (titleLower.includes('maçon') || titleLower.includes('macon')) return "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg";
+    if (titleLower.includes('carreleur')) return "https://i.supaimg.com/06e7bd93-4222-4631-aeee-6516870145ef.jpg";
+    if (titleLower.includes('charpentier')) return "https://i.supaimg.com/017f0261-3cac-4fa3-b519-c5e93cdc1dd1.jpg";
+    if (titleLower.includes('soudeur')) return "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg";
+    if (titleLower.includes('peintre')) return "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg";
+    if (titleLower.includes('vitre') || titleLower.includes('vitrier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg";
+    if (titleLower.includes('clim')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg";
+    if (titleLower.includes('caméra') || titleLower.includes('camera')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg";
+    if (titleLower.includes('pouf')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg";
+    if (titleLower.includes('fenêtre') || titleLower.includes('porte')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg";
+    if (titleLower.includes('menuisier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg";
+    if (titleLower.includes('studio')) return "https://i.supaimg.com/5d6f5d3f-6e64-4291-8ce3-28cebdb6bcec.jpg";
+    if (titleLower.includes('villa')) return "https://i.supaimg.com/7dd280ea-2d80-472d-9997-d6c5b3d3c53c.jpg";
+    if (titleLower.includes('chambre')) return "https://i.supaimg.com/db2acfbe-b3ca-4b65-9b21-ddb0c7fcb3af.jpg";
+    if (titleLower.includes('local')) return "https://i.supaimg.com/a0a75e1c-8b38-485a-8231-0a213cf10858.jpg";
+    if (titleLower.includes('terrain')) return "https://i.supaimg.com/7c08d763-ce1e-44a5-b093-430cdb072ad2.jpg";
+    if (titleLower.includes('magasin')) return "https://i.supaimg.com/dfdc8569-179f-4dc2-aeb9-e0757dfbc5cf.jpg";
+    if (titleLower.includes('bâche') || titleLower.includes('bache')) return "https://i.supaimg.com/bcf4c081-b3ae-4759-83b5-4c79f52989ec.jpg";
+    if (titleLower.includes('groupe')) return "https://i.supaimg.com/2944eab0-2074-4e61-a759-dca478289e4b.jpg";
+    if (titleLower.includes('sonorisation')) return "https://i.supaimg.com/03ee9f0b-9978-48aa-a0c1-a4ee2b0efb74.jpg";
+    if (titleLower.includes('table')) return "https://i.supaimg.com/6a3225ae-bdd4-40ea-95aa-51511076ec44.jpg";
+    if (titleLower.includes('chaise')) return "https://i.supaimg.com/90d4d927-ad54-471b-9238-d57d11233758.jpg";
+
+    // 3. Try key mapping back to EQUIPMENT_IMAGES
+    const key = title.replace(/\s*rapide/i, '').replace(/\s*Rapide/i, '').trim();
+    const directZk = EQUIPMENT_IMAGES[title] || EQUIPMENT_IMAGES[key];
+    if (directZk) {
+        if (Array.isArray(directZk)) return directZk[0];
+        return directZk;
     }
 
-    return (
-        <div 
-            className="flex-shrink-0 w-[180px] bg-white rounded-[2rem] overflow-hidden shadow-2xl flex flex-col transition-all relative border border-gray-100/50 active:scale-95 cursor-pointer"
-            onClick={handleOpen}
-        >
-            <div className="p-3">
-                <div className="h-[120px] w-full rounded-2xl overflow-hidden relative shadow-inner bg-slate-50 flex items-center justify-center border border-gray-100">
-                    <EquipmentVisual title={item.title} fallbackImg={item.img} />
-                </div>
-            </div>
-            <div className="px-4 pb-5 flex flex-col flex-1 text-left relative">
-                <h4 className="text-[13px] font-black text-gray-900 uppercase leading-tight mb-1.5 tracking-tight line-clamp-1">{item.title}</h4>
-                {type === 'batiment' ? (
-                    <p className="text-[#ef4444] font-black text-[12px] leading-tight mb-2 uppercase">
-                        Heure de descente : <span className="text-black">18h30</span>
-                    </p>
-                ) : (
-                    <p className="text-[#ef4444] font-black text-[11px] leading-tight mb-2 uppercase">
-                        Prix par jour : <br/><span className="text-black text-[10px] leading-tight italic">{item.price}</span>
-                    </p>
-                )}
-                <p className="text-[10px] text-gray-400 leading-snug italic line-clamp-2 mt-auto mb-3">
-                    {item.description}
-                </p>
-                <div className="flex items-center justify-between border-t border-gray-50 pt-2.5">
-                    <div className="flex items-center gap-1.5 opacity-40">
-                        <ShopIconSmall />
-                        <span className="text-[9px] font-black uppercase tracking-wider">Filant Services</span>
-                    </div>
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            const savedKey = `fav_${item.title}`;
-                            const nextFav = localStorage.getItem(savedKey) !== 'true';
-                            localStorage.setItem(savedKey, String(nextFav));
-                            window.dispatchEvent(new Event('favourites-updated'));
-                        }}
-                        className="bg-white p-1 rounded-full shadow-md border border-gray-100 flex items-center justify-center transition-all active:scale-90"
-                    >
-                        <StarIconPassive title={item.title} />
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+    // Ultimate fallback image
+    return "https://i.supaimg.com/ed09fd1b-87c1-4297-bab2-6f5e2f39baf0.jpg";
 };
 
-interface ClassicCardProps {
+// --- WHATSAPP ROW COMPONENT ---
+interface WhatsAppRowProps {
     item: any;
-    user: User;
-    category: string;
-    onOpenForm: (context: any) => void;
+    tabId: string;
+    onOpen: () => void;
 }
 
-const ClassicCard: React.FC<ClassicCardProps> = ({ item, user, category, onOpenForm }) => {
-    const index = Math.floor(Math.random() * 4);
-    const colorStyle = classicCardColors[index % classicCardColors.length];
-    const isWorker = category === 'travailleurs';
-    const img = item.img || (isWorker ? getSynchronizedWorkerImage(item.title) : (EQUIPMENT_IMAGES[item.title] || undefined));
-    
-    const [isFav, setIsFav] = useState(() => {
-        try {
-            return localStorage.getItem(`fav_${item.title}`) === 'true';
-        } catch {
-            return false;
-        }
-    });
+const WhatsAppRow: React.FC<WhatsAppRowProps> = ({ item, tabId, onOpen }) => {
+    const image = getServiceItemImage(item.title);
+    const desc = item.description || "Service rapide et structuré de confiance.";
 
-    useEffect(() => {
-        const handleUpdate = () => {
-            try {
-                setIsFav(localStorage.getItem(`fav_${item.title}`) === 'true');
-            } catch {}
-        };
-        window.addEventListener('favourites-updated', handleUpdate);
-        return () => window.removeEventListener('favourites-updated', handleUpdate);
-    }, [item.title]);
-
-    const toggleFav = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const newVal = !isFav;
-        setIsFav(newVal);
-        try {
-            localStorage.setItem(`fav_${item.title}`, String(newVal));
-            window.dispatchEvent(new Event('favourites-updated'));
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleOpen = () => {
-        onOpenForm({
-            formType: category === 'immobilier' || category === 'equipement' ? 'location' : 'worker',
-            title: item.title,
-            imageUrl: img,
-            description: item.description,
-            price: item.price
-        });
+    const getRightLabel = () => {
+        if (tabId === 'depannage') return "18h30";
+        if (tabId === 'construction') return "18:30";
+        if (item.price) return item.price;
+        if (tabId === 'appartements') return "Exclusif";
+        if (tabId === 'equipement') return "Tarif Prop.";
+        return "Disponible";
     };
 
     return (
-        <div 
-            className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col transition-all border border-gray-100 active:scale-95 cursor-pointer"
-            onClick={handleOpen}
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            onClick={onOpen}
+            className="flex items-center gap-4 py-3.5 px-4 border-b border-gray-100 hover:bg-gray-50/50 active:bg-gray-100/80 transition-all cursor-pointer"
         >
-            <div className="flex flex-col">
-                <div className={`aspect-[4/3] w-full flex items-center justify-center relative ${colorStyle.bg} ${colorStyle.border || ''} overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200`}>
-                    {img && typeof img === 'string' ? (
-                        <img 
-                            src={img} 
-                            alt={item.title} 
-                            className="w-full h-full object-cover" 
-                            referrerPolicy="no-referrer"
-                        />
-                    ) : isWorker ? (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <UserCircleIcon className="w-16 h-16 text-slate-400" />
-                        </div>
-                    ) : (
-                        <EquipmentVisual title={item.title} category={(item as any).category} />
-                    )}
+            {/* Rounded avatar image */}
+            <div className="relative w-14 h-14 flex-shrink-0">
+                <div className="w-full h-full rounded-full overflow-hidden border-2 border-gray-100/80 shadow-inner bg-gradient-to-br from-gray-50 to-gray-100">
+                    <img
+                        src={image}
+                        alt={item.title}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                    />
                 </div>
-                <div className="p-3 flex-1 w-full text-left relative flex flex-col justify-between min-h-[95px]">
-                    <div>
-                        <span className="text-[11px] font-black text-gray-900 leading-tight block mb-1 uppercase truncate" title={item.title}>{item.title}</span>
-                        <span className="text-[10px] text-gray-400 leading-normal line-clamp-2">{item.description}</span>
-                    </div>
-                    <button 
-                        onClick={toggleFav}
-                        className="absolute bottom-2 right-2 bg-white hover:bg-gray-50 border border-gray-200 p-1 rounded-full shadow-md flex items-center justify-center transition-all active:scale-90"
-                        title="Favori"
-                    >
-                        <StarIcon filled={isFav} className="w-3.5 h-3.5" />
-                    </button>
+                {/* Active/clock minibadge */}
+                <div className="absolute -bottom-0.5 -right-0.5 bg-orange-500 rounded-full border-2 border-white flex items-center justify-center w-5.5 h-5.5 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clipRule="evenodd" />
+                    </svg>
                 </div>
             </div>
-        </div>
+
+            {/* Chat text contents */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <div className="flex justify-between items-baseline mb-1">
+                    <h4 className="text-[14px] font-black text-gray-900 uppercase tracking-tight truncate pr-2">
+                        {item.title}
+                    </h4>
+                    <span className="text-[10px] font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100/30 whitespace-nowrap">
+                        {getRightLabel()}
+                    </span>
+                </div>
+                <div className="flex items-center text-gray-400 text-[12.5px] leading-tight font-medium">
+                    {/* Read receipt checkmarks */}
+                    <span className="text-[#34b7f1] text-xs font-sans font-black mr-1 flex-shrink-0 select-none">✓✓</span>
+                    <p className="truncate text-gray-400 font-medium">
+                        {desc}
+                    </p>
+                </div>
+            </div>
+        </motion.div>
     );
 };
+
+// --- TABS LIST ---
+const TABS = [
+    { id: 'depannage', label: "Dépannage" },
+    { id: 'construction', label: "Construction" },
+    { id: 'equipement', label: "Équipements" },
+    { id: 'travailleurs', label: "Travailleurs" },
+    { id: 'appartements', label: "Appartements" },
+    { id: 'autres', label: "Services" }
+];
 
 interface InterventionShopScreenProps {
     onBack: () => void;
@@ -537,59 +449,119 @@ interface InterventionShopScreenProps {
 
 const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack, user, category, onOpenForm }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [showAllBatiment, setShowAllBatiment] = useState(false);
-    const [showAllLocation, setShowAllLocation] = useState(false);
     
-    const isInterventionView = category === 'intervention';
+    // Map initial selected tab based on outer screen context
+    const getInitialTabId = (cat: string) => {
+        if (cat === 'travailleurs') return 'travailleurs';
+        if (cat === 'immobilier') return 'appartements';
+        if (cat === 'equipement') return 'equipement';
+        return 'depannage';
+    };
 
-    const headerImage = useMemo(() => {
-        if (category === 'intervention') return "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg";
-        if (category === 'travailleurs') return "https://i.supaimg.com/ed09fd1b-87c1-4297-bab2-6f5e2f39baf0.jpg";
-        if (category === 'immobilier') return "https://i.supaimg.com/7dd280ea-2d80-472d-9997-d6c5b3d3c53c.jpg";
-        if (category === 'equipement') return "https://i.supaimg.com/03ee9f0b-9978-48aa-a0c1-a4ee2b0efb74.jpg";
-        return "https://i.supaimg.com/ed09fd1b-87c1-4297-bab2-6f5e2f39baf0.jpg";
-    }, [category]);
+    const [activeTabId, setActiveTabId] = useState(() => getInitialTabId(category));
 
-    const filteredIntervBat = useMemo(() => 
-        batimentIntervItems.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase())),
-    [searchTerm]);
-    
-    const filteredIntervLoc = useMemo(() => 
-        locationRapideIntervItems.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase())),
-    [searchTerm]);
+    // Compile entire list of items for each tab
+    const tabItems = useMemo(() => {
+        switch (activeTabId) {
+            case 'depannage': {
+                return categoriesConfig[0]?.items || [];
+            }
+            case 'construction': {
+                return categoriesConfig[1]?.items || [];
+            }
+            case 'equipement': {
+                return locationRapideIntervItems;
+            }
+            case 'travailleurs': {
+                return generalWorkerDataList;
+            }
+            case 'appartements': {
+                return generalLocationDataList.filter(l => l.category === 'appartement');
+            }
+            case 'autres': {
+                const cat3 = categoriesConfig[2]?.items || [];
+                const cat4 = categoriesConfig[3]?.items || [];
+                const cat5 = categoriesConfig[4]?.items || [];
+                return [...cat3, ...cat4, ...cat5];
+            }
+            default:
+                return [];
+        }
+    }, [activeTabId]);
 
-    // Grouped categories for workers screen
-    const filteredCategories = useMemo(() => {
-        if (!searchTerm) return categoriesConfig;
-        return categoriesConfig.map(cat => ({
-            ...cat,
-            items: cat.items.filter(item => 
-                item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-            )
-        })).filter(cat => cat.items.length > 0);
-    }, [searchTerm]);
+    // Construct master flat dataset of ALL items for instant universal search
+    const ALL_POSSIBLE_ITEMS = useMemo(() => {
+        const list: Array<{ title: string; description: string; tabId: string; tabLabel: string; price?: string }> = [];
+        
+        // 1. Dépannage
+        (categoriesConfig[0]?.items || []).forEach(item => {
+            list.push({ ...item, tabId: 'depannage', tabLabel: 'Dépannage' });
+        });
 
-    const classicItems = useMemo(() => {
-        if (category === 'travailleurs') return generalWorkerDataList;
-        if (category === 'immobilier') return generalLocationDataList.filter(l => l.category === 'appartement');
-        if (category === 'equipement') return generalLocationDataList.filter(l => l.category === 'equipement');
-        return [];
-    }, [category]);
+        // 2. Construction
+        (categoriesConfig[1]?.items || []).forEach(item => {
+            list.push({ ...item, tabId: 'construction', tabLabel: 'Construction' });
+        });
 
-    const filteredClassic = useMemo(() => 
-        classicItems.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase())),
-    [classicItems, searchTerm]);
+        // 3. Équipements
+        locationRapideIntervItems.forEach(item => {
+            list.push({ ...item, tabId: 'equipement', tabLabel: 'Équipement' });
+        });
 
-    const displayBat = showAllBatiment ? filteredIntervBat : filteredIntervBat.slice(0, 3);
-    const displayLoc = showAllLocation ? filteredIntervLoc : filteredIntervLoc.slice(0, 3);
+        // 4. Travailleurs
+        generalWorkerDataList.forEach(item => {
+            list.push({ ...item, tabId: 'travailleurs', tabLabel: 'Travailleur' });
+        });
 
-    const getTitle = () => {
-        if (category === 'intervention') return "Intervention Rapide";
-        if (category === 'travailleurs') return "Travailleurs Qualifiés";
-        if (category === 'immobilier') return "Agence Immobilière";
-        if (category === 'equipement') return "Location d'équipements";
-        return "";
+        // 5. Appartements
+        generalLocationDataList.filter(l => l.category === 'appartement').forEach(item => {
+            list.push({ ...item, tabId: 'appartements', tabLabel: 'Appartement' });
+        });
+
+        // 6. Autres services (Nettoyage, Événementiel, Transport)
+        const cat3 = categoriesConfig[2]?.items || [];
+        const cat4 = categoriesConfig[3]?.items || [];
+        const cat5 = categoriesConfig[4]?.items || [];
+        [...cat3, ...cat4, ...cat5].forEach(item => {
+            list.push({ ...item, tabId: 'autres', tabLabel: 'Service' });
+        });
+
+        return list;
+    }, []);
+
+    // Filtered items based on active search
+    const filteredItems = useMemo(() => {
+        if (!searchTerm.trim()) {
+            return tabItems.map(item => ({
+                ...item,
+                tabId: activeTabId,
+                tabLabel: TABS.find(t => t.id === activeTabId)?.label || ''
+            }));
+        }
+        const query = searchTerm.toLowerCase().trim();
+        return ALL_POSSIBLE_ITEMS.filter(item => 
+            item.title.toLowerCase().includes(query) || 
+            item.description.toLowerCase().includes(query)
+        );
+    }, [searchTerm, activeTabId, tabItems, ALL_POSSIBLE_ITEMS]);
+
+    const handleOpenItem = (item: any, finalTabId: string) => {
+        let formType: 'rapid_building_service' | 'location' | 'worker' = 'worker';
+        if (finalTabId === 'depannage' || finalTabId === 'construction') {
+            formType = 'rapid_building_service';
+        } else if (finalTabId === 'appartements' || finalTabId === 'equipement') {
+            formType = 'location';
+        } else {
+            formType = 'worker';
+        }
+
+        onOpenForm({
+            formType,
+            title: item.title,
+            imageUrl: getServiceItemImage(item.title) || item.img,
+            description: item.description,
+            price: item.price || (formType === 'location' ? DESIGNATED_PRICE : undefined)
+        });
     };
 
     return (
@@ -599,194 +571,110 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-white z-[500] flex flex-col font-sans overflow-hidden"
         >
-            <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-hide">
-                
-                {/* Header Image Section */}
-                <motion.div 
-                    initial={{ y: -55, opacity: 0, scale: 1.1 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.9, ease: "easeOut", delay: 0.1 }}
-                    className="relative h-[220px] w-full flex-shrink-0 bg-orange-600 flex items-center justify-center overflow-hidden"
-                >
-                    <img 
-                        src={headerImage} 
-                        alt="Filant Services Header" 
-                        className="absolute inset-0 w-full h-full object-cover blur-[1px]"
-                        referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-black/30"></div>
-                    <span className="text-white/20 font-black text-6xl select-none">F</span>
+            {/* Top Bar Header (WhatsApp style) */}
+            <div className="flex-shrink-0 bg-white border-b border-gray-100 px-4 pt-5 pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
                     <button 
                         onClick={onBack} 
-                        className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20 hover:bg-white/30 transition-all"
+                        className="p-1 -ml-1 hover:bg-gray-100 rounded-full text-gray-800 transition-all active:scale-95"
                     >
-                        <BackIcon />
+                        <BackIcon className="w-6 h-6" />
                     </button>
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-                        <span className="text-white font-black text-xl tracking-tighter uppercase drop-shadow-lg">FILANT°225</span>
-                    </div>
-                </motion.div>
+                    <h1 className="text-[#FF8200] font-black text-2xl tracking-tighter uppercase select-none">
+                        FILANT°225
+                    </h1>
+                </div>
+                
+                {/* Meta Icons for completeness */}
+                <div className="flex items-center gap-4 text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                </div>
+            </div>
 
-                {/* Content Container */}
-                <motion.div 
-                    initial={{ y: "100%" }}
-                    animate={{ y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="flex-1 bg-white rounded-t-[3rem] -mt-12 relative z-10 p-6 flex flex-col"
-                >
-                    <div className="w-16 h-1.5 bg-gray-100 rounded-full mb-6 self-center"></div>
-                    
-                    <div className="mb-6 flex flex-col items-center">
-                        <h2 className="text-xl font-black text-black uppercase tracking-tight text-center">{getTitle()}</h2>
-                        <div className="h-1 w-20 bg-orange-500 mt-1 rounded-full"></div>
-                    </div>
-
-                    {/* Search Bar */}
-                    <div className="relative mb-6">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <SearchIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input 
-                            type="text" 
-                            placeholder="Rechercher..." 
-                            value={searchTerm} 
-                            onChange={e => setSearchTerm(e.target.value)} 
-                            className="w-full pl-10 bg-gray-100 border border-transparent rounded-full p-3 text-black shadow-inner focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder-gray-400 font-bold text-sm" 
-                        />
-                    </div>
-
-                    {category === 'travailleurs' ? (
-                        /* Grouped Categories Section */
-                        <div className="space-y-10 pb-24">
-                            {filteredCategories.map((cat, catIdx) => (
-                                <div key={catIdx} className="space-y-4">
-                                    <div className="flex justify-between items-center px-1">
-                                        <div 
-                                            onClick={() => {
-                                                if (cat.name.includes("2. SERVICES CONSTRUCTION")) {
-                                                    onOpenForm({
-                                                        formType: 'rapid_building_service',
-                                                        title: 'SERVICES CONSTRUCTION (Tous)',
-                                                        imageUrl: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg",
-                                                        description: "Sélection groupée de tous les métiers de construction (Maçon, Ferrailleur, Coffreur, Carreleur, Peintre, Électricien, Plombier bâtiment, Soudeur, Charpentier, Menuisier, Staffeur, Étancheur, etc.)."
-                                                    });
-                                                }
-                                            }}
-                                            className={`px-4 py-2 rounded-full shadow-md transition-all ${
-                                                cat.name.includes("2. SERVICES CONSTRUCTION") 
-                                                    ? "bg-gradient-to-r from-orange-500 to-red-600 cursor-pointer hover:shadow-lg active:scale-95" 
-                                                    : "bg-orange-500"
-                                            }`}
-                                        >
-                                            <h2 className="text-[12px] font-black text-white uppercase tracking-tight flex items-center gap-1.5 select-none">
-                                                {cat.name}
-                                                {cat.name.includes("2. SERVICES CONSTRUCTION") && (
-                                                    <span className="text-[9px] bg-white text-orange-600 px-2 py-0.5 rounded-full font-black animate-pulse">
-                                                        Tout sélectionner
-                                                    </span>
-                                                )}
-                                            </h2>
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {cat.items.map((item, index) => (
-                                            <ClassicCard 
-                                                key={index}
-                                                item={item}
-                                                user={user}
-                                                category={cat.name.includes("6. LOCATION D’ÉQUIPEMENTS") ? "equipement" : "travailleurs"}
-                                                onOpenForm={onOpenForm}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* Autre Service Button */}
-                            <div className="pt-4 px-1">
-                                <button 
-                                    onClick={() => onOpenForm({
-                                        formType: 'worker',
-                                        title: 'Autre Service spécifique',
-                                        description: 'Veuillez préciser le service sur mesure ou métier spécifique dont vous avez besoin.'
-                                    })}
-                                    className="w-full bg-slate-900 hover:bg-black active:scale-95 text-white font-black py-4 rounded-3xl shadow-lg uppercase tracking-wider text-xs transition-all text-center flex items-center justify-center gap-2 border-2 border-slate-900"
-                                >
-                                    <span>Autre service</span>
-                                </button>
-                            </div>
-
-                            {filteredCategories.length === 0 && (
-                                <div className="text-center py-10 text-gray-500">
-                                    <p className="font-bold">Aucun résultat trouvé.</p>
-                                </div>
-                            )}
-                        </div>
-                    ) : isInterventionView ? (
-                        <div className="space-y-10 pb-24">
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center px-1">
-                                    <div className="bg-[#f97316] px-4 py-1.5 rounded-full shadow-md">
-                                        <h2 className="text-[13px] font-bold text-white uppercase tracking-tight">
-                                            Service du bâtiment maison rapide
-                                        </h2>
-                                    </div>
-                                    <button onClick={() => setShowAllBatiment(!showAllBatiment)} className="text-orange-600 text-sm font-black uppercase hover:opacity-80 active:scale-95 transition-all">{showAllBatiment ? 'Moins' : 'Plus'}</button>
-                                </div>
-                                <div className={`${showAllBatiment ? 'grid grid-cols-1 gap-4' : 'flex gap-4 overflow-x-auto pb-4 scrollbar-hide'}`}>
-                                    {displayBat.map((item, idx) => (
-                                        <RapidSectionCard 
-                                            key={idx} 
-                                            item={item} 
-                                            type="batiment" 
-                                            user={user}
-                                            variant={showAllBatiment ? 'horizontal' : 'square'}
-                                            onOpenForm={onOpenForm}
-                                        />
-                                    ))}
-                                    {filteredIntervBat.length === 0 && <p className="text-gray-400 text-xs italic p-4">Aucun résultat.</p>}
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center px-1">
-                                    <div className="bg-[#f97316] px-4 py-1.5 rounded-full shadow-md">
-                                        <h2 className="text-[13px] font-bold text-white uppercase tracking-tight">
-                                            Service location équipement rapide
-                                        </h2>
-                                    </div>
-                                    <button onClick={() => setShowAllLocation(!showAllLocation)} className="text-orange-600 text-sm font-black uppercase hover:opacity-80 active:scale-95 transition-all">{showAllLocation ? 'Moins' : 'Plus'}</button>
-                                </div>
-                                <div className={`${showAllLocation ? 'grid grid-cols-1 gap-4' : 'flex gap-4 overflow-x-auto pb-4 scrollbar-hide'}`}>
-                                    {displayLoc.map((item, idx) => (
-                                        <RapidSectionCard 
-                                            key={idx} 
-                                            item={item} 
-                                            type="location" 
-                                            user={user}
-                                            variant={showAllLocation ? 'horizontal' : 'square'}
-                                            onOpenForm={onOpenForm}
-                                        />
-                                    ))}
-                                    {filteredIntervLoc.length === 0 && <p className="text-gray-400 text-xs italic p-4">Aucun résultat.</p>}
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-4 pb-24">
-                            {filteredClassic.map((item, index) => (
-                                <ClassicCard 
-                                    key={index}
-                                    item={item}
-                                    user={user}
-                                    category={category}
-                                    onOpenForm={onOpenForm}
-                                />
-                            ))}
-                            {filteredClassic.length === 0 && <div className="col-span-2 text-center py-10 text-gray-500"><p className="font-bold">Aucun résultat.</p></div>}
-                        </div>
+            {/* Pill Search Field */}
+            <div className="flex-shrink-0 px-4 pt-1 pb-2 bg-white">
+                <div className="relative flex items-center bg-gray-50/90 rounded-full px-3.5 py-1.5 border border-gray-100 shadow-sm transition-all duration-200 focus-within:bg-white focus-within:border-[#FF8200]/30 focus-within:shadow">
+                    <SearchIcon className="h-3.5 w-3.5 text-gray-400 mr-2 flex-shrink-0 transition-colors duration-200" />
+                    <input 
+                        type="text" 
+                        placeholder="Rechercher un service ou un métier..." 
+                        value={searchTerm} 
+                        onChange={e => setSearchTerm(e.target.value)} 
+                        className="w-full bg-transparent border-none text-gray-800 text-[13px] leading-tight focus:outline-none placeholder-gray-400/80 font-medium pr-1" 
+                    />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="p-1 -mr-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-all active:scale-90 flex items-center justify-center flex-shrink-0 animate-pulse-once"
+                            title="Effacer"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </button>
                     )}
-                </motion.div>
+                </div>
+            </div>
+
+            {/* Main Chat Conversation List */}
+            <div className="flex-1 overflow-y-auto bg-white pb-6 scrollbar-hide">
+                <AnimatePresence mode="popLayout">
+                    {filteredItems.map((item, index) => (
+                        <WhatsAppRow
+                            key={`${item.tabId}-${item.title}-${index}`}
+                            item={item}
+                            tabId={item.tabId}
+                            onOpen={() => handleOpenItem(item, item.tabId)}
+                        />
+                    ))}
+                    
+                    {filteredItems.length === 0 && (
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-center py-12 text-gray-400"
+                        >
+                            <span className="text-3xl block mb-2">🔍</span>
+                            <p className="font-bold text-sm">Aucun service ou titre trouvé.</p>
+                            <p className="text-xs text-gray-400">Veuillez ajuster votre recherche.</p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Bottom Horizon Navigation Tabs */}
+            <div className="flex-shrink-0 bg-white border-t border-gray-100 pb-3">
+                <div className="flex gap-6 overflow-x-auto px-6 py-3 scrollbar-hide items-center">
+                    {TABS.map(tab => {
+                        const isActive = activeTabId === tab.id;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => {
+                                    setSearchTerm(''); // Reset search on tab change
+                                    setActiveTabId(tab.id);
+                                }}
+                                className="relative flex-shrink-0 pb-1.5 focus:outline-none transition-all active:scale-95"
+                            >
+                                <span className={`text-[14px] font-black uppercase tracking-tight transition-colors ${isActive ? 'text-[#FF8200]' : 'text-gray-400'}`}>
+                                    {tab.label}
+                                </span>
+                                {isActive && (
+                                    <motion.div 
+                                        layoutId="activeTabIndicator"
+                                        className="absolute bottom-0 left-0 right-0 h-0.75 bg-[#FF8200] rounded-full"
+                                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
         </motion.div>
     );
