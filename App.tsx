@@ -127,6 +127,7 @@ interface NavigationPoint {
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(() => databaseService.getActiveUser());
   const [isAuthChecking, setIsAuthChecking] = useState(() => !databaseService.getActiveUser());
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [showSmartRegistration, setShowSmartRegistration] = useState(false);
   const [hasCompletedFirstLaunch, setHasCompletedFirstLaunch] = useState(() => {
@@ -292,6 +293,7 @@ const App: React.FC = () => {
       try {
         if (user) {
           console.log("Auth state changed: User logged in", user.uid);
+          setIsAuthReady(true);
           
           // Try to recover user data from Firestore using UID or stored phone
           const storedPhone = localStorage.getItem('filant_currentUserPhone');
@@ -450,7 +452,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!currentUser?.phone) return;
+    if (!currentUser?.phone || !isAuthReady) return;
     
     const unsubscribe = databaseService.onNotificationsUpdate(currentUser.phone, (notifications) => {
       const unread = notifications.filter(n => !n.isRead);
@@ -479,7 +481,7 @@ const App: React.FC = () => {
     });
     
     return () => unsubscribe();
-  }, [currentUser?.phone, activeTab, showPopup, lastNotificationId, navigateTo]);
+  }, [currentUser?.phone, isAuthReady, activeTab, showPopup, lastNotificationId, navigateTo]);
 
 // Card data and role sync logic removed
 
@@ -521,7 +523,7 @@ const App: React.FC = () => {
 
   // Écoute des messages non lus pour les badges
   useEffect(() => {
-    if (currentUser?.phone) {
+    if (currentUser?.phone && isAuthReady) {
       const sanitizedPhone = currentUser.phone.replace(/\D/g, '');
       const chatUserId = sanitizedPhone || currentUser.userId || currentUser.id || `${currentUser.name}_${sanitizedPhone}`;
       const isUserAdmin = isAdmin(currentUser);
@@ -547,7 +549,7 @@ const App: React.FC = () => {
         unsubAssistant();
       };
     }
-  }, [currentUser?.phone, currentUser?.userId, currentUser?.id, currentUser?.name]);
+  }, [currentUser?.phone, currentUser?.userId, currentUser?.id, currentUser?.name, isAuthReady]);
 
   const handleToggleProfile = () => {
     setIsProfileOpen(prev => !prev);

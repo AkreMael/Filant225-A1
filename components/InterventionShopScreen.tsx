@@ -1,33 +1,6 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-    Hammer, 
-    Droplets, 
-    Zap, 
-    Paintbrush, 
-    Truck, 
-    Construction, 
-    Scaling, 
-    Fence, 
-    Key, 
-    Satellite, 
-    Wifi, 
-    Scissors,
-    Lightbulb,
-    Mic,
-    Tv,
-    Utensils,
-    Trash2,
-    Bed,
-    Tent,
-    Leaf,
-    Bug,
-    Sparkles,
-    ShieldCheck,
-    Monitor,
-    Wrench
-} from 'lucide-react';
 import { getSynchronizedWorkerImage } from './WorkerListScreen';
 import { User } from '../types';
 import EmbeddedForm from './EmbeddedForm';
@@ -130,62 +103,26 @@ const classicCardColors = [
 const batimentIntervItems = [
     { title: 'Plombier rapide', description: 'Réparation fuites d’eau et installations.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
     { title: 'Électricien rapide', description: 'Dépannage électrique sécurisé.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
-    { title: 'Maçon rapide', description: 'Maçonnerie et rénovation rapide.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
     { title: 'Carreleur rapide', description: 'Pose de carreaux tous formats.', img: "https://i.supaimg.com/06e7bd93-4222-4631-aeee-6516870145ef.jpg" },
-    { title: 'Peintre bâtiment', description: 'Peinture bâtiment et finitions.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Soudeur rapide', description: 'Travaux de soudure et ferronnerie.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
-    { title: 'Menuisier aluminium', description: 'Installation portes et fenêtres alu.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
-    { title: 'Menuisier bois', description: 'Menuiserie bois et fabrication meubles.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg" },
-    { title: 'Vitrier', description: 'Remplacement de vitres et miroiterie.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
-    { title: 'Staffeur', description: 'Décoration staff et faux plafonnement.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Frigoriste professionnel', description: 'Dépannage frigo et systèmes de froid.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
-    { title: 'Jardinier & Espaces verts', description: 'Entretien jardin et pose de gazon.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
-    { title: 'Nettoyage fin de chantier', description: 'Propreté parfaite après vos travaux.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Réparation électroménager', description: 'Dépannage machines à laver et divers.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
-    { title: 'Traitement anti-insectes', description: 'Désinsectisation et dératisation rapide.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Installation chauffe-eau', description: 'Pose et maintenance de chauffe-eau.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
-    { title: 'Vernissage & Laquage', description: 'Embellissement de vos meubles bois.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg" },
-    { title: 'Forage de puits', description: 'Réalisation de puits et forages eau.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
-    { title: 'Réparation pompe maison', description: 'Dépannage pompes hydrauliques.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
-    { title: 'Pose papier peint', description: 'Décoration murale et pose papier.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Réparation climatiseur', description: 'Dépannage et maintenance clim rapide.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
-    { title: 'Réparation château d’eau', description: 'Maintenance et étanchéité châteaux d’eau.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
-    { title: 'Pose de portail', description: 'Installation de portails et clôtures.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
-    { title: 'Réparation toiture', description: 'Réparation fuites et charpentes.', img: "https://i.supaimg.com/017f0261-3cac-4fa3-b519-c5e93cdc1dd1.jpg" },
-    { title: 'Réparation fuite d’eau', description: 'Dépannage plomberie express.', img: "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg" },
-    { title: 'Dépannage maison', description: 'Petits travaux et bricolage maison.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
-    { title: 'Construction maison', description: 'Gros œuvre et construction complète.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
-    { title: 'Finition bâtiment', description: 'Peinture, carrelage et décoration.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Travaux publics', description: 'Travaux de voirie et terrassement.', img: "https://i.supaimg.com/06e7bd93-4222-4631-aeee-6516870145ef.jpg" },
-    { title: 'Réparation serrure', description: 'Ouverture de porte et serrurerie.', img: "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg" },
-    { title: 'Installation parabole', description: 'Pose et réglage antennes satellite.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
-    { title: 'Installation Internet maison', description: 'Configuration réseau et WiFi domicile.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
     { title: 'Charpentier rapide', description: 'Menuiserie et charpente bois.', img: "https://i.supaimg.com/017f0261-3cac-4fa3-b519-c5e93cdc1dd1.jpg" },
+    { title: 'Maçon rapide', description: 'Maçonnerie et rénovation rapide.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
+    { title: 'Soudeur rapide', description: 'Travaux de soudure et ferronnerie.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
+    { title: 'Peintre rapide', description: 'Peinture et finitions intérieures.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
     { title: 'Laveur de vitres Rapide', description: 'Nettoyage professionnel de vitres.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
-    { title: 'Installateur de caméras Rapide', description: 'Installation vidéosurveillance.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
+    { title: 'Technicien entretien climatisation Rapide', description: 'Entretien et recharge clim.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
+    { title: 'Installateur de caméras de surveillance Rapide', description: 'Installation vidéosurveillance.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
     { title: 'Fabricant de poufs Rapide', description: 'Création et réparation de poufs.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg" },
+    { title: 'Installateur de fenêtres et portes vitrées Rapide', description: 'Pose menuiserie et vitrerie.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
+    { title: 'Menuisier Rapide', description: 'Menuiserie bois et meubles.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg" },
 ];
 
 const locationRapideIntervItems = [
     { title: 'Camion de campagne à louer', description: 'Camion podium sonorisé pour vos campagnes.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Camion benne à louer', description: 'Transport de sable, gravier et agrégats.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
     { title: 'Bâche à louer', description: 'Bâches de toutes tailles pour vos fêtes.', img: EQUIPMENT_IMAGES['Bâche à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Chaise à louer', description: 'Chaises confortables pour événements.', img: "https://i.supaimg.com/90d4d927-ad54-471b-9238-d57d11233758.jpg", price: DESIGNATED_PRICE },
-    { title: 'Table à louer', description: 'Tables de réception pour vos invités.', img: "https://i.supaimg.com/6a3225ae-bdd4-40ea-95aa-51511076ec44.jpg", price: DESIGNATED_PRICE },
     { title: 'Groupe électrogène à louer', description: 'Puissance garantie pour vos événements.', img: (EQUIPMENT_IMAGES['Groupe électrogène à louer'] as string[])[0], price: DESIGNATED_PRICE },
-    { title: 'Bétonnière à louer', description: 'Mélange efficace pour vos travaux béton.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Échafaudage à louer', description: 'Structure sécurisée pour travaux hauteur.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Tracteur à louer', description: 'Matériel agricole pour labourage.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Mini pelle à louer', description: 'Travaux d’excavation en accès restreint.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Pelle mécanique à louer', description: 'Gros terrassement et démolition.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
     { title: 'Sonorisation à louer', description: 'Matériel son complet pour ambiance.', img: EQUIPMENT_IMAGES['Sonorisation à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Tente événementielle à louer', description: 'Tentes grand format pour réceptions.', img: "https://i.supaimg.com/85a7fcdf-42cb-4725-821c-1e209ebabfbc.jpg", price: DESIGNATED_PRICE },
-    { title: 'Véhicule de transport', description: 'Location de véhicules pour déménagement.', img: EQUIPMENT_IMAGES['Camion de campagne à louer'] as string, price: DESIGNATED_PRICE },
-    { title: 'Engin de chantier', description: 'Divers engins pour chantiers BTP.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Machine de forage', description: 'Équipement pour puits et forages.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Marteau piqueur à louer', description: 'Démolition béton et roches.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Compresseur à louer', description: 'Air comprimé pour outils pneumatiques.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
     { title: 'Espace d’événement à louer', description: 'Salles et espaces en plein air.', img: (EQUIPMENT_IMAGES['Espace d’événement à louer'] as string[])[0], price: DESIGNATED_PRICE },
+    { title: 'Table d’événement à louer', description: 'Mobilier complet pour réceptions.', img: EQUIPMENT_IMAGES['Table d’événement à louer'] as string, price: DESIGNATED_PRICE },
     { title: 'Écran géant à louer', description: 'Écrans LED haute définition.', img: EQUIPMENT_IMAGES['Écran géant à louer'] as string, price: DESIGNATED_PRICE },
     { title: 'Podium à louer', description: 'Scènes modulables pour discours.', img: EQUIPMENT_IMAGES['Podium à louer'] as string, price: DESIGNATED_PRICE },
     { title: 'Poubelle mobile à louer', description: 'Collecte et gestion des déchets.', img: "https://i.supaimg.com/5d50ad37-c869-47dd-ab0a-7439425189ca.jpg", price: DESIGNATED_PRICE },
@@ -208,14 +145,6 @@ const locationRapideIntervItems = [
     { title: 'Table en bois à louer', description: 'Table robuste en bois pour repas.', img: "https://i.supaimg.com/b30c95a6-c5c1-421c-9977-0867018a1aa2.jpg", price: DESIGNATED_PRICE },
     { title: 'Bâche (petite / moyenne) à louer', description: 'Protection étanche moyenne.', img: "https://i.supaimg.com/774b9edd-9be5-4396-90bc-6211999e7acc.jpg", price: DESIGNATED_PRICE },
     { title: 'Matelas une place à louer', description: 'Couchage d’appoint confortable.', img: "https://i.supaimg.com/8faa86d6-3417-4b28-be02-5f67b136341c.jpg", price: DESIGNATED_PRICE },
-    { title: 'Vidéoprojecteur à louer', description: 'Projection haute qualité événements.', img: "https://i.supaimg.com/8930c037-58e6-4114-8407-a23ac25b94cb.jpg", price: DESIGNATED_PRICE },
-    { title: 'Tronçonneuse à louer', description: 'Abattage et découpe de bois.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Nettoyeur haute pression', description: 'Lavage professionnel sols et murs.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Aspirateur industriel', description: 'Nettoyage puissant gros volumes.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Perforateur à louer', description: 'Forage béton et maçonnerie.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
-    { title: 'Tondeuse à gazon à louer', description: 'Entretien pelouse et espaces verts.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Broyeur de végétaux', description: 'Réduction déchets verts jardin.', img: "https://i.supaimg.com/040c4d7c-ea5a-4489-bfc1-513ae24b4d11.jpg", price: DESIGNATED_PRICE },
-    { title: 'Dameuse à louer', description: 'Compactage sols et terrassement.', img: "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg", price: DESIGNATED_PRICE },
 ];
 
 const generalWorkerDataList = [
@@ -252,67 +181,6 @@ const generalLocationDataList = [
 // --- COMPONENTS ---
 
 const EquipmentVisual: React.FC<{ title: string, fallbackImg?: string, category?: string }> = ({ title, fallbackImg, category }) => {
-    const t = title.toLowerCase();
-    const iconSize = "w-16 h-16";
-    
-    // Choose dynamic icon based on keywords
-    if (t.includes('plombier') || t.includes('eau') || t.includes('fuite') || t.includes('château')) 
-        return <Droplets className={`${iconSize} text-blue-400`} />;
-    
-    if (t.includes('électr') || t.includes('clim') || t.includes('parabole') || t.includes('internet')) 
-        return <Zap className={`${iconSize} text-yellow-400`} />;
-    
-    if (t.includes('peintre') || t.includes('déco') || t.includes('finition') || t.includes('staff')) 
-        return <Paintbrush className={`${iconSize} text-pink-400`} />;
-    
-    if (t.includes('maçon') || t.includes('carreleur') || t.includes('beton') || t.includes('construction') || t.includes('bétonnière') || t.includes('pelle') || t.includes('engin')) 
-        return <Hammer className={`${iconSize} text-orange-400`} />;
-    
-    if (t.includes('camion') || t.includes('véhicule') || t.includes('tracteur')) 
-        return <Truck className={`${iconSize} text-red-500`} />;
-    
-    if (t.includes('chantier') || t.includes('forage') || t.includes('piqueur') || t.includes('compresseur') || t.includes('échafaudage') || t.includes('marteau')) 
-        return <Construction className={`${iconSize} text-stone-500`} />;
-    
-    if (t.includes('jardin') || t.includes('gazon') || t.includes('tondeuse') || t.includes('végétaux') || t.includes('broyeur'))
-        return <Leaf className={`${iconSize} text-green-500`} />;
-
-    if (t.includes('insecte') || t.includes('termites') || t.includes('rat') || t.includes('désinfection'))
-        return <Bug className={`${iconSize} text-amber-900`} />;
-
-    if (t.includes('nettoyage') || t.includes('aspirateur') || t.includes('propreté') || t.includes('laveur') || t.includes('pression'))
-        return <Sparkles className={`${iconSize} text-sky-300`} />;
-
-    if (t.includes('sécurité') || t.includes('alarme') || t.includes('vidéosurveillance'))
-        return <ShieldCheck className={`${iconSize} text-blue-600`} />;
-
-    if (t.includes('vidéo') || t.includes('écran') || t.includes('projecteur') || t.includes('tv'))
-        return <Monitor className={`${iconSize} text-slate-700`} />;
-
-    if (t.includes('menuisier') || t.includes('soudeur') || t.includes('ferron') || t.includes('charpentier') || t.includes('portail') || t.includes('aluminium')) 
-        return <Scaling className={`${iconSize} text-indigo-400`} />;
-    
-    if (t.includes('vitr') || t.includes('fenêtre') || t.includes('porte')) 
-        return <Fence className={`${iconSize} text-cyan-400`} />;
-    
-    if (t.includes('serrure') || t.includes('clé')) 
-        return <Key className={`${iconSize} text-amber-500`} />;
-
-    if (t.includes('camera') || t.includes('surveillance'))
-        return <Tv className={`${iconSize} text-slate-600`} />;
-
-    if (t.includes('sono') || t.includes('haut-parleur') || t.includes('baffle') || t.includes('micro') || t.includes('mégaphone'))
-        return <Mic className={`${iconSize} text-purple-400`} />;
-
-    if (t.includes('chaise') || t.includes('table') || t.includes('banc') || t.includes('matelas') || t.includes('nappe'))
-        return <Utensils className={`${iconSize} text-emerald-400`} />;
-
-    if (t.includes('poubelle'))
-        return <Trash2 className={`${iconSize} text-green-600`} />;
-
-    if (t.includes('tente') || t.includes('bâche') || t.includes('parasol'))
-        return <Tent className={`${iconSize} text-sky-400`} />;
-
     return (
         <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
             {category === 'appartement' ? <HouseIcon className="w-16 h-16 text-blue-400" /> : <ToolIcon className="w-16 h-16 text-orange-400" />}
