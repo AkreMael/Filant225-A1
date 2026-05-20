@@ -4,7 +4,7 @@
   "apiKey": "AIzaSyBYoX0tIbEeM2PlP44ToE_kDcpj6RheIIo",
   "authDomain": "filant225-base.firebaseapp.com",
   "databaseURL": "https://filant225-base-default-rtdb.firebaseio.com",
-  "firestoreDatabaseId": "ai-studio-954d31f0-1c51-4775-bef9-0c33f19f0bab",
+  "firestoreDatabaseId": "(default)",
   "storageBucket": "filant225-base.firebasestorage.app",
   "messagingSenderId": "620102449526",
   "measurementId": "G-TC4M61VX2S"
