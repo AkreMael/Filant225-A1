@@ -1,11 +1,11 @@
 {
   "projectId": "filant225-base",
-  "appId": "1:620102449526:web:034bb2d244362260682257",
+  "appId": "1:620102449526:web:998bf392f3dbab62682257",
   "apiKey": "AIzaSyBYoX0tIbEeM2PlP44ToE_kDcpj6RheIIo",
   "authDomain": "filant225-base.firebaseapp.com",
   "databaseURL": "https://filant225-base-default-rtdb.firebaseio.com",
   "firestoreDatabaseId": "(default)",
   "storageBucket": "filant225-base.firebasestorage.app",
   "messagingSenderId": "620102449526",
-  "measurementId": "G-TC4M61VX2S"
+  "measurementId": "G-88XZE34VHC"
 }

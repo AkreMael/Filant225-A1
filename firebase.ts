@@ -18,23 +18,12 @@ export const messaging = typeof window !== 'undefined' ? getMessaging(app) : nul
 // Initialisation de Firebase App Check (reCAPTCHA Enterprise)
 if (typeof window !== 'undefined') {
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || (firebaseConfig as any).recaptchaSiteKey || (firebaseConfig as any).siteKey;
-  const isDev = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname.includes('run.app');
 
-  if (siteKey || isDev) {
+  if (siteKey) {
     try {
-      if (isDev && !siteKey) {
-        // En développement (ou iframe AI Studio), on active le mode debug de App Check.
-        // Cela génère un token de débogage affiché dans la console du navigateur que l'utilisateur peut ajouter dans Firebase.
-        // @ts-ignore
-        self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-        console.log("[App Check] Mode débogage activé pour l'environnement de développement.");
-      }
-
-      // Initialise App Check avec le siteKey s'il est configuré, sinon avec un placeholder en développement
-      const providerKey = siteKey || "6LeIxAcTAAAAAJcZVRqyIAn7y3g_Fm9GoLaEeNDp"; // Clé test reCAPTCHA si en debug
-      
+      // Initialise App Check avec le siteKey s'il est configuré
       const appCheck = initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(providerKey),
+        provider: new ReCaptchaEnterpriseProvider(siteKey),
         isTokenAutoRefreshEnabled: true
       });
       console.log("[App Check] Initialisation réussie avec succès.");
