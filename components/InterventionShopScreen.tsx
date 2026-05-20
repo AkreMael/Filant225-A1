@@ -1,9 +1,7 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getSynchronizedWorkerImage } from './WorkerListScreen';
 import { User } from '../types';
-import EmbeddedForm from './EmbeddedForm';
 
 // --- ICONS ---
 const HouseIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -21,9 +19,46 @@ const ToolIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 const BackIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>;
 const SearchIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
-const MicIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>;
 const UserCircleIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="currentColor"><path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 a4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" /></svg>;
 const ShopIconSmall = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12.378 1.602a.75.75 0 00-.756 0L3 6.632V21a.75.75 0 00.75.75h16.5a.75.75 0 00.75-.75V6.632l-8.622-5.03zM12 4.457l6.5 3.791V20.25H5.5V8.248l6.5-3.791zM9.5 12.25a2.5 2.5 0 005 0v-1.5a.75.75 0 00-1.5 0v1.5a1 1 0 01-2 0v-1.5a.75.75 0 00-1.5 0v1.5z" /></svg>;
+
+// --- STAR ICON ---
+const StarIcon: React.FC<{ filled?: boolean; className?: string; onClick?: (e: React.MouseEvent) => void }> = ({ filled, className = "w-4 h-4", onClick }) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        className={`${className} ${filled ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 fill-none'}`} 
+        viewBox="0 0 24 24" 
+        stroke="currentColor" 
+        strokeWidth={2.5}
+        onClick={onClick}
+    >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499c.192-.41.761-.41.953 0l2.253 4.8 5.084.774c.433.066.607.61.293.927l-3.682 3.738.87 5.378c.074.457-.38.796-.763.568L12 17.5l-4.545 2.508c-.383.228-.837-.11-.763-.568l.87-5.378-3.682-3.738c-.314-.317-.14-.86.293-.927l5.084-.774 2.253-4.8z" />
+    </svg>
+);
+
+const StarIconPassive: React.FC<{ title: string }> = ({ title }) => {
+    const [isFav, setIsFav] = useState(() => {
+        try {
+            return localStorage.getItem(`fav_${title}`) === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    useEffect(() => {
+        const handleUpdate = () => {
+            try {
+                setIsFav(localStorage.getItem(`fav_${title}`) === 'true');
+            } catch {}
+        };
+        window.addEventListener('favourites-updated', handleUpdate);
+        return () => window.removeEventListener('favourites-updated', handleUpdate);
+    }, [title]);
+
+    return (
+        <StarIcon filled={isFav} className="w-4 h-4" />
+    );
+};
 
 // --- EQUIPMENT & REAL ESTATE IMAGES MAPPING ---
 const EQUIPMENT_IMAGES: Record<string, string | string[]> = {
@@ -65,7 +100,7 @@ const EQUIPMENT_IMAGES: Record<string, string | string[]> = {
         "https://i.supaimg.com/26640f33-a936-4a3c-a910-19ffb1cc8e82.jpg"
     ],
 
-    // Nouveaux équipements ajoutés
+    // Nouveaux équipements
     'Poubelle mobile à louer': "https://i.supaimg.com/5d50ad37-c869-47dd-ab0a-7439425189ca.jpg",
     'Mégaphone à louer': "https://i.supaimg.com/9bbdf54f-ff0f-4290-ad44-4b65e6615b87.jpg",
     'Échelle pliante (petite) à louer': "https://i.supaimg.com/247860e7-ea16-4347-a0f5-302a1710806a.jpg",
@@ -91,7 +126,6 @@ const EQUIPMENT_IMAGES: Record<string, string | string[]> = {
 // --- CONSTANTS ---
 const DESIGNATED_PRICE = "Désigné par le propriétaire";
 
-// Fix: Define classicCardColors constant
 const classicCardColors = [
     { bg: "bg-blue-50", border: "border-blue-100" },
     { bg: "bg-orange-50", border: "border-orange-100" },
@@ -173,13 +207,117 @@ const generalLocationDataList = [
     { title: 'Petit local à louer', description: 'Locaux commerciaux pour boutiques.', category: 'appartement' },
     { title: 'Terrain à louer ou à vendre', description: 'Vente et location de terrains.', category: 'appartement' },
     { title: 'Magasin à louer', description: 'Espaces commerciaux stratégiques.', category: 'appartement' },
-
-    // Location équipements
     ...locationRapideIntervItems.map(item => ({ ...item, category: 'equipement' }))
 ];
 
-// --- COMPONENTS ---
+// --- MAIN ORGANIZED CATEGORIES CONFIG (Avoiding duplicates) ---
+const categoriesConfig = [
+    {
+        name: "1. DÉPANNAGE RAPIDE",
+        items: [
+            { title: "Plombier rapide", description: "Dépannage plomberie ultra rapide." },
+            { title: "Électricien rapide", description: "Dépannage électricité urgent." },
+            { title: "Serrurier rapide", description: "Ouverture de porte et serrures rapides." },
+            { title: "Vitrier rapide", description: "Changement de vitres et fenêtres." },
+            { title: "Réparation climatiseur rapide", description: "Réparation et recharge climatisation." },
+            { title: "Réparation frigo rapide", description: "Réparation réfrigérateurs et congél." },
+            { title: "Réparation télévision rapide", description: "Réparation téléviseurs et écrans." },
+            { title: "Réparation machine à laver rapide", description: "Réparation lave-linge et sèche-linge." },
+            { title: "Réparation pompe à eau rapide", description: "Réparation pompe à eau et forage." },
+            { title: "Réparation fuite d’eau rapide", description: "Détection et réparation fuites." },
+            { title: "Dépannage Internet rapide", description: "Configuration box et connexion." },
+            { title: "Dépannage parabole rapide", description: "Installation et réglage parabole." },
+            { title: "Dépannage électroménager rapide", description: "Appareils de cuisine et maison." },
+            { title: "Dépannage groupe électrogène rapide", description: "Réparation de groupes électrogènes." },
+            { title: "Dépannage auto rapide", description: "Mécanique et électrique auto." }
+        ]
+    },
+    {
+        name: "2. SERVICES CONSTRUCTION",
+        items: [
+            { title: "Maçon", description: "Maçonnerie générale, chapes et murs." },
+            { title: "Ferrailleur", description: "Travaux de ferraillage solides." },
+            { title: "Coffreur", description: "Coffrages bois ou métalliques." },
+            { title: "Carreleur", description: "Pose de carreaux tous formats." },
+            { title: "Peintre bâtiment", description: "Peinture murs et boiseries." },
+            { title: "Électricien bâtiment", description: "Installation électrique complète." },
+            { title: "Plombier bâtiment", description: "Tuyauterie et réseaux sanitaires." },
+            { title: "Soudeur", description: "Soudure et structures métalliques." },
+            { title: "Charpentier", description: "Charpentes bois et ossatures." },
+            { title: "Menuisier aluminium", description: "Fenêtres, portes et baies vitrées." },
+            { title: "Menuisier bois", description: "Portes et placards en bois." },
+            { title: "Staffeur", description: "Décoration en plâtre et staff." },
+            { title: "Étancheur", description: "Traitement des fuites et infiltration." },
+            { title: "Poseur de portail", description: "Installation de portails." },
+            { title: "Poseur de caméra", description: "Installation vidéosurveillance." },
+            { title: "Climatisation bâtiment", description: "Installation climatisation centrale." },
+            { title: "Technicien forage", description: "Forage de puits d'eau." },
+            { title: "Constructeur maison", description: "Projet de construction de A à Z." },
+            { title: "Finition bâtiment", description: "Enduit, ponçage, finitions fines." }
+        ]
+    },
+    {
+        name: "3. NETTOYAGE & ENTRETIEN",
+        items: [
+            { title: "Technicien de surface", description: "Nettoyage sols et surfaces." },
+            { title: "Nettoyage maison", description: "Ménage complet de maisons." },
+            { title: "Nettoyage bureau", description: "Entretien des espaces de travail." },
+            { title: "Nettoyage chantier", description: "Nettoyage de fin de chantier." },
+            { title: "Lavage automobile", description: "Lavage auto à domicile." },
+            { title: "Désinfection", description: "Nettoyage et élimination de germes." },
+            { title: "Entretien jardin", description: "Tonte pelouse et jardinage." },
+            { title: "Entretien piscine", description: "Nettoyage et traitement eau de piscine." }
+        ]
+    },
+    {
+        name: "4. CUISINE & ÉVÉNEMENTIEL",
+        items: [
+            { title: "Cuisinier", description: "Cuisine à domicile ou événement." },
+            { title: "Serveur", description: "Service traiteur ou restaurant." },
+            { title: "Décorateur", description: "Décoration salle et événements." },
+            { title: "DJ", description: "Animation musicale pour fêtes." },
+            { title: "Sonorisateur", description: "Installation et réglage du son." },
+            { title: "Organisateur événementiel", description: "Planification et coordination totale." },
+            { title: "Photographe", description: "Reportage photos professionnel." },
+            { title: "Vidéaste", description: "Captation et montage vidéo." }
+        ]
+    },
+    {
+        name: "5. TRANSPORT & LIVRAISON",
+        items: [
+            { title: "Chauffeur", description: "Déplacement sécurisé et rapide." },
+            { title: "Déménageur", description: "Aide pour chargement et emballage." },
+            { title: "Livreur", description: "Livraison colis et repas express." },
+            { title: "Transport marchandises", description: "Camionnette pour fret commercial." },
+            { title: "Transport matériaux", description: "Livraison de ciment, sable, etc." },
+            { title: "Transport déménagement", description: "Grand camion de déménagement." }
+        ]
+    },
+    {
+        name: "6. LOCATION D’ÉQUIPEMENTS",
+        items: [
+            { title: "Camion benne", description: "Camion benne pour transport lourd." },
+            { title: "Camion de campagne", description: "Camion podium sonorisé campagne." },
+            { title: "Bâche à louer", description: "Bâches toutes dimensions." },
+            { title: "Chaise à louer", description: "Chaises blanches de réception." },
+            { title: "Table à louer", description: "Tables rondes ou rectangulaires." },
+            { title: "Groupe électrogène", description: "Alimentation électrique autonome." },
+            { title: "Bétonnière", description: "Bétonnière électrique ou thermique." },
+            { title: "Échafaudage", description: "Échafaudage de chantier sécurisé." },
+            { title: "Tracteur", description: "Tracteur agricole ou de chantier." },
+            { title: "Mini pelle", description: "Mini pelle pour travaux d’accès." },
+            { title: "Pelle mécanique", description: "Excavatrice lourd chantier." },
+            { title: "Marteau piqueur", description: "Démolition de béton robuste." },
+            { title: "Compresseur", description: "Compresseur d'air professionnel." },
+            { title: "Sonorisation", description: "Sonorisation puissante événements." },
+            { title: "Tente événementielle", description: "Tente blanche de réception." },
+            { title: "Véhicule de transport", description: "Véhicule utilitaire ou de livraison." },
+            { title: "Engin de chantier", description: "Engins divers pour BTP." }
+        ]
+    }
+];
 
+// --- COMPONENTS ---
 const EquipmentVisual: React.FC<{ title: string, fallbackImg?: string, category?: string }> = ({ title, fallbackImg, category }) => {
     return (
         <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
@@ -231,7 +369,18 @@ const RapidSectionCard: React.FC<{
                                 <ShopIconSmall />
                                 <span className="text-[8px] font-black uppercase tracking-wider">Filant Services</span>
                             </div>
-                            <div className="flex h-3 w-3 rounded-full border-2 border-white shadow-lg animate-flash-green-red"></div>
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const savedKey = `fav_${item.title}`;
+                                    const nextFav = localStorage.getItem(savedKey) !== 'true';
+                                    localStorage.setItem(savedKey, String(nextFav));
+                                    window.dispatchEvent(new Event('favourites-updated'));
+                                }}
+                                className="bg-white p-1 rounded-full shadow-md border border-gray-100 flex items-center justify-center transition-all active:scale-90"
+                            >
+                                <StarIconPassive title={item.title} />
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -268,7 +417,18 @@ const RapidSectionCard: React.FC<{
                         <ShopIconSmall />
                         <span className="text-[9px] font-black uppercase tracking-wider">Filant Services</span>
                     </div>
-                    <div className="flex h-3.5 w-3.5 rounded-full border-2 border-white shadow-lg animate-flash-green-red"></div>
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const savedKey = `fav_${item.title}`;
+                            const nextFav = localStorage.getItem(savedKey) !== 'true';
+                            localStorage.setItem(savedKey, String(nextFav));
+                            window.dispatchEvent(new Event('favourites-updated'));
+                        }}
+                        className="bg-white p-1 rounded-full shadow-md border border-gray-100 flex items-center justify-center transition-all active:scale-90"
+                    >
+                        <StarIconPassive title={item.title} />
+                    </button>
                 </div>
             </div>
         </div>
@@ -283,11 +443,41 @@ interface ClassicCardProps {
 }
 
 const ClassicCard: React.FC<ClassicCardProps> = ({ item, user, category, onOpenForm }) => {
-    const index = Math.floor(Math.random() * 4); // For color rotation
+    const index = Math.floor(Math.random() * 4);
     const colorStyle = classicCardColors[index % classicCardColors.length];
     const isWorker = category === 'travailleurs';
-    const img = isWorker ? getSynchronizedWorkerImage(item.title) : (EQUIPMENT_IMAGES[item.title] || undefined);
+    const img = item.img || (isWorker ? getSynchronizedWorkerImage(item.title) : (EQUIPMENT_IMAGES[item.title] || undefined));
     
+    const [isFav, setIsFav] = useState(() => {
+        try {
+            return localStorage.getItem(`fav_${item.title}`) === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    useEffect(() => {
+        const handleUpdate = () => {
+            try {
+                setIsFav(localStorage.getItem(`fav_${item.title}`) === 'true');
+            } catch {}
+        };
+        window.addEventListener('favourites-updated', handleUpdate);
+        return () => window.removeEventListener('favourites-updated', handleUpdate);
+    }, [item.title]);
+
+    const toggleFav = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const newVal = !isFav;
+        setIsFav(newVal);
+        try {
+            localStorage.setItem(`fav_${item.title}`, String(newVal));
+            window.dispatchEvent(new Event('favourites-updated'));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const handleOpen = () => {
         onOpenForm({
             formType: category === 'immobilier' || category === 'equipement' ? 'location' : 'worker',
@@ -305,7 +495,14 @@ const ClassicCard: React.FC<ClassicCardProps> = ({ item, user, category, onOpenF
         >
             <div className="flex flex-col">
                 <div className={`aspect-[4/3] w-full flex items-center justify-center relative ${colorStyle.bg} ${colorStyle.border || ''} overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200`}>
-                    {isWorker ? (
+                    {img && typeof img === 'string' ? (
+                        <img 
+                            src={img} 
+                            alt={item.title} 
+                            className="w-full h-full object-cover" 
+                            referrerPolicy="no-referrer"
+                        />
+                    ) : isWorker ? (
                         <div className="absolute inset-0 flex items-center justify-center">
                             <UserCircleIcon className="w-16 h-16 text-slate-400" />
                         </div>
@@ -313,14 +510,18 @@ const ClassicCard: React.FC<ClassicCardProps> = ({ item, user, category, onOpenF
                         <EquipmentVisual title={item.title} category={(item as any).category} />
                     )}
                 </div>
-                <div className="p-3 flex-1 w-full text-left relative flex flex-col justify-between min-h-[90px]">
+                <div className="p-3 flex-1 w-full text-left relative flex flex-col justify-between min-h-[95px]">
                     <div>
-                        <span className="text-sm font-bold text-gray-900 leading-tight block mb-1 uppercase truncate">{item.title}</span>
-                        <span className="text-xs text-gray-500 leading-tight line-clamp-2">{item.description}</span>
+                        <span className="text-[11px] font-black text-gray-900 leading-tight block mb-1 uppercase truncate" title={item.title}>{item.title}</span>
+                        <span className="text-[10px] text-gray-400 leading-normal line-clamp-2">{item.description}</span>
                     </div>
-                    <div className="absolute bottom-2 right-2 bg-orange-100 p-1.5 rounded-full text-orange-600 shadow-sm">
-                        <UserCircleIcon className="w-4 h-4" />
-                    </div>
+                    <button 
+                        onClick={toggleFav}
+                        className="absolute bottom-2 right-2 bg-white hover:bg-gray-50 border border-gray-200 p-1 rounded-full shadow-md flex items-center justify-center transition-all active:scale-90"
+                        title="Favori"
+                    >
+                        <StarIcon filled={isFav} className="w-3.5 h-3.5" />
+                    </button>
                 </div>
             </div>
         </div>
@@ -339,7 +540,6 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
     const [showAllBatiment, setShowAllBatiment] = useState(false);
     const [showAllLocation, setShowAllLocation] = useState(false);
     
-    const mainScrollRef = useRef<HTMLDivElement>(null);
     const isInterventionView = category === 'intervention';
 
     const headerImage = useMemo(() => {
@@ -353,9 +553,22 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
     const filteredIntervBat = useMemo(() => 
         batimentIntervItems.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase())),
     [searchTerm]);
+    
     const filteredIntervLoc = useMemo(() => 
         locationRapideIntervItems.filter(i => i.title.toLowerCase().includes(searchTerm.toLowerCase())),
     [searchTerm]);
+
+    // Grouped categories for workers screen
+    const filteredCategories = useMemo(() => {
+        if (!searchTerm) return categoriesConfig;
+        return categoriesConfig.map(cat => ({
+            ...cat,
+            items: cat.items.filter(item => 
+                item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
+            )
+        })).filter(cat => cat.items.length > 0);
+    }, [searchTerm]);
 
     const classicItems = useMemo(() => {
         if (category === 'travailleurs') return generalWorkerDataList;
@@ -388,18 +601,24 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
         >
             <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-hide">
                 
-                {/* Header Image Section - Matching EmbeddedForm */}
+                {/* Header Image Section */}
                 <motion.div 
-                    initial={{ y: -50, opacity: 0, scale: 1.1 }}
+                    initial={{ y: -55, opacity: 0, scale: 1.1 }}
                     animate={{ y: 0, opacity: 1, scale: 1 }}
-                    transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                    className="relative h-[220px] w-full flex-shrink-0 bg-orange-600 flex items-center justify-center"
+                    transition={{ duration: 0.9, ease: "easeOut", delay: 0.1 }}
+                    className="relative h-[220px] w-full flex-shrink-0 bg-orange-600 flex items-center justify-center overflow-hidden"
                 >
-                    <div className="absolute inset-0 bg-black/10"></div>
-                    <span className="text-white/20 font-black text-6xl">F</span>
+                    <img 
+                        src={headerImage} 
+                        alt="Filant Services Header" 
+                        className="absolute inset-0 w-full h-full object-cover blur-[1px]"
+                        referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-black/30"></div>
+                    <span className="text-white/20 font-black text-6xl select-none">F</span>
                     <button 
                         onClick={onBack} 
-                        className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20"
+                        className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20 hover:bg-white/30 transition-all"
                     >
                         <BackIcon />
                     </button>
@@ -408,7 +627,7 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
                     </div>
                 </motion.div>
 
-                {/* Content Container - Matching EmbeddedForm */}
+                {/* Content Container */}
                 <motion.div 
                     initial={{ y: "100%" }}
                     animate={{ y: 0 }}
@@ -436,7 +655,74 @@ const InterventionShopScreen: React.FC<InterventionShopScreenProps> = ({ onBack,
                         />
                     </div>
 
-                    {isInterventionView ? (
+                    {category === 'travailleurs' ? (
+                        /* Grouped Categories Section */
+                        <div className="space-y-10 pb-24">
+                            {filteredCategories.map((cat, catIdx) => (
+                                <div key={catIdx} className="space-y-4">
+                                    <div className="flex justify-between items-center px-1">
+                                        <div 
+                                            onClick={() => {
+                                                if (cat.name.includes("2. SERVICES CONSTRUCTION")) {
+                                                    onOpenForm({
+                                                        formType: 'rapid_building_service',
+                                                        title: 'SERVICES CONSTRUCTION (Tous)',
+                                                        imageUrl: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg",
+                                                        description: "Sélection groupée de tous les métiers de construction (Maçon, Ferrailleur, Coffreur, Carreleur, Peintre, Électricien, Plombier bâtiment, Soudeur, Charpentier, Menuisier, Staffeur, Étancheur, etc.)."
+                                                    });
+                                                }
+                                            }}
+                                            className={`px-4 py-2 rounded-full shadow-md transition-all ${
+                                                cat.name.includes("2. SERVICES CONSTRUCTION") 
+                                                    ? "bg-gradient-to-r from-orange-500 to-red-600 cursor-pointer hover:shadow-lg active:scale-95" 
+                                                    : "bg-orange-500"
+                                            }`}
+                                        >
+                                            <h2 className="text-[12px] font-black text-white uppercase tracking-tight flex items-center gap-1.5 select-none">
+                                                {cat.name}
+                                                {cat.name.includes("2. SERVICES CONSTRUCTION") && (
+                                                    <span className="text-[9px] bg-white text-orange-600 px-2 py-0.5 rounded-full font-black animate-pulse">
+                                                        Tout sélectionner
+                                                    </span>
+                                                )}
+                                            </h2>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {cat.items.map((item, index) => (
+                                            <ClassicCard 
+                                                key={index}
+                                                item={item}
+                                                user={user}
+                                                category={cat.name.includes("6. LOCATION D’ÉQUIPEMENTS") ? "equipement" : "travailleurs"}
+                                                onOpenForm={onOpenForm}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Autre Service Button */}
+                            <div className="pt-4 px-1">
+                                <button 
+                                    onClick={() => onOpenForm({
+                                        formType: 'worker',
+                                        title: 'Autre Service spécifique',
+                                        description: 'Veuillez préciser le service sur mesure ou métier spécifique dont vous avez besoin.'
+                                    })}
+                                    className="w-full bg-slate-900 hover:bg-black active:scale-95 text-white font-black py-4 rounded-3xl shadow-lg uppercase tracking-wider text-xs transition-all text-center flex items-center justify-center gap-2 border-2 border-slate-900"
+                                >
+                                    <span>Autre service</span>
+                                </button>
+                            </div>
+
+                            {filteredCategories.length === 0 && (
+                                <div className="text-center py-10 text-gray-500">
+                                    <p className="font-bold">Aucun résultat trouvé.</p>
+                                </div>
+                            )}
+                        </div>
+                    ) : isInterventionView ? (
                         <div className="space-y-10 pb-24">
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center px-1">
