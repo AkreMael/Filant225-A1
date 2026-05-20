@@ -20,12 +20,12 @@ if (!admin.apps.length) {
     projectId: process.env.GCP_PROJECT_ID || firebaseConfig.projectId,
   });
 }
-const firestore = admin.firestore(firebaseConfig.firestoreDatabaseId);
+const firestore = admin.firestore();
 console.log("Firestore initialized successfully with project:", admin.app().options.projectId);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.set("trust proxy", 1);
   app.use(express.json());
@@ -122,7 +122,7 @@ async function startServer() {
   app.get("/api/workers", async (req, res) => {
     try {
       // Fetch from multiple collections in parallel to provide a comprehensive list quickly
-      const collections = ["Travailleurs", "AgencesImmobilieres", "Equipements", "Entreprises"];
+      const collections = ["Travailleurs", "Agences immobilières", "Équipements", "Entreprises"];
       
       const snapshots = await Promise.all(
         collections.map(col => firestore.collection(col).get())
@@ -329,20 +329,9 @@ async function startServer() {
       }
 
       const sanitizedPhone = phone.replace(/\D/g, '');
-      let fcmToken = null;
-      let userData = null;
-
-      const collectionsToCheck = ["Clients", "users", "Travailleurs", "AgencesImmobilieres", "Equipements", "Entreprises", "Admin"];
-      for (const col of collectionsToCheck) {
-        const docRef = await firestore.collection(col).doc(sanitizedPhone).get();
-        if (docRef.exists) {
-          userData = docRef.data();
-          if (userData?.fcmToken) {
-            fcmToken = userData.fcmToken;
-            break;
-          }
-        }
-      }
+      const userDoc = await firestore.collection("Clients").doc(sanitizedPhone).get();
+      const userData = userDoc.data();
+      const fcmToken = userData?.fcmToken;
 
       if (!fcmToken) {
         console.warn(`No FCM token found for user ${sanitizedPhone}`);

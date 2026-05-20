@@ -138,8 +138,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   }, [chatUserId, type, isAdmin]);
 
   const displayMessages = useMemo(() => {
-    return messages;
-  }, [messages]);
+    if (isAdmin) return messages;
+    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+    return messages.filter(msg => msg.timestamp > twentyFourHoursAgo);
+  }, [messages, isAdmin]);
 
   useEffect(() => {
     if (shouldAutoScroll && messagesEndRef.current) {

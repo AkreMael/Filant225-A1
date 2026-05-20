@@ -1,9 +1,69 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Helper to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // New structure collections
+    
+    match /Connexions/{id} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /Clients/{phone} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /Travailleurs/{id} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /Agents/{phone} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /Admin/{phone} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /AgencesImmobilieres/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /Equipements/{id} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /Entreprises/{id} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /Messagerie/{id} {
+      allow read, write: if isAuthenticated();
+      // Subcollections for recursive messages
+      match /{document=**} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    match /offres_emploi/{id} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /QRCodeActivations/{id} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /Missions/{id} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || request.auth.token.email == "filantmael225@gmail.com");
+      allow write: if isAuthenticated() && request.auth.token.email == "filantmael225@gmail.com";
+    }
+
+    // Default deny
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated();
     }
   }
 }
