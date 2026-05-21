@@ -362,10 +362,18 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
           initial={{ y: -50, opacity: 0, scale: 1.1 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          className="relative h-[220px] w-full flex-shrink-0 bg-orange-600 flex items-center justify-center"
+          className="relative h-[220px] w-full flex-shrink-0 bg-orange-600 overflow-hidden flex items-center justify-center"
         >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
-            <span className="text-white/20 font-black text-8xl relative z-0 mt-4">F</span>
+            {resolvedImage ? (
+                <img 
+                  src={resolvedImage} 
+                  alt={title} 
+                  className={`absolute inset-0 w-full h-full object-cover ${isBlurredImage ? 'blur-md opacity-40' : ''}`}
+                  referrerPolicy="no-referrer"
+                />
+            ) : null}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/25"></div>
+            {!resolvedImage && <span className="text-white/20 font-black text-8xl relative z-0 mt-4">F</span>}
             {isBlurredImage && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                     <span className="text-white text-lg font-black uppercase tracking-[0.3em] drop-shadow-lg">MASQUÉ</span>

@@ -167,9 +167,9 @@ const batimentIntervItems = [
     { title: 'Peintre rapide', description: 'Peinture et finitions intérieures.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
     { title: 'Laveur de vitres Rapide', description: 'Nettoyage professionnel de vitres.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/523a7221-efdc-40cb-8854-e2cf0f23b981.jpg" },
     { title: 'Technicien entretien climatisation Rapide', description: 'Entretien et recharge clim.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
-    { title: 'Installateur de caméras de surveillance Rapide', description: 'Installation vidéosurveillance.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
-    { title: 'Fabricant de poufs Rapide', description: 'Création et réparation de poufs.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg" },
-    { title: 'Installateur de fenêtres et portes vitrées Rapide', description: 'Pose menuiserie et vitrerie.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg" },
+    { title: 'Installateur de caméras de surveillance Rapide', description: 'Installation vidéosurveillance.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/692e8ebb-b3d7-495b-8b43-65148c4f1609.jpg" },
+    { title: 'Fabricant de poufs Rapide', description: 'Création et réparation de poufs.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/1bd32ba7-1320-4334-bff0-8016ccb6404f.jpg" },
+    { title: 'Installateur de fenêtres et portes vitrées Rapide', description: 'Pose menuiserie et vitrerie.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/5b41e300-53eb-4213-ac32-e07b1d272667.jpg" },
     { title: 'Menuisier Rapide', description: 'Menuiserie bois et meubles.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg" },
 ];
 
@@ -384,9 +384,9 @@ export const getServiceItemImage = (title: string): string => {
     if (titleLower.includes('finition bâtiment') || titleLower.includes('finition batiment') || titleLower.includes('finition') || titleLower.includes('βaτιμeντ') || titleLower.includes('βατιμeντ')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/52afd515-de3a-42de-b2a8-6f4f27f5d4af.jpg";
 
     if (titleLower.includes('vitre') || titleLower.includes('vitrier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg";
-    if (titleLower.includes('caméra') || titleLower.includes('camera')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg";
-    if (titleLower.includes('pouf')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg";
-    if (titleLower.includes('fenêtre') || titleLower.includes('porte')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg";
+    if (titleLower.includes('caméra') || titleLower.includes('camera')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/692e8ebb-b3d7-495b-8b43-65148c4f1609.jpg";
+    if (titleLower.includes('pouf')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/1bd32ba7-1320-4334-bff0-8016ccb6404f.jpg";
+    if (titleLower.includes('fenêtre') || titleLower.includes('porte')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/5b41e300-53eb-4213-ac32-e07b1d272667.jpg";
     if (titleLower.includes('studio')) return "https://i.supaimg.com/5d6f5d3f-6e64-4291-8ce3-28cebdb6bcec.jpg";
     if (titleLower.includes('villa')) return "https://i.supaimg.com/7dd280ea-2d80-472d-9997-d6c5b3d3c53c.jpg";
     if (titleLower.includes('chambre')) return "https://i.supaimg.com/db2acfbe-b3ca-4b65-9b21-ddb0c7fcb3af.jpg";

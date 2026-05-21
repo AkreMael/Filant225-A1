@@ -26,10 +26,19 @@ const TallyFormScreen: React.FC<TallyFormScreenProps> = ({ formUrl, formTitle = 
           initial={{ y: -50, opacity: 0, scale: 1.1 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          className="relative h-[200px] w-full flex-shrink-0 bg-orange-600 flex items-center justify-center"
+          className="relative h-[200px] w-full flex-shrink-0 bg-orange-600 overflow-hidden flex items-center justify-center"
         >
-            <FileText className="w-16 h-16 text-white/50" />
-            <div className="absolute inset-0 bg-black/10"></div>
+            {getFormImage(formTitle) ? (
+                <img 
+                  src={getFormImage(formTitle)} 
+                  alt={formTitle} 
+                  className="absolute inset-0 w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+            ) : (
+                <FileText className="w-16 h-16 text-white/50 relative z-10" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/25"></div>
             <button 
               onClick={onBack} 
               className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20"

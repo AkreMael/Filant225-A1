@@ -84,9 +84,15 @@ const IMAGES_MAPPING: Record<string, string | string[]> = {
     'Nettoyage maison': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6229a41a-0e9e-4f10-81a6-732897f24998.jpg",
     'NETTOYAGE MAISON': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6229a41a-0e9e-4f10-81a6-732897f24998.jpg",
     'Technicien entretien climatisation Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg",
-    'Installateur de caméras de surveillance Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg",
-    'Fabricant de poufs Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg",
-    'Installateur de fenêtres et portes vitrées Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg",
+    'Installateur de caméras de surveillance Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/692e8ebb-b3d7-495b-8b43-65148c4f1609.jpg",
+    'Installateur de caméras de surveillance rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/692e8ebb-b3d7-495b-8b43-65148c4f1609.jpg",
+    'INSTALLATEUR DE CAMÉRAS DE SURVEILLANCE RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/692e8ebb-b3d7-495b-8b43-65148c4f1609.jpg",
+    'Fabricant de poufs Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/1bd32ba7-1320-4334-bff0-8016ccb6404f.jpg",
+    'Fabricant de poufs rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/1bd32ba7-1320-4334-bff0-8016ccb6404f.jpg",
+    'FABRICANT DE POUFS RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/1bd32ba7-1320-4334-bff0-8016ccb6404f.jpg",
+    'Installateur de fenêtres et portes vitrées Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/5b41e300-53eb-4213-ac32-e07b1d272667.jpg",
+    'Installateur de fenêtres et portes vitrées rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/5b41e300-53eb-4213-ac32-e07b1d272667.jpg",
+    'INSTALLATEUR DE FENÊTRES ET PORTES VITRÉES RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/5b41e300-53eb-4213-ac32-e07b1d272667.jpg",
     'Menuisier Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg",
 
     // New specific requests mapped explicitly to match forms / search / titles precisely:
