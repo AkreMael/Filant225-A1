@@ -221,6 +221,10 @@ const generalWorkerDataList = [
     { title: 'Magasinier', description: 'Gestion des stocks.', category: 'worker' },
     { title: 'Manutentionnaire', description: 'Chargement marchandises.', category: 'worker' },
     { title: 'Vigile', description: 'Sécurité bâtiments.', category: 'worker' },
+    { title: 'MANUCURE À DOMICILE RAPIDE', description: 'Soin et mise en beauté des mains et pieds à domicile.', category: 'worker' },
+    { title: 'ESTHÉTICIENNE-MASSAGE', description: 'Soins esthétiques du corps et du visage, massages.', category: 'worker' },
+    { title: 'MAQUILLEUSE PROFESSIONNELLE', description: 'Maquillage professionnel de tout type.', category: 'worker' },
+    { title: 'PÂTISSIÈRE', description: 'Création et cuisson de gâteaux et desserts.', category: 'worker' },
 ];
 
 const generalLocationDataList = [

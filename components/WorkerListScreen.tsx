@@ -77,6 +77,11 @@ export const getSynchronizedWorkerImage = (name: string) => {
     const nameLower = name.toLowerCase().trim();
 
     // Check specific user requested overrides first
+    if (nameLower.includes('manucure à domicile rapide') || nameLower.includes('manucure a domicile rapide')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3a9b4b-f03e-417f-a1ae-69d612bb1de8.jpg";
+    if (nameLower.includes('esthéticienne-massage') || nameLower.includes('estheticienne-massage')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e884871d-41ea-40c2-b46a-cb2885c270c8.jpg";
+    if (nameLower.includes('maquilleuse professionnelle') || nameLower.includes('maquilleuse professionnel')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e9355d98-e4a9-4bc9-a0bb-9d314aa40839.jpg";
+    if (nameLower.includes('pâtissière') || nameLower.includes('patissiere')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/218add6d-6e21-4628-bfad-06d7b3210e28.jpg";
+
     if (nameLower.includes('entretien piscine')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9c3ec760-4dba-41a4-b8cd-c6fe37b1d915.jpg";
     if (nameLower.includes('entretien jardin')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/a457d9bb-89d8-43c9-9d79-47af16441a96.jpg";
     if (nameLower.includes('désinfection') || nameLower.includes('desinfection')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ff1341c6-c0af-45b4-ac13-14be2e99f250.jpg";
@@ -159,7 +164,11 @@ const workerTallyLinks: Record<string, string> = {
     'Magasinier': 'https://tally.so/r/1AXk0g',
     'Couturière / Couturier': 'https://tally.so/r/WO2rbe',
     'Manucure / Pédicure': 'https://tally.so/r/9qBXYE',
-    'Massage': 'https://tally.so/r/9qBXYE'
+    'Massage': 'https://tally.so/r/9qBXYE',
+    'MANUCURE À DOMICILE RAPIDE': 'https://tally.so/r/9qBXYE',
+    'ESTHÉTICIENNE-MASSAGE': 'https://tally.so/r/kdl9jr',
+    'MAQUILLEUSE PROFESSIONNELLE': 'https://tally.so/r/kdl9jr',
+    'PÂTISSIÈRE': 'https://tally.so/r/zxjN4g'
 };
 
 interface WorkerCardProps {

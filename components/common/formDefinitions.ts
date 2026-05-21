@@ -53,6 +53,10 @@ const IMAGES_MAPPING: Record<string, string | string[]> = {
     'Maçon': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/7759e2a2-e89b-4f9a-981d-1498c014e9cf.jpg",
     'Soudeur': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6a162389-4981-4106-b81b-b0baf5b94254.jpg",
     'Peintre': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/8552d20d-cf9a-4f93-abfe-c9852d6ad79a.jpg",
+    'MANUCURE À DOMICILE RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3a9b4b-f03e-417f-a1ae-69d612bb1de8.jpg",
+    'ESTHÉTICIENNE-MASSAGE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e884871d-41ea-40c2-b46a-cb2885c270c8.jpg",
+    'MAQUILLEUSE PROFESSIONNELLE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e9355d98-e4a9-4bc9-a0bb-9d314aa40839.jpg",
+    'PÂTISSIÈRE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/218add6d-6e21-4628-bfad-06d7b3210e28.jpg",
 
     // Bâtiment Interv Rapide
     'Plombier rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/bc813433-c44a-4b95-9559-9a1c6fa75705.jpg",
@@ -217,6 +221,10 @@ export const SEARCHABLE_TITLES = [
     { title: "Maçon", type: "worker" },
     { title: "Soudeur", type: "worker" },
     { title: "Peintre", type: "worker" },
+    { title: "MANUCURE À DOMICILE RAPIDE", type: "worker" },
+    { title: "ESTHÉTICIENNE-MASSAGE", type: "worker" },
+    { title: "MAQUILLEUSE PROFESSIONNELLE", type: "worker" },
+    { title: "PÂTISSIÈRE", type: "worker" },
     { title: "Laveur de vitres Rapide", type: "worker" },
     { title: "Technicien entretien climatisation Rapide", type: "worker" },
     { title: "Installateur de caméras de surveillance Rapide", type: "worker" },
