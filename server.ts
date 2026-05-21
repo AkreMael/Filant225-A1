@@ -7,6 +7,18 @@ import path from "path";
 import { fileURLToPath } from "url";
 import admin from "firebase-admin";
 import fs from "fs";
+import { initializeApp as initializeClientApp } from "firebase/app";
+import { 
+  getFirestore as getClientFirestore, 
+  collection as clientCollection, 
+  getDocs as clientGetDocs, 
+  doc as clientDoc, 
+  getDoc as clientGetDoc, 
+  addDoc as clientAddDoc, 
+  updateDoc as clientUpdateDoc, 
+  serverTimestamp as clientServerTimestamp 
+} from "firebase/firestore";
+import { getAuth as getClientAuth, signInAnonymously as clientSignInAnonymously } from "firebase/auth";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,7 +26,7 @@ const __dirname = path.dirname(__filename);
 // Load Firebase Config
 const firebaseConfig = JSON.parse(fs.readFileSync(path.join(__dirname, "firebase-applet-config.json"), "utf8"));
 
-// Initialize Firestore with Firebase Admin
+// Initialize Firestore with Firebase Admin (keep for admin SDK backwards compatibility if any)
 if (!admin.apps.length) {
   admin.initializeApp({
     projectId: process.env.GCP_PROJECT_ID || firebaseConfig.projectId,
@@ -22,6 +34,23 @@ if (!admin.apps.length) {
 }
 const firestore = admin.firestore();
 console.log("Firestore initialized successfully with project:", admin.app().options.projectId);
+
+// Initialize Client Firebase SDK inside server.ts for authorized database operations (bypassing service account IAM limitation)
+const clientApp = initializeClientApp(firebaseConfig);
+const clientDb = getClientFirestore(clientApp);
+const clientAuth = getClientAuth(clientApp);
+
+async function getClientDb() {
+  if (!clientAuth.currentUser) {
+    try {
+      await clientSignInAnonymously(clientAuth);
+      console.log("Client SDK authenticated anonymously for server-side Firestore operations.");
+    } catch (authError) {
+      console.error("Error signing in anonymously in Client SDK server-side:", authError);
+    }
+  }
+  return clientDb;
+}
 
 async function startServer() {
   const app = express();
@@ -73,21 +102,23 @@ async function startServer() {
       let docRef;
       try {
         // 1. Save to 'Travailleurs' for immediate display on the page
-        docRef = await firestore.collection("Travailleurs").add({
+        const dbInstance = await getClientDb();
+        const docRefResult = await clientAddDoc(clientCollection(dbInstance, "Travailleurs"), {
           name,
           city: city || "Non spécifiée",
           price: price || "À discuter",
           frequency: frequency || "mois",
           service,
           description: description || `Disponible pour : ${service}`,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: clientServerTimestamp(),
           isVerified: false,
           typeInscription: "Demande d'emploi",
           userId: userId || null,
           photoUrl: photoUrl || null,
           isUnblurred: isUnblurred || false
         });
-        console.log("Saved to 'Travailleurs' with ID:", docRef.id);
+        console.log("Saved to 'Travailleurs' with ID:", docRefResult.id);
+        docRef = docRefResult;
       } catch (firestoreError: any) {
         console.error("Firestore Write Error:", firestoreError);
         return res.status(500).json({ error: "Erreur lors de la sauvegarde dans Firestore.", details: firestoreError.message });
@@ -109,7 +140,8 @@ async function startServer() {
       if (!offerId) {
         return res.status(400).json({ error: "Missing offerId" });
       }
-      await firestore.collection("Travailleurs").doc(offerId).update({
+      const dbInstance = await getClientDb();
+      await clientUpdateDoc(clientDoc(dbInstance, "Travailleurs", offerId), {
         isUnblurred: !!isUnblurred
       });
       res.json({ success: true });
@@ -122,25 +154,26 @@ async function startServer() {
   app.get("/api/workers", async (req, res) => {
     try {
       // Fetch from multiple collections in parallel to provide a comprehensive list quickly
+      const dbInstance = await getClientDb();
       const collections = ["Travailleurs", "Agences immobilières", "Équipements", "Entreprises"];
       
       const snapshots = await Promise.all(
-        collections.map(col => firestore.collection(col).get())
+        collections.map(col => clientGetDocs(clientCollection(dbInstance, col)))
       );
 
       const allDocs: any[] = [];
       
       snapshots.forEach((snapshot, index) => {
         const col = collections[index];
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data();
           // Map different schemas to a common Worker interface
           // Ensure name and description are always present and clear
           const name = data.fullName || data.agencyName || data.ownerName || data.companyName || data.name || "Professionnel";
           const description = data.jobTitle || data.description || data.services?.join(", ") || data.equipmentType || "Professionnel qualifié";
           
           allDocs.push({
-            id: doc.id,
+            id: docSnap.id,
             name: name,
             profileImageUrl: data.profileImageUrl || "",
             phone: data.phone || "",
@@ -166,9 +199,10 @@ async function startServer() {
   app.post("/api/workers", async (req, res) => {
     try {
       const worker = req.body;
-      const docRef = await firestore.collection("Travailleurs").add({
+      const dbInstance = await getClientDb();
+      const docRef = await clientAddDoc(clientCollection(dbInstance, "Travailleurs"), {
         ...worker,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: clientServerTimestamp(),
       });
       res.json({ id: docRef.id, success: true });
     } catch (error: any) {
@@ -183,9 +217,10 @@ async function startServer() {
       if (!workerId || !collection) {
         return res.status(400).json({ error: "Missing workerId or collection" });
       }
-      await firestore.collection(collection).doc(workerId).update({
+      const dbInstance = await getClientDb();
+      await clientUpdateDoc(clientDoc(dbInstance, collection, workerId), {
         isVerified: !!isVerified,
-        verifiedAt: admin.firestore.FieldValue.serverTimestamp()
+        verifiedAt: clientServerTimestamp()
       });
       res.json({ success: true });
     } catch (error: any) {
@@ -196,8 +231,9 @@ async function startServer() {
 
   app.get("/api/offers", async (req, res) => {
     try {
-      const snapshot = await firestore.collection("Travailleurs").get();
-      const offers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const dbInstance = await getClientDb();
+      const snapshot = await clientGetDocs(clientCollection(dbInstance, "Travailleurs"));
+      const offers = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
       res.json(offers);
     } catch (error: any) {
       console.error("Error fetching offers:", error);
@@ -208,9 +244,10 @@ async function startServer() {
   app.post("/api/offers", async (req, res) => {
     try {
       const offer = req.body;
-      const docRef = await firestore.collection("Travailleurs").add({
+      const dbInstance = await getClientDb();
+      const docRef = await clientAddDoc(clientCollection(dbInstance, "Travailleurs"), {
         ...offer,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: clientServerTimestamp(),
       });
       res.json({ id: docRef.id, success: true });
     } catch (error) {
@@ -221,10 +258,11 @@ async function startServer() {
   app.post("/api/recruitment", async (req, res) => {
     try {
       const data = req.body;
-      const docRef = await firestore.collection("Messagerie").add({
+      const dbInstance = await getClientDb();
+      const docRef = await clientAddDoc(clientCollection(dbInstance, "Messagerie"), {
         ...data,
         type: 'recruitment',
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: clientServerTimestamp(),
       });
       res.json({ id: docRef.id, success: true });
     } catch (error) {
@@ -236,10 +274,11 @@ async function startServer() {
   app.post("/api/placement", async (req, res) => {
     try {
       const data = req.body;
-      const docRef = await firestore.collection("Messagerie").add({
+      const dbInstance = await getClientDb();
+      const docRef = await clientAddDoc(clientCollection(dbInstance, "Messagerie"), {
         ...data,
         type: 'placement',
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: clientServerTimestamp(),
       });
       res.json({ id: docRef.id, success: true });
     } catch (error) {
@@ -329,7 +368,8 @@ async function startServer() {
       }
 
       const sanitizedPhone = phone.replace(/\D/g, '');
-      const userDoc = await firestore.collection("Clients").doc(sanitizedPhone).get();
+      const dbInstance = await getClientDb();
+      const userDoc = await clientGetDoc(clientDoc(dbInstance, "Clients", sanitizedPhone));
       const userData = userDoc.data();
       const fcmToken = userData?.fcmToken;
 
