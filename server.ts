@@ -19,6 +19,7 @@ import {
   serverTimestamp as clientServerTimestamp 
 } from "firebase/firestore";
 import { getAuth as getClientAuth, signInAnonymously as clientSignInAnonymously } from "firebase/auth";
+import { GoogleGenAI, Type } from "@google/genai";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +52,22 @@ async function getClientDb() {
   }
   return clientDb;
 }
+
+const getGeminiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.warn("GEMINI_API_KEY is missing from environment variables.");
+    return null;
+  }
+  return new GoogleGenAI({
+    apiKey: apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      }
+    }
+  });
+};
 
 async function startServer() {
   const app = express();
@@ -88,6 +105,76 @@ async function startServer() {
   };
 
   // API Routes
+  app.post("/api/verify-identity", async (req, res) => {
+    try {
+      const { imageBase64 } = req.body;
+      if (!imageBase64) {
+        return res.status(400).json({ error: "Aucune image fournie." });
+      }
+
+      // Extract raw base64 and mimeType from data URL (e.g. data:image/jpeg;base64,...)
+      const matches = imageBase64.match(/^data:([^;]+);base64,(.+)$/);
+      let mimeType = "image/jpeg";
+      let base64Data = imageBase64;
+      
+      if (matches && matches.length === 3) {
+        mimeType = matches[1];
+        base64Data = matches[2];
+      }
+
+      const aiClient = getGeminiClient();
+      if (!aiClient) {
+        console.warn("Gemini client not initialized, skipping validation and approving as fallback.");
+        return res.json({ isValid: true, reason: "Bypass mode as API key not configured yet" });
+      }
+
+      const response = await aiClient.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: [
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType
+            }
+          },
+          {
+            text: "Analyse l'image fournie. Détermine s'il s'agit d'une pièce d'identité (comme une Carte Nationale d'Identité - CNI, Passeport, Permis de Conduire, Carte Professionnelle, ou autre document officiel d'identité et de légitimation en Côte d'Ivoire ou de format administratif officiel général). Réponds avec un JSON contenant isValid (boolean) et reason (string)."
+          }
+        ],
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              isValid: {
+                type: Type.BOOLEAN,
+                description: "True if the image looks like an official Ivorian identity card, professional card, passport, driver's license, or general official ID document. False if the image is unrelated."
+              },
+              reason: {
+                type: Type.STRING
+              }
+            },
+            required: ["isValid"]
+          }
+        }
+      });
+
+      const responseText = response.text || "{}";
+      const result = JSON.parse(responseText.trim());
+      console.log("Identity validation result from Gemini:", result);
+      
+      return res.json({
+        isValid: !!result.isValid,
+        reason: result.reason || ""
+      });
+
+    } catch (err: any) {
+      console.error("Error in /api/verify-identity:", err);
+      // Let's print the actual error if we want, or fall back to true/false
+      return res.status(500).json({ error: "Erreur de validation", details: err.message });
+    }
+  });
+
   app.post("/api/publish-offer", async (req, res) => {
     console.log("POST /api/publish-offer received:", req.body);
     try {

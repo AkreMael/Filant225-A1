@@ -198,7 +198,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [showScanner, setShowScanner] = useState(false);
   const [showIdModal, setShowIdModal] = useState(false);
-  const [idImages, setIdImages] = useState({ front: user.idCardFront || '', back: user.idCardBack || '' });
+  const [idImages, setIdImages] = useState(() => {
+    if (user?.phone) {
+      const storedFront = localStorage.getItem(`filant_id_image_front_${user.phone}`);
+      const storedBack = localStorage.getItem(`filant_id_image_back_${user.phone}`);
+      if (storedFront || storedBack) {
+        return { front: storedFront || '', back: storedBack || '' };
+      }
+    }
+    return { front: user.idCardFront || '', back: user.idCardBack || '' };
+  });
   const [isUploading, setIsUploading] = useState(false);
   const [activeSide, setActiveSide] = useState<'front' | 'back' | null>(null);
   
@@ -359,7 +368,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
             </div>
             
             <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-gray-100">
-                <ProfileRow icon={<IdIcon className="w-10 h-10 text-blue-600" />} title="Intégration de la pièce d'identité" subtitle={idImages.front && idImages.back ? "DOCUMENTS SOUMIS" : "CNI / CARTE PROF / OFFICIEL"} onClick={() => setShowIdModal(true)} rightElement={idImages.front && idImages.back ? <div className="bg-green-100 px-2 pl-1 rounded-full flex items-center gap-1"><div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"><svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path d="M5 13l4 4L19 7" /></svg></div><span className="text-[9px] font-black text-green-700 uppercase tracking-tighter mr-1">OK</span></div> : undefined} />
+                <ProfileRow 
+                  icon={<IdIcon className="w-10 h-10 text-blue-600" />} 
+                  title="Intégration de la pièce d'identité" 
+                  subtitle={idImages.front && idImages.back ? "En cours de vérification" : "CNI / CARTE PROF / OFFICIEL"} 
+                  onClick={() => setShowIdModal(true)} 
+                  rightElement={idImages.front && idImages.back ? (
+                    <div className="bg-yellow-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-yellow-200">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                      <span className="text-[9px] font-black text-yellow-800 uppercase tracking-tight">VÉRIC...</span>
+                    </div>
+                  ) : undefined} 
+                />
                 <div className="h-px bg-gray-50 mx-4"></div>
                 <ProfileRow icon={<VideoIcon className="w-10 h-10 text-red-500" />} title="Vidéos Tuto" subtitle="Tutoriels FILANT°225" onClick={() => window.open('https://www.youtube.com/@FILANT225', '_blank')} />
             </div>
@@ -402,22 +422,58 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (idImages.front && idImages.back) {
+      onShowPopup("Ces documents ont déjà été validés et sont en cours de vérification.", "alert");
+      return;
+    }
+
     setIsUploading(true);
+    onShowPopup("Analyse et vérification de la pièce d'identité...", "alert");
+
     try {
       // 1. Compress image
       const compressedBase64 = await imageService.compressImage(file, 1000, 0.6);
       
-      // 2. Upload to Firebase Storage and update Firestore
-      const downloadUrl = await databaseService.uploadIdDocument(user.phone, activeSide, compressedBase64);
-      
-      if (downloadUrl) {
-          setIdImages(prev => ({ ...prev, [activeSide]: downloadUrl }));
+      // 2. Validate with Gemini server route
+      const response = await fetch("/api/verify-identity", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ imageBase64: compressedBase64 })
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur de communication avec le service de vérification.");
       }
-      
+
+      const verifyResult = await response.json();
+
+      if (!verifyResult.isValid) {
+        // Automatically reject the image and display the required exact error message
+        onShowPopup("Veuillez réintégrer correctement la pièce d’identité.", "alert");
+        setIsUploading(false);
+        setActiveSide(null);
+        if (e.target) e.target.value = '';
+        return;
+      }
+
+      // If valid, save it locally (and NOT in database yet as requested)
+      setIdImages(prev => {
+        const updated = { ...prev, [activeSide]: compressedBase64 };
+        if (user?.phone) {
+          localStorage.setItem(`filant_id_image_front_${user.phone}`, updated.front);
+          localStorage.setItem(`filant_id_image_back_${user.phone}`, updated.back);
+        }
+        return updated;
+      });
+
+      onShowPopup("Image vérifiée et intégrée avec succès !", "alert");
       setIsUploading(false);
       setActiveSide(null);
     } catch (err) {
-      console.error("ID upload error:", err);
+      console.error("ID verification error:", err);
+      onShowPopup("Échec de la validation de la pièce d'identité.", "alert");
       setIsUploading(false);
     }
   };
@@ -444,15 +500,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
           <div className="space-y-3">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Avant de la pièce</label>
             <div 
-              onClick={() => { setActiveSide('front'); idFileInputRef.current?.click(); }}
-              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group ${idImages.front ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
+              onClick={() => {
+                if (idImages.front && idImages.back) {
+                  onShowPopup("Ces documents ont déjà été validés et sont en cours de vérification.", "alert");
+                  return;
+                }
+                setActiveSide('front'); 
+                idFileInputRef.current?.click();
+              }}
+              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group ${(idImages.front && idImages.back) ? 'border-yellow-500 bg-white cursor-not-allowed' : idImages.front ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
             >
               {idImages.front ? (
                 <>
                   <img src={idImages.front} className="w-full h-full object-cover" alt="ID Front" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <p className="text-white text-[10px] font-black uppercase bg-blue-600 px-4 py-2 rounded-full">Modifier</p>
-                  </div>
+                  {(!idImages.front || !idImages.back) && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <p className="text-white text-[10px] font-black uppercase bg-blue-600 px-4 py-2 rounded-full">Modifier</p>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -467,15 +532,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
           <div className="space-y-3">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Arrière de la pièce</label>
             <div 
-              onClick={() => { setActiveSide('back'); idFileInputRef.current?.click(); }}
-              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group ${idImages.back ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
+              onClick={() => {
+                if (idImages.front && idImages.back) {
+                  onShowPopup("Ces documents ont déjà été validés et sont en cours de vérification.", "alert");
+                  return;
+                }
+                setActiveSide('back'); 
+                idFileInputRef.current?.click();
+              }}
+              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group ${(idImages.front && idImages.back) ? 'border-yellow-500 bg-white cursor-not-allowed' : idImages.back ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
             >
               {idImages.back ? (
                 <>
                   <img src={idImages.back} className="w-full h-full object-cover" alt="ID Back" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <p className="text-white text-[10px] font-black uppercase bg-blue-600 px-4 py-2 rounded-full">Modifier</p>
-                  </div>
+                  {(!idImages.front || !idImages.back) && (
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <p className="text-white text-[10px] font-black uppercase bg-blue-600 px-4 py-2 rounded-full">Modifier</p>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -488,13 +562,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
         </div>
 
         {idImages.front && idImages.back && (
-          <div className="bg-green-50 p-5 rounded-3xl border border-green-100 flex items-center gap-4 animate-in zoom-in duration-300">
-            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+          <div className="bg-yellow-50 p-5 rounded-3xl border border-yellow-100 flex items-center gap-4 animate-in zoom-in duration-300 border-dashed">
+            <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <div>
-              <h4 className="text-green-800 font-black text-[10px] uppercase tracking-widest">Documents ajoutés</h4>
-              <p className="text-[10px] text-green-600 uppercase font-bold">Ils sont maintenant liés à votre profil.</p>
+              <h4 className="text-yellow-800 font-extrabold text-[12px] uppercase tracking-wider mb-0.5">En cours de vérification</h4>
+              <p className="text-[10px] text-yellow-600 uppercase font-bold leading-normal">Vos documents d'identité sont sécurisés et bloqués pour vérification.</p>
             </div>
           </div>
         )}
