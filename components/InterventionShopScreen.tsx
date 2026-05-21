@@ -319,9 +319,17 @@ const categoriesConfig = [
 
 // --- HELPER FUNCTION FOR SERVICE IMAGES ---
 export const getServiceItemImage = (title: string): string => {
+    // 0. Try key mapping back to EQUIPMENT_IMAGES first to prioritize equipment images
+    const eqKey = title.replace(/\s*rapide/i, '').replace(/\s*Rapide/i, '').trim();
+    const eqImg = EQUIPMENT_IMAGES[title] || EQUIPMENT_IMAGES[eqKey];
+    if (eqImg) {
+        if (Array.isArray(eqImg)) return eqImg[0];
+        return eqImg;
+    }
+
     // 1. Try WorkerListScreen name mapper first
     const workerImg = getSynchronizedWorkerImage(title);
-    if (workerImg && !workerImg.includes('placeholder')) return workerImg;
+    if (workerImg && !workerImg.includes('placeholder') && workerImg !== "https://i.supaimg.com/17697fbb-4850-449b-8aae-1e5074f46e78.jpg") return workerImg;
 
     // 2. Try simple mapping of common terms
     const titleLower = title.toLowerCase();
