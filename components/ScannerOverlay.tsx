@@ -67,7 +67,17 @@ export const extractQRInfo = (data: string) => {
     };
 
     // Tentative 1: Format structuré avec clés
-    const title = parseKeyValue(data, 'Métier') || parseKeyValue(data, 'MÉTIER') || parseKeyValue(data, 'Poste') || parseKeyValue(data, 'Titre') || parseKeyValue(data, 'Service');
+    const title = parseKeyValue(data, 'Métier') || 
+                  parseKeyValue(data, 'MÉTIER') || 
+                  parseKeyValue(data, 'Poste') || 
+                  parseKeyValue(data, 'Titre') || 
+                  parseKeyValue(data, 'Service') ||
+                  parseKeyValue(data, 'Nom de l’entreprise') ||
+                  parseKeyValue(data, "Nom de l'entreprise") ||
+                  parseKeyValue(data, 'Nom de l’agence') ||
+                  parseKeyValue(data, "Nom de l'agence") ||
+                  parseKeyValue(data, 'Nom type d’équipement') ||
+                  parseKeyValue(data, "Nom type d'équipement");
     const name = parseKeyValue(data, 'Nom') || parseKeyValue(data, 'Prénom') || parseKeyValue(data, 'Prestataire');
     const phone = parseKeyValue(data, 'Numéro') || parseKeyValue(data, 'NUMÉRO') || parseKeyValue(data, 'Tél') || parseKeyValue(data, 'Phone') || parseKeyValue(data, 'WhatsApp') || parseKeyValue(data, 'Téléphone');
     const city = parseKeyValue(data, 'Ville') || parseKeyValue(data, 'Localité') || parseKeyValue(data, 'Commune');

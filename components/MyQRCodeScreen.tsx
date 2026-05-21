@@ -63,8 +63,52 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
   }, [user.phone]);
 
   const generateQRCodeValue = () => {
-    // Standard format for scanner recognition
-    return `Poste: ${user.role || 'Client'}\nNom: ${user.name}\nTél: ${user.phone}\nVille: ${user.city}\nDetails: FILANT225 - COMPTE ACTIF`;
+    // Detect profile type from qrData config or user role
+    const rawRole = qrData?.profileType || user.role || localStorage.getItem("filant_user_role") || 'Travailleur';
+    
+    let profileType = 'Travailleur';
+    if (rawRole === 'Entreprise') {
+      profileType = 'Entreprise';
+    } else if (rawRole === 'Agence' || rawRole === 'Agence immobilière') {
+      profileType = 'Agence';
+    } else if (rawRole === 'Propriétaire' || rawRole === 'Propriétaire d’équipement' || rawRole === 'Équipement') {
+      profileType = 'Équipement';
+    } else if (rawRole === 'Travailleur') {
+      profileType = 'Travailleur';
+    } else {
+      const lower = rawRole.toLowerCase();
+      if (lower.includes('entreprise')) profileType = 'Entreprise';
+      else if (lower.includes('agence')) profileType = 'Agence';
+      else if (lower.includes('propriétaire') || lower.includes('equipement') || lower.includes('équipement')) profileType = 'Équipement';
+    }
+
+    const name = qrData?.name || user.name || 'N/A';
+    const city = qrData?.city || user.city || 'N/A';
+    const phone = qrData?.phone || user.phone || 'N/A';
+    const profession = qrData?.profession || qrData?.jobTitle || qrData?.agencyName || qrData?.companyName || qrData?.ownerName || '';
+
+    let displayProfession = profession;
+    if (!displayProfession) {
+      if (profileType === 'Travailleur') {
+        displayProfession = user.role || 'Travailleur';
+      } else if (profileType === 'Entreprise') {
+        displayProfession = 'Entreprise';
+      } else if (profileType === 'Agence') {
+        displayProfession = 'Agence';
+      } else if (profileType === 'Équipement') {
+        displayProfession = 'Équipement';
+      }
+    }
+
+    if (profileType === 'Entreprise') {
+      return `Nom de l’entreprise: ${displayProfession}\nNom: ${name}\nVille: ${city}\nNuméro: ${phone}`;
+    } else if (profileType === 'Agence') {
+      return `Nom de l’agence: ${displayProfession}\nNom: ${name}\nVille: ${city}\nNuméro: ${phone}`;
+    } else if (profileType === 'Équipement') {
+      return `Nom type d’équipement: ${displayProfession}\nNom: ${name}\nVille: ${city}\nNuméro: ${phone}`;
+    } else {
+      return `Nom: ${name}\nMétier: ${displayProfession}\nVille: ${city}\nNuméro: ${phone}`;
+    }
   };
 
   const currentStatus = qrData?.status || "Inscrivez-vous maintenant pour accéder aux missions, services et mises en relation disponibles sur FILANT°225.\n\n📌 Travailleurs\n📌 Équipements\n📌 Agences immobilières\n📌 Entreprises\n\n💳 Inscription : 310 FCFA seulement";
