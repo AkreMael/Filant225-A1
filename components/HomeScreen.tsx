@@ -9,6 +9,7 @@ import { SEARCHABLE_TITLES } from './common/formDefinitions';
 import { audioService } from '../services/audioService';
 import { chatService } from '../services/chatService';
 import { isAdmin, getCardType } from '../utils/authUtils';
+import { getServiceItemImage } from './InterventionShopScreen';
 
 // --- SVG Icons ---
 const IconWrapper: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
@@ -140,32 +141,44 @@ const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onS
                 onMouseUp={() => setIsUserInteracting(false)}
                 onMouseLeave={() => setIsUserInteracting(false)}
             >
-                {batimentWorkers.map((item, idx) => (
-                    <div 
-                        key={idx}
-                        onClick={() => onSelectItem(item)}
-                        className="flex-shrink-0 w-[160px] bg-white rounded-[2rem] overflow-hidden shadow-xl flex flex-col transition-all relative border border-gray-100"
-                    >
-                        <div className="p-2">
-                            <div className="h-[100px] w-full rounded-2xl overflow-hidden relative shadow-inner bg-slate-50 border border-gray-100 flex items-center justify-center">
-                                <UserCircleIcon className="w-12 h-12 text-slate-400" />
+                {batimentWorkers.map((item, idx) => {
+                    const imgUrl = getServiceItemImage(item.title);
+                    return (
+                        <div 
+                            key={idx}
+                            onClick={() => onSelectItem(item)}
+                            className="flex-shrink-0 w-[160px] bg-white rounded-[2rem] overflow-hidden shadow-xl flex flex-col transition-all relative border border-gray-100"
+                        >
+                            <div className="p-2">
+                                <div className="h-[100px] w-full rounded-2xl overflow-hidden relative shadow-inner bg-slate-50 border border-gray-100 flex items-center justify-center">
+                                    {imgUrl ? (
+                                        <img 
+                                            src={imgUrl} 
+                                            alt={item.title} 
+                                            className="w-full h-full object-cover"
+                                            referrerPolicy="no-referrer"
+                                        />
+                                    ) : (
+                                        <UserCircleIcon className="w-12 h-12 text-slate-400" />
+                                    )}
+                                </div>
+                            </div>
+                            <div className="px-4 pb-4 flex flex-col text-left">
+                                <h4 className="text-[12px] font-black text-gray-900 uppercase leading-tight mb-1 tracking-tight truncate">{item.title}</h4>
+                                <p className="text-[#ef4444] font-black text-[10px] leading-tight mb-1.5 uppercase">
+                                    H. Descente : <span className="text-black font-bold">18h30</span>
+                                </p>
+                                <p className="text-[9px] text-gray-400 leading-snug italic line-clamp-2 mb-2">
+                                    {item.description}
+                                </p>
+                                <div className="flex items-center justify-between border-t border-gray-50 pt-2">
+                                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Filant Services</span>
+                                    <div className="flex h-2.5 w-2.5 rounded-full border-2 border-white shadow-md animate-flash-green-red"></div>
+                                </div>
                             </div>
                         </div>
-                        <div className="px-4 pb-4 flex flex-col text-left">
-                            <h4 className="text-[12px] font-black text-gray-900 uppercase leading-tight mb-1 tracking-tight truncate">{item.title}</h4>
-                            <p className="text-[#ef4444] font-black text-[10px] leading-tight mb-1.5 uppercase">
-                                H. Descente : <span className="text-black font-bold">18h30</span>
-                            </p>
-                            <p className="text-[9px] text-gray-400 leading-snug italic line-clamp-2 mb-2">
-                                {item.description}
-                            </p>
-                            <div className="flex items-center justify-between border-t border-gray-50 pt-2">
-                                <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Filant Services</span>
-                                <div className="flex h-2.5 w-2.5 rounded-full border-2 border-white shadow-md animate-flash-green-red"></div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

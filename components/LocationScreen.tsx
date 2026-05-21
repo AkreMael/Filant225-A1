@@ -187,7 +187,20 @@ const LocationCard: React.FC<LocationCardProps> = ({ item, user, onPropose, onOp
   };
 
   const renderVisual = () => {
-      return <OrangeAvatar icon={item.category === 'appartement' ? <BuildingIcon /> : <FlashlightIcon />} />;
+    const src = Array.isArray(equipmentImgData) ? equipmentImgData[currentImgIndex] : (equipmentImgData || "");
+    if (src) {
+      return (
+        <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-orange-500 flex-shrink-0 shadow-lg bg-slate-50">
+          <img 
+            src={src} 
+            alt={item.title} 
+            className="w-full h-full object-cover" 
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      );
+    }
+    return <OrangeAvatar icon={item.category === 'appartement' ? <BuildingIcon /> : <FlashlightIcon />} />;
   };
 
   return (

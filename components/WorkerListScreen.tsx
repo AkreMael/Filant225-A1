@@ -74,7 +74,40 @@ export const LAVEUR_VITRES_IMAGE = "https://i.supaimg.com/0543a7e5-673b-44b9-966
 const UNIFORM_WORKER_IMAGE = "https://i.supaimg.com/17697fbb-4850-449b-8aae-1e5074f46e78.jpg";
 
 export const getSynchronizedWorkerImage = (name: string) => {
-    const nameLower = name.toLowerCase();
+    const nameLower = name.toLowerCase().trim();
+
+    // Check specific user requested overrides first
+    if (nameLower.includes('entretien piscine')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9c3ec760-4dba-41a4-b8cd-c6fe37b1d915.jpg";
+    if (nameLower.includes('entretien jardin')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/a457d9bb-89d8-43c9-9d79-47af16441a96.jpg";
+    if (nameLower.includes('désinfection') || nameLower.includes('desinfection')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ff1341c6-c0af-45b4-ac13-14be2e99f250.jpg";
+    if (nameLower.includes('lavage automobile')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/94a52205-50dc-405e-a706-890ae4cd782c.jpg";
+    if (nameLower.includes('nettoyage chantier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/97941791-30f2-4350-91ab-4c19743a8b4b.jpg";
+    if (nameLower.includes('nettoyage bureau')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6d388c33-c0f5-46ed-af04-3ae5c8cbb212.jpg";
+    if (nameLower.includes('sonorisateur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/89e2d5eb-eb0d-4c2d-a61b-88d1d02f56ff.jpg";
+    if (nameLower.includes('organisateur événementiel') || nameLower.includes('organisateur evenementiel')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ea085472-d107-4662-868f-c030d139e454.jpg";
+    if (nameLower.includes('déménageur') || nameLower.includes('demenageur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/7666c637-2d97-400b-a6b1-307eee3b5223.jpg";
+    if (nameLower.includes('transport marchandises') || nameLower.includes('transport de marchandises')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4613b69f-91d6-46c5-9a4a-c505eefd2c63.jpg";
+    if (nameLower.includes('transport matériaux') || nameLower.includes('transport de materiaux') || nameLower.includes('transport materiaux')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4613b69f-91d6-46c5-9a4a-c505eefd2c63.jpg";
+    if (nameLower.includes('transport déménagement') || nameLower.includes('transport demenagement')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4613b69f-91d6-46c5-9a4a-c505eefd2c63.jpg";
+    if (nameLower.includes('livreur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/48e240f8-04ca-4609-b8e1-908ffd40f430.jpg";
+    if (nameLower.includes('maçon') || nameLower.includes('macon')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/7759e2a2-e89b-4f9a-981d-1498c014e9cf.jpg";
+    if (nameLower.includes('ferrailleur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/5ae09e19-f285-4127-9865-ec7523886c61.jpg";
+    if (nameLower.includes('coffreur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6be60e9a-394f-4026-90f8-3d9843c98589.jpg";
+    if (nameLower.includes('carreleur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/7db163c3-53bc-48ed-b87e-9e5c1df9af2d.jpg";
+    if (nameLower.includes('peintre bâtiment') || nameLower.includes('peintre batiment') || nameLower.includes('peintre')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/8552d20d-cf9a-4f93-abfe-c9852d6ad79a.jpg";
+    if (nameLower.includes('électricien bâtiment') || nameLower.includes('electricien batiment') || nameLower.includes('électricien') || nameLower.includes('electricien')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98d8c8c7-868a-4267-b4ca-e8985919e7ec.jpg";
+    if (nameLower.includes('plombier bâtiment') || nameLower.includes('plombier batiment') || nameLower.includes('plombier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/bc813433-c44a-4b95-9559-9a1c6fa75705.jpg";
+    if (nameLower.includes('soudeur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6a162389-4981-4106-b81b-b0baf5b94254.jpg";
+    if (nameLower.includes('charpentier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/0dce445b-e80a-4837-bce1-705e07151696.jpg";
+    if (nameLower.includes('menuisier aluminium') || nameLower.includes('menuisier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f7d607f0-05be-43fc-898d-70d7b23b04dd.jpg";
+    if (nameLower.includes('staffeur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/3489c362-c1ae-4e34-8ea2-e5b4f37a20de.jpg";
+    if (nameLower.includes('étancheur') || nameLower.includes('etancheur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/57313e9c-2768-491d-aaf8-eaec1f0c908a.jpg";
+    if (nameLower.includes('poseur de portail')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/1c9c07d7-c210-4a04-87ae-459b428b4565.jpg";
+    if (nameLower.includes('climatisation bâtiment') || nameLower.includes('climatisation batiment') || nameLower.includes('climatisation')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/053eff8b-328c-4314-96fe-1fec715749b3.jpg";
+    if (nameLower.includes('technicien forage')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/42143443-ac35-44bb-994f-dfd03705db32.jpg";
+    if (nameLower.includes('constructeur maison')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/3ce0a6b7-4c22-4494-840d-5dcb20755e02.jpg";
+    if (nameLower.includes('finition bâtiment') || nameLower.includes('finition batiment') || nameLower.includes('finition') || nameLower.includes('βaτιμeντ') || nameLower.includes('βατιμeντ')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/52afd515-de3a-42de-b2a8-6f4f27f5d4af.jpg";
+
     if (nameLower.includes('chauffeur')) return CHAUFFEUR_QUALIF_IMAGE;
     if (nameLower.includes('vendeur') || nameLower.includes('vendeuse')) return VENDEUR_IMAGE;
     if (nameLower.includes('cuisinier') || nameLower.includes('cuisinière')) return CUISINIER_IMAGE;
@@ -170,7 +203,16 @@ const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, onScheduleService
       <div className="flex gap-4">
         {/* Profile Image - Large Rounded Rectangle */}
         <div className="w-24 h-24 rounded-3xl border-2 border-orange-500 overflow-hidden flex-shrink-0 relative bg-gray-50 flex items-center justify-center shadow-inner">
-            <User className="w-12 h-12 text-slate-400" strokeWidth={1.5} />
+            {imageSrc ? (
+              <img 
+                src={imageSrc} 
+                alt={displayName} 
+                className="w-full h-full object-cover" 
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <User className="w-12 h-12 text-slate-400" strokeWidth={1.5} />
+            )}
             {worker.isVerified && <VerifiedBadge />}
         </div>
         

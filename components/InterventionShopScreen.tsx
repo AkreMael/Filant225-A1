@@ -318,26 +318,48 @@ const categoriesConfig = [
 ];
 
 // --- HELPER FUNCTION FOR SERVICE IMAGES ---
-const getServiceItemImage = (title: string): string => {
+export const getServiceItemImage = (title: string): string => {
     // 1. Try WorkerListScreen name mapper first
     const workerImg = getSynchronizedWorkerImage(title);
     if (workerImg && !workerImg.includes('placeholder')) return workerImg;
 
     // 2. Try simple mapping of common terms
     const titleLower = title.toLowerCase();
-    if (titleLower.includes('plombier')) return "https://i.supaimg.com/bf0970ed-7dcd-44cb-9de3-62334cdf346a.jpg";
-    if (titleLower.includes('électricien') || titleLower.includes('electricien')) return "https://i.supaimg.com/8c410fb6-878b-44ec-84ed-2b5a4a864a78.jpg";
-    if (titleLower.includes('maçon') || titleLower.includes('macon')) return "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg";
-    if (titleLower.includes('carreleur')) return "https://i.supaimg.com/06e7bd93-4222-4631-aeee-6516870145ef.jpg";
-    if (titleLower.includes('charpentier')) return "https://i.supaimg.com/017f0261-3cac-4fa3-b519-c5e93cdc1dd1.jpg";
-    if (titleLower.includes('soudeur')) return "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg";
-    if (titleLower.includes('peintre')) return "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg";
+    if (titleLower.includes('entretien piscine')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9c3ec760-4dba-41a4-b8cd-c6fe37b1d915.jpg";
+    if (titleLower.includes('entretien jardin')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/a457d9bb-89d8-43c9-9d79-47af16441a96.jpg";
+    if (titleLower.includes('désinfection') || titleLower.includes('desinfection')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ff1341c6-c0af-45b4-ac13-14be2e99f250.jpg";
+    if (titleLower.includes('lavage automobile')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/94a52205-50dc-405e-a706-890ae4cd782c.jpg";
+    if (titleLower.includes('nettoyage chantier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/97941791-30f2-4350-91ab-4c19743a8b4b.jpg";
+    if (titleLower.includes('nettoyage bureau')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6d388c33-c0f5-46ed-af04-3ae5c8cbb212.jpg";
+    if (titleLower.includes('sonorisateur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/89e2d5eb-eb0d-4c2d-a61b-88d1d02f56ff.jpg";
+    if (titleLower.includes('organisateur événementiel') || titleLower.includes('organisateur evenementiel')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ea085472-d107-4662-868f-c030d139e454.jpg";
+    if (titleLower.includes('déménageur') || titleLower.includes('demenageur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/7666c637-2d97-400b-a6b1-307eee3b5223.jpg";
+    if (titleLower.includes('transport marchandises') || titleLower.includes('transport de marchandises')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4613b69f-91d6-46c5-9a4a-c505eefd2c63.jpg";
+    if (titleLower.includes('transport matériaux') || titleLower.includes('transport de materiaux') || titleLower.includes('transport materiaux')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4613b69f-91d6-46c5-9a4a-c505eefd2c63.jpg";
+    if (titleLower.includes('transport déménagement') || titleLower.includes('transport demenagement')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4613b69f-91d6-46c5-9a4a-c505eefd2c63.jpg";
+    if (titleLower.includes('livreur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/48e240f8-04ca-4609-b8e1-908ffd40f430.jpg";
+    if (titleLower.includes('maçon') || titleLower.includes('macon')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/7759e2a2-e89b-4f9a-981d-1498c014e9cf.jpg";
+    if (titleLower.includes('ferrailleur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/5ae09e19-f285-4127-9865-ec7523886c61.jpg";
+    if (titleLower.includes('coffreur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6be60e9a-394f-4026-90f8-3d9843c98589.jpg";
+    if (titleLower.includes('carreleur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/7db163c3-53bc-48ed-b87e-9e5c1df9af2d.jpg";
+    if (titleLower.includes('peintre bâtiment') || titleLower.includes('peintre batiment') || titleLower.includes('peintre')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/8552d20d-cf9a-4f93-abfe-c9852d6ad79a.jpg";
+    if (titleLower.includes('électricien bâtiment') || titleLower.includes('electricien batiment') || titleLower.includes('électricien') || titleLower.includes('electricien')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98d8c8c7-868a-4267-b4ca-e8985919e7ec.jpg";
+    if (titleLower.includes('plombier bâtiment') || titleLower.includes('plombier batiment') || titleLower.includes('plombier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/bc813433-c44a-4b95-9559-9a1c6fa75705.jpg";
+    if (titleLower.includes('soudeur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6a162389-4981-4106-b81b-b0baf5b94254.jpg";
+    if (titleLower.includes('charpentier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/0dce445b-e80a-4837-bce1-705e07151696.jpg";
+    if (titleLower.includes('menuisier aluminium') || titleLower.includes('menuisier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f7d607f0-05be-43fc-898d-70d7b23b04dd.jpg";
+    if (titleLower.includes('staffeur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/3489c362-c1ae-4e34-8ea2-e5b4f37a20de.jpg";
+    if (titleLower.includes('étancheur') || titleLower.includes('etancheur')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/57313e9c-2768-491d-aaf8-eaec1f0c908a.jpg";
+    if (titleLower.includes('poseur de portail')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/1c9c07d7-c210-4a04-87ae-459b428b4565.jpg";
+    if (titleLower.includes('climatisation bâtiment') || titleLower.includes('climatisation batiment') || titleLower.includes('climatisation') || titleLower.includes('clim')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/053eff8b-328c-4314-96fe-1fec715749b3.jpg";
+    if (titleLower.includes('technicien forage')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/42143443-ac35-44bb-994f-dfd03705db32.jpg";
+    if (titleLower.includes('constructeur maison')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/3ce0a6b7-4c22-4494-840d-5dcb20755e02.jpg";
+    if (titleLower.includes('finition bâtiment') || titleLower.includes('finition batiment') || titleLower.includes('finition') || titleLower.includes('βaτιμeντ') || titleLower.includes('βατιμeντ')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/52afd515-de3a-42de-b2a8-6f4f27f5d4af.jpg";
+
     if (titleLower.includes('vitre') || titleLower.includes('vitrier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg";
-    if (titleLower.includes('clim')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg";
     if (titleLower.includes('caméra') || titleLower.includes('camera')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg";
     if (titleLower.includes('pouf')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg";
     if (titleLower.includes('fenêtre') || titleLower.includes('porte')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3f3e05-c4d1-4687-9039-8d371e6a166c.jpg";
-    if (titleLower.includes('menuisier')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f34061d0-a1bf-43fd-8043-e872aaab3759.jpg";
     if (titleLower.includes('studio')) return "https://i.supaimg.com/5d6f5d3f-6e64-4291-8ce3-28cebdb6bcec.jpg";
     if (titleLower.includes('villa')) return "https://i.supaimg.com/7dd280ea-2d80-472d-9997-d6c5b3d3c53c.jpg";
     if (titleLower.includes('chambre')) return "https://i.supaimg.com/db2acfbe-b3ca-4b65-9b21-ddb0c7fcb3af.jpg";

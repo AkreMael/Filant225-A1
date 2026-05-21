@@ -116,11 +116,11 @@ const SEARCHABLE_TITLES = [
 
 // --- Images ---
 const INTERV_IMAGES = {
-    electricien: "https://i.supaimg.com/9f041925-62aa-4975-8ac1-1c8c2b8cddbc.jpg",
-    plombier: "https://i.supaimg.com/2f48ca38-bff5-4ebb-9ac5-d72553710d0e.jpg",
-    clim: "https://i.supaimg.com/e9e9e2cb-e3e2-4504-a37b-90c888c42740.jpg",
-    macon: "https://i.supaimg.com/ddaa37a0-cc8d-4cdd-a857-8d1eb4f72383.jpg",
-    peintre: "https://i.supaimg.com/8e6037b9-ce46-45e4-b620-0a04e4cf657d.jpg",
+    electricien: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98d8c8c7-868a-4267-b4ca-e8985919e7ec.jpg",
+    plombier: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/bc813433-c44a-4b95-9559-9a1c6fa75705.jpg",
+    clim: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/053eff8b-328c-4314-96fe-1fec715749b3.jpg",
+    macon: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/7759e2a2-e89b-4f9a-981d-1498c014e9cf.jpg",
+    peintre: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/8552d20d-cf9a-4f93-abfe-c9852d6ad79a.jpg",
     videaste: "https://i.supaimg.com/0b29471a-3d31-4d69-a4a0-3b254ff72f5a.jpg",
     garde_malade: "https://i.supaimg.com/17697fbb-4850-449b-8aae-1e5074f46e78.jpg",
     aide_domicile: "https://i.supaimg.com/c3c14402-3c1f-4484-bfe1-774bcc4ac6de.png"
