@@ -228,16 +228,16 @@ export const calculateTotalPrice = (formType: string, answers: Answers, serviceM
         let baseFee = 530; // Frais de base par personne
 
         if (serviceMode === 'Embauche') {
-            baseFee = 4650;
+            baseFee = 6530;
         } else if (duration) {
             if (duration === 'Par mois') {
-                baseFee = 4650;
+                baseFee = 6530;
             } else {
                 const daysMatch = (duration as string).match(/(\d+)/);
                 if (daysMatch) {
                     const days = parseInt(daysMatch[1], 10);
-                    // 465 CFA par jour par personne, plafonné à 4650 par personne
-                    baseFee = Math.min(days * 465, 4650);
+                    // 653 CFA par jour par personne, plafonné à 6530 par personne
+                    baseFee = Math.min(days * 653, 6530);
                 }
             }
         }
@@ -246,24 +246,24 @@ export const calculateTotalPrice = (formType: string, answers: Answers, serviceM
     }
 
     // 4. Logique pour les autres types (Immobilier, Urgences, etc.)
-    // On conserve le plafond global de 4650 CFA pour ces cas
+    // On conserve le plafond global de 6530 CFA pour ces cas
     if (duration) {
         if (duration === 'Par mois') {
-            return 4650;
+            return 6530;
         }
         const daysMatch = (duration as string).match(/(\d+)/);
         if (daysMatch) {
             const days = parseInt(daysMatch[1], 10);
-            const calculated = days * 465 * count;
-            return Math.min(calculated, 4650);
+            const calculated = days * 653 * count;
+            return Math.min(calculated, 6530);
         }
     }
 
     if (serviceMode === 'Embauche') {
-        return Math.min(4650 * count, 4650);
+        return Math.min(6530 * count, 6530);
     }
 
-    return Math.min(530 * count, 4650);
+    return Math.min(530 * count, 6530);
 };
 
 // --- FORM QUESTIONS ---

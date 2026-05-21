@@ -207,9 +207,15 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
                       </p>
                     </div>
                   ) : (
-                    <p className={`text-center font-black text-sm leading-tight whitespace-pre-line ${isActive ? 'text-green-600 uppercase' : 'text-orange-600'}`}>
-                        {currentStatus}
-                    </p>
+                    currentStatus.includes("En attente paiement activation") ? (
+                      <p className="text-center font-black text-xs leading-normal whitespace-pre-line text-green-600">
+                        {"🎊 Votre profil est maintenant actif.\nVous bénéficiez actuellement d’une première mission gratuite.\nPour augmenter votre visibilité, recevoir plus de clients et accéder aux opportunités complètes de FILANT°225, activez votre Code QR professionnel pour 7 100 FCFA."}
+                      </p>
+                    ) : (
+                      <p className={`text-center font-black text-sm leading-tight whitespace-pre-line ${isActive ? 'text-green-600 uppercase' : 'text-orange-600'}`}>
+                          {currentStatus}
+                      </p>
+                    )
                   )}
                   {qrData?.expiryDate && isActive && (
                       <p className="text-center text-[10px] font-bold text-gray-400 mt-2">
@@ -254,13 +260,9 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
                       <>
                       <div className="bg-green-500 rounded-[2.5rem] p-6 text-white shadow-xl text-center relative overflow-hidden group">
                           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
-                          <h3 className="font-black text-xl uppercase tracking-tighter mb-1">FÉLICITATIONS !</h3>
-                          <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Votre QR Code est entièrement actif</p>
-                          <div className="mt-4 pt-4 border-t border-white/20">
-                             <p className="text-[10px] font-bold leading-relaxed px-4">
-                                Présentez ce code lors de vos interventions ou scannages pour être instantanément identifié par Filant°225.
-                             </p>
-                          </div>
+                          <p className="font-black text-sm uppercase tracking-wide leading-relaxed px-4 my-2">
+                             Veuillez me scanner pour une nouvelle demande de mon service.
+                          </p>
                       </div>
                       <button 
                         onClick={() => setShowMissions(true)}

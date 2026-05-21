@@ -15,14 +15,14 @@ interface PaymentOption {
 }
 
 const paymentOptions: PaymentOption[] = [
-  { amount: 4500, serviceName: "(Fin Du Service Client)", description: "Travailleur" },
+  { amount: 6530, serviceName: "(Fin Du Service Client)", description: "Travailleur" },
   { amount: 530, serviceName: "(Fin Du Service Client)", description: "Agence Location" },
   { amount: 2000, serviceName: "(Fin Du Service Agence Propriétaire)", description: "" },
   { amount: 500, serviceName: "Renouveler la carte FILANT°225", description: "Ce paiement permet de renouveler la carte professionnelle du service FILANT°225." }
 ];
 
 const WavePaymentScreen: React.FC<WavePaymentScreenProps> = ({ onBack }) => {
-    const [selectedAmount, setSelectedAmount] = useState<number>(4500);
+    const [selectedAmount, setSelectedAmount] = useState<number>(6530);
     const [isLoading, setIsLoading] = useState(false);
 
     const selectedOption = useMemo(() => {

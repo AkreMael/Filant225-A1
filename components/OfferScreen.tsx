@@ -508,13 +508,21 @@ const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (
             </div>
 
             <div className="text-center mb-8">
-                <p className="text-sm font-bold text-slate-700 mb-1">{user.name}</p>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{user.phone}</p>
-                <p className="text-xs font-bold text-orange-600 mt-2">
-                    {(isActive && !isExpired) ? '✅ Votre code QR est maintenant activé' : isExpired ? '❌ Votre code QR a expiré (Désactivé)' : '❌ Votre code QR est actuellement inactif'}
-                </p>
+                {(isActive && !isExpired) ? (
+                    <p className="text-xs font-black text-orange-600 max-w-xs mx-auto px-4 uppercase tracking-wide leading-relaxed">
+                        Veuillez me scanner pour une nouvelle demande de mon service.
+                    </p>
+                ) : (
+                    <>
+                        <p className="text-sm font-bold text-slate-700 mb-1">{user.name}</p>
+                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{user.phone}</p>
+                        <p className="text-xs font-bold text-orange-600 mt-2">
+                            {isExpired ? '❌ Votre code QR a expiré (Désactivé)' : '❌ Votre code QR est actuellement inactif'}
+                        </p>
+                    </>
+                )}
                 {(isActive && !isExpired) && activation.expiryDate && (
-                    <p className="text-[10px] text-gray-500 mt-1 italic">
+                    <p className="text-[10px] text-gray-500 mt-2 italic">
                         Expire le : {new Date(activation.expiryDate).toLocaleDateString('fr-FR')}
                     </p>
                 )}
@@ -543,12 +551,6 @@ const ProfessionalRegistrationStatus: React.FC<{ user: any, onEnrolledChange?: (
                         <CheckCircle2 className="w-4 h-4" />
                         <span>Profil Actif</span>
                     </div>
-                    <button 
-                        onClick={onModify}
-                        className="w-full text-gray-400 font-bold py-2 text-[9px] uppercase tracking-[0.2em] hover:text-gray-600 transition-all"
-                    >
-                        Mettre à jour mon profil
-                    </button>
                 </div>
             )}
         </div>
