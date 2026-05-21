@@ -70,7 +70,7 @@ export const PHOTOGRAPHE_IMAGE = "https://i.supaimg.com/d600fd73-adb7-431b-8414-
 export const MAQUILLAGE_IMAGE = "https://i.supaimg.com/f5cb3f59-9518-4703-b187-98901456c91f.jpg";
 export const MANUCURE_IMAGE = "https://i.supaimg.com/fad6642a-a767-4442-a038-aca825747fb5.jpg";
 export const MASSAGE_IMAGE = "https://i.supaimg.com/eb12af34-45d2-43a5-805f-ae76c582109c.jpg";
-export const LAVEUR_VITRES_IMAGE = "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg";
+export const LAVEUR_VITRES_IMAGE = "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/523a7221-efdc-40cb-8854-e2cf0f23b981.jpg";
 const UNIFORM_WORKER_IMAGE = "https://i.supaimg.com/17697fbb-4850-449b-8aae-1e5074f46e78.jpg";
 
 export const getSynchronizedWorkerImage = (name: string) => {

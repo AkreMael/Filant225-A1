@@ -62,6 +62,29 @@ const StarIconPassive: React.FC<{ title: string }> = ({ title }) => {
 
 // --- EQUIPMENT & REAL ESTATE IMAGES MAPPING ---
 const EQUIPMENT_IMAGES: Record<string, string | string[]> = {
+    // Services direct images
+    'Laveur de vitres Rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/523a7221-efdc-40cb-8854-e2cf0f23b981.jpg",
+    'LAVEUR DE VITRES RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/523a7221-efdc-40cb-8854-e2cf0f23b981.jpg",
+    'Vitrier rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2e206e53-6d2f-407c-afed-ade496273d38.jpg",
+    'VITRIER RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2e206e53-6d2f-407c-afed-ade496273d38.jpg",
+    'Serrurier rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/875cfb8e-eb8b-41e3-9fd0-1913ecd35ef1.jpg",
+    'SERRURIER RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/875cfb8e-eb8b-41e3-9fd0-1913ecd35ef1.jpg",
+    'Réparation frigo rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/bbaa4d5b-1347-4e3d-9c37-105746cd07b5.jpg",
+    'RÉPARATION FRIGO RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/bbaa4d5b-1347-4e3d-9c37-105746cd07b5.jpg",
+    'Réparation machine à laver rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ded86605-c99d-4249-80a5-c9b7bda7ec53.jpg",
+    'RÉPARATION MACHINE À LAVER RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ded86605-c99d-4249-80a5-c9b7bda7ec53.jpg",
+    'Dépannage parabole rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f8bc69a2-70c9-46aa-a6c7-46490174fcf1.jpg",
+    'DÉPANNAGE PARABOLE RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/f8bc69a2-70c9-46aa-a6c7-46490174fcf1.jpg",
+    'Dépannage auto rapide': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/598a9736-7060-40b4-950b-4b797a6d91ec.jpg",
+    'DÉPANNAGE AUTO RAPIDE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/598a9736-7060-40b4-950b-4b797a6d91ec.jpg",
+    'Poseur de caméra': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/a8ac2931-a784-45ac-815a-8f3c9862fa93.jpg",
+    'POSEUR DE CAMÉRA': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/a8ac2931-a784-45ac-815a-8f3c9862fa93.jpg",
+    'DJ': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/900783f2-a4ac-4728-a05b-c5dc2257c261.jpg",
+    'Technicien de surface': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/eba4b548-31aa-4a5f-b14a-53e3f4459e47.jpg",
+    'TECHNICIEN DE SURFACE': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/eba4b548-31aa-4a5f-b14a-53e3f4459e47.jpg",
+    'Nettoyage maison': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6229a41a-0e9e-4f10-81a6-732897f24998.jpg",
+    'NETTOYAGE MAISON': "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6229a41a-0e9e-4f10-81a6-732897f24998.jpg",
+
     // Agence Immobilière
     'Studio à louer': "https://i.supaimg.com/5d6f5d3f-6e64-4291-8ce3-28cebdb6bcec.jpg",
     'Terrain à louer ou à vendre': "https://i.supaimg.com/7c08d763-ce1e-44a5-b093-430cdb072ad2.jpg",
@@ -142,7 +165,7 @@ const batimentIntervItems = [
     { title: 'Maçon rapide', description: 'Maçonnerie et rénovation rapide.', img: "https://i.supaimg.com/dfd8a52a-a25c-4e93-a3c9-329a8a9ee255.jpg" },
     { title: 'Soudeur rapide', description: 'Travaux de soudure et ferronnerie.', img: "https://i.supaimg.com/891653b3-5444-44d7-abb6-cbbdd1f4b5bd.jpg" },
     { title: 'Peintre rapide', description: 'Peinture et finitions intérieures.', img: "https://i.supaimg.com/da9c5439-08c6-45b6-a6c4-772d20bbe1da.jpg" },
-    { title: 'Laveur de vitres Rapide', description: 'Nettoyage professionnel de vitres.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e7f7c3c8-89f3-4893-b163-c21f955e5e81.jpg" },
+    { title: 'Laveur de vitres Rapide', description: 'Nettoyage professionnel de vitres.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/523a7221-efdc-40cb-8854-e2cf0f23b981.jpg" },
     { title: 'Technicien entretien climatisation Rapide', description: 'Entretien et recharge clim.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e079b93f-a2ab-4aa5-8be3-a6923b189f86.jpg" },
     { title: 'Installateur de caméras de surveillance Rapide', description: 'Installation vidéosurveillance.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2f8ca35b-fcf3-40ad-82fa-63742864e4ec.jpg" },
     { title: 'Fabricant de poufs Rapide', description: 'Création et réparation de poufs.', img: "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/ebb24cd2-8a14-45c1-b273-0b4a81361c8b.jpg" },
@@ -221,13 +244,9 @@ const categoriesConfig = [
             { title: "Vitrier rapide", description: "Changement de vitres et fenêtres." },
             { title: "Réparation climatiseur rapide", description: "Réparation et recharge climatisation." },
             { title: "Réparation frigo rapide", description: "Réparation réfrigérateurs et congél." },
-            { title: "Réparation télévision rapide", description: "Réparation téléviseurs et écrans." },
             { title: "Réparation machine à laver rapide", description: "Réparation lave-linge et sèche-linge." },
-            { title: "Réparation pompe à eau rapide", description: "Réparation pompe à eau et forage." },
             { title: "Réparation fuite d’eau rapide", description: "Détection et réparation fuites." },
-            { title: "Dépannage Internet rapide", description: "Configuration box et connexion." },
             { title: "Dépannage parabole rapide", description: "Installation et réglage parabole." },
-            { title: "Dépannage électroménager rapide", description: "Appareils de cuisine et maison." },
             { title: "Dépannage groupe électrogène rapide", description: "Réparation de groupes électrogènes." },
             { title: "Dépannage auto rapide", description: "Mécanique et électrique auto." }
         ]
