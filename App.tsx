@@ -557,7 +557,40 @@ const App: React.FC = () => {
     setIsProfileOpen(prev => !prev);
   };
 
+  const backHandlerRef = useRef<(() => boolean) | null>(null);
+
   const handleBack = useCallback(() => {
+    // 1. Check if a registered custom back handler intercepts
+    if (backHandlerRef.current && backHandlerRef.current()) {
+      return;
+    }
+
+    // 2. Clear overlays or popups (if any)
+    if (interactiveModalContext) {
+      setInteractiveModalContext(null);
+      return;
+    }
+
+    if (paymentConfirmationContext) {
+      setPaymentConfirmationContext(null);
+      return;
+    }
+
+    if (showSmartRegistration) {
+      setShowSmartRegistration(false);
+      return;
+    }
+
+    if (showFullRegistration) {
+      setShowFullRegistration(false);
+      return;
+    }
+
+    if (adminChatContext) {
+      setAdminChatContext(null);
+      return;
+    }
+
     if (isProfileOpen) {
       setIsProfileOpen(false);
       return;
@@ -568,6 +601,7 @@ const App: React.FC = () => {
       return;
     }
 
+    // 3. Navigate back through history
     if (navHistory.length > 0) {
       const lastPoint = navHistory[navHistory.length - 1];
       setNavHistory(prev => prev.slice(0, -1));
@@ -577,6 +611,7 @@ const App: React.FC = () => {
       return;
     }
 
+    // 4. Default home state or exit
     if (activeTab === Tab.Menu && menuView === 'hub') {
       showPopup(
         "Voulez-vous quitter l’application ?",
@@ -591,7 +626,20 @@ const App: React.FC = () => {
     } else {
       navigateTo({ activeTab: Tab.Menu, menuView: 'hub' });
     }
-  }, [activeTab, menuView, isProfileOpen, showScannerGlobal, navHistory, showPopup, navigateTo]);
+  }, [
+    activeTab, 
+    menuView, 
+    isProfileOpen, 
+    showScannerGlobal, 
+    navHistory, 
+    showPopup, 
+    navigateTo,
+    interactiveModalContext,
+    paymentConfirmationContext,
+    showSmartRegistration,
+    showFullRegistration,
+    adminChatContext
+  ]);
 
   useEffect(() => {
     const backListener = CapApp.addListener('backButton', () => {
@@ -784,6 +832,7 @@ const App: React.FC = () => {
             onBack={handleBack} 
             user={displayUser} 
             onOpenForm={(context) => setInteractiveModalContext(context as any)} 
+            onRegisterBackHandler={(handler) => backHandlerRef.current = handler}
           />;
           break;
         case 'admin_dashboard':

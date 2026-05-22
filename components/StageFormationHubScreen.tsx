@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, 
@@ -39,6 +39,7 @@ interface StageFormationHubScreenProps {
     imageUrl?: string;
     description?: string;
   }) => void;
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
 const STAGES_LIST = [
@@ -256,11 +257,38 @@ const getIconAndColor = (title: string) => {
   return { icon: HelpCircle, color: "text-slate-500 bg-slate-50 border-slate-100" };
 };
 
-const StageFormationHubScreen: React.FC<StageFormationHubScreenProps> = ({ onBack, user, onOpenForm }) => {
+const StageFormationHubScreen: React.FC<StageFormationHubScreenProps> = ({ 
+  onBack, 
+  user, 
+  onOpenForm,
+  onRegisterBackHandler 
+}) => {
   const [subView, setSubView] = useState<'main' | 'stage_list' | 'formation_list'>('main');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customTitle, setCustomTitle] = useState('');
+
+  // Register local back button handler for Android
+  useEffect(() => {
+    if (onRegisterBackHandler) {
+      const handler = () => {
+        if (showCustomInput) {
+          setShowCustomInput(false);
+          return true; // handled
+        }
+        if (subView !== 'main') {
+          setSubView('main');
+          return true; // handled
+        }
+        return false; // not handled, fallback to parent
+      };
+      
+      onRegisterBackHandler(handler);
+      return () => {
+        onRegisterBackHandler(null);
+      };
+    }
+  }, [onRegisterBackHandler, subView, showCustomInput]);
 
   const currentList = useMemo(() => {
     const rawList = subView === 'stage_list' ? STAGES_LIST : subView === 'formation_list' ? FORMATIONS_LIST : [];
