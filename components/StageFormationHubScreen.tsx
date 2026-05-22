@@ -114,7 +114,7 @@ const StageFormationHubScreen: React.FC<StageFormationHubScreenProps> = ({ onBac
   };
 
   return (
-    <div className="min-h-full bg-slate-50 text-gray-800 flex flex-col font-sans animate-in fade-in duration-300">
+    <div className="h-full bg-slate-50 text-gray-800 flex flex-col font-sans animate-in fade-in duration-300 overflow-hidden">
       {/* Header */}
       <header className="bg-white border-b border-gray-150 px-4 py-4 sticky top-0 z-30 shadow-sm flex items-center justify-between">
         <button 
@@ -131,7 +131,7 @@ const StageFormationHubScreen: React.FC<StageFormationHubScreenProps> = ({ onBac
         <div className="w-10"></div> {/* Spacing balance */}
       </header>
 
-      <div className="p-4 flex-1 flex flex-col overflow-y-auto">
+      <main className="p-4 flex-1 overflow-y-auto pb-24">
         <AnimatePresence mode="wait">
           {subView === 'main' ? (
             <motion.div 
@@ -306,7 +306,7 @@ const StageFormationHubScreen: React.FC<StageFormationHubScreenProps> = ({ onBac
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </main>
     </div>
   );
 };
