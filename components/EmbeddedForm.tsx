@@ -323,9 +323,22 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                     {title.replace(/ Rapide$/i, '').toUpperCase()}{title.toLowerCase().endsWith('s') ? '' : 'S'}.
                 </p>
 
-                <p className="text-lg font-bold text-gray-900 leading-snug">
-                    Dès que vous procéderez au paiement de mise en relation, un agent vous contactera dans les plus brefs délais.
-                </p>
+                {(formType === 'stage' || formType === 'formation') ? (
+                  <div className="space-y-4">
+                    <p className="text-lg font-bold text-gray-900 leading-snug">
+                        Dès que vous procéderez au paiement, un conseiller vous contactera dans les plus brefs délais.
+                    </p>
+                    <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl px-5 py-4 shadow-sm">
+                      <p className="text-[13px] font-black text-orange-700 uppercase tracking-wide">
+                        Frais de communication du service : 100 CFA
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-lg font-bold text-gray-900 leading-snug">
+                      Dès que vous procéderez au paiement de mise en relation, un agent vous contactera dans les plus brefs délais.
+                  </p>
+                )}
             </div>
 
             <div className="w-full space-y-4">
@@ -446,7 +459,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
 
             <div className="flex flex-col items-center mb-8 bg-orange-50 px-8 py-3 rounded-2xl border border-orange-100 shadow-sm">
                 <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">
-                    {isBlurredImage ? "Dépôt de candidature (Embauche)" : (isRapidTitle ? "Intervention Immédiate" : "Frais de mise en relation")}
+                    {isBlurredImage ? "Dépôt de candidature (Embauche)" : (isRapidTitle ? "Intervention Immédiate" : (formType === 'stage' || formType === 'formation') ? "Frais de communication du service" : "Frais de mise en relation")}
                 </span>
                 <span className="text-2xl font-black text-orange-600">{totalPrice} CFA</span>
             </div>

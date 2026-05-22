@@ -244,6 +244,11 @@ export const SEARCHABLE_TITLES = [
 
 // --- PRICE CALCULATION ---
 export const calculateTotalPrice = (formType: string, answers: Answers, serviceMode?: string, count: number = 1, title: string = ''): number => {
+    // 0. Stage et Formation sont des forfaits de communication à 100 CFA
+    if (formType === 'stage' || formType === 'formation') {
+        return 100;
+    }
+
     // 1. Détecter le type de formulaire
     const apartmentTitles = ['Studio à louer', 'Villa à louer', 'Chambre-salon à louer', 'Petit local à louer', 'Magasin à louer'];
     const isAppart = apartmentTitles.some(t => title.includes(t)) || title.toLowerCase().includes('appartement');
