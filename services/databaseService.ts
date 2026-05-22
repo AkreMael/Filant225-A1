@@ -1281,6 +1281,36 @@ export const databaseService = {
     }
   },
 
+  saveStageApplication: async (applicationData: any) => {
+    try {
+      await databaseService.ensureAuth();
+      const docRef = await addDoc(collection(db, 'Stage'), {
+        ...applicationData,
+        timestamp: serverTimestamp(),
+        adminReadStatus: 'NON LU'
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error("Error saving Stage application:", error);
+      throw error;
+    }
+  },
+
+  saveFormationApplication: async (applicationData: any) => {
+    try {
+      await databaseService.ensureAuth();
+      const docRef = await addDoc(collection(db, 'Formation'), {
+        ...applicationData,
+        timestamp: serverTimestamp(),
+        adminReadStatus: 'NON LU'
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error("Error saving Formation application:", error);
+      throw error;
+    }
+  },
+
   saveAssistantChatMessage: async (chatUserId: string, message: any) => {
     return databaseService.saveTypedChatMessage('Assistant', chatUserId, message);
   },

@@ -427,7 +427,78 @@ export const sonorisationQuestions: Question[] = [
     { key: 'extraInfo', text: () => "Informations complémentaires ?", type: 'text', placeholder: 'Détails...' },
 ];
 
+export const stageQuestions: Question[] = [
+  {
+    key: 'educationLevel',
+    text: () => "Quel est votre niveau d'études actuel ?",
+    type: 'buttons',
+    options: [
+      { label: 'Niveau BAC (ou moins)', value: 'BAC ou moins' },
+      { label: 'BAC +2 (BTS/DUT)', value: 'BAC +2' },
+      { label: 'BAC +3 (Licence)', value: 'BAC +3' },
+      { label: 'BAC +5 (Master)', value: 'BAC +5' },
+      { label: 'Autre diplôme', value: 'Autre' }
+    ]
+  },
+  {
+    key: 'startDate',
+    text: () => "Quand souhaitez-vous commencer votre stage ?",
+    type: 'date'
+  },
+  {
+    key: 'duration',
+    text: () => "Quelle est la durée de stage souhaitée ?",
+    type: 'buttons',
+    options: [
+      { label: '1 mois', value: '1 mois' },
+      { label: '2 à 3 mois', value: '2-3 mois' },
+      { label: '4 à 6 mois', value: '4-6 mois' },
+      { label: 'Plus de 6 mois', value: 'Plus de 6 mois' }
+    ]
+  },
+  { key: 'city', text: () => "Dans quelle ville recherchez-vous ce stage ?", type: 'text', placeholder: 'Ex: Abidjan, Bassam' },
+];
+
+export const formationQuestions: Question[] = [
+  {
+    key: 'currentStatus',
+    text: () => "Quelle est votre situation professionnelle actuelle ?",
+    type: 'buttons',
+    options: [
+      { label: 'Étudiant', value: 'Etudiant' },
+      { label: 'Sans emploi / En recherche', value: 'Sans emploi' },
+      { label: 'Employé / Indépendant', value: 'Travailleur' },
+      { label: 'Autre', value: 'Autre' }
+    ]
+  },
+  {
+    key: 'objective',
+    text: () => "Quel est votre objectif principal ?",
+    type: 'buttons',
+    options: [
+      { label: 'Trouver un emploi', value: 'Trouver un emploi' },
+      { label: 'Se perfectionner', value: 'Se perfectionner' },
+      { label: 'Se reconvertir', value: 'Se reconvertir' },
+      { label: 'Créer une entreprise', value: 'Entreprendre' }
+    ]
+  },
+  {
+    key: 'availability',
+    text: () => "Quelles sont vos disponibilités pour les cours ?",
+    type: 'buttons',
+    options: [
+      { label: 'Cours du jour', value: 'Jour' },
+      { label: 'Cours du soir', value: 'Soir' },
+      { label: 'Cours du week-end', value: 'Week-end' },
+      { label: 'En ligne (E-learning)', value: 'En ligne' }
+    ]
+  },
+  { key: 'city', text: () => "Dans quelle ville souhaitez-vous vous former ?", type: 'text', placeholder: 'Ex: Abidjan, Yamoussoukro' },
+];
+
 export const getQuestionsForType = (formType: string, title: string, serviceMode?: string): Question[] => {
+    if (formType === 'stage') return stageQuestions;
+    if (formType === 'formation') return formationQuestions;
     if (formType === 'night_service') return [
         { key: 'serviceNeeded', text: () => "Quel service d'urgence recherchez-vous ?", type: 'text', placeholder: 'Ex: Pharmacie, Serrurier...' },
         { key: 'budget', text: () => "Quel est votre budget pour cette intervention ?", type: 'text', inputType: 'tel', defaultValue: "10000" },

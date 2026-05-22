@@ -6,7 +6,7 @@ import EmbeddedForm from './EmbeddedForm';
 
 interface InteractiveModalProps {
   title: string;
-  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service';
+  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service' | 'stage' | 'formation';
   user: User;
   onClose: () => void;
   imageUrl?: string | string[];

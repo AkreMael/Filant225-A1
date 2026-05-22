@@ -300,6 +300,42 @@
         "syncedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["scannerUser", "name", "phone", "adminReadStatus", "syncedAt"]
+    },
+    "StageApplication": {
+      "title": "StageApplication",
+      "description": "Candidature pour un stage professionnel.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "category": { "type": "string" },
+        "domain": { "type": "string" },
+        "title": { "type": "string" },
+        "answers": { "type": "object" },
+        "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "phone", "city", "category", "domain", "title", "answers", "adminReadStatus", "timestamp"]
+    },
+    "FormationApplication": {
+      "title": "FormationApplication",
+      "description": "Inscription pour une formation professionnelle.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "category": { "type": "string" },
+        "domain": { "type": "string" },
+        "title": { "type": "string" },
+        "answers": { "type": "object" },
+        "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "phone", "city", "category", "domain", "title", "answers", "adminReadStatus", "timestamp"]
     }
   },
   "firestore": {
@@ -366,6 +402,14 @@
     "/ServiceRequests/{id}": {
       "schema": "ServiceRequest",
       "description": "Collection des demandes de services soumises par les clients."
+    },
+    "/Stage/{id}": {
+      "schema": "StageApplication",
+      "description": "Candidatures aux stages d'apprentissage professionnel."
+    },
+    "/Formation/{id}": {
+      "schema": "FormationApplication",
+      "description": "Inscriptions aux formations professionnelles."
     }
   }
 }

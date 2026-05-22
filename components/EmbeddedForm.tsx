@@ -15,7 +15,7 @@ const Spinner = () => (
 
 interface EmbeddedFormProps {
   title: string;
-  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service';
+  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service' | 'stage' | 'formation';
   user: User;
   onClose: () => void;
   description?: string;
@@ -238,18 +238,45 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     };
 
     try {
-        // Save as a service request for the admin dashboard
-        await databaseService.saveServiceRequest({
-            userId: chatUserId,
-            userName: user.name || 'Utilisateur',
-            phone: user.phone,
-            city: user.city || 'Non spécifiée',
-            serviceTitle: title,
-            formType,
-            answers,
-            totalPrice,
-            readStatus: 'NON LU'
-        });
+        // Save as a stage, formation or service request depending on the formType
+        if (formType === 'stage') {
+            await databaseService.saveStageApplication({
+                userId: chatUserId,
+                userName: user.name || 'Utilisateur',
+                phone: user.phone,
+                city: user.city || 'Non spécifiée',
+                category: 'Stage',
+                domain: title.replace(/^Stage en /i, ''),
+                title: title,
+                answers: answers,
+                adminReadStatus: 'NON LU'
+            });
+        } else if (formType === 'formation') {
+            await databaseService.saveFormationApplication({
+                userId: chatUserId,
+                userName: user.name || 'Utilisateur',
+                phone: user.phone,
+                city: user.city || 'Non spécifiée',
+                category: 'Formation',
+                domain: title.replace(/^Formation en /i, ''),
+                title: title,
+                answers: answers,
+                adminReadStatus: 'NON LU'
+            });
+        } else {
+            // Save as a service request for the admin dashboard
+            await databaseService.saveServiceRequest({
+                userId: chatUserId,
+                userName: user.name || 'Utilisateur',
+                phone: user.phone,
+                city: user.city || 'Non spécifiée',
+                serviceTitle: title,
+                formType,
+                answers,
+                totalPrice,
+                readStatus: 'NON LU'
+            });
+        }
 
         await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
         

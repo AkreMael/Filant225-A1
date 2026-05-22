@@ -26,6 +26,7 @@ import LocationScreen from './components/LocationScreen';
 import InterventionShopScreen from './components/InterventionShopScreen';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
+import StageFormationHubScreen from './components/StageFormationHubScreen';
 import { motion, AnimatePresence } from 'motion/react';
 import { isAdmin } from './utils/authUtils';
 import { databaseService, SavedContact } from './services/databaseService';
@@ -137,7 +138,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Menu);
   const [showFullRegistration, setShowFullRegistration] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map'>('hub');
+  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub'>('hub');
   const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Assistant' | 'Privee' } | null>(null);
   const [offerSubView, setOfferSubView] = useState<'main' | 'shop'>('main');
   
@@ -431,7 +432,8 @@ const App: React.FC = () => {
     'location_hub',
     'notifications',
     'assistant_qr',
-    'emergency_form'
+    'emergency_form',
+    'stage_formation_hub'
   ];
 
   const isFullScreenView = (activeTab === Tab.Menu && FULL_SCREEN_MENU_VIEWS.includes(menuView)) || 
@@ -776,6 +778,13 @@ const App: React.FC = () => {
           break;
         case 'assistant_qr':
           activeScreen = <AssistantQRScreen onBack={handleBack} user={displayUser} onShowPopup={showPopup} />;
+          break;
+        case 'stage_formation_hub':
+          activeScreen = <StageFormationHubScreen 
+            onBack={handleBack} 
+            user={displayUser} 
+            onOpenForm={(context) => setInteractiveModalContext(context as any)} 
+          />;
           break;
         case 'admin_dashboard':
           activeScreen = (

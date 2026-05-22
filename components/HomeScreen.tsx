@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Tab, User } from '../types';
-import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar } from 'lucide-react';
+import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap } from 'lucide-react';
 import MenuBackground from './common/MenuBackground';
 import { databaseService, SavedContact } from '../services/databaseService';
 import ScannerOverlay from './ScannerOverlay';
@@ -40,6 +40,8 @@ const NotificationIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className
 
 const ServiceRapideIcon: React.FC = () => <IconWrapper className="w-12 h-12 bg-white/20"><svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-current" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0zM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></IconWrapper>;
 const EquipmentIcon: React.FC = () => <IconWrapper className="w-12 h-12 bg-orange-600/20"><svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.528-1.036.94-2.197 1.088-3.386l-.738-2.652L3 14l2.652.738c1.19.147 2.35.56 3.386 1.088l3.03-2.496z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 21.75l-4.135-4.134a1.21 1.21 0 010-1.707l4.134-4.135a1.21 1.21 0 011.707 0l4.135 4.135a1.21 1.21 0 010 1.707l-4.134 4.135a1.21 1.21 0 01-1.707 0z" /></svg></IconWrapper>;
+
+const StageFormationIcon: React.FC = () => <IconWrapper className="w-12 h-12 bg-orange-600/20"><GraduationCap className="h-7 w-7 text-orange-600" /></IconWrapper>;
 
 // --- Admin Icons ---
 const StorageIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" /></svg>;
@@ -185,7 +187,7 @@ const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onS
 };
 
 interface HomeScreenProps {
-  onNavigate: (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr', category?: 'appartement' | 'equipement') => void;
+  onNavigate: (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub', category?: 'appartement' | 'equipement') => void;
   user: User;
   setActiveTab: (tab: Tab) => void;
   onOpenBuildingService: (item: any) => void;
@@ -248,7 +250,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   const isCardExpired = false;
   const cardData = null;
 
-  const handleMainServiceClick = (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr', category?: 'appartement' | 'equipement') => {
+  const handleMainServiceClick = (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub', category?: 'appartement' | 'equipement') => {
       onNavigate(view, category);
   };
 
@@ -626,6 +628,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     </div>
                     <div className={`p-2 rounded-full bg-orange-100 text-orange-600`}>
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                </button>
+
+                <button 
+                    onClick={() => handleMainServiceClick('stage_formation_hub')} 
+                    className="w-full bg-slate-900 text-white rounded-3xl p-5 flex items-center justify-between shadow-xl transform active:scale-[0.98] transition-all border-2 border-orange-500 relative overflow-hidden group"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    <div className="flex items-center space-x-4 text-left relative z-10">
+                        <StageFormationIcon />
+                        <div className="flex flex-col items-start font-sans">
+                            <span className="text-lg font-black uppercase tracking-tight leading-none text-orange-400">Stage & Formation</span>
+                            <span className="text-[10px] text-gray-300 mt-1 font-bold">Devenez plus professionnel dans votre activité</span>
+                        </div>
+                    </div>
+                    <div className="p-2 rounded-full bg-orange-500 text-slate-950 relative z-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 stroke-[2.5]" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                         </svg>
                     </div>
