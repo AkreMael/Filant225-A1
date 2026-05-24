@@ -309,8 +309,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               {list.length > 0 ? list.map((item, i) => (
                 <tr 
                   key={i} 
-                  onClick={() => openDetails(item, collectionName)}
-                  className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
+                  className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
                 >
                   {keysWithStatus.map((key, j) => {
                     if (key === 'actions_mission') {
@@ -1136,8 +1135,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         {filteredData(data.requests).length > 0 ? filteredData(data.requests).map((req, i) => (
                           <tr 
                             key={i} 
-                            onClick={() => openDetails(req, 'ServiceRequests')}
-                            className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors cursor-pointer ${req.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
+                            className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors ${req.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
                           >
                             <td className="px-6 py-4 font-bold text-xs uppercase text-slate-800 dark:text-gray-200">
                               {req.userName}
