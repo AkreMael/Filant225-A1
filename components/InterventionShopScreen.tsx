@@ -392,6 +392,7 @@ export const getServiceItemImage = (title: string): string => {
     if (titleLower.includes('pouf')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/1bd32ba7-1320-4334-bff0-8016ccb6404f.jpg";
     if (titleLower.includes('fenêtre') || titleLower.includes('porte')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/5b41e300-53eb-4213-ac32-e07b1d272667.jpg";
     if (titleLower.includes('studio')) return "https://i.supaimg.com/5d6f5d3f-6e64-4291-8ce3-28cebdb6bcec.jpg";
+    if (titleLower.includes('agence immobilière') || titleLower.includes('agence immobiliere')) return "https://picsum.photos/seed/immobilier/500/300";
     if (titleLower.includes('villa')) return "https://i.supaimg.com/7dd280ea-2d80-472d-9997-d6c5b3d3c53c.jpg";
     if (titleLower.includes('chambre')) return "https://i.supaimg.com/db2acfbe-b3ca-4b65-9b21-ddb0c7fcb3af.jpg";
     if (titleLower.includes('local')) return "https://i.supaimg.com/a0a75e1c-8b38-485a-8231-0a213cf10858.jpg";

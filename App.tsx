@@ -855,9 +855,9 @@ const App: React.FC = () => {
             user={displayUser} 
             setActiveTab={handleTabChange}
             onOpenBuildingService={(item) => setInteractiveModalContext({ 
-                formType: 'rapid_building_service', 
+                formType: item.formType || 'rapid_building_service', 
                 title: item.title, 
-                imageUrl: item.img,
+                imageUrl: item.img || item.profileImageUrl,
                 description: item.description
             })}
             onRestrictedAccess={handleRestrictedAccess}
@@ -958,9 +958,9 @@ const App: React.FC = () => {
         user={displayUser} 
         setActiveTab={handleTabChange}
         onOpenBuildingService={(item) => setInteractiveModalContext({ 
-            formType: 'rapid_building_service', 
+            formType: item.formType || 'rapid_building_service', 
             title: item.title, 
-            imageUrl: item.img,
+            imageUrl: item.img || item.profileImageUrl,
             description: item.description
         })}
         onRestrictedAccess={handleRestrictedAccess}
