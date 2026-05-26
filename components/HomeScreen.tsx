@@ -150,20 +150,6 @@ const batimentWorkers = [
 
 // --- ALL SEARCH CATEGORIES ---
 const ALL_SEARCH_CATEGORIES = [
-    // --- STAGES & FORMATIONS ---
-    { 
-        title: "Candidature de Stage", 
-        description: "Postulez pour un stage professionnel ou académique directement auprès d'entreprises partenaires de FILANT°225.", 
-        formType: 'stage', 
-        categoryGroup: 'Stages' 
-    },
-    { 
-        title: "Inscription Formation", 
-        description: "Formez-vous aux métiers d'avenir et obtenez des diplômes certifiants pour booster votre employabilité.", 
-        formType: 'formation', 
-        categoryGroup: 'Formations' 
-    },
-
     // --- AGENCES IMMOBILIÈRES & APPARTEMENTS ---
     { 
         title: "Agence Immobilière FILANT", 
@@ -210,8 +196,14 @@ const ALL_SEARCH_CATEGORIES = [
 
     // --- ÉQUIPEMENTS À LOUER ---
     { 
-        title: "Sonorisation à louer", 
-        description: "Équipement de sonorisation de haute qualité, micros, baffles et consoles pour vos fêtes.", 
+        title: "Camion benne à louer", 
+        description: "Location de camions benne robustes pour le transport lourd de décombres ou de matériaux.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Camion de campagne à louer", 
+        description: "Camion podium équipé d'une sonorisation pour vos campagnes de sensibilisation ou publicitaires.", 
         formType: 'location', 
         categoryGroup: 'Équipements à louer' 
     },
@@ -222,8 +214,92 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Équipements à louer' 
     },
     { 
+        title: "Chaise à louer", 
+        description: "Chaises blanches solides et confortables pour vos réceptions, réunions et célébrations.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Table à louer", 
+        description: "Sélection de tables de réception de différentes formes pour accueillir convenablement vos hôtes.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
         title: "Groupe électrogène à louer", 
         description: "Alimentation électrique autonome de secours pour vos grands événements sans interruption.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Bétonnière à louer", 
+        description: "Location de bétonnières professionnelles pour simplifier la préparation de vos mortiers.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Échafaudage à louer", 
+        description: "Échafaudages de chantier sécurisés et modulables pour vos travaux de bâtiment en hauteur.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Tracteur à louer", 
+        description: "Tracteurs robustes pour vos aménagement de parcelles, travaux agricoles ou de terrassement.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Mini pelle à louer", 
+        description: "Mini pelle hydraulique pour le creusement de tranchées et excavations dans des espaces réduits.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Pelle mécanique à louer", 
+        description: "Excavatrice de chantier robuste pour vos grands travaux publics et terrassements d'envergure.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Marteau piqueur à louer", 
+        description: "Démolisseur pneumatique de forte puissance pour briser dalles de béton ou vieux bitumes.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Compresseur à louer", 
+        description: "Compresseurs d'air performants pour alimenter vos outils de chantier ou sablage.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Sonorisation à louer", 
+        description: "Équipement de sonorisation de haute qualité, micros, baffles et consoles pour vos fêtes.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Tente événementielle à louer", 
+        description: "Tentes de réception blanches et chapiteaux professionnels imperméables pour vos banquets.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Véhicule de transport à louer", 
+        description: "Véhicules utilitaires légers ou camionnettes pour loger et déplacer vos biens et cartons.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Engin de chantier à louer", 
+        description: "Divers engins spécialisés et machines de terrassement pour vos besoins spécifiques de BTP.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Espace d’événement à louer", 
+        description: "Salles climatisées prestigieuses ou espaces extérieurs spacieux pour accueillir vos convives.", 
         formType: 'location', 
         categoryGroup: 'Équipements à louer' 
     },
@@ -251,47 +327,167 @@ const ALL_SEARCH_CATEGORIES = [
         formType: 'location', 
         categoryGroup: 'Équipements à louer' 
     },
+    { 
+        title: "Poubelle mobile à louer", 
+        description: "Supports de sacs et containers mobiles pour garantir la propreté lors de vos grands rassemblements.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Mégaphone à louer", 
+        description: "Mégaphone à sirène et voix forte, idéal pour guider les foules et animer vos ventes de rue.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Échelle pliante (petite) à louer", 
+        description: "Échelle télescopique légère à emporter partout pour vos interventions techniques en hauteur.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Corde / rallonge corde à louer", 
+        description: "Lignes de cordage solides en nylon et extensions spéciales de suspension de charge pour chantiers.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Nappe de table à louer", 
+        description: "Nappes de tissu de grande qualité et chemins de table colorés pour habiller vos buffets.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Tapis à louer", 
+        description: "Tapis VIP rouge ou coloré haute densité pour accueillir vos convives dès le hall d'entrée.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Distributeur d’eau à louer", 
+        description: "Fontaines d’eau de comptoir ou sur stand distribuant eau fraîche et eau chaude filtrée.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Plateau de service à louer", 
+        description: "Plateaux solides et antidérapants pour serveurs de réceptions et traiteurs.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Microphone événement à louer", 
+        description: "Système professionnel double HF micro serre-tête ou micro baladeur pour vos conférences.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Haut-parleur / baffle Bluetooth à louer", 
+        description: "Baffle autonome sur batterie avec connexion Bluetooth facile et port USB pour micro.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Projecteur LED portable à louer", 
+        description: "Projecteur autonome sur batterie d'éclairage puissant pour chantiers nocturnes ou jardins.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Lampe éclairage forte à louer", 
+        description: "Ampoules et installations de haute luminosité suspendues pour vos chantiers ou stands d'accueil.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Glacière à louer", 
+        description: "Glacière isotherme à poignées de grande contenance pour conserver vos boissons et glaçons.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Tente pliante (petite) à louer", 
+        description: "Barnum pliant léger en aluminium idéal pour protéger vos stands de foire.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Parasol à louer", 
+        description: "Parasols larges de terrasse de café adaptés à la protection du soleil en extérieur.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Banc à louer", 
+        description: "Bancs de kermesse pliants en bois résistant pour des repas de fête collectifs faciles.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Chaise pliante à louer", 
+        description: "Chaises pliables légères faciles à stocker et manipuler pour toutes vos réceptions.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Table en bois à louer", 
+        description: "Tables pliantes solides en bois massif avec piétement métallique très stable.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Bâche (petite / moyenne) à louer", 
+        description: "Bâche étanche moyenne idéale pour couvrir bois ou équipement sensible du vent.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Matelas une place à louer", 
+        description: "Matelas d'appoint d'une personne propre et désinfecté pour vos visites temporaires.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
 
-    // --- TRAVAILLEURS QUALIFIÉS (Bâtiment Rapide) ---
+    // --- TRAVAILLEURS QUALIFIÉS (Bâtiment Rapide / Dépannage urgent) ---
     { 
         title: "Plombier rapide", 
-        description: "Réparation instantanée des fuites, installation de robinetterie et tuyauteries.", 
+        description: "Réparation instantanée des fuites, installation de robinetterie et tuyauteries de salle de bain.", 
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
         title: "Électricien rapide", 
-        description: "Interventions rapides sur court-circuit, installations de luminaires et sécurisations.", 
+        description: "Interventions rapides sur court-circuit, installations de luminaires, tableaux et sécurisation.", 
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
         title: "Carreleur rapide", 
-        description: "Pose rapide et impeccable de sols, carreaux, mosaïques de tout format.", 
+        description: "Pose rapide et impeccable de sols, carreaux, faïence de tout format et mosaïque.", 
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
         title: "Charpentier rapide", 
-        description: "Assemblages de structures bois, charpentes, réparations de bois d'œuvre.", 
+        description: "Assemblages de structures bois, charpentes d'habitations et escaliers extérieurs.", 
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
         title: "Maçon rapide", 
-        description: "Construction de cloisons, reprises de murs, coulage de dalles rapides.", 
+        description: "Construction de cloisons, reprises de murs, coulage de dalles rapides et enduits.", 
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
         title: "Soudeur rapide", 
-        description: "Travaux de ferronnerie, réparation de portails ou grilles métalliques urgents.", 
+        description: "Travaux de ferronnerie, soudure de charpente métallique et sécurité de portail urgents.", 
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
         title: "Peintre rapide", 
-        description: "Application de couches de peintures ou de revêtements muraux de finition.", 
+        description: "Application rapide de couches de vernis, peinture intérieure et enduit de finition mural.", 
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
@@ -303,14 +499,192 @@ const ALL_SEARCH_CATEGORIES = [
     },
     { 
         title: "Technicien entretien climatisation Rapide", 
-        description: "Nettoyage complet, décrassage et recharge de fluide pour climatiseurs.", 
+        description: "Dépannage, nettoyage complet, décrassage et recharge de fluide pour climatiseurs.", 
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
         title: "Installateur de caméras de surveillance Rapide", 
-        description: "Configuration de kits de caméras et réglages d'applications de monitoring.", 
+        description: "Configuration de kits de caméras et réglages d'applications de monitoring et sécurité.", 
         formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Fabricant de poufs Rapide", 
+        description: "Création, re-remplissage et réparation rapide de fauteuils poires et poufs d'intérieur.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Installateur de fenêtres et portes vitrées Rapide", 
+        description: "Remplacement rapide de vitrages brisés et pose de baies et portes fenêtres d'accès.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Menuisier Rapide", 
+        description: "Dépannage de meubles brisés, réglage de gonds de portes et charnières de cuisine.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Serrurier rapide", 
+        description: "Ouverture de porte bloquée en urgence, blindage simple et changement de cylindre.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Vitrier rapide", 
+        description: "Installation, découpe et remplacement urgent de carreaux tous types (simple, double vitrage).", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Réparation climatiseur rapide", 
+        description: "Diagnostic de panne, compresseur HS et dépannage urgent de split-système.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Réparation frigo rapide", 
+        description: "Désactivation des alarmes de température, recharge de gaz de compresseurs de réfrigérateurs.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Réparation machine à laver rapide", 
+        description: "Débouchage de pompe de vidange, changement de tambour et déblocage de hublot.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Réparation fuite d’eau rapide", 
+        description: "Détection acoustique ou thermique de fuites invisibles encastrées et colmatage immédiat.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Dépannage parabole rapide", 
+        description: "Amélioration du signal satellite, réglage ou déplacement d'antenne suite à intempéries.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Dépannage groupe électrogène rapide", 
+        description: "Intervention rapide pour démarrage impossible, filtre bouché ou problème d'alternateur.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Dépannage auto rapide", 
+        description: "Dépannage de batterie à plat, diagnostic mécanique rapide ou crevaison sur place.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+
+    // --- OTHER CONSTRUCTION WORKERS ---
+    { 
+        title: "Ferrailleur", 
+        description: "Façonnage et assemblage de fer à béton armé pour semelles, poteaux et linteaux.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Coffreur", 
+        description: "Conception de structures temporaires en bois ou métal pour guider le coulage de béton.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Staffeur", 
+        description: "Pose d'éléments d'ornement en staff, création de faux-plafonds décoratifs moulés en plâtre.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Étancheur", 
+        description: "Prévention des infiltrations de pluie et colmatage de toitures terrasses d'immeubles.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Poseur de portail", 
+        description: "Fixation, réglage et calage de portails robustes battants ou coulissants.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Climatisation bâtiment", 
+        description: "Réseau global de gaines pour VMC, extraction forces et climatisation globale d'immeubles.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Technicien forage", 
+        description: "Creusement de puits d'eau de grande profondeur avec pompes immergées de relevage.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Constructeur maison", 
+        description: "Maîtrise d'œuvre générale pour piloter les chantiers de construction de votre future villa.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Finition bâtiment", 
+        description: "Ensemble des opérations d'enduits de finition fins et lessivages pour la remise des clés.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+
+    // --- NETTOYAGE & ENTRETIEN ---
+    { 
+        title: "Technicien de surface", 
+        description: "Spécialiste de la désinfection des sols à fort passage et de l'astiquage professionnel.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Nettoyage maison", 
+        description: "Formule de grand ménage de printemps, lessivage intensif et lavage approfondi à domicile.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Nettoyage bureau", 
+        description: "Entretien régulier de bureaux, vidage de corbeilles et nettoyage de matériel de bureau.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Nettoyage chantier", 
+        description: "Évacuation de gravats lourds et grattage de traces de colle suite à la pose de carrelage.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Lavage automobile", 
+        description: "Soin intérieur et lustrage carrosserie avec aspirateur professionnel de véhicule chez vous.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Désinfection", 
+        description: "Pulvérisation de produits bactéricides ou de lutte contre les nuisibles de locaux et maisons.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Entretien jardin", 
+        description: "Arrosage soigné, débroussaillage de friches et élagage régulier d'arbres à fleurs et pelouse.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Entretien piscine", 
+        description: "Ajustement du taux de chlore, nettoyage du panier de skimmer et brossage de ligne d'eau.", 
+        formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
 
@@ -358,6 +732,18 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
+        title: "Caissière / Caissier", 
+        description: "Agent d'encaissement formé à la gestion des caisses enregistreuses et terminaux.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Réceptionniste", 
+        description: "Accueil physique, gestion de standard et coordination de séjours hôteliers.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
         title: "Esthéticienne", 
         description: "Spécialiste de la beauté de la peau, des ongles et de l'épilation.", 
         formType: 'worker', 
@@ -382,6 +768,24 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
+        title: "Magasinier", 
+        description: "Rangement de palettes, vérification de bons de commande et surveillance de stocks.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Manutentionnaire", 
+        description: "Chargement de camions, manutentions d'objets lourds et assistance physique sur chantiers.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Vigile", 
+        description: "Surveillance de jour comme de nuit d'accès physiques, ronde de sûreté d'immeubles.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
         title: "MANUCURE À DOMICILE RAPIDE", 
         description: "Soin et mise en beauté rapide de vos mains et ongles directement chez vous.", 
         formType: 'worker', 
@@ -402,6 +806,132 @@ const ALL_SEARCH_CATEGORIES = [
     { 
         title: "PÂTISSIÈRE", 
         description: "Confection de gâteaux d'anniversaire personnalisés, de pièces montées ou de gaufres.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Décorateur", 
+        description: "Mise en scène d'espaces, agencements de rideaux et installations festives hôtelières.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "DJ", 
+        description: "Animation musicale tous genres de vos soirées, mariages et fêtes.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Sonorisateur", 
+        description: "Régisseur technique son, équilibrage acoustique de scènes ou podiums.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Organisateur événementiel", 
+        description: "Coordination et organisation complète de cérémonies, mariages et réceptions complexes.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Photographe", 
+        description: "Prises de vues professionnelles et retouche d'images pour immortaliser vos célébrations.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Vidéaste", 
+        description: "Réalisation de clips vidéo, montages professionnels et enregistrements d'événements.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Déménageur", 
+        description: "Assistance au port des cartons et sécurisation des meubles fragiles lors du transfert.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Livreur", 
+        description: "Livreur à moto ou véhicule léger pour acheminer repas ou paquets à Abidjan et partout.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Transport marchandises", 
+        description: "Acheminement logistique et livraison routière de marchandises d'entreprises.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Transport matériaux", 
+        description: "Livraison de ciment, briques, sable et graviers sur vos chantiers de construction.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Transport déménagement", 
+        description: "Solution logistique complète avec grand camion adapté aux déménagements de villas.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Manucure / Pédicure", 
+        description: "S’occupe des soins des mains et des pieds pour votre beauté.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Massage", 
+        description: "Pratique des massages pour un soulagement ou une récupération musculaire.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Maquillage professionnel", 
+        description: "Maquillages artistiques haut de gamme pour vos événements ou séances média.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Enseignant privé", 
+        description: "Donne des cours d'appui et soutiens scolaires réguliers dans différentes matières scolaire.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Community Manager", 
+        description: "Gestion de vos réseaux sociaux, création de contenu régulier et animation de communauté.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Agent de Vente en ligne", 
+        description: "Gestion de commandes e-commerce, relation client digitale et suivi de colis.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Grossiste", 
+        description: "Recherche ou relation grossiste pour vos approvisionnements en gros au meilleur prix.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Vendeuse de vêtements", 
+        description: "Spécialiste de la vente en boutique de vêtements, conseils en styles et cabines.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Poseur de faux plafond", 
+        description: "Conception et installation de faux-plafonds, plaques de plâtre et habillage spots.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Aide à domicile / Garde malade", 
+        description: "Assistance bienveillante à domicile pour personnes âgées ou malades en convalescence.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     }
