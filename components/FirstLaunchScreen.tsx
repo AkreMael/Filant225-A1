@@ -25,57 +25,57 @@ const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => 
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-[#FFA200] via-[#FF7E00] to-[#FF4500] text-white font-sans overflow-hidden">
-      <div className="flex-1 flex flex-col items-center justify-center px-10 text-center py-10">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-8">
         
         {/* Welcome Section */}
-        <div className="mb-2 transition-all duration-700 animate-in fade-in slide-in-from-top-10 ease-out">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-0">Bienvenue chez</h2>
-          <h1 className="text-6xl sm:text-7xl font-black text-black tracking-tighter leading-none mt-2">
+        <div className="mb-1 transition-all duration-700 animate-in fade-in slide-in-from-top-10 ease-out">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-0 opacity-90">Bienvenue chez</h2>
+          <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter leading-none mt-1">
             FILANT°225
           </h1>
         </div>
 
         {/* Description Section */}
-        <div className="mt-10 space-y-5 max-w-sm transition-all duration-1000 delay-300 animate-in fade-in slide-in-from-bottom-10 ease-out">
-          <p className="text-[20px] sm:text-[22px] font-black leading-tight">
+        <div className="mt-6 space-y-4 max-w-sm transition-all duration-1000 delay-300 animate-in fade-in slide-in-from-bottom-10 ease-out">
+          <p className="text-base sm:text-lg font-black leading-tight px-4 text-white">
             Trouvez facilement ce dont vous avez besoin.
           </p>
           
-          <div className="bg-black/10 backdrop-blur-sm rounded-3xl p-6 py-4 space-y-2 border border-white/20">
-            <p className="text-sm font-black uppercase tracking-widest text-black/60 translate-y-[-2px]">
+          <div className="bg-black/10 backdrop-blur-sm rounded-3xl p-5 py-3.5 space-y-1.5 border border-white/10">
+            <p className="text-xs font-black uppercase tracking-widest text-black/60">
               🔎 Recherchez rapidement :
             </p>
-            <ul className="text-[17px] sm:text-[18px] font-bold space-y-1">
+            <ul className="text-sm sm:text-base font-bold space-y-1">
               <li>• Des travailleurs (tous types de métiers)</li>
               <li>• Des équipements</li>
               <li>• Des appartements</li>
             </ul>
           </div>
 
-          <p className="text-[15px] sm:text-[16px] font-bold leading-tight px-2">
+          <p className="text-xs sm:text-sm font-bold leading-tight px-4 opacity-90">
             🤝 FILANT°225 vous met en relation directe avec les bonnes personnes.
           </p>
           
-          <p className="text-[14px] font-black uppercase tracking-[0.2em] opacity-80 pt-2">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] opacity-80 py-1">
             Simple. Rapide. Efficace.
           </p>
           
-          <p className="text-[17px] sm:text-[18px] font-bold leading-tight px-2">
+          <p className="text-sm sm:text-base font-bold leading-tight px-4">
             Connectez-vous et commencez dès aujourd'hui.
           </p>
         </div>
 
         {/* Action Section */}
-        <div className="mt-16 flex items-center gap-3 transition-all duration-1000 delay-700 animate-in fade-in slide-in-from-bottom-10 ease-out">
+        <div className="mt-8 flex flex-col items-center gap-2.5 w-full max-w-xs transition-all duration-1000 delay-700 animate-in fade-in slide-in-from-bottom-10 ease-out">
           <button
             onClick={handleStartRegister}
-            className="bg-white text-black text-lg font-black py-3 px-8 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:bg-gray-100 active:scale-95 transition-all duration-300 transform border-2 border-white/20"
+            className="w-full bg-white text-black text-base font-black py-3 px-8 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] hover:bg-gray-100 active:scale-95 transition-all duration-300 transform border border-white/20 uppercase tracking-widest"
           >
-            S'inscrire
+            Se connecter
           </button>
           
-          <button className="w-10 h-10 bg-black/80 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform border-2 border-white/10 group">
-            <span className="text-white text-lg font-serif italic font-bold group-hover:scale-110 transition-transform">i</span>
+          <button className="w-8 h-8 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform border border-white/10 group">
+            <span className="text-white text-xs font-serif italic font-bold group-hover:scale-110 transition-transform">i</span>
           </button>
         </div>
 
