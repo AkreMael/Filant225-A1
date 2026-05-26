@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Tab, User } from '../types';
-import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap } from 'lucide-react';
+import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap, Search, ArrowLeft, X, ChevronRight, Send } from 'lucide-react';
 import MenuBackground from './common/MenuBackground';
 import { databaseService, SavedContact } from '../services/databaseService';
 import ScannerOverlay from './ScannerOverlay';
@@ -10,6 +10,7 @@ import { audioService } from '../services/audioService';
 import { chatService } from '../services/chatService';
 import { isAdmin, getCardType } from '../utils/authUtils';
 import { getServiceItemImage } from './InterventionShopScreen';
+import { motion, AnimatePresence } from 'motion/react';
 
 // --- SVG Icons ---
 const IconWrapper: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
@@ -147,6 +148,278 @@ const batimentWorkers = [
     { title: 'Enseignant privé', description: 'Donne des cours particuliers aux élèves.', formType: 'worker' }
 ];
 
+// --- ALL SEARCH CATEGORIES ---
+const ALL_SEARCH_CATEGORIES = [
+    // --- STAGES & FORMATIONS ---
+    { 
+        title: "Candidature de Stage", 
+        description: "Postulez pour un stage professionnel ou académique directement auprès d'entreprises partenaires de FILANT°225.", 
+        formType: 'stage', 
+        categoryGroup: 'Stages' 
+    },
+    { 
+        title: "Inscription Formation", 
+        description: "Formez-vous aux métiers d'avenir et obtenez des diplômes certifiants pour booster votre employabilité.", 
+        formType: 'formation', 
+        categoryGroup: 'Formations' 
+    },
+
+    // --- AGENCES IMMOBILIÈRES & APPARTEMENTS ---
+    { 
+        title: "Agence Immobilière FILANT", 
+        description: "Demandez une visite ou l'achat/location d'un bien immobilier d'exception avec l'accompagnement d'experts de l'agence FILANT.", 
+        formType: 'location', 
+        categoryGroup: 'Agences Immobilières' 
+    },
+    { 
+        title: "Studio à louer", 
+        description: "Recherche de studios standing, équipés, meublés ou non dans toutes les communes.", 
+        formType: 'location', 
+        categoryGroup: 'Agences Immobilières' 
+    },
+    { 
+        title: "Villa à louer", 
+        description: "Trouvez de superbes villas de standing ou des duplex spacieux pour un confort optimal.", 
+        formType: 'location', 
+        categoryGroup: 'Agences Immobilières' 
+    },
+    { 
+        title: "Chambre-salon à louer", 
+        description: "Recherche d'appartements de type 2 pièces bien placés pour étudiants ou jeunes professionnels.", 
+        formType: 'location', 
+        categoryGroup: 'Agences Immobilières' 
+    },
+    { 
+        title: "Petit local à louer", 
+        description: "Espaces commerciaux, petits bureaux de travail ou bureaux partagés pour lancer votre business.", 
+        formType: 'location', 
+        categoryGroup: 'Agences Immobilières' 
+    },
+    { 
+        title: "Magasin à louer", 
+        description: "Boutiques, magasins d'exposition ou espaces de vente dans des zones commerçantes fluides.", 
+        formType: 'location', 
+        categoryGroup: 'Agences Immobilières' 
+    },
+    { 
+        title: "Terrain à louer ou à vendre", 
+        description: "Achat, vente ou location de parcelles approuvées avec documents légaux complets.", 
+        formType: 'location', 
+        categoryGroup: 'Agences Immobilières' 
+    },
+
+    // --- ÉQUIPEMENTS À LOUER ---
+    { 
+        title: "Sonorisation à louer", 
+        description: "Équipement de sonorisation de haute qualité, micros, baffles et consoles pour vos fêtes.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Bâche à louer", 
+        description: "Ensemble de bâches et abris pliants pour protéger vos convives du soleil et de la pluie.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Groupe électrogène à louer", 
+        description: "Alimentation électrique autonome de secours pour vos grands événements sans interruption.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Table d’événement à louer", 
+        description: "Sélection de tables rectangulaires ou rondes avec nappages élégants pour réceptions.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Chaise d’événement à louer", 
+        description: "Chaises pliantes, vip ou banquet pour asseoir convenablement tous vos invités.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Écran géant à louer", 
+        description: "Écran LED géant pour des présentations de vidéos, de matchs ou de clips d'événements.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+    { 
+        title: "Podium à louer", 
+        description: "Location d'installations scéniques ou de podiums sécurisés pour artistes et présentations.", 
+        formType: 'location', 
+        categoryGroup: 'Équipements à louer' 
+    },
+
+    // --- TRAVAILLEURS QUALIFIÉS (Bâtiment Rapide) ---
+    { 
+        title: "Plombier rapide", 
+        description: "Réparation instantanée des fuites, installation de robinetterie et tuyauteries.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Électricien rapide", 
+        description: "Interventions rapides sur court-circuit, installations de luminaires et sécurisations.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Carreleur rapide", 
+        description: "Pose rapide et impeccable de sols, carreaux, mosaïques de tout format.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Charpentier rapide", 
+        description: "Assemblages de structures bois, charpentes, réparations de bois d'œuvre.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Maçon rapide", 
+        description: "Construction de cloisons, reprises de murs, coulage de dalles rapides.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Soudeur rapide", 
+        description: "Travaux de ferronnerie, réparation de portails ou grilles métalliques urgents.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Peintre rapide", 
+        description: "Application de couches de peintures ou de revêtements muraux de finition.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Laveur de vitres Rapide", 
+        description: "Nettoyage en hauteur ou standard de vos baies vitrées et vitrines de commerces.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Technicien entretien climatisation Rapide", 
+        description: "Nettoyage complet, décrassage et recharge de fluide pour climatiseurs.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Installateur de caméras de surveillance Rapide", 
+        description: "Configuration de kits de caméras et réglages d'applications de monitoring.", 
+        formType: 'rapid_building_service', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+
+    // --- AUTRES SERVICES & MÉTIERS ---
+    { 
+        title: "Vendeuse / Vendeur", 
+        description: "Personnel qualifié pour la vente directe, les caisses de boutiques ou de rayons.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Cuisinier / Cuisinière", 
+        description: "Chef à domicile ou cuisinier pour vos événements, buffets et plats quotidiens.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Serveur / Serveuse", 
+        description: "Service impeccable de table et accueil professionnel pour restaurants ou soirées.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Coiffeur / Coiffeuse", 
+        description: "Soin des cheveux, tresses africaines, coiffure homme ou femme professionnelle.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Hôtesse d’accueil", 
+        description: "Service de réception, orientation des invités et assistance événementielle.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Chauffeur", 
+        description: "Chauffeur titulaire de permis toutes catégories pour déplacements de personnes.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Agent d’entretien / Femme de ménage", 
+        description: "Nettoyage professionnel de maisons, villas ou bureaux à fréquence choisie.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Esthéticienne", 
+        description: "Spécialiste de la beauté de la peau, des ongles et de l'épilation.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Nounou / Baby-sitter", 
+        description: "Garde attentive et éducative de vos enfants à domicile, en journée ou en soirée.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Jardinier", 
+        description: "Taille de haies, soins des plantes et de la pelouse pour vos villas.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Couturière / Couturier", 
+        description: "Stylisme, couture traditionnelle ou moderne et retouches de vêtements.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "MANUCURE À DOMICILE RAPIDE", 
+        description: "Soin et mise en beauté rapide de vos mains et ongles directement chez vous.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "ESTHÉTICIENNE-MASSAGE", 
+        description: "Soins esthétiques du corps, massages de relaxation et gommages de peau.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "MAQUILLEUSE PROFESSIONNELLE", 
+        description: "Maquillages d'événements, mariages, soirées et séances de shooting photo.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "PÂTISSIÈRE", 
+        description: "Confection de gâteaux d'anniversaire personnalisés, de pièces montées ou de gaufres.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    }
+];
+
+const getCategoryCardImage = (title: string): string => {
+    const lower = title.toLowerCase();
+    
+    if (lower.includes('stage')) {
+        return "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=500";
+    }
+    if (lower.includes('formation')) {
+        return "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=500";
+    }
+    
+    return getServiceItemImage(title);
+};
+
 
 // --- COMPONENT CAROUSEL ---
 const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onSelectItem }) => {
@@ -266,6 +539,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   const [showNoOffer, setShowNoOffer] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // --- CONVERSATIONAL ASSISTANT STATES ---
   const [isSearchSubmitted, setIsSearchSubmitted] = useState(false);
@@ -291,6 +566,26 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   const handleMainServiceClick = (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub', category?: 'appartement' | 'equipement') => {
       onNavigate(view, category);
   };
+
+  const handleSelectCategory = (item: any) => {
+      setIsSearchOverlayOpen(false);
+      onOpenBuildingService({
+          title: item.title,
+          description: item.description,
+          formType: item.formType,
+          img: getCategoryCardImage(item.title)
+      });
+  };
+
+  const filteredCategories = useMemo(() => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return ALL_SEARCH_CATEGORIES;
+      return ALL_SEARCH_CATEGORIES.filter(item => 
+          item.title.toLowerCase().includes(q) || 
+          item.description.toLowerCase().includes(q) ||
+          item.categoryGroup.toLowerCase().includes(q)
+      );
+  }, [searchQuery]);
 
   const formattedDate = useMemo(() => {
     const dayName = currentTime.toLocaleDateString('fr-FR', { weekday: 'long' });
@@ -620,26 +915,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     </button>
                 </div>
 
-                <div className="px-4 py-0 w-full flex flex-col gap-1">
+                <div 
+                    onClick={() => {
+                        setIsSearchOverlayOpen(true);
+                        setSearchQuery('');
+                    }}
+                    className="px-4 py-0 w-full flex flex-col gap-1 cursor-pointer active:scale-[0.99] transition-all"
+                >
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex-1 h-1.5 rounded-full bg-animated-search-border animate-search-border-flow shadow-lg"></div>
                         <div className="relative w-full max-w-[240px] h-11 rounded-full p-[2.5px] overflow-hidden group shadow-xl">
                             <div className="absolute inset-0 bg-animated-search-border animate-search-border-flow"></div>
                             <div className="relative w-full h-full bg-[#3d4234] rounded-full flex items-center px-4 gap-2 shadow-inner">
                                 <div className="w-1 h-5 bg-white animate-search-cursor-color rounded-full"></div>
-                                <div className="flex-1 flex items-center justify-between overflow-hidden">
+                                <div className="flex-1 flex items-center justify-between overflow-hidden pointer-events-none">
                                     <input 
-                                        ref={searchInputRef}
                                         type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        onKeyDown={(e) => { if(e.key === 'Enter') handleSearchSubmit(); }}
+                                        readOnly
                                         placeholder="Qu'est-ce que vous recherchez...."
-                                        className="bg-transparent border-none outline-none text-white/80 font-bold text-[10px] tracking-tight truncate w-full placeholder-white/40 lowercase"
+                                        className="bg-transparent border-none outline-none text-white/80 font-bold text-[10px] tracking-tight truncate w-full placeholder-white/40 lowercase cursor-pointer"
                                     />
                                     <button 
-                                        onClick={handleSearchSubmit}
-                                        className={`${searchTerm.trim().length > 0 ? 'bg-orange-500' : 'bg-transparent text-white/40'} p-1.5 rounded-full transition-all active:scale-90 ml-1`}
+                                        className="bg-transparent text-white/40 p-1.5 rounded-full ml-1"
                                     >
                                         <SendIconSmall />
                                     </button>
@@ -694,6 +991,154 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       </div>
 
       {showScanner && <ScannerOverlay onScan={handleScanResult} onClose={() => setShowScanner(false)} />}
+
+      {/* --- FLOATING CATEGORIES SEARCH OVERLAY --- */}
+      <AnimatePresence>
+        {isSearchOverlayOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 220 }}
+            className="fixed inset-0 z-[150] bg-slate-50 flex flex-col overflow-hidden"
+          >
+            {/* Overlay Header with search bar rising upwards */}
+            <div className="px-4 pt-4 pb-3 flex items-center justify-between gap-3 bg-white border-b border-slate-200/60 sticky top-0 z-30 shadow-sm">
+                <button 
+                    onClick={() => {
+                        setIsSearchOverlayOpen(false);
+                        setSearchQuery('');
+                    }}
+                    className="p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 active:scale-90 transition-all flex items-center justify-center shadow-inner"
+                    aria-label="Retour"
+                >
+                    <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                </button>
+                
+                {/* Visual rise/animating search bar */}
+                <div className="relative flex-1 h-11 rounded-full p-[2.5px] overflow-hidden shadow-md">
+                    <div className="absolute inset-0 bg-animated-search-border animate-search-border-flow"></div>
+                    <div className="relative w-full h-full bg-[#3d4234] rounded-full flex items-center px-4 gap-2 shadow-inner">
+                        <div className="w-1 h-5 bg-white animate-search-cursor-color rounded-full"></div>
+                        <div className="flex-1 flex items-center justify-between overflow-hidden">
+                            <input 
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Qu'est-ce que vous recherchez?..."
+                                className="bg-transparent border-none outline-none text-white/95 font-bold text-xs tracking-tight truncate w-full placeholder-white/40 lowercase"
+                                autoFocus
+                            />
+                            {searchQuery.trim().length > 0 && (
+                                <button 
+                                    onClick={() => setSearchQuery('')}
+                                    className="p-1 rounded-full bg-white/20 hover:bg-white/35 text-white/80 active:scale-90 ml-1"
+                                >
+                                    <X className="w-3.5 h-3.5 stroke-[3]" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Vertical Scroll Categories interface */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4 pb-20 scrollbar-none">
+                <div className="flex justify-between items-center px-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        {filteredCategories.length} {filteredCategories.length > 1 ? 'catégories trouvées' : 'catégorie trouvée'}
+                    </p>
+                    {searchQuery && (
+                        <button 
+                            onClick={() => setSearchQuery('')}
+                            className="text-[10px] font-black uppercase tracking-widest text-green-600 bg-green-50 hover:bg-green-100 px-2.5 py-1 rounded-full transition-colors ml-auto"
+                        >
+                            Réinitialiser
+                        </button>
+                    )}
+                </div>
+
+                {filteredCategories.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                        {filteredCategories.map((item, index) => {
+                            const itemImage = getCategoryCardImage(item.title);
+                            const isStageOrFormation = item.formType === 'stage' || item.formType === 'formation';
+                            const isEquipement = item.categoryGroup === 'Équipements à louer';
+                            const isImmobilier = item.categoryGroup === 'Agences Immobilières';
+                            
+                            const groupColorClass = isStageOrFormation 
+                                ? 'text-orange-600 bg-orange-50/95 ring-1 ring-orange-500/10' 
+                                : isEquipement 
+                                ? 'text-purple-600 bg-purple-50/95 ring-1 ring-purple-500/10'
+                                : isImmobilier
+                                ? 'text-blue-600 bg-blue-50/95 ring-1 ring-blue-500/10'
+                                : 'text-green-600 bg-green-50/95 ring-1 ring-green-500/10';
+
+                            return (
+                                <motion.div
+                                    key={item.title}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: Math.min(index * 0.02, 0.2) }}
+                                    className="rounded-[1.5rem] bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 p-2.5 flex flex-col justify-between relative overflow-hidden group border-b-[3px] hover:border-b-orange-500"
+                                >
+                                    {/* Image Container with category group badge overlay at top left */}
+                                    {itemImage && (
+                                        <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden relative shadow-sm flex-shrink-0 bg-slate-50 border border-slate-100">
+                                            <img 
+                                                src={itemImage} 
+                                                alt={item.title} 
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                referrerPolicy="no-referrer"
+                                            />
+                                            {/* Badge Overlaid nicely */}
+                                            <div className="absolute top-1.5 left-1.5 z-10">
+                                                <span className={`text-[7px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow-xs backdrop-blur-md ${groupColorClass} ring-1 ring-white/10`}>
+                                                    {item.categoryGroup}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="flex-1 flex flex-col justify-between pt-2">
+                                        <div className="flex flex-col">
+                                            <h3 className="text-[11px] font-black uppercase tracking-tight text-slate-900 group-hover:text-orange-500 transition-colors duration-300 line-clamp-2 leading-tight min-h-[1.75rem]">
+                                                {item.title}
+                                            </h3>
+                                            <p className="text-[10px] font-semibold text-slate-400 mt-1 line-clamp-2 leading-tight min-h-[2.25rem]">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className="mt-2.5">
+                                            <button
+                                                onClick={() => handleSelectCategory(item)}
+                                                className="w-full py-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-xs active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
+                                            >
+                                                <Send className="w-2.5 h-2.5 fill-white stroke-[2.5]" />
+                                                <span>Demande</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4 text-slate-400">
+                            <Search className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-lg font-black uppercase tracking-tight text-slate-800 leading-tight">Aucun service trouvé</h3>
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wide mt-2 max-w-xs leading-relaxed">
+                            Nous n'avons trouvé aucun résultat pour "{searchQuery}". Essayez avec un autre terme comme "plombier" ou "studio".
+                        </p>
+                    </div>
+                )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style>{`
         .text-outline-white {
