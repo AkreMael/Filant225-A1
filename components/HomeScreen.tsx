@@ -1450,30 +1450,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                         setIsSearchOverlayOpen(true);
                         setSearchQuery('');
                     }}
-                    className="px-4 py-0 w-full flex flex-col gap-1 cursor-pointer active:scale-[0.99] transition-all"
+                    className="py-2 w-full flex justify-center cursor-pointer active:scale-[0.97] transition-all"
                 >
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex-1 h-1.5 rounded-full bg-animated-search-border animate-search-border-flow shadow-lg"></div>
-                        <div className="relative w-full max-w-[240px] h-11 rounded-full p-[2.5px] overflow-hidden group shadow-xl">
-                            <div className="absolute inset-0 bg-animated-search-border animate-search-border-flow"></div>
-                            <div className="relative w-full h-full bg-[#3d4234] rounded-full flex items-center px-4 gap-2 shadow-inner">
-                                <div className="w-1 h-5 bg-white animate-search-cursor-color rounded-full"></div>
-                                <div className="flex-1 flex items-center justify-between overflow-hidden pointer-events-none">
-                                    <input 
-                                        type="text"
-                                        readOnly
-                                        placeholder="Qu'est-ce que vous recherchez...."
-                                        className="bg-transparent border-none outline-none text-white/80 font-bold text-[10px] tracking-tight truncate w-full placeholder-white/40 lowercase cursor-pointer"
-                                    />
-                                    <button 
-                                        className="bg-transparent text-white/40 p-1.5 rounded-full ml-1"
-                                    >
-                                        <SendIconSmall />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div className="w-64 h-1.5 rounded-full bg-animated-search-border animate-search-border-flow shadow-lg"></div>
                 </div>
 
                 {!isSearchSubmitted && (
