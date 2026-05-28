@@ -151,12 +151,7 @@ const batimentWorkers = [
 // --- ALL SEARCH CATEGORIES ---
 const ALL_SEARCH_CATEGORIES = [
     // --- AGENCES IMMOBILIÈRES & APPARTEMENTS ---
-    { 
-        title: "Agence Immobilière FILANT", 
-        description: "Demandez une visite ou l'achat/location d'un bien immobilier d'exception avec l'accompagnement d'experts de l'agence FILANT.", 
-        formType: 'location', 
-        categoryGroup: 'Agences Immobilières' 
-    },
+
     { 
         title: "Studio à louer", 
         description: "Recherche de studios standing, équipés, meublés ou non dans toutes les communes.", 
@@ -195,12 +190,7 @@ const ALL_SEARCH_CATEGORIES = [
     },
 
     // --- ÉQUIPEMENTS À LOUER ---
-    { 
-        title: "Camion benne à louer", 
-        description: "Location de camions benne robustes pour le transport lourd de décombres ou de matériaux.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
+
     { 
         title: "Camion de campagne à louer", 
         description: "Camion podium équipé d'une sonorisation pour vos campagnes de sensibilisation ou publicitaires.", 
@@ -231,72 +221,14 @@ const ALL_SEARCH_CATEGORIES = [
         formType: 'location', 
         categoryGroup: 'Équipements à louer' 
     },
-    { 
-        title: "Bétonnière à louer", 
-        description: "Location de bétonnières professionnelles pour simplifier la préparation de vos mortiers.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
-    { 
-        title: "Échafaudage à louer", 
-        description: "Échafaudages de chantier sécurisés et modulables pour vos travaux de bâtiment en hauteur.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
-    { 
-        title: "Tracteur à louer", 
-        description: "Tracteurs robustes pour vos aménagement de parcelles, travaux agricoles ou de terrassement.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
-    { 
-        title: "Mini pelle à louer", 
-        description: "Mini pelle hydraulique pour le creusement de tranchées et excavations dans des espaces réduits.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
-    { 
-        title: "Pelle mécanique à louer", 
-        description: "Excavatrice de chantier robuste pour vos grands travaux publics et terrassements d'envergure.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
-    { 
-        title: "Marteau piqueur à louer", 
-        description: "Démolisseur pneumatique de forte puissance pour briser dalles de béton ou vieux bitumes.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
-    { 
-        title: "Compresseur à louer", 
-        description: "Compresseurs d'air performants pour alimenter vos outils de chantier ou sablage.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
+
     { 
         title: "Sonorisation à louer", 
         description: "Équipement de sonorisation de haute qualité, micros, baffles et consoles pour vos fêtes.", 
         formType: 'location', 
         categoryGroup: 'Équipements à louer' 
     },
-    { 
-        title: "Tente événementielle à louer", 
-        description: "Tentes de réception blanches et chapiteaux professionnels imperméables pour vos banquets.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
-    { 
-        title: "Véhicule de transport à louer", 
-        description: "Véhicules utilitaires légers ou camionnettes pour loger et déplacer vos biens et cartons.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
-    { 
-        title: "Engin de chantier à louer", 
-        description: "Divers engins spécialisés et machines de terrassement pour vos besoins spécifiques de BTP.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
+
     { 
         title: "Espace d’événement à louer", 
         description: "Salles climatisées prestigieuses ou espaces extérieurs spacieux pour accueillir vos convives.", 
@@ -369,12 +301,7 @@ const ALL_SEARCH_CATEGORIES = [
         formType: 'location', 
         categoryGroup: 'Équipements à louer' 
     },
-    { 
-        title: "Plateau de service à louer", 
-        description: "Plateaux solides et antidérapants pour serveurs de réceptions et traiteurs.", 
-        formType: 'location', 
-        categoryGroup: 'Équipements à louer' 
-    },
+
     { 
         title: "Microphone événement à louer", 
         description: "Système professionnel double HF micro serre-tête ou micro baladeur pour vos conférences.", 
@@ -557,12 +484,7 @@ const ALL_SEARCH_CATEGORIES = [
         formType: 'rapid_building_service', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
-    { 
-        title: "Réparation fuite d’eau rapide", 
-        description: "Détection acoustique ou thermique de fuites invisibles encastrées et colmatage immédiat.", 
-        formType: 'rapid_building_service', 
-        categoryGroup: 'Travailleurs Qualifiés' 
-    },
+
     { 
         title: "Dépannage parabole rapide", 
         description: "Amélioration du signal satellite, réglage ou déplacement d'antenne suite à intempéries.", 
