@@ -1133,6 +1133,7 @@ const App: React.FC = () => {
             isMiseEnRelationActive={false}
             unreadChatCount={unreadChatCount}
             isHidden={isFullScreenView}
+            showAdmin={isAdmin(currentUser) || isAdminAuthenticated}
           />
         </div>
       </div>

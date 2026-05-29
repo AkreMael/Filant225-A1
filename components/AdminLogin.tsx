@@ -50,11 +50,11 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onBack }) => {
             <div className="relative">
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
-                type="tel"
+                type="password"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="0705052632"
-                className="w-full bg-gray-100 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-blue-500/50 transition-all outline-none"
+                placeholder="00"
+                className="w-full bg-gray-100 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-blue-500/50 transition-all outline-none tracking-widest"
                 required
               />
             </div>

@@ -29,9 +29,11 @@ interface BottomNavProps {
   isMiseEnRelationActive?: boolean;
   unreadChatCount?: number;
   isHidden?: boolean;
+  onOpenScanner?: () => void;
+  showAdmin?: boolean;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggleProfile, isProfileOpen, userRole, userPhone, isMiseEnRelationActive, unreadChatCount, onOpenScanner, isHidden }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggleProfile, isProfileOpen, userRole, userPhone, isMiseEnRelationActive, unreadChatCount, onOpenScanner, isHidden, showAdmin = false }) => {
   if (isHidden) return null;
   
   // Définition statique des onglets pour le Client uniquement
@@ -42,7 +44,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
     { id: Tab.Offer, icon: <SiteIcon />, label: "Site" },
     { id: Tab.UserChat, icon: <ChatBubbleIcon />, label: "Chat" },
     { id: 'scanner', icon: <ScannerIcon />, label: "Scanner" },
-    { id: Tab.Admin, icon: <AdminIcon />, label: "Admin", isBlue: true },
+    ...(showAdmin ? [{ id: Tab.Admin, icon: <AdminIcon />, label: "Admin", isBlue: true }] : []),
     { id: Tab.Payment, icon: <PaymentIcon />, label: "Paiement" },
   ];
 
