@@ -33,8 +33,8 @@ const WhatsAppIcon = () => (
 );
 
 const QUICK_MESSAGES = [
-  { label: 'BIENVENUE', text: "Bonjour ! Bienvenue chez Filan 225. Nous avons bien reçu votre formulaire. Votre profil est en cours de traitement. Merci de votre confiance !" },
-  { label: 'VALIDATION', text: "Félicitations ! Votre inscription sur Filan 225 est validée. Vous faites officiellement partie de notre réseau. À très bientôt pour des opportunités !" },
+  { label: 'BIENVENUE', text: "Bonjour ! Bienvenue chez FILANT°225. Nous avons bien reçu votre formulaire. Votre profil est en cours de traitement. Merci de votre confiance !" },
+  { label: 'VALIDATION', text: "Félicitations ! Votre inscription sur FILANT°225 est validée. Vous faites officiellement partie de notre réseau. À très bientôt pour des opportunités !" },
   { label: 'CORRECTION', text: "Bonjour, certaines informations de votre formulaire sont incomplètes. Merci de nous préciser les détails manquants ici même dans cette messagerie." }
 ];
 
@@ -66,7 +66,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     ? ((targetUser.phone || '').replace(/\D/g, '') || targetUser.userId || targetUser.id || `${targetUser.name}_${(targetUser.phone || '').replace(/\D/g, '')}`)
     : ((currentUser.phone || '').replace(/\D/g, '') || currentUser.userId || currentUser.id || `${currentUser.name}_${(currentUser.phone || '').replace(/\D/g, '')}`);
 
-  const chatTitle = isAdmin && targetUser ? `${targetUser.name}` : `Messagerie (Filant 225)`;
+  const chatTitle = isAdmin && targetUser ? `${targetUser.name}` : `Messagerie (FILANT°225)`;
 
   // Effect to handle sending our typing status
   useEffect(() => {
@@ -317,7 +317,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
             <p className="text-xs font-bold text-slate-400 leading-relaxed max-w-[200px]">
               {isAdmin 
                 ? "Envoyez un message privé à cet utilisateur pour démarrer la conversation."
-                : "Bienvenue dans votre espace de discussion privée avec Filant 225. Posez vos questions ici !"}
+                : "Bienvenue dans votre espace de discussion privée avec FILANT°225. Posez vos questions ici !"}
             </p>
           </div>
         ) : (

@@ -17,7 +17,7 @@ const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => 
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-4">
         <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-6 shadow-xl"></div>
-        <h2 className="text-2xl font-black uppercase tracking-tighter animate-pulse text-orange-500">Filant°225</h2>
+        <h2 className="text-2xl font-black uppercase tracking-tighter animate-pulse text-orange-500">FILANT°225</h2>
         <p className="text-xs text-white/50 mt-2 font-bold uppercase tracking-widest">Initialisation...</p>
       </div>
     );

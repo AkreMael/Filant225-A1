@@ -391,7 +391,7 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
       </AnimatePresence>
 
       <footer className="p-8 text-center">
-          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">Signature Numérique • Filant°225</p>
+          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">Signature Numérique • FILANT°225</p>
       </footer>
     </div>
   );

@@ -938,7 +938,7 @@ const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onS
                                     {item.description}
                                 </p>
                                 <div className="flex items-center justify-between border-t border-gray-50 pt-2">
-                                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Filant Services</span>
+                                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">FILANT°225</span>
                                     <div className="flex h-2.5 w-2.5 rounded-full border-2 border-white shadow-md animate-flash-green-red"></div>
                                 </div>
                             </div>
@@ -1170,7 +1170,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     Aucune offre disponible pour le moment
                 </p>
             </div>
-            <p className="mt-8 text-white/60 font-bold uppercase tracking-widest text-[10px]">Filant°225 • Service Client</p>
+            <p className="mt-8 text-white/60 font-bold uppercase tracking-widest text-[10px]">FILANT°225 • Service Client</p>
         </div>
     );
   }

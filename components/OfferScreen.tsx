@@ -269,7 +269,7 @@ const InterventionCard: React.FC<{ item: WorkerOffer, currentUser?: any }> = ({ 
                 <p className="text-[9px] text-gray-400 leading-tight italic line-clamp-2 mt-auto mb-1">{item.description}</p>
                 <div className="flex items-center gap-1 opacity-40">
                     <ShopIcon />
-                    <span className="text-[8px] font-bold truncate">Filant Services</span>
+                    <span className="text-[8px] font-bold truncate">FILANT°225</span>
                 </div>
             </div>
         </div>
@@ -896,7 +896,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                 
                 <div className="bg-white/10 backdrop-blur-md rounded-[2rem] p-6 border border-white/20 shadow-2xl">
                     <p className="text-white font-black text-xl leading-tight mb-6 uppercase tracking-tighter">
-                        Rejoignez la Révolution du Travail en Côte d’Ivoire avec Filan 225 !
+                        Rejoignez la Révolution du Travail en Côte d’Ivoire avec FILANT°225 !
                     </p>
                     
                     <div className="space-y-6 mb-8">
@@ -905,8 +905,8 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                         </p>
                         
                         <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-4">
-                            <p className="text-white text-sm font-medium leading-relaxed">
-                                <span className="text-orange-500 font-black">Filan 225</span> vous ouvre les portes d'une visibilité nationale.
+                             <p className="text-white text-sm font-medium leading-relaxed">
+                                <span className="text-orange-500 font-black">FILANT°225</span> vous ouvre les portes d'une visibilité nationale.
                             </p>
                             <p className="text-white text-sm font-bold leading-relaxed">
                                 Inscrivez-vous dès maintenant pour être mis en relation directe avec des clients sérieux, partout en Côte d’Ivoire.
@@ -921,7 +921,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
                         
                         <div 
                             onClick={() => {
-                                const audioText = `Rejoignez la Révolution du Travail en Côte d’Ivoire avec Filan 225 ! Vous êtes un travailleur qualifié, un propriétaire d'équipement, une agence immobilière ou une entreprise ambitieuse ? Ne restez plus dans l'ombre ! Filan 225 vous ouvre les portes d'une visibilité nationale. Inscrivez-vous dès maintenant pour être mis en relation directe avec des clients sérieux, partout en Côte d’Ivoire.`;
+                                const audioText = `Rejoignez la Révolution du Travail en Côte d’Ivoire avec FILANT°225 ! Vous êtes un travailleur qualifié, un propriétaire d'équipement, une agence immobilière ou une entreprise ambitieuse ? Ne restez plus dans l'ombre ! FILANT°225 vous ouvre les portes d'une visibilité nationale. Inscrivez-vous dès maintenant pour être mis en relation directe avec des clients sérieux, partout en Côte d’Ivoire.`;
                                 audioService.speak(audioText);
                             }}
                             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-2xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm cursor-pointer"
