@@ -210,9 +210,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   });
   const [isUploading, setIsUploading] = useState(false);
   const [activeSide, setActiveSide] = useState<'front' | 'back' | null>(null);
+  const [idSourceSelector, setIdSourceSelector] = useState<'front' | 'back' | null>(null);
   
   const touchStartX = useRef<number | null>(null);
-  const idFileInputRef = useRef<HTMLInputElement>(null);
+  const idCameraInputRef = useRef<HTMLInputElement>(null);
+  const idGalleryInputRef = useRef<HTMLInputElement>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
       touchStartX.current = e.touches[0].clientX;
@@ -371,12 +373,17 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                 <ProfileRow 
                   icon={<IdIcon className="w-10 h-10 text-blue-600" />} 
                   title="Intégration de la pièce d'identité" 
-                  subtitle={idImages.front && idImages.back ? "En cours de vérification" : "CNI / CARTE PROF / OFFICIEL"} 
+                  subtitle={idImages.front && idImages.back ? "Fichier(s) enregistré(s) • En cours" : idImages.front || idImages.back ? "Fichier(s) enregistré(s) partiellement" : "CNI / CARTE PROF / OFFICIEL"} 
                   onClick={() => setShowIdModal(true)} 
                   rightElement={idImages.front && idImages.back ? (
-                    <div className="bg-yellow-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-yellow-200">
+                    <div className="bg-yellow-105 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-yellow-250">
                       <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
-                      <span className="text-[9px] font-black text-yellow-800 uppercase tracking-tight">VÉRIC...</span>
+                      <span className="text-[9px] font-black text-yellow-800 uppercase tracking-tight">EN COURS</span>
+                    </div>
+                  ) : idImages.front || idImages.back ? (
+                    <div className="bg-blue-100 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-blue-200">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                      <span className="text-[9px] font-black text-blue-800 uppercase tracking-tight">PARTIEL</span>
                     </div>
                   ) : undefined} 
                 />
@@ -422,45 +429,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (idImages.front && idImages.back) {
-      onShowPopup("Ces documents ont déjà été validés et sont en cours de vérification.", "alert");
-      return;
-    }
-
     setIsUploading(true);
-    onShowPopup("Analyse et vérification de la pièce d'identité...", "alert");
+    onShowPopup("Intégration du document d'identité...", "alert");
 
     try {
-      // 1. Compress image
-      const compressedBase64 = await imageService.compressImage(file, 1000, 0.6);
+      // 1. Compress image to highly optimized base64 for reliable localStorage persistence
+      const compressedBase64 = await imageService.compressImage(file, 600, 0.65);
       
-      // 2. Validate with Gemini server route
-      const response = await fetch("/api/verify-identity", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ imageBase64: compressedBase64 })
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur de communication avec le service de vérification.");
-      }
-
-      const verifyResult = await response.json();
-
-      if (!verifyResult.isValid) {
-        // Automatically reject the image and display the required exact error message
-        onShowPopup("Veuillez réintégrer correctement la pièce d’identité.", "alert");
-        setIsUploading(false);
-        setActiveSide(null);
-        if (e.target) e.target.value = '';
-        return;
-      }
-
-      // If valid, save it locally (and NOT in database yet as requested)
+      const side = activeSide;
       setIdImages(prev => {
-        const updated = { ...prev, [activeSide]: compressedBase64 };
+        const updated = { ...prev, [side]: compressedBase64 };
         if (user?.phone) {
           localStorage.setItem(`filant_id_image_front_${user.phone}`, updated.front);
           localStorage.setItem(`filant_id_image_back_${user.phone}`, updated.back);
@@ -468,13 +446,15 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
         return updated;
       });
 
-      onShowPopup("Image vérifiée et intégrée avec succès !", "alert");
+      onShowPopup("Image de la pièce d'identité enregistrée avec succès !", "alert");
       setIsUploading(false);
       setActiveSide(null);
     } catch (err) {
-      console.error("ID verification error:", err);
-      onShowPopup("Échec de la validation de la pièce d'identité.", "alert");
+      console.error("ID processing error:", err);
+      onShowPopup("Impossible de traiter l'image.", "alert");
       setIsUploading(false);
+    } finally {
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -498,30 +478,23 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
         <div className="grid gap-6">
           {/* Face Avant */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Avant de la pièce</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Avant de la pièce (Recto)</label>
             <div 
               onClick={() => {
-                if (idImages.front && idImages.back) {
-                  onShowPopup("Ces documents ont déjà été validés et sont en cours de vérification.", "alert");
-                  return;
-                }
-                setActiveSide('front'); 
-                idFileInputRef.current?.click();
+                setIdSourceSelector('front');
               }}
-              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group ${(idImages.front && idImages.back) ? 'border-yellow-500 bg-white cursor-not-allowed' : idImages.front ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
+              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group cursor-pointer ${idImages.front ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
             >
               {idImages.front ? (
                 <>
                   <img src={idImages.front} className="w-full h-full object-cover" alt="ID Front" />
-                  {(!idImages.front || !idImages.back) && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <p className="text-white text-[10px] font-black uppercase bg-blue-600 px-4 py-2 rounded-full">Modifier</p>
-                    </div>
-                  )}
+                  <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <p className="text-white text-[10px] font-black uppercase bg-orange-500 px-4 py-2 rounded-full shadow-lg">Modifier</p>
+                  </div>
                 </>
               ) : (
                 <>
-                  <CameraIcon className="w-8 h-8 text-gray-300 mb-2" />
+                  <CameraIcon className="w-8 h-8 text-gray-300 mb-2 animate-bounce" />
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Prendre / Importer</p>
                 </>
               )}
@@ -530,30 +503,23 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
 
           {/* Face Arrière */}
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Arrière de la pièce</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Face Arrière de la pièce (Verso)</label>
             <div 
               onClick={() => {
-                if (idImages.front && idImages.back) {
-                  onShowPopup("Ces documents ont déjà été validés et sont en cours de vérification.", "alert");
-                  return;
-                }
-                setActiveSide('back'); 
-                idFileInputRef.current?.click();
+                setIdSourceSelector('back');
               }}
-              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group ${(idImages.front && idImages.back) ? 'border-yellow-500 bg-white cursor-not-allowed' : idImages.back ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
+              className={`aspect-[1.6/1] w-full rounded-3xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden relative group cursor-pointer ${idImages.back ? 'border-green-500 bg-white' : 'border-gray-200 bg-gray-50'}`}
             >
               {idImages.back ? (
                 <>
                   <img src={idImages.back} className="w-full h-full object-cover" alt="ID Back" />
-                  {(!idImages.front || !idImages.back) && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <p className="text-white text-[10px] font-black uppercase bg-blue-600 px-4 py-2 rounded-full">Modifier</p>
-                    </div>
-                  )}
+                  <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <p className="text-white text-[10px] font-black uppercase bg-orange-500 px-4 py-2 rounded-full shadow-lg">Modifier</p>
+                  </div>
                 </>
               ) : (
                 <>
-                  <CameraIcon className="w-8 h-8 text-gray-300 mb-2" />
+                  <CameraIcon className="w-8 h-8 text-gray-300 mb-2 animate-bounce" />
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Prendre / Importer</p>
                 </>
               )}
@@ -583,14 +549,82 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
         </button>
       </div>
 
+      {/* Camera capture input */}
       <input 
         type="file" 
-        ref={idFileInputRef} 
+        ref={idCameraInputRef} 
         onChange={handleIdFileChange} 
         className="hidden" 
         accept="image/*" 
-        capture={activeSide === 'front' || activeSide === 'back' ? 'environment' : undefined}
+        capture="environment"
       />
+
+      {/* Photo gallery input */}
+      <input 
+        type="file" 
+        ref={idGalleryInputRef} 
+        onChange={handleIdFileChange} 
+        className="hidden" 
+        accept="image/*" 
+      />
+
+      {/* Custom Bottom Action Sheet for Image Source Selection */}
+      {idSourceSelector && (
+        <div className="absolute inset-0 z-[250] flex flex-col justify-end bg-black/60 transition-opacity animate-in fade-in duration-200">
+          <div 
+            className="absolute inset-0" 
+            onClick={() => setIdSourceSelector(null)}
+          ></div>
+          <div className="relative z-10 bg-white rounded-t-[2.5rem] p-6 pb-12 space-y-5 shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-2"></div>
+            <h3 className="text-gray-900 font-extrabold text-center uppercase tracking-wider text-xs">
+              Ajouter une photo ({idSourceSelector === 'front' ? 'Face Avant / Recto' : 'Face Arrière / Verso'})
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  const side = idSourceSelector;
+                  setIdSourceSelector(null);
+                  setActiveSide(side);
+                  setTimeout(() => {
+                    idCameraInputRef.current?.click();
+                  }, 100);
+                }}
+                className="flex flex-col items-center justify-center p-6 bg-orange-50 hover:bg-orange-100 active:scale-95 rounded-3xl border border-orange-100 transition-all text-orange-600 gap-2 cursor-pointer"
+              >
+                <CameraIcon className="w-8 h-8 text-orange-500" />
+                <span className="text-[10px] font-black uppercase tracking-wider mt-1">Appareil Photo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const side = idSourceSelector;
+                  setIdSourceSelector(null);
+                  setActiveSide(side);
+                  setTimeout(() => {
+                    idGalleryInputRef.current?.click();
+                  }, 100);
+                }}
+                className="flex flex-col items-center justify-center p-6 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-3xl border border-blue-100 transition-all text-blue-600 gap-2 cursor-pointer"
+              >
+                <PhotoIcon className="w-8 h-8 text-blue-500" />
+                <span className="text-[10px] font-black uppercase tracking-wider mt-1">Galerie Photos</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIdSourceSelector(null)}
+              className="w-full py-4 text-center text-gray-500 hover:text-gray-700 bg-gray-100 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
