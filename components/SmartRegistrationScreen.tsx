@@ -50,7 +50,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     agencyName: '',
     agencyCity: '',
     agencyPhone: '',
-    propertyTypes: '' as 'Appartement' | 'Terrain' | 'Automobile' | '',
+    propertyTypes: '',
     agencyZone: '',
     // Entreprise
     companyName: '',
@@ -376,16 +376,20 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Disponibilité *</label>
-              <input 
-                type="text"
-                value={formData.availability}
-                onChange={(e) => {
-                    setFormData({...formData, availability: e.target.value});
-                    if (errors.includes('availability')) setErrors(errors.filter(e => e !== 'availability'));
-                }}
-                placeholder="Ex: Lundi au Samedi, 8h-18h"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('availability') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
-              />
+              <div className="flex flex-wrap gap-2 mt-1">
+                {['Toujours disponible', 'Disponible en permanence'].map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => {
+                        setFormData({...formData, availability: opt});
+                        if (errors.includes('availability')) setErrors(errors.filter(e => e !== 'availability'));
+                    }}
+                    className={`px-3 py-1.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.availability === opt ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('availability') ? 'bg-red-50 border-red-200 text-red-50/30 text-red-400' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Zone de déplacement *</label>
@@ -547,18 +551,29 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Type de biens proposés : *</label>
               <div className="flex flex-wrap gap-2 mt-1">
-                {['Appartement', 'Terrain', 'Automobile'].map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => {
-                        setFormData({...formData, propertyTypes: opt as any});
-                        if (errors.includes('propertyTypes')) setErrors(errors.filter(e => e !== 'propertyTypes'));
-                    }}
-                    className={`px-3 py-1.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.propertyTypes === opt ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('propertyTypes') ? 'bg-red-50 border-red-200 text-red-400' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
-                  >
-                    {opt}
-                  </button>
-                ))}
+                {['Appartement', 'Terrain', 'Automobile'].map((opt) => {
+                  const selectedTypes = formData.propertyTypes ? formData.propertyTypes.split(',').map(s => s.trim()) : [];
+                  const isSelected = selectedTypes.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => {
+                          let newTypes: string[];
+                          if (isSelected) {
+                              newTypes = selectedTypes.filter(t => t !== opt);
+                          } else {
+                              newTypes = [...selectedTypes, opt];
+                          }
+                          const newPropertyTypesString = newTypes.join(', ');
+                          setFormData({...formData, propertyTypes: newPropertyTypesString});
+                          if (errors.includes('propertyTypes')) setErrors(errors.filter(e => e !== 'propertyTypes'));
+                      }}
+                      className={`px-3 py-1.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${isSelected ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('propertyTypes') ? 'bg-red-50 border-red-200 text-red-400' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
               </div>
             </div>
             <div>
