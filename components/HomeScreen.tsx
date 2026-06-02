@@ -112,38 +112,42 @@ const batimentWorkers = [
     // Agence Immobilière
     { title: 'Agence Immobilière FILANT', description: 'Trouvez la maison de vos rêves avec notre catalogue exclusif de propriétés.', formType: 'location' },
     // Travailleurs qualifiés
-    { title: 'Vendeuse / Vendeur', description: 'Assure la vente, l’accueil des clients et la gestion d’une boutique.', formType: 'worker' },
-    { title: 'Cuisinier / Cuisinière', description: 'Prépare les repas quotidiennement pour restaurant, foyer ou entreprise.', formType: 'worker' },
-    { title: 'Serveur / Serveuse', description: 'Accueille les clients, sert les plats et s’occupe des commandes.', formType: 'worker' },
-    { title: 'Coiffeur / Coiffeuse', description: 'S’occupe des cheveux, coiffure, tresses et soins capillaires.', formType: 'worker' },
+    { title: 'Vendeuse', description: 'Assure la vente, l’accueil des clients et la gestion d’une boutique.', formType: 'worker' },
+    { title: 'Cuisinier', description: 'Prépare les repas pour restaurant, foyer ou entreprise.', formType: 'worker' },
+    { title: 'Serveur', description: 'Accueille les clients, sert les plats et s’occupe des commandes.', formType: 'worker' },
+    { title: 'Coiffeur Homme', description: 'Coupes de cheveux hommes, rasage et soins de la barbe.', formType: 'worker' },
+    { title: 'Coiffeuse Femme', description: 'Tresses africaines, tissages, tressages et coiffure dames.', formType: 'worker' },
     { title: 'Hôtesse d’accueil', description: 'Accueille les visiteurs, gère les informations et la réception.', formType: 'worker' },
     { title: 'Chauffeur', description: '(Taxi, VTC, Entreprise) Conduit les clients ou le personnel d’un lieu à un autre.', formType: 'worker' },
-    { title: 'Agent d’entretien / Femme de ménage', description: 'Nettoyeur bureaux et maisons.', formType: 'worker' },
-    { title: 'Caissière / Caissier', description: 'Gère les paiements, la caisse et l’accueil dans les commerces.', formType: 'worker' },
+    { title: 'Agent d’entretien', description: 'Nettoyage professionnel de bureaux, immeubles et maisons.', formType: 'worker' },
+    { title: 'Femme de ménage', description: 'Entretien ménager soigné et lessivages pour votre domicile.', formType: 'worker' },
+    { title: 'Caissier', description: 'Gère les paiements, la caisse et l’accueil dans les commerces.', formType: 'worker' },
     { title: 'Réceptionniste', description: 'Accueille les clients dans hôtels, entreprises ou agences.', formType: 'worker' },
-    { title: 'Nounou / Baby-sitter', description: 'Garde les enfants, aide aux devoirs et accompagne la famille.', formType: 'worker' },
+    { title: 'Nounou', description: 'Garde les enfants, aide aux devoirs et accompagne la famille.', formType: 'worker' },
+    { title: 'Baby-sitter', description: 'Garde ponctuelle d’enfants pour soulager les parents au besoin.', formType: 'worker' },
     { title: 'Jardinier', description: 'Entretient les jardins, pelouses, fleurs et espaces verts.', formType: 'worker' },
-    { title: 'Couturière / Couturier', description: 'Coud, répare et crée des vêtements pour clients.', formType: 'worker' },
+    { title: 'Couturier', description: 'Coupe, couture, confection et retouches de vêtements.', formType: 'worker' },
     { title: 'Esthéticienne', description: 'Fait les soins du visage, manucure, pédicure, beauté.', formType: 'worker' },
     { title: 'Magasinier', description: 'Gère les stocks, rangement et réception des marchandises.', formType: 'worker' },
     { title: 'Manutentionnaire', description: 'Charge, décharge et organise les marchandises.', formType: 'worker' },
-    { title: 'Vigile', description: 'Sécurise l’entrée d’un commerce ou d’un bâtiment.', formType: 'worker' },
-    { title: 'Aide à domicile', description: 'Services humains', formType: 'worker' },
-    { title: 'Garde malade (jour / nuit)', description: 'Services humains', formType: 'worker' },
+    { title: 'Agent de sécurité', description: 'Assure la sécurité et la surveillance d’un commerce, bâtiment ou d’une résidence.', formType: 'worker' },
+    { title: 'Aide à domicile', description: 'Services de maintien à domicile et d’accompagnement.', formType: 'worker' },
+    { title: 'Garde malade (jour / nuit)', description: 'Maintien physique et accompagnement des personnes âgées ou dépendantes.', formType: 'worker' },
     { title: 'MANUCURE À DOMICILE RAPIDE', description: 'Soin et mise en beauté des mains et des pieds à domicile.', formType: 'worker' },
     { title: 'ESTHÉTICIENNE-MASSAGE', description: 'Soins esthétiques du corps et du visage, massages de bien-être.', formType: 'worker' },
     { title: 'MAQUILLEUSE PROFESSIONNELLE', description: 'Maquillage professionnel pour mariages, soirées et événements.', formType: 'worker' },
-    { title: 'PÂTISSIÈRE', description: 'Création et préparation de pâtisseries artisanales pour événements et au quotidien.', formType: 'worker' },
+    { title: 'Pâtissier', description: 'Création et préparation de pâtisseries artisanales pour événements et au quotidien.', formType: 'worker' },
     { title: 'Vente en ligne', description: 'Vend des produits via internet.', formType: 'worker' },
     { title: 'Grossiste', description: 'Fournit des produits en grande quantité aux commerçants.', formType: 'worker' },
     { title: 'Vente de vêtements', description: 'Propose des vêtements à la vente aux clients.', formType: 'worker' },
-    { title: 'Cuisinier / Restaurateur', description: 'Prépare et cuisine des plats pour les clients.', formType: 'worker' },
+    { title: 'Restaurateur', description: 'Prépare et cuisine des plats pour les clients.', formType: 'worker' },
     { title: 'Décorateur intérieur', description: 'Aménage et décore des espaces intérieurs.', formType: 'worker' },
     { title: 'Pose de faux plafond', description: 'Installe des plafond suspendus dans les maisons ou bureaux.', formType: 'worker' },
     { title: 'Community manager', description: 'Gère les réseaux sociaux pour les entreprises ou projets.', formType: 'worker' },
     { title: 'Photographe', description: 'Prend des photos pour événements ou projets.', formType: 'worker' },
     { title: 'Vidéaste / Monteur', description: 'Réalise et monte des vidéos.', formType: 'worker' },
-    { title: 'Manucure / Pédicure', description: 'S’occupe des soins des mains et pieds.', formType: 'worker' },
+    { title: 'Manucure', description: 'S’occupe des soins de mise en beauté des mains.', formType: 'worker' },
+    { title: 'Pédicure', description: 'S’occupe des soins de mise en beauté des pieds.', formType: 'worker' },
     { title: 'Massage', description: 'Pratique des massages pour le bien-être.', formType: 'worker' },
     { title: 'Maquillage professionnel', description: 'Maquille pour événements ou spectacles.', formType: 'worker' },
     { title: 'Enseignant privé', description: 'Donne des cours particuliers aux élèves.', formType: 'worker' }
@@ -613,26 +617,32 @@ const ALL_SEARCH_CATEGORIES = [
 
     // --- AUTRES SERVICES & MÉTIERS ---
     { 
-        title: "Vendeuse / Vendeur", 
+        title: "Vendeuse", 
         description: "Personnel qualifié pour la vente directe, les caisses de boutiques ou de rayons.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Cuisinier / Cuisinière", 
-        description: "Chef à domicile ou cuisinier pour vos événements, buffets et plats quotidiens.", 
+        title: "Cuisinier", 
+        description: "Chef à domicile pour vos événements, buffets et plats quotidiens.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Serveur / Serveuse", 
-        description: "Service impeccable de table et accueil professionnel pour restaurants ou soirées.", 
+        title: "Serveur", 
+        description: "Service de table impeccable et accueil professionnel pour restaurants ou soirées.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Coiffeur / Coiffeuse", 
-        description: "Soin des cheveux, tresses africaines, coiffure homme ou femme professionnelle.", 
+        title: "Coiffeur Homme", 
+        description: "Coupes masculines et soins capillaires professionnels pour hommes.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Coiffeuse Femme", 
+        description: "Tresses africaines sophistiquées, coiffure et soins capillaires pour dames.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
@@ -649,14 +659,20 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Agent d’entretien / Femme de ménage", 
-        description: "Nettoyage professionnel de maisons, villas ou bureaux à fréquence choisie.", 
+        title: "Agent d’entretien", 
+        description: "Nettoyage rigoureux de maisons, villas ou bureaux.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Caissière / Caissier", 
-        description: "Agent d'encaissement formé à la gestion des caisses enregistreuses et terminaux.", 
+        title: "Femme de ménage", 
+        description: "Entretien régulier de votre maison, vitres, et lessives.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Caissier", 
+        description: "Agent d'encaissement formé à la gestion des caisses enregistreuses et terminaux de paiement.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
@@ -673,8 +689,14 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Nounou / Baby-sitter", 
-        description: "Garde attentive et éducative de vos enfants à domicile, en journée ou en soirée.", 
+        title: "Nounou", 
+        description: "Garde attentive et accompagnement quotidien de vos enfants à domicile.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Baby-sitter", 
+        description: "Garde ponctuelle ou occasionnelle de vos enfants en journée ou en soirée.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
@@ -685,8 +707,8 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Couturière / Couturier", 
-        description: "Stylisme, couture traditionnelle ou moderne et retouches de vêtements.", 
+        title: "Couturier", 
+        description: "Coupe sur mesure, confection sur tout type de tissus et ajustements précis.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
@@ -703,8 +725,8 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Vigile", 
-        description: "Surveillance de jour comme de nuit d'accès physiques, ronde de sûreté d'immeubles.", 
+        title: "Agent de sécurité", 
+        description: "Surveillance de jour comme de nuit d’accès physiques, ronde de sûreté d’immeubles.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
@@ -727,7 +749,7 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "PÂTISSIÈRE", 
+        title: "Pâtissier", 
         description: "Confection de gâteaux d'anniversaire personnalisés, de pièces montées ou de gaufres.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
@@ -799,8 +821,14 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Manucure / Pédicure", 
-        description: "S’occupe des soins des mains et des pieds pour votre beauté.", 
+        title: "Manucure", 
+        description: "S’occupe des soins et mise en beauté esthétique de vos mains.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Pédicure", 
+        description: "S’occupe des soins d’hygiène et de beauté esthétique de vos pieds.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },
@@ -853,8 +881,14 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Aide à domicile / Garde malade", 
-        description: "Assistance bienveillante à domicile pour personnes âgées ou malades en convalescence.", 
+        title: "Aide à domicile", 
+        description: "Assistance bienveillante pour les tâches de la vie quotidienne.", 
+        formType: 'worker', 
+        categoryGroup: 'Travailleurs Qualifiés' 
+    },
+    { 
+        title: "Garde malade", 
+        description: "Suivi et bien-être physique de personnes dépendantes, malades ou en convalescence.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     }
@@ -951,7 +985,7 @@ const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onS
 };
 
 interface HomeScreenProps {
-  onNavigate: (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub', category?: 'appartement' | 'equipement') => void;
+  onNavigate: (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub' | 'demande_recherche', category?: 'appartement' | 'equipement') => void;
   user: User;
   setActiveTab: (tab: Tab) => void;
   onOpenBuildingService: (item: any) => void;
@@ -1016,7 +1050,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   const isCardExpired = false;
   const cardData = null;
 
-  const handleMainServiceClick = (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub', category?: 'appartement' | 'equipement') => {
+  const handleMainServiceClick = (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub' | 'demande_recherche', category?: 'appartement' | 'equipement') => {
       onNavigate(view, category);
   };
 
@@ -1369,13 +1403,30 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
 
                 <div 
-                    onClick={() => {
-                        setIsSearchOverlayOpen(true);
-                        setSearchQuery('');
-                    }}
-                    className="py-2 w-full flex justify-center cursor-pointer active:scale-[0.97] transition-all"
+                    className="py-2 w-full flex justify-center"
                 >
                     <div className="w-64 h-1.5 rounded-full bg-animated-search-border animate-search-border-flow shadow-lg"></div>
+                </div>
+
+                <div className="w-full">
+                    <button
+                        onClick={() => handleMainServiceClick('demande_recherche')}
+                        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-3xl p-5 flex items-center justify-between shadow-xl transform active:scale-[0.98] transition-all border-2 border-white/20 font-sans relative overflow-hidden group"
+                        id="demande-recherche-button"
+                    >
+                        <div className="flex items-center space-x-4 text-left">
+                            <IconWrapper className="w-12 h-12 bg-white/20 text-white shadow-md">
+                                <Search className="w-6 h-6 stroke-[2.5]" />
+                            </IconWrapper>
+                            <div className="flex flex-col items-start">
+                                <span className="text-lg font-black uppercase tracking-tight leading-none text-white">Demande de recherche</span>
+                                <span className="text-[10px] text-white/90 mt-1 font-bold">Métier, travailleur, agence immobilière ou équipement</span>
+                            </div>
+                        </div>
+                        <div className="p-2 rounded-full bg-white text-orange-600 shadow-sm">
+                            <ChevronRight className="h-5 w-5 stroke-[3]" />
+                        </div>
+                    </button>
                 </div>
 
                 {!isSearchSubmitted && (

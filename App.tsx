@@ -27,6 +27,7 @@ import InterventionShopScreen from './components/InterventionShopScreen';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import StageFormationHubScreen from './components/StageFormationHubScreen';
+import { DemandeRechercheScreen } from './components/DemandeRechercheScreen';
 import { motion, AnimatePresence } from 'motion/react';
 import { isAdmin } from './utils/authUtils';
 import { databaseService, SavedContact } from './services/databaseService';
@@ -138,7 +139,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Menu);
   const [showFullRegistration, setShowFullRegistration] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub'>('hub');
+  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>('hub');
   const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Assistant' | 'Privee' } | null>(null);
   const [offerSubView, setOfferSubView] = useState<'main' | 'shop'>('main');
   
@@ -833,6 +834,12 @@ const App: React.FC = () => {
             user={displayUser} 
             onOpenForm={(context) => setInteractiveModalContext(context as any)} 
             onRegisterBackHandler={(handler) => backHandlerRef.current = handler}
+          />;
+          break;
+        case 'demande_recherche':
+          activeScreen = <DemandeRechercheScreen 
+            onBack={handleBack} 
+            user={displayUser} 
           />;
           break;
         case 'admin_dashboard':

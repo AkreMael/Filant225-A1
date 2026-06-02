@@ -114,6 +114,73 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     return getFormImage(title);
   }, [imageUrl, title]);
 
+  const [isSearchingInDb, setIsSearchingInDb] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(title.replace(/ Rapide$/i, '').trim());
+  const [isPerformingSearch, setIsPerformingSearch] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  const handlePerformDbSearch = async () => {
+    setIsPerformingSearch(true);
+    try {
+      const inscriptions = await databaseService.getInscriptions();
+      if (!inscriptions || inscriptions.length === 0) {
+        setSearchResults([]);
+        setHasSearched(true);
+        setIsPerformingSearch(false);
+        return;
+      }
+
+      const normalizedQuery = searchQuery.toLowerCase().trim();
+      if (!normalizedQuery) {
+        setSearchResults(inscriptions);
+        setHasSearched(true);
+        setIsPerformingSearch(false);
+        return;
+      }
+
+      const keywords = normalizedQuery.split(/\s+/).filter(k => k.length > 1);
+
+      const filtered = inscriptions.filter((doc: any) => {
+        const name = (doc.name || doc.companyName || doc.agencyName || '').toLowerCase();
+        const city = (doc.city || doc.agencyCity || doc.companyCity || doc.equipmentCity || '').toLowerCase();
+        const profileType = (doc.profileType || '').toLowerCase();
+        
+        let mainField = '';
+        let subField = '';
+        
+        if (doc.profileType === 'Travailleur') {
+          mainField = (doc.job || '').toLowerCase();
+          subField = (doc.skillsDescription || '').toLowerCase();
+        } else if (doc.profileType === 'Propriétaire') {
+          mainField = (doc.equipmentType || '').toLowerCase();
+          subField = (doc.equipmentCategory || '').toLowerCase();
+        } else if (doc.profileType === 'Agence') {
+          mainField = (doc.propertyTypes || '').toLowerCase();
+          subField = (doc.agencyZone || '').toLowerCase();
+        } else if (doc.profileType === 'Entreprise') {
+          mainField = (doc.companyDomain || '').toLowerCase();
+          subField = (doc.companyServices || '').toLowerCase();
+        }
+        
+        const stringToSearch = `${name} ${city} ${profileType} ${mainField} ${subField}`;
+
+        if (keywords.length > 0) {
+          return keywords.every(kw => stringToSearch.includes(kw));
+        }
+        return stringToSearch.includes(normalizedQuery);
+      });
+
+      setSearchResults(filtered);
+      setHasSearched(true);
+    } catch (error) {
+      console.error("Error searching inscriptions:", error);
+      showToast("Impossible de récupérer les inscriptions.");
+    } finally {
+      setIsPerformingSearch(false);
+    }
+  };
+
   useEffect(() => {
     if (currentQuestion) {
         if (currentQuestion.type === 'text' || currentQuestion.type === 'date' || currentQuestion.type === 'select') {
@@ -419,7 +486,16 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                     <span className="text-white text-lg font-black uppercase tracking-[0.3em] drop-shadow-lg">MASQUÉ</span>
                 </div>
             )}
-            <button onClick={onClose} className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20">
+            <button 
+              onClick={() => {
+                if (!isSearchingInDb) {
+                  setIsSearchingInDb(true);
+                } else {
+                  onClose();
+                }
+              }} 
+              className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20"
+            >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
@@ -440,244 +516,404 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                 <div className="h-1 w-20 bg-orange-500 mt-1 rounded-full"></div>
             </div>
 
-            {isWorker && !isBlurredImage && !isRapidTitle && (
-              <div className="flex gap-3 mb-8">
-                  <button 
-                    onClick={() => setServiceMode('Embauche')}
-                    className={`px-5 py-2 rounded-full font-black text-[10px] uppercase transition-all border-2 ${serviceMode === 'Embauche' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-gray-400 border-gray-100'}`}
-                  >
-                      Embauche
-                  </button>
-                  <button 
-                    onClick={() => setServiceMode('Service rapide')}
-                    className={`px-5 py-2 rounded-full font-black text-[10px] uppercase transition-all border-2 ${serviceMode === 'Service rapide' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-gray-400 border-gray-100'}`}
-                  >
-                      Service rapide
-                  </button>
-              </div>
-            )}
+            {isSearchingInDb ? (
+                <div className="w-full max-w-md flex flex-col items-center animate-in fade-in duration-300">
+                    <p className="text-[10px] text-center text-gray-400 font-extrabold uppercase tracking-widest pl-1 mb-6">
+                        Recherche en temps réel dans notre base de données d'inscrits
+                    </p>
 
-            <div className="flex flex-col items-center mb-8 bg-orange-50 px-8 py-3 rounded-2xl border border-orange-100 shadow-sm">
-                <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">
-                    {isBlurredImage ? "Dépôt de candidature (Embauche)" : (isRapidTitle ? "Intervention Immédiate" : (formType === 'stage' || formType === 'formation') ? "Frais de communication du service" : "Frais de mise en relation")}
-                </span>
-                <span className="text-2xl font-black text-orange-600">{totalPrice} CFA</span>
-            </div>
-
-            {!isAppart && (
-              <div className="flex flex-col items-center mb-8">
-                  <span className="text-[11px] font-black uppercase text-gray-800 mb-3">{isWorker ? 'Personne' : 'Quantité'}</span>
-                  <div className="flex items-center gap-6">
-                      <button onClick={() => setCount(Math.max(1, count - 1))} className="w-10 h-10 rounded-full border-2 border-gray-200 flex items-center justify-center text-xl font-bold active:bg-gray-50">-</button>
-                      <span className="text-3xl font-black text-black w-8 text-center">{count}</span>
-                      <button onClick={() => setCount(count + 1)} className="w-10 h-10 rounded-full border-2 border-gray-200 flex items-center justify-center text-xl font-bold active:bg-gray-50">+</button>
-                  </div>
-              </div>
-            )}
-
-            {!isFormComplete && currentQuestion && (
-                <div className="w-full max-w-sm mb-10 animate-in fade-in slide-in-from-right duration-500 delay-300">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <p className="text-center font-bold text-gray-900 text-base">{currentQuestion.text(answers)}</p>
-                      <SpeakerIcon text={currentQuestion.text(answers)} className="text-orange-500" />
+                    {/* Search Input and Button */}
+                    <div className="w-full space-y-4 mb-6">
+                        <div className="bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all shadow-inner">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePerformDbSearch()}
+                                className="bg-transparent w-full py-4 text-sm font-black text-gray-800 outline-none placeholder:text-gray-400 placeholder:font-normal"
+                                placeholder="Rechercher un métier ou catégorie (ex: Plombier)..."
+                            />
+                        </div>
+                        
+                        <button
+                            onClick={handlePerformDbSearch}
+                            disabled={isPerformingSearch}
+                            className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer"
+                        >
+                            {isPerformingSearch ? <Spinner /> : <span>Lancer la recherche</span>}
+                        </button>
                     </div>
 
-                    {currentQuestion.type === 'buttons' ? (
-                        <div className="grid grid-cols-2 gap-2">
-                            {currentQuestion.options?.map((opt) => (
-                                <button
-                                  key={opt.value}
-                                  disabled={isWaitingNext}
-                                  onClick={() => handleNext(opt.value)}
-                                  className="bg-gray-50 hover:bg-orange-50 border border-gray-100 rounded-xl p-2.5 text-[11px] font-black uppercase text-gray-700 active:scale-95 transition-all flex items-center justify-center min-h-[40px] tracking-tight"
-                                >
-                                    {isWaitingNext ? <div className="w-4 h-4 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div> : opt.label}
-                                </button>
-                            ))}
-                        </div>
-                    ) : currentQuestion.type === 'date' ? (
-                        <div className="flex gap-2 items-stretch">
-                            <div className="flex-1 bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
-                                <input 
-                                    type="date" 
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
-                                />
+                    {/* Results Container */}
+                    <div className="w-full flex-1 min-h-[160px] flex flex-col items-center justify-center mb-6">
+                        {isPerformingSearch ? (
+                            <div className="flex flex-col items-center gap-3 text-orange-500 py-8">
+                                <div className="w-8 h-8 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
+                                <span className="text-[10px] font-black uppercase tracking-wider animate-pulse">Recherche en temps réel...</span>
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <button 
-                                    onClick={() => handleNext()}
-                                    disabled={isWaitingNext || !inputValue}
-                                    className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
-                                >
-                                    {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
-                                </button>
-                                {step > 0 && (
-                                    <button 
-                                        onClick={() => setStep(prev => prev - 1)}
-                                        className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
-                                    >
-                                        Retour
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ) : currentQuestion.type === 'select' ? (
-                        <div className="flex gap-2 items-stretch">
-                            <div className="flex-1 bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
-                                <select 
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none appearance-none"
-                                >
-                                    <option value="">Sélectionner...</option>
-                                    {currentQuestion.options?.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <button 
-                                    onClick={() => handleNext()}
-                                    disabled={isWaitingNext || !inputValue}
-                                    className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
-                                >
-                                    {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
-                                </button>
-                                {step > 0 && (
-                                    <button 
-                                        onClick={() => setStep(prev => prev - 1)}
-                                        className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
-                                    >
-                                        Retour
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ) : (
-                      <div className="flex gap-2 items-stretch">
-                          <div className="flex-1 flex flex-col gap-2">
-                              <div className="bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
-                                  <input 
-                                      ref={inputRef}
-                                      type={currentQuestion.inputType === 'tel' ? 'text' : (currentQuestion.inputType || 'text')} 
-                                      inputMode={currentQuestion.inputType === 'tel' ? 'numeric' : undefined}
-                                      value={inputValue}
-                                      onChange={handleInputChange}
-                                      onClick={handleInputClick}
-                                      onFocus={handleInputClick}
-                                      onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                                      className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
-                                      placeholder={currentQuestion.placeholder || "..."}
-                                  />
-                              </div>
-                              {currentQuestion.hint && (
-                                <p className="text-[10px] text-gray-400 font-bold italic ml-4 animate-in fade-in slide-in-from-top-1 duration-300">
-                                  {currentQuestion.hint}
+                        ) : !hasSearched ? (
+                            <div className="text-center py-6 px-4 bg-orange-50/50 rounded-3xl border border-orange-100/50 space-y-3">
+                                <span className="text-[10px] font-black text-orange-600 bg-orange-100 px-3 py-1 rounded-full uppercase tracking-wider">Base de données active</span>
+                                <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                                    Cliquez sur <strong>"Lancer la recherche"</strong> pour interroger les inscriptions de travailleurs, équipements, agences ou entreprises enregistrées.
                                 </p>
-                              )}
-                          </div>
-                          <div className="flex flex-col gap-2">
-                              <button 
-                                  onClick={() => handleNext()}
-                                  disabled={isWaitingNext}
-                                  className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
-                              >
-                                  {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
-                              </button>
-                              {step > 0 && (
-                                <button 
-                                    onClick={() => setStep(prev => prev - 1)}
-                                    className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
-                                >
-                                    Retour
-                                </button>
-                              )}
-                          </div>
-                      </div>
-                    )}
-                </div>
-            )}
-
-            {isFormComplete && (
-                <div className="w-full max-w-sm mb-10 animate-in zoom-in-95 duration-500 flex flex-col items-center">
-                    <div className="w-full bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100 space-y-4">
-                        <div className="flex items-center justify-between border-b border-gray-200 pb-2 mb-2">
-                            <span className="text-[10px] font-black uppercase text-gray-400">Résumé de votre demande</span>
-                            <button 
-                                onClick={() => setStep(questions.length - 1)}
-                                className="text-orange-500 font-black text-[10px] uppercase"
-                            >
-                                Modifier
-                            </button>
-                        </div>
-                        {questions.map((q, i) => {
-                            if (q.condition && !q.condition(answers)) return null;
-                            return (
-                                <div key={q.key} className="flex flex-col">
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">{q.text(answers).replace(/\?$/, '')}</span>
-                                    <span className="text-sm font-black text-gray-900 leading-tight">{answers[q.key] || 'Non renseigné'}</span>
+                            </div>
+                        ) : searchResults.length === 0 ? (
+                            <div className="text-center py-8 px-5 bg-gray-50 rounded-3xl border border-gray-100 space-y-4 w-full">
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-relaxed">
+                                    Aucun inscrit ne correspond à "{searchQuery}"
+                                </p>
+                                <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
+                                    Vous pouvez néanmoins continuer pour soumettre votre demande personnalisée à nos services.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="w-full space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-hide py-1">
+                                <div className="flex justify-between items-center px-1 mb-1">
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                        {searchResults.length} {searchResults.length > 1 ? 'Résultats trouvés' : 'Résultat trouvé'}
+                                    </span>
                                 </div>
-                            );
-                        })}
+                                
+                                {searchResults.map((item, index) => {
+                                    let displayProfession = "";
+                                    let badgeColor = "";
+                                    let badgeText = "";
+                                    
+                                    if (item.profileType === 'Travailleur') {
+                                        displayProfession = item.job || "Travailleur";
+                                        badgeColor = "bg-blue-50 text-blue-600 border border-blue-100";
+                                        badgeText = "Travailleur";
+                                    } else if (item.profileType === 'Propriétaire') {
+                                        displayProfession = item.equipmentType || "Équipement";
+                                        badgeColor = "bg-purple-50 text-purple-600 border border-purple-100";
+                                        badgeText = "Équipement";
+                                    } else if (item.profileType === 'Agence') {
+                                        displayProfession = item.agencyName || "Agence Immobilière";
+                                        badgeColor = "bg-emerald-50 text-emerald-600 border border-emerald-100";
+                                        badgeText = "Agence";
+                                    } else if (item.profileType === 'Entreprise') {
+                                        displayProfession = item.companyName || "Entreprise";
+                                        badgeColor = "bg-amber-50 text-amber-600 border border-amber-100";
+                                        badgeText = "Entreprise";
+                                    } else {
+                                        displayProfession = "Inscrit";
+                                        badgeColor = "bg-gray-50 text-gray-600 border border-gray-100";
+                                        badgeText = "Inscrit";
+                                    }
+
+                                    return (
+                                        <div 
+                                            key={item.id || index}
+                                            className="w-full bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
+                                        >
+                                            <div className="space-y-1 flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-black text-gray-900 truncate uppercase">
+                                                        {item.name || item.companyName || item.agencyName}
+                                                    </span>
+                                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${badgeColor}`}>
+                                                        {badgeText}
+                                                    </span>
+                                                </div>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[11px] font-bold text-gray-600 pr-1 truncate">
+                                                        📍 {item.city || item.agencyCity || item.companyCity || item.equipmentCity || "Non spécifiée"}
+                                                    </span>
+                                                    <span className="text-[10px] font-semibold text-gray-400 truncate">
+                                                        💼 {displayProfession}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <button
+                                                onClick={() => {
+                                                    const newAnswers = { ...answers };
+                                                    const resultCity = item.city || item.agencyCity || item.companyCity || item.equipmentCity;
+                                                    if (resultCity) {
+                                                        newAnswers.serviceCity = resultCity;
+                                                        newAnswers.workLocation = resultCity;
+                                                        newAnswers.commune = resultCity;
+                                                        newAnswers.city = resultCity;
+                                                        newAnswers.location = resultCity;
+                                                    }
+                                                    const chosenName = item.name || item.companyName || item.agencyName;
+                                                    if (chosenName) {
+                                                        newAnswers.chosenWorkerName = chosenName;
+                                                        newAnswers.description = `Demande concernant l'inscrit : ${chosenName}`;
+                                                        newAnswers.workDescription = `Demande concernant l'inscrit : ${chosenName}`;
+                                                    }
+                                                    setAnswers(newAnswers);
+                                                    setIsSearchingInDb(false);
+                                                }}
+                                                className="bg-orange-500 hover:bg-orange-600 text-white font-black text-[10px] uppercase px-4 py-2.5 rounded-xl shadow-md active:scale-95 transition-all cursor-pointer"
+                                            >
+                                                Afficher
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
-                    <button 
-                      onClick={() => handleAction('assistant')}
-                      disabled={isSending}
-                      className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-5 rounded-3xl text-xl uppercase tracking-wider shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 min-h-[68px]"
-                    >
-                        {isSending ? <Spinner /> : <span>Confirmé</span>}
-                    </button>
-                    
-                    <button 
-                        onClick={() => {
-                            localStorage.removeItem(storageKey);
-                            setAnswers({});
-                            setStep(0);
-                            setInputValue('');
-                        }}
-                        className="mt-4 text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
-                    >
-                        Recommencer le formulaire
-                    </button>
+                    {/* Direct Submit Action */}
+                    <div className="w-full mt-2 pt-4 border-t border-gray-100 flex flex-col items-center">
+                        <button
+                            onClick={() => {
+                                setIsSearchingInDb(false);
+                            }}
+                            className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 font-black py-4 rounded-2xl text-[10px] uppercase tracking-wider transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                            📁 Continuer vers la demande classique
+                        </button>
+                        <p className="text-[10px] text-gray-400 font-semibold text-center mt-3 leading-relaxed">
+                            Si vous préférez rédiger une demande de service d'un agent Filant°225 directement sans consulter d'abord la base de données.
+                        </p>
+                    </div>
                 </div>
-            )}
+            ) : (
+                <>
+                {isWorker && !isBlurredImage && !isRapidTitle && (
+                  <div className="flex gap-3 mb-8">
+                      <button 
+                        onClick={() => setServiceMode('Embauche')}
+                        className={`px-5 py-2 rounded-full font-black text-[10px] uppercase transition-all border-2 ${serviceMode === 'Embauche' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-gray-400 border-gray-100'}`}
+                      >
+                          Embauche
+                      </button>
+                      <button 
+                        onClick={() => setServiceMode('Service rapide')}
+                        className={`px-5 py-2 rounded-full font-black text-[10px] uppercase transition-all border-2 ${serviceMode === 'Service rapide' ? 'bg-orange-500 text-white border-orange-500 shadow-md' : 'bg-white text-gray-400 border-gray-100'}`}
+                      >
+                          Service rapide
+                      </button>
+                  </div>
+                )}
 
-            <p className="text-gray-400 text-xs leading-relaxed text-center px-4 mb-12">
-              {description || "Service professionnel de mise en relation FILANT°225. Nous garantissons la compétence et la fiabilité de nos prestataires."}
-            </p>
+                <div className="flex flex-col items-center mb-8 bg-orange-50 px-8 py-3 rounded-2xl border border-orange-100 shadow-sm">
+                    <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">
+                        {isBlurredImage ? "Dépôt de candidature (Embauche)" : (isRapidTitle ? "Intervention Immédiate" : (formType === 'stage' || formType === 'formation') ? "Frais de communication du service" : "Frais de mise en relation")}
+                    </span>
+                    <span className="text-2xl font-black text-orange-600">{totalPrice} CFA</span>
+                </div>
 
-            <div className="mt-auto mb-6 relative w-full flex justify-center">
-                {toastMessage && (
-                    <div className="absolute bottom-full mb-4 px-6 py-2 bg-white text-orange-500 font-black text-xs uppercase tracking-widest rounded-full shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-300 border border-orange-100">
-                        {toastMessage}
+                {!isAppart && (
+                  <div className="flex flex-col items-center mb-8">
+                      <span className="text-[11px] font-black uppercase text-gray-800 mb-3">{isWorker ? 'Personne' : 'Quantité'}</span>
+                      <div className="flex items-center gap-6">
+                          <button onClick={() => setCount(Math.max(1, count - 1))} className="w-10 h-10 rounded-full border-2 border-gray-200 flex items-center justify-center text-xl font-bold active:bg-gray-50">-</button>
+                          <span className="text-3xl font-black text-black w-8 text-center">{count}</span>
+                          <button onClick={() => setCount(count + 1)} className="w-10 h-10 rounded-full border-2 border-gray-200 flex items-center justify-center text-xl font-bold active:bg-gray-50">+</button>
+                      </div>
+                  </div>
+                )}
+
+                {!isFormComplete && currentQuestion && (
+                    <div className="w-full max-w-sm mb-10 animate-in fade-in slide-in-from-right duration-500 delay-300">
+                        <div className="flex items-center justify-center gap-2 mb-4">
+                          <p className="text-center font-bold text-gray-900 text-base">{currentQuestion.text(answers)}</p>
+                          <SpeakerIcon text={currentQuestion.text(answers)} className="text-orange-500" />
+                        </div>
+
+                        {currentQuestion.type === 'buttons' ? (
+                            <div className="grid grid-cols-2 gap-2">
+                                {currentQuestion.options?.map((opt) => (
+                                    <button
+                                      key={opt.value}
+                                      disabled={isWaitingNext}
+                                      onClick={() => handleNext(opt.value)}
+                                      className="bg-gray-50 hover:bg-orange-50 border border-gray-100 rounded-xl p-2.5 text-[11px] font-black uppercase text-gray-700 active:scale-95 transition-all flex items-center justify-center min-h-[40px] tracking-tight"
+                                    >
+                                        {isWaitingNext ? <div className="w-4 h-4 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div> : opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : currentQuestion.type === 'date' ? (
+                            <div className="flex gap-2 items-stretch">
+                                <div className="flex-1 bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
+                                    <input 
+                                        type="date" 
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <button 
+                                        onClick={() => handleNext()}
+                                        disabled={isWaitingNext || !inputValue}
+                                        className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
+                                    >
+                                        {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
+                                    </button>
+                                    {step > 0 && (
+                                        <button 
+                                            onClick={() => setStep(prev => prev - 1)}
+                                            className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
+                                        >
+                                            Retour
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ) : currentQuestion.type === 'select' ? (
+                            <div className="flex gap-2 items-stretch">
+                                <div className="flex-1 bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
+                                    <select 
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none appearance-none"
+                                    >
+                                        <option value="">Sélectionner...</option>
+                                        {currentQuestion.options?.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <button 
+                                        onClick={() => handleNext()}
+                                        disabled={isWaitingNext || !inputValue}
+                                        className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
+                                    >
+                                        {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
+                                    </button>
+                                    {step > 0 && (
+                                        <button 
+                                            onClick={() => setStep(prev => prev - 1)}
+                                            className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
+                                        >
+                                            Retour
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                          <div className="flex gap-2 items-stretch">
+                              <div className="flex-1 flex flex-col gap-2">
+                                  <div className="bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
+                                      <input 
+                                          ref={inputRef}
+                                          type={currentQuestion.inputType === 'tel' ? 'text' : (currentQuestion.inputType || 'text')} 
+                                          inputMode={currentQuestion.inputType === 'tel' ? 'numeric' : undefined}
+                                          value={inputValue}
+                                          onChange={handleInputChange}
+                                          onClick={handleInputClick}
+                                          onFocus={handleInputClick}
+                                          onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                                          className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
+                                          placeholder={currentQuestion.placeholder || "..."}
+                                      />
+                                  </div>
+                                  {currentQuestion.hint && (
+                                    <p className="text-[10px] text-gray-400 font-bold italic ml-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                                      {currentQuestion.hint}
+                                    </p>
+                                  )}
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                  <button 
+                                      onClick={() => handleNext()}
+                                      disabled={isWaitingNext}
+                                      className="bg-orange-500 hover:bg-orange-600 text-white px-5 rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap min-w-[90px] h-[52px]"
+                                  >
+                                      {isWaitingNext ? <Spinner /> : <span>Suivant</span>}
+                                  </button>
+                                  {step > 0 && (
+                                    <button 
+                                        onClick={() => setStep(prev => prev - 1)}
+                                        className="text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1"
+                                    >
+                                        Retour
+                                    </button>
+                                  )}
+                              </div>
+                          </div>
+                        )}
                     </div>
                 )}
-                
-                <div className="flex items-center gap-10 py-2">
-                    <button 
-                      onClick={() => handleAction('assistant')}
-                      disabled={isSending}
-                      className="w-14 h-14 bg-white border-2 border-gray-100 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform overflow-hidden p-1.5"
-                    >
-                        {isSending ? <div className="w-6 h-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div> : <div className="w-full h-full bg-orange-600 rounded-full flex items-center justify-center text-white"><span className="font-black text-xl">F</span></div>}
-                    </button>
-                    
-                    <span className="text-gray-400 font-black text-[9px] uppercase tracking-tighter w-24 text-center leading-tight">
-                      {isFormComplete ? "Prêt à transmettre" : `${remainingFields} champs à remplir`}
-                    </span>
 
-                    <button 
-                      onClick={() => handleAction('whatsapp')}
-                      disabled={isSending}
-                      className="w-14 h-14 bg-[#16a34a] rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform p-3"
-                    >
-                        {isSending ? <Spinner /> : <Phone className="w-full h-full text-white" fill="currentColor" />}
-                    </button>
+                {isFormComplete && (
+                    <div className="w-full max-w-sm mb-10 animate-in zoom-in-95 duration-500 flex flex-col items-center">
+                        <div className="w-full bg-gray-50 rounded-3xl p-6 mb-8 border border-gray-100 space-y-4">
+                            <div className="flex items-center justify-between border-b border-gray-200 pb-2 mb-2">
+                                <span className="text-[10px] font-black uppercase text-gray-400">Résumé de votre demande</span>
+                                <button 
+                                    onClick={() => setStep(questions.length - 1)}
+                                    className="text-orange-500 font-black text-[10px] uppercase"
+                                >
+                                    Modifier
+                                </button>
+                            </div>
+                            {questions.map((q, i) => {
+                                if (q.condition && !q.condition(answers)) return null;
+                                return (
+                                    <div key={q.key} className="flex flex-col">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">{q.text(answers).replace(/\?$/, '')}</span>
+                                        <span className="text-sm font-black text-gray-900 leading-tight">{answers[q.key] || 'Non renseigné'}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <button 
+                          onClick={() => handleAction('assistant')}
+                          disabled={isSending}
+                          className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-5 rounded-3xl text-xl uppercase tracking-wider shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 min-h-[68px] cursor-pointer"
+                        >
+                            {isSending ? <Spinner /> : <span>Confirmé</span>}
+                        </button>
+                        
+                        <button 
+                            onClick={() => {
+                                localStorage.removeItem(storageKey);
+                                setAnswers({});
+                                setStep(0);
+                                setInputValue('');
+                            }}
+                            className="mt-4 text-gray-400 font-bold text-[9px] uppercase tracking-widest py-1 cursor-pointer"
+                        >
+                            Recommencer le formulaire
+                        </button>
+                    </div>
+                )}
+
+                <p className="text-gray-400 text-xs leading-relaxed text-center px-4 mb-12">
+                  {description || "Service professionnel de mise en relation FILANT°225. Nous garantissons la compétence et la fiabilité de nos prestataires."}
+                </p>
+
+                <div className="mt-auto mb-6 relative w-full flex justify-center">
+                    {toastMessage && (
+                        <div className="absolute bottom-full mb-4 px-6 py-2 bg-white text-orange-500 font-black text-xs uppercase tracking-widest rounded-full shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-300 border border-orange-100">
+                            {toastMessage}
+                        </div>
+                    )}
+                    
+                    <div className="flex items-center gap-10 py-2">
+                        <button 
+                          onClick={() => handleAction('assistant')}
+                          disabled={isSending}
+                          className="w-14 h-14 bg-white border-2 border-gray-100 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-transform overflow-hidden p-1.5 cursor-pointer"
+                        >
+                            {isSending ? <div className="w-6 h-6 border-2 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div> : <div className="w-full h-full bg-orange-600 rounded-full flex items-center justify-center text-white"><span className="font-black text-xl">F</span></div>}
+                        </button>
+                        
+                        <span className="text-gray-400 font-black text-[9px] uppercase tracking-tighter w-24 text-center leading-tight">
+                          {isFormComplete ? "Prêt à transmettre" : `${remainingFields} champs à remplir`}
+                        </span>
+
+                        <button 
+                          onClick={() => handleAction('whatsapp')}
+                          disabled={isSending}
+                          className="w-14 h-14 bg-[#16a34a] rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform p-3 cursor-pointer"
+                        >
+                            {isSending ? <Spinner /> : <Phone className="w-full h-full text-white" fill="currentColor" />}
+                        </button>
+                    </div>
                 </div>
-            </div>
+                </>
+            )}
         </motion.div>
       </div>
     </motion.div>
