@@ -688,15 +688,30 @@ export const databaseService = {
   saveInscription: async (inscriptionData: any) => {
     try {
       await databaseService.ensureAuth();
-      const inscrRef = collection(db, 'Inscriptions');
-      await addDoc(inscrRef, {
-        ...inscriptionData,
-        timestamp: serverTimestamp(),
-        status: 'pending',
-        adminReadStatus: 'NON LU'
-      });
-      console.log("Inscription saved successfully");
-      return true;
+      const phoneRaw = inscriptionData.phone || '';
+      const sanitizedPhone = phoneRaw.replace(/\D/g, '');
+      
+      if (sanitizedPhone) {
+        const docRef = doc(db, 'Inscriptions', sanitizedPhone);
+        await setDoc(docRef, {
+          ...inscriptionData,
+          timestamp: serverTimestamp(),
+          status: 'pending',
+          adminReadStatus: 'NON LU'
+        });
+        console.log("Inscription saved/updated successfully for profile:", sanitizedPhone);
+        return true;
+      } else {
+        const inscrRef = collection(db, 'Inscriptions');
+        await addDoc(inscrRef, {
+          ...inscriptionData,
+          timestamp: serverTimestamp(),
+          status: 'pending',
+          adminReadStatus: 'NON LU'
+        });
+        console.log("Inscription saved successfully (fallback with addDoc)");
+        return true;
+      }
     } catch (e) {
         handleFirestoreError(e, OperationType.WRITE, 'Inscriptions');
         return false;
