@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User } from '../types';
+import { User, Tab } from '../types';
 import { databaseService } from '../services/databaseService';
-import { ArrowLeft, Search, CheckCircle, Loader2, Compass, MapPin, Briefcase, Building, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle } from 'lucide-react';
 
 interface InscriptionResult {
   id: string;
@@ -15,92 +15,18 @@ interface InscriptionResult {
 interface DemandeRechercheScreenProps {
   onBack: () => void;
   user: User;
+  onSelectTab: (tab: Tab) => void;
 }
 
-// Fallback high-quality seed data representing realistic registrations matching user examples
-const SEED_INSCRIPTIONS: InscriptionResult[] = [
-  {
-    id: 'seed-1',
-    name: 'Koffi Kouadio',
-    city: 'Abidjan',
-    profileType: 'Travailleur',
-    titleOrActivity: 'Plombier',
-    description: 'Plomberie générale, installation sanitaire et dépannage rapide de fuites.'
-  },
-  {
-    id: 'seed-2',
-    name: 'Diallo Amadou',
-    city: 'Bouaké',
-    profileType: 'Travailleur',
-    titleOrActivity: 'Électricien',
-    description: 'Électricité bâtiment, dépannage, câblage et pose de disjoncteurs.'
-  },
-  {
-    id: 'seed-3',
-    name: 'Koné Mariam',
-    city: 'Yamoussoukro',
-    profileType: 'Travailleur',
-    titleOrActivity: 'Cuisinier',
-    description: 'Cuisinier professionnel à domicile, banquets, cuisine africaine et européenne.'
-  },
-  {
-    id: 'seed-4',
-    name: 'Immo Plus S.A.',
-    city: 'Bassam',
-    profileType: 'Agence',
-    titleOrActivity: 'Agence Immobilière (Maison à louer, appartements, terrains)',
-    description: 'Maison à louer, villa de luxe, appartements meublés et gestion locative.'
-  },
-  {
-    id: 'seed-5',
-    name: 'Location Express Côte d\'Ivoire',
-    city: 'Abidjan',
-    profileType: 'Propriétaire',
-    titleOrActivity: 'Location de Pelleteuse',
-    description: 'Pelleteuse Caterpillar 320 disponible pour tous vos travaux de terrassement.'
-  },
-  {
-    id: 'seed-6',
-    name: 'BatiMiel SARL',
-    city: 'Bassam',
-    profileType: 'Propriétaire',
-    titleOrActivity: 'Location de Bétonnière',
-    description: 'Bétonnière électrique 350L haute performance avec option de livraison sur chantier.'
-  },
-  {
-    id: 'seed-7',
-    name: 'SCI La Lagune',
-    city: 'Assinie',
-    profileType: 'Agence',
-    titleOrActivity: 'Agence Immobilière (Magasin à louer, commerces)',
-    description: 'Magasin à louer, espaces commerciaux d\'exception, bureaux et entrepôts.'
-  },
-  {
-    id: 'seed-8',
-    name: 'Groupe EGB BTP',
-    city: 'Abidjan',
-    profileType: 'Entreprise',
-    titleOrActivity: 'Entreprise de construction',
-    description: 'Gros œuvres, construction de bâtiments R+5, routes, assainissement et rénovations.'
-  }
-];
-
-const SEARCH_SUGGESTIONS = [
-  'Plombier',
-  'Électricien',
-  'Cuisinier',
-  'Maison à louer',
-  'Magasin à louer',
-  'Pelleteuse',
-  'Bétonnière',
-  'Entreprise de construction'
-];
-
-export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ onBack, user }) => {
+export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ onBack, user, onSelectTab }) => {
   const [queryInput, setQueryInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<InscriptionResult[] | null>(null);
   const [inscriptionsFromDB, setInscriptionsFromDB] = useState<any[]>([]);
+  const [isLinking, setIsLinking] = useState(false);
+
+  // Parse current user safe ID
+  const chatUserId = ((user.phone || '').replace(/\D/g, '') || user.userId || user.id || 'anonymous_user');
 
   // Pre-fetch real Inscriptions from Firestore
   useEffect(() => {
@@ -117,31 +43,27 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     fetchDBInscriptions();
   }, []);
 
-  const handleSearch = (searchedTerm?: string) => {
-    const term = (searchedTerm !== undefined ? searchedTerm : queryInput).trim();
+  const handleSearch = () => {
+    const term = queryInput.trim();
     if (!term) return;
-
-    if (searchedTerm !== undefined) {
-      setQueryInput(searchedTerm);
-    }
 
     setIsLoading(true);
     setResults(null);
 
-    // Maintain loading state between 3 and 5 seconds to feel realistic (e.g. 3.5 seconds)
-    const randomDuration = 3000 + Math.random() * 2000;
+    // Exact loading duration around 3 seconds (3000ms)
     setTimeout(() => {
-      executeLocalAndDBSearch(term);
+      executeDatabaseSearch(term);
       setIsLoading(false);
-    }, randomDuration);
+    }, 3000);
   };
 
-  const executeLocalAndDBSearch = (term: string) => {
+  const executeDatabaseSearch = (term: string) => {
     const normalizedTerm = term.toLowerCase();
 
-    // 1. Search in Firestore Inscriptions
-    const firestoreMatches: InscriptionResult[] = inscriptionsFromDB
+    // Search exclusively in Firestore Inscriptions
+    const matches: InscriptionResult[] = inscriptionsFromDB
       .filter((item: any) => {
+        // Collect all text from fields that are relevant for search
         const textToSearch = [
           item.name,
           item.city,
@@ -169,7 +91,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         if (item.profileType === 'Travailleur') {
           titleOrActivity = item.job || 'Travailleur Qualifié';
         } else if (item.profileType === 'Propriétaire') {
-          titleOrActivity = `Location ${item.equipmentType || item.equipmentCategory || 'Équipement'}`;
+          titleOrActivity = `${item.equipmentType || item.equipmentCategory || 'Équipement'}`;
         } else if (item.profileType === 'Agence') {
           titleOrActivity = item.agencyName || 'Agence Immobilière';
           if (item.propertyTypes) {
@@ -192,39 +114,59 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         };
       });
 
-    // 2. Search in Static Fallback Elements
-    const staticMatches = SEED_INSCRIPTIONS.filter((item) => {
-      const textToSearch = [
-        item.name,
-        item.city,
-        item.profileType,
-        item.titleOrActivity,
-        item.description
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
+    setResults(matches);
+  };
 
-      return textToSearch.includes(normalizedTerm);
-    });
+  const handleDemandeDeService = async (item: InscriptionResult) => {
+    if (isLinking) return;
+    setIsLinking(true);
 
-    // Combine them, removing possible duplicate seeds of the match
-    const combined = [...firestoreMatches];
-    staticMatches.forEach((statItem) => {
-      // Avoid adding if the term matches but we already matched something in firebase (for realism)
-      const exists = combined.some(
-        (existing) => existing.name.toLowerCase() === statItem.name.toLowerCase()
-      );
-      if (!exists) {
-        combined.push(statItem);
-      }
-    });
+    try {
+      // 1. Save Service Request to Firestore
+      const serviceRequestData = {
+        userId: chatUserId,
+        userName: user.name || 'Utilisateur',
+        phone: user.phone || 'Non spécifié',
+        city: user.city || 'Non spécifiée',
+        serviceTitle: `Demande de service : ${item.titleOrActivity}`,
+        formType: 'service_request_search',
+        answers: {
+          'Nom du prestataire': item.name,
+          'Ville du prestataire': item.city,
+          'Activité recherchée': item.titleOrActivity,
+          'Type de profil': item.profileType
+        },
+        readStatus: 'NON LU',
+        prestataireName: item.name,
+        prestataireCity: item.city,
+        prestataireActivity: item.titleOrActivity
+      };
 
-    setResults(combined);
+      await databaseService.saveServiceRequest(serviceRequestData);
+
+      // 2. Format custom chat message
+      const chatMsgText = `📢 *Nouvelle Demande de Service*\n\nJe souhaite être mis en relation avec le profil suivant issu de ma recherche :\n\n• *Nom :* ${item.name}\n• *Ville :* ${item.city}\n• *Activité/Métier :* ${item.titleOrActivity}\n• *Type :* ${item.profileType}`;
+
+      const chatMsg = {
+        sender: 'user' as const,
+        text: chatMsgText,
+        timestamp: Date.now()
+      };
+
+      // 3. Save Private Chat Message
+      await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
+
+      // 4. Trigger tab switch to Chat screen
+      onSelectTab(Tab.UserChat);
+    } catch (error) {
+      console.error("Error creating service request connection:", error);
+    } finally {
+      setIsLinking(false);
+    }
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-500 font-sans" id="demande-recherche-screen">
+    <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-300 font-sans" id="demande-recherche-screen">
       {/* Header */}
       <header className="p-4 flex items-center gap-4 bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
         <button 
@@ -239,7 +181,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
       {/* Main Container */}
       <main className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
-        {/* Intro */}
+        {/* Banner */}
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-6 text-white shadow-xl border-2 border-white/20 relative overflow-hidden">
           <div className="absolute right-[-10px] bottom-[-20px] opacity-10">
             <Search className="w-40 h-40 transform rotate-12" />
@@ -247,28 +189,28 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           <div className="relative z-10 space-y-2">
             <h2 className="text-xl font-black uppercase tracking-tight leading-none text-white">Recherche Intelligente</h2>
             <p className="text-xs text-orange-50/90 font-medium leading-relaxed">
-              Dites-nous ce que vous cherchez. Notre système parcourt instantanément les inscriptions enregistrées (Travailleurs, Équipements, Agences, Entreprises) pour vous proposer les meilleurs résultats.
+              Consultez instantanément les profils certifiés de FILANT°225. Saisissez l'activité recherchée pour initier une mise en relation directe.
             </p>
           </div>
         </div>
 
-        {/* Search Input Card */}
+        {/* Input area */}
         <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 space-y-4">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Quel service recherchez-vous ?</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Quel métier ou service cherchez-vous ?</label>
             <div className="relative flex items-center">
               <input
                 type="text"
                 value={queryInput}
                 onChange={(e) => setQueryInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Ex. Plombier, Maison à louer, Pelleteuse..."
+                placeholder="Ex. Vendeur, Cuisinier, Agence immobilière..."
                 className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
                 disabled={isLoading}
                 id="search-query-input"
               />
               <button
-                onClick={() => handleSearch()}
+                onClick={handleSearch}
                 className="absolute right-3 p-2 bg-orange-500 hover:bg-orange-600 active:scale-90 text-white rounded-xl transition-all shadow-md"
                 disabled={isLoading || !queryInput.trim()}
                 id="search-submit-btn"
@@ -279,7 +221,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           </div>
 
           <button
-            onClick={() => handleSearch()}
+            onClick={handleSearch}
             disabled={isLoading || !queryInput.trim()}
             className="w-full bg-slate-900 text-white py-4 px-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 transform active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
             id="search-main-action-btn"
@@ -298,120 +240,98 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           </button>
         </div>
 
-        {/* Suggested Queries */}
-        {!isLoading && results === null && (
-          <div className="space-y-3">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Exemples de recherches populaires</h3>
-            <div className="flex flex-wrap gap-2.5">
-              {SEARCH_SUGGESTIONS.map((tag, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSearch(tag)}
-                  className="bg-white border border-slate-200/80 hover:border-orange-200 hover:bg-orange-50/40 text-slate-700 text-xs font-bold px-4 py-3 rounded-full shadow-sm active:scale-95 transition-all flex items-center gap-1.5"
-                >
-                  <span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Loading State Overlay / Card */}
+        {/* Loading Spinner Area */}
         {isLoading && (
-          <div className="bg-white rounded-3xl p-10 shadow-lg border border-slate-100 flex flex-col items-center justify-center text-center space-y-4 animate-pulse">
+          <div className="bg-white rounded-3xl p-10 shadow-lg border border-slate-100 flex flex-col items-center justify-center text-center space-y-4">
             <div className="relative">
               <div className="w-16 h-16 border-4 border-orange-500/20 rounded-full"></div>
               <div className="absolute inset-0 w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
             <div className="space-y-1">
               <h4 className="text-base font-black uppercase tracking-wide text-slate-900">Recherche en cours...</h4>
-              <p className="text-xs text-slate-400 font-bold">Analyse en temps réel de notre base de données</p>
+              <p className="text-xs text-slate-400 font-bold">Vérification de la base de données FILANT°225</p>
             </div>
           </div>
         )}
 
-        {/* Results View */}
+        {/* Results layout */}
         {!isLoading && results !== null && (
           <div className="space-y-4">
             <div className="flex justify-between items-center px-1">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                {results.length} {results.length > 1 ? 'résultats trouvés' : 'résultat trouvé'}
+                {results.length} {results.length > 1 ? 'résultats correspondants' : 'résultat correspondant'}
               </h3>
-              <button
-                onClick={() => {
-                  setResults(null);
-                  setQueryInput('');
-                }}
-                className="text-[10px] font-black uppercase tracking-widest text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-full transition-all"
-              >
-                Nouvelle recherche
-              </button>
             </div>
 
             {results.length === 0 ? (
-              <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-100 flex flex-col items-center justify-center text-center space-y-4">
-                <div className="w-16 h-16 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center text-slate-400">
-                  <Compass className="h-8 w-8 stroke-[1.5]" />
+              <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-100 flex flex-col items-center justify-center text-center space-y-3">
+                <div className="w-12 h-12 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mb-1">
+                  <AlertCircle className="h-6 w-6 stroke-[2]" />
                 </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-black uppercase tracking-tight text-slate-900">Aucun prestataire trouvé</h4>
-                  <p className="text-xs text-slate-500 font-bold max-w-xs leading-relaxed">
-                    Aucune inscription correspondant à votre recherche n'est disponible pour le moment. Veuillez vérifier l'orthographe ou essayer un autre terme.
-                  </p>
-                </div>
+                <p className="text-xs text-slate-500 font-bold leading-relaxed max-w-xs" id="no-results-message">
+                  Aucun résultat disponible pour le moment pour ce titre.
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {results.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 flex gap-4 items-start relative overflow-hidden group hover:shadow-xl transition-all"
+                    className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center relative overflow-hidden group hover:shadow-xl transition-all"
                   >
-                    {/* Visual Accents & Category Badge */}
-                    <div className="absolute top-0 right-0 p-3 flex gap-2">
-                      <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-                        item.profileType === 'Travailleur' ? 'bg-green-50 text-green-700 border border-green-100' :
-                        item.profileType === 'Propriétaire' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
-                        item.profileType === 'Agence' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                        'bg-orange-50 text-orange-700 border border-orange-100'
+                    <div className="flex gap-4 items-start flex-1 min-w-0">
+                      {/* Icon container */}
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
+                        item.profileType === 'Travailleur' ? 'bg-green-50 text-green-600' :
+                        item.profileType === 'Propriétaire' ? 'bg-purple-50 text-purple-600' :
+                        item.profileType === 'Agence' ? 'bg-blue-50 text-blue-600' :
+                        'bg-orange-50 text-orange-600'
                       }`}>
-                        {item.profileType}
-                      </span>
-                    </div>
+                        {item.profileType === 'Travailleur' ? <Briefcase className="h-5 w-5" /> :
+                         item.profileType === 'Agence' ? <Building className="h-5 w-5" /> :
+                         item.profileType === 'Propriétaire' ? <Compass className="h-5 w-5" /> :
+                         <CheckCircle className="h-5 w-5" />}
+                      </div>
 
-                    {/* Icon wrapper based on category type */}
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
-                      item.profileType === 'Travailleur' ? 'bg-green-50 text-green-600' :
-                      item.profileType === 'Propriétaire' ? 'bg-purple-50 text-purple-600' :
-                      item.profileType === 'Agence' ? 'bg-blue-50 text-blue-600' :
-                      'bg-orange-50 text-orange-600'
-                    }`}>
-                      {item.profileType === 'Travailleur' ? <Briefcase className="h-5 w-5" /> :
-                       item.profileType === 'Agence' ? <Building className="h-5 w-5" /> :
-                       item.profileType === 'Propriétaire' ? <Compass className="h-5 w-5" /> :
-                       <CheckCircle className="h-5 w-5" />}
-                    </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-sans font-black uppercase text-xs tracking-tight text-slate-900 truncate">{item.name}</h4>
+                          <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                            item.profileType === 'Travailleur' ? 'bg-green-50 text-green-700 border border-green-100' :
+                            item.profileType === 'Propriétaire' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                            item.profileType === 'Agence' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                            'bg-orange-50 text-orange-700 border border-orange-100'
+                          }`}>
+                            {item.profileType}
+                          </span>
+                        </div>
 
-                    <div className="flex-1 min-w-0 pr-16 space-y-2">
-                      <div>
-                        <h4 className="font-sans font-black uppercase text-xs tracking-tight text-slate-900 truncate">{item.name}</h4>
-                        <div className="flex items-center gap-1.5 text-slate-500 mt-1">
+                        <div className="flex items-center gap-1 text-slate-500">
                           <MapPin className="h-3 w-3 text-slate-400 stroke-[2.5]" />
                           <span className="text-[10px] font-black uppercase tracking-tight">{item.city}</span>
                         </div>
-                      </div>
 
-                      <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5">
-                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Service ou activité</span>
-                        <span className="text-xs text-slate-800 font-bold block mt-0.5">{item.titleOrActivity}</span>
-                        {item.description && (
-                          <p className="text-[10px] text-slate-500 font-medium leading-relaxed mt-1 dark:text-slate-400 italic">
-                            "{item.description}"
-                          </p>
-                        )}
+                        {/* Title of profession or activity */}
+                        <div className="mt-1">
+                          <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Activité / Titre :</span>
+                          <span className="text-xs text-slate-800 font-bold block">{item.titleOrActivity}</span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Action button next to result */}
+                    <button
+                      onClick={() => handleDemandeDeService(item)}
+                      disabled={isLinking}
+                      className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black uppercase text-[10px] tracking-wider py-2.5 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"
+                    >
+                      {isLinking ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <MessageSquare className="h-3.5 w-3.5" />
+                      )}
+                      <span>Demande de service</span>
+                    </button>
                   </div>
                 ))}
               </div>

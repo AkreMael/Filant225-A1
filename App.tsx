@@ -840,6 +840,10 @@ const App: React.FC = () => {
           activeScreen = <DemandeRechercheScreen 
             onBack={handleBack} 
             user={displayUser} 
+            onSelectTab={(tab) => {
+              setActiveTab(tab);
+              setMenuView('hub');
+            }}
           />;
           break;
         case 'admin_dashboard':
