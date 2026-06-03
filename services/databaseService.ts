@@ -1868,11 +1868,16 @@ export const databaseService = {
     const sanitizedPhone = phone.replace(/\D/g, '');
     const q = query(
       collection(db, 'WalletTransactions'),
-      where('phone', '==', sanitizedPhone),
-      orderBy('timestamp', 'desc')
+      where('phone', '==', sanitizedPhone)
     );
     return onSnapshot(q, (snap) => {
       const txs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort client-side by timestamp descending to avoid composite index requirement
+      txs.sort((a: any, b: any) => {
+        const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : (a.timestamp || 0);
+        const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : (b.timestamp || 0);
+        return timeB - timeA;
+      });
       callback(txs);
     }, (error) => {
       console.error("Error subscribing to wallet transactions:", error);

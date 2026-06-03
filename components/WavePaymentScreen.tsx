@@ -50,7 +50,7 @@ const WavePaymentScreen: React.FC<WavePaymentScreenProps> = ({ onBack }) => {
                 </button>
                 <div className="flex items-center gap-2.5 ml-4">
                     <h1 className="text-xl font-bold">Autre Paiement Wave</h1>
-                    <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/73da4ae5-abba-4c0a-8da6-c3d9b2ca23e2.png" alt="Wave Logo" className="w-8 h-8 object-contain rounded-full bg-white p-0.5" referrerPolicy="no-referrer" />
+                    <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98b8035e-bacd-491a-8ff2-81d947531063.png" alt="Wave Logo" className="w-8 h-8 object-contain rounded-full bg-white p-0.5" referrerPolicy="no-referrer" />
                 </div>
             </header>
 
@@ -87,7 +87,7 @@ const WavePaymentScreen: React.FC<WavePaymentScreenProps> = ({ onBack }) => {
                         </div>
 
                         <div className="flex items-center justify-center gap-2 bg-[#1f2937] py-3 px-4 rounded-xl border border-slate-800">
-                             <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/73da4ae5-abba-4c0a-8da6-c3d9b2ca23e2.png" alt="Wave Logo" className="w-5 h-5 object-contain" referrerPolicy="no-referrer" />
+                             <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98b8035e-bacd-491a-8ff2-81d947531063.png" alt="Wave Logo" className="w-5 h-5 object-contain" referrerPolicy="no-referrer" />
                              <span className="text-[10px] uppercase font-bold tracking-widest text-[#33C4F3]">Paiement sécurisé via Wave</span>
                         </div>
 
