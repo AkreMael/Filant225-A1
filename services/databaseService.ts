@@ -700,6 +700,22 @@ export const databaseService = {
           adminReadStatus: 'NON LU'
         });
         console.log("Inscription saved/updated successfully for profile:", sanitizedPhone);
+
+        // Send automated message on registration completion
+        try {
+          const autoMsg = {
+            text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
+            sender: 'admin',
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            adminReadStatus: 'LU'
+          };
+          await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, autoMsg);
+          await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
+        } catch (msgErr) {
+          console.error("Error sending auto message after inscription:", msgErr);
+        }
+
         return true;
       } else {
         const inscrRef = collection(db, 'Inscriptions');
@@ -710,6 +726,24 @@ export const databaseService = {
           adminReadStatus: 'NON LU'
         });
         console.log("Inscription saved successfully (fallback with addDoc)");
+
+        // Send automated message for fallback if phone is present
+        if (phoneRaw) {
+          try {
+            const autoMsg = {
+              text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
+              sender: 'admin',
+              timestamp: new Date().toISOString(),
+              isRead: false,
+              adminReadStatus: 'LU'
+            };
+            await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, autoMsg);
+            await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
+          } catch (msgErr) {
+            console.error("Error sending auto message after inscription fallback:", msgErr);
+          }
+        }
+
         return true;
       }
     } catch (e) {
@@ -1294,6 +1328,28 @@ export const databaseService = {
         timestamp: serverTimestamp(),
         adminReadStatus: 'NON LU'
       });
+
+      // Send automated message after service request submission
+      const phoneRaw = requestData.phone || '';
+      const sanitizedPhone = phoneRaw.replace(/\D/g, '');
+      const userId = requestData.userId || sanitizedPhone;
+
+      if (userId) {
+        try {
+          const autoMsg = {
+            text: "Merci pour votre demande. Votre demande est en cours de traitement. Chaque demande est transmise à notre service de mise en relation. Un agent ou un partenaire vous contactera dans les meilleurs délais.",
+            sender: 'admin',
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            adminReadStatus: 'LU'
+          };
+          await databaseService.saveTypedChatMessage('Assistant', userId, autoMsg);
+          await databaseService.saveTypedChatMessage('Privee', userId, autoMsg);
+        } catch (msgErr) {
+          console.error("Error sending auto message after service request:", msgErr);
+        }
+      }
+
       return docRef.id;
     } catch (error) {
       console.error("Error saving service request:", error);
