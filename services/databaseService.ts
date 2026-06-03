@@ -692,6 +692,20 @@ export const databaseService = {
       const sanitizedPhone = phoneRaw.replace(/\D/g, '');
       
       if (sanitizedPhone) {
+        // Post the user's own registration details in the chat first
+        try {
+          const activity = inscriptionData.job || inscriptionData.equipmentType || inscriptionData.agencyName || inscriptionData.companyName || 'Inscrit';
+          const userMsg = {
+            text: `📝 *Nouveau Formulaire d'Inscription Soumis*\n\nJe viens de terminer mon inscription sur FILANT°225.\n\n• *Nom :* ${inscriptionData.name || 'Utilisateur'}\n• *Ville :* ${inscriptionData.city || 'Non spécifiée'}\n• *Type de Profil :* ${inscriptionData.profileType || 'Inscrit'}\n• *Activité/Catégorie :* ${activity}`,
+            sender: 'user',
+            type: 'inscription_submission'
+          };
+          await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, userMsg);
+          await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, userMsg);
+        } catch (msgErr) {
+          console.error("Error sending user inscription message to chat:", msgErr);
+        }
+
         const docRef = doc(db, 'Inscriptions', sanitizedPhone);
         await setDoc(docRef, {
           ...inscriptionData,
@@ -706,7 +720,6 @@ export const databaseService = {
           const autoMsg = {
             text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
             sender: 'admin',
-            timestamp: new Date().toISOString(),
             isRead: false,
             adminReadStatus: 'LU'
           };
@@ -730,10 +743,18 @@ export const databaseService = {
         // Send automated message for fallback if phone is present
         if (phoneRaw) {
           try {
+            const activity = inscriptionData.job || inscriptionData.equipmentType || inscriptionData.agencyName || inscriptionData.companyName || 'Inscrit';
+            const userMsg = {
+              text: `📝 *Nouveau Formulaire d'Inscription Soumis*\n\nJe viens de terminer mon inscription sur FILANT°225.\n\n• *Nom :* ${inscriptionData.name || 'Utilisateur'}\n• *Ville :* ${inscriptionData.city || 'Non spécifiée'}\n• *Type de Profil :* ${inscriptionData.profileType || 'Inscrit'}\n• *Activité/Catégorie :* ${activity}`,
+              sender: 'user',
+              type: 'inscription_submission'
+            };
+            await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, userMsg);
+            await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, userMsg);
+
             const autoMsg = {
               text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
               sender: 'admin',
-              timestamp: new Date().toISOString(),
               isRead: false,
               adminReadStatus: 'LU'
             };
@@ -1339,7 +1360,6 @@ export const databaseService = {
           const autoMsg = {
             text: "Merci pour votre demande. Votre demande est en cours de traitement. Chaque demande est transmise à notre service de mise en relation. Un agent ou un partenaire vous contactera dans les meilleurs délais.",
             sender: 'admin',
-            timestamp: new Date().toISOString(),
             isRead: false,
             adminReadStatus: 'LU'
           };

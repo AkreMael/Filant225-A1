@@ -230,6 +230,9 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     };
 
     try {
+        // Save the user's detailed message in the private chat first
+        await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
+
         // Save as a stage, formation or service request depending on the formType
         if (formType === 'stage') {
             await databaseService.saveStageApplication({
@@ -256,7 +259,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                 adminReadStatus: 'NON LU'
             });
         } else {
-            // Save as a service request for the admin dashboard
+            // Save as a service request for the admin dashboard (this triggers the automated response)
             await databaseService.saveServiceRequest({
                 userId: chatUserId,
                 userName: user.name || 'Utilisateur',
@@ -269,8 +272,6 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                 readStatus: 'NON LU'
             });
         }
-
-        await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
         
         // Note: We keep the form data fixed as per user request, so we don't clear localStorage here
         // localStorage.removeItem(storageKey);

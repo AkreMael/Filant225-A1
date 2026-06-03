@@ -50,6 +50,39 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const [viewportHeight, setViewportHeight] = useState<number | string>('100dvh');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!window.visualViewport) return;
+
+    const handleResize = () => {
+      setViewportHeight(window.visualViewport.height);
+      
+      // Auto-scroll when keyboard status changes
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    };
+
+    window.visualViewport.addEventListener('resize', handleResize);
+    window.visualViewport.addEventListener('scroll', handleResize);
+    
+    handleResize();
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [inputText]);
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     // We are at bottom if distance to bottom is less than 50px
@@ -259,7 +292,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   }, [displayMessages, isAdmin]);
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 animate-in fade-in duration-300">
+    <div 
+      className="flex flex-col bg-slate-50 animate-in fade-in duration-300 w-full overflow-hidden"
+      style={{ height: typeof viewportHeight === 'number' ? `${viewportHeight}px` : '100dvh' }}
+    >
       <header className="bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-20 shadow-sm">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors">
@@ -413,26 +449,40 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 bg-white border-t border-slate-200">
-        <div className="flex items-center gap-2 bg-slate-100 rounded-2xl p-2 shadow-inner">
-          <input
-            type="text"
+      <div className="p-3 bg-white border-t border-slate-100 flex items-end gap-2 shrink-0">
+        <div className="flex-1 flex items-center min-h-[44px] bg-slate-100 rounded-[1.5rem] px-4 py-1.5 transition-all focus-within:bg-slate-50 focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500/30 border border-transparent shadow-inner">
+          <textarea
+            ref={textareaRef}
+            rows={1}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            onFocus={() => {
+              setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }, 150);
+            }}
             placeholder="Écrivez votre message..."
-            className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-2 py-1 text-slate-800 placeholder:text-slate-400 font-medium"
+            className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-1 font-semibold text-slate-800 placeholder:text-slate-400 resize-none max-h-28 overflow-y-auto scrollbar-hide focus:outline-none"
+            style={{ height: '24px' }}
           />
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputText.trim()}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md ${
-              inputText.trim() ? 'bg-orange-500 text-white active:scale-90' : 'bg-slate-200 text-slate-400'
-            }`}
-          >
-            <SendIcon />
-          </button>
         </div>
+        <button
+          onClick={() => handleSendMessage()}
+          disabled={!inputText.trim()}
+          className={`w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md shrink-0 active:scale-90 ${
+            inputText.trim() 
+              ? 'bg-orange-500 text-white hover:bg-orange-600' 
+              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+          }`}
+        >
+          <SendIcon />
+        </button>
       </div>
 
       {/* Modal de confirmation de suppression */}
