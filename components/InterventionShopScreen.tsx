@@ -254,7 +254,6 @@ const categoriesConfig = [
             { title: "Réparation machine à laver rapide", description: "Réparation lave-linge et sèche-linge." },
             { title: "Réparation fuite d’eau rapide", description: "Détection et réparation fuites." },
             { title: "Dépannage parabole rapide", description: "Installation et réglage parabole." },
-            { title: "Dépannage groupe électrogène rapide", description: "Réparation de groupes électrogènes." },
             { title: "Dépannage auto rapide", description: "Mécanique et électrique auto." }
         ]
     },

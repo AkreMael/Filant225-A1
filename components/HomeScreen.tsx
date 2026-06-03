@@ -121,7 +121,6 @@ const batimentWorkers = [
     { title: 'Femme de ménage', description: 'Entretien ménager soigné et lessivages pour votre domicile.', formType: 'worker' },
     { title: 'Caissier', description: 'Gère les paiements, la caisse et l’accueil dans les commerces.', formType: 'worker' },
     { title: 'Réceptionniste', description: 'Accueille les clients dans hôtels, entreprises ou agences.', formType: 'worker' },
-    { title: 'Nounou', description: 'Garde les enfants, aide aux devoirs et accompagne la famille.', formType: 'worker' },
     { title: 'Baby-sitter', description: 'Garde ponctuelle d’enfants pour soulager les parents au besoin.', formType: 'worker' },
     { title: 'Jardinier', description: 'Entretient les jardins, pelouses, fleurs et espaces verts.', formType: 'worker' },
     { title: 'Couturier', description: 'Coupe, couture, confection et retouches de vêtements.', formType: 'worker' },
@@ -145,7 +144,6 @@ const batimentWorkers = [
     { title: 'Photographe', description: 'Prend des photos pour événements ou projets.', formType: 'worker' },
     { title: 'Vidéaste / Monteur', description: 'Réalise et monte des vidéos.', formType: 'worker' },
     { title: 'Manucure', description: 'S’occupe des soins de mise en beauté des mains.', formType: 'worker' },
-    { title: 'Pédicure', description: 'S’occupe des soins de mise en beauté des pieds.', formType: 'worker' },
     { title: 'Massage', description: 'Pratique des massages pour le bien-être.', formType: 'worker' },
     { title: 'Maquillage professionnel', description: 'Maquille pour événements ou spectacles.', formType: 'worker' },
     { title: 'Enseignant privé', description: 'Donne des cours particuliers aux élèves.', formType: 'worker' }
@@ -495,12 +493,6 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Dépannage groupe électrogène rapide", 
-        description: "Intervention rapide pour démarrage impossible, filtre bouché ou problème d'alternateur.", 
-        formType: 'rapid_building_service', 
-        categoryGroup: 'Travailleurs Qualifiés' 
-    },
-    { 
         title: "Dépannage auto rapide", 
         description: "Dépannage de batterie à plat, diagnostic mécanique rapide ou crevaison sur place.", 
         formType: 'rapid_building_service', 
@@ -687,12 +679,6 @@ const ALL_SEARCH_CATEGORIES = [
         categoryGroup: 'Travailleurs Qualifiés' 
     },
     { 
-        title: "Nounou", 
-        description: "Garde attentive et accompagnement quotidien de vos enfants à domicile.", 
-        formType: 'worker', 
-        categoryGroup: 'Travailleurs Qualifiés' 
-    },
-    { 
         title: "Baby-sitter", 
         description: "Garde ponctuelle ou occasionnelle de vos enfants en journée ou en soirée.", 
         formType: 'worker', 
@@ -821,12 +807,6 @@ const ALL_SEARCH_CATEGORIES = [
     { 
         title: "Manucure", 
         description: "S’occupe des soins et mise en beauté esthétique de vos mains.", 
-        formType: 'worker', 
-        categoryGroup: 'Travailleurs Qualifiés' 
-    },
-    { 
-        title: "Pédicure", 
-        description: "S’occupe des soins d’hygiène et de beauté esthétique de vos pieds.", 
         formType: 'worker', 
         categoryGroup: 'Travailleurs Qualifiés' 
     },

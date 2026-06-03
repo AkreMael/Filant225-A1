@@ -77,10 +77,13 @@ export const getSynchronizedWorkerImage = (name: string) => {
     const nameLower = name.toLowerCase().trim();
 
     // Check specific user requested overrides first
+    if (nameLower.includes('agent d’entretien') || nameLower.includes("agent d'entretien")) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/6d388c33-c0f5-46ed-af04-3ae5c8cbb212.jpg";
+    if (nameLower.includes('coiffeuse femme') || nameLower.includes('coiffeuse') || nameLower.includes('coiffeur femme')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9c714920-4de5-4419-97f8-9114f9cbb215.jpg";
+    if (nameLower.includes('pâtissier') || nameLower.includes('patissier') || nameLower.includes('pâtissière') || nameLower.includes('patissiere')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/218add6d-6e21-4628-bfad-06d7b3210e28.jpg";
+    if (nameLower.includes('agent de sécurité') || nameLower.includes('agent de securite')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/28e343d6-95b2-461d-a0c9-5889367b8be4.jpg";
     if (nameLower.includes('manucure à domicile rapide') || nameLower.includes('manucure a domicile rapide')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9b3a9b4b-f03e-417f-a1ae-69d612bb1de8.jpg";
     if (nameLower.includes('esthéticienne-massage') || nameLower.includes('estheticienne-massage')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e884871d-41ea-40c2-b46a-cb2885c270c8.jpg";
     if (nameLower.includes('maquilleuse professionnelle') || nameLower.includes('maquilleuse professionnel')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/e9355d98-e4a9-4bc9-a0bb-9d314aa40839.jpg";
-    if (nameLower.includes('pâtissière') || nameLower.includes('patissiere')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/218add6d-6e21-4628-bfad-06d7b3210e28.jpg";
 
     if (nameLower.includes('entretien piscine')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/9c3ec760-4dba-41a4-b8cd-c6fe37b1d915.jpg";
     if (nameLower.includes('entretien jardin')) return "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/a457d9bb-89d8-43c9-9d79-47af16441a96.jpg";
