@@ -52,13 +52,12 @@ const CardIconArea = ({ amount, isManual, onValueChange, onValidate, isValidated
     <div className="bg-gray-100/50 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 shadow-inner border border-gray-200 mb-3 w-full max-w-[340px] mx-auto">
         <div className="flex items-center justify-center gap-3 w-full">
             <div className="relative flex-shrink-0">
-                <svg width="56" height="36" viewBox="0 0 100 66" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="100" height="66" rx="12" fill="#16a34a" />
-                    <rect y="12" width="100" height="10" fill="#14532d" fillOpacity="0.15" />
-                    <circle cx="72" cy="44" r="14" stroke="white" strokeWidth="1.5" strokeDasharray="3 3" />
-                    <circle cx="72" cy="44" r="11" fill="white" fillOpacity="0.2" />
-                    <path d="M72 38V50M72 38L68 42M72 38L76 42" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <img 
+                  src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98b8035e-bacd-491a-8ff2-81d947531063.png" 
+                  alt="Wave Logo" 
+                  className="w-14 h-14 object-contain rounded-full bg-white p-0.5 shadow-sm border border-gray-150" 
+                  referrerPolicy="no-referrer" 
+                />
             </div>
             
             {!isManual || isValidated ? (
@@ -407,10 +406,13 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     if (depositSuccess) {
       return (
         <div className="flex flex-col items-center justify-center p-6 text-center h-full max-w-sm mx-auto space-y-4 animate-in fade-in duration-300">
-          <div className="w-14 h-14 rounded-full bg-orange-50 border-2 border-orange-500 flex items-center justify-center text-orange-600 animate-bounce">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
+          <div className="w-14 h-14 rounded-full bg-white border border-gray-150 flex items-center justify-center p-0.5 shadow-sm animate-bounce">
+            <img 
+              src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98b8035e-bacd-491a-8ff2-81d947531063.png" 
+              alt="Wave Logo" 
+              className="w-full h-full object-contain" 
+              referrerPolicy="no-referrer" 
+            />
           </div>
           <h2 className="text-lg font-black text-slate-950 uppercase tracking-tight font-sans">Demande enregistrée</h2>
           <p className="text-slate-600 text-[11px] font-extrabold uppercase leading-relaxed font-sans">
@@ -752,7 +754,12 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 
           <div className="mt-auto w-full pt-3 pb-1 flex items-center justify-between gap-4 font-sans">
               <div className="flex flex-col items-center flex-shrink-0">
-                <CreditCard className="w-8 h-8 text-blue-500" />
+                <img 
+                  src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98b8035e-bacd-491a-8ff2-81d947531063.png" 
+                  alt="Wave Logo" 
+                  className="w-8 h-8 object-contain rounded-full bg-white p-0.5 border border-slate-100 shadow-sm" 
+                  referrerPolicy="no-referrer" 
+                />
                 <span className="text-[7.5px] font-black uppercase text-slate-400 mt-1 font-sans">WALLET SECURE</span>
               </div>
               <button 
