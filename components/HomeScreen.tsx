@@ -109,8 +109,6 @@ const batimentWorkers = [
     { title: 'Fabricant de poufs Rapide', description: 'Création et réparation de poufs.', formType: 'rapid_building_service' },
     { title: 'Installateur de fenêtres et portes vitrées Rapide', description: 'Pose menuiserie et vitrerie.', formType: 'rapid_building_service' },
     { title: 'Menuisier Rapide', description: 'Menuiserie bois et meubles.', formType: 'rapid_building_service' },
-    // Agence Immobilière
-    { title: 'Agence Immobilière FILANT', description: 'Trouvez la maison de vos rêves avec notre catalogue exclusif de propriétés.', formType: 'location' },
     // Travailleurs qualifiés
     { title: 'Vendeuse', description: 'Assure la vente, l’accueil des clients et la gestion d’une boutique.', formType: 'worker' },
     { title: 'Cuisinier', description: 'Prépare les repas pour restaurant, foyer ou entreprise.', formType: 'worker' },
@@ -965,9 +963,6 @@ const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onS
                             </div>
                             <div className="px-4 pb-4 flex flex-col text-left">
                                 <h4 className="text-[12px] font-black text-gray-900 uppercase leading-tight mb-1 tracking-tight truncate">{item.title}</h4>
-                                <p className="text-[#ef4444] font-black text-[10px] leading-tight mb-1.5 uppercase">
-                                    H. Descente : <span className="text-black font-bold">18h30</span>
-                                </p>
                                 <p className="text-[9px] text-gray-400 leading-snug italic line-clamp-2 mb-2">
                                     {item.description}
                                 </p>
