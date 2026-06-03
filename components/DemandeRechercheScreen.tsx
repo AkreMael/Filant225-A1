@@ -63,6 +63,9 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     // Search exclusively in Firestore Inscriptions
     const matches: InscriptionResult[] = inscriptionsFromDB
       .filter((item: any) => {
+        // Exclude disabled inscriptions
+        if (item.isActive === false) return false;
+
         // Collect all text from fields that are relevant for search
         const textToSearch = [
           item.name,

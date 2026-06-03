@@ -279,6 +279,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       keysWithStatus.push('adminReadStatus');
     }
 
+    // Add Visibilité column for Inscriptions
+    if (collectionName === 'Inscriptions') {
+      headersWithStatus.push('Visibilité');
+      keysWithStatus.push('actions_toggle_active');
+    }
+
     // Add Mission column for user-centric tabs
     const userTabs = ['connections', 'workers', 'equipments', 'agencies', 'companies', 'inscriptions', 'qrcodes'];
     if (userTabs.includes(activeTab)) {
@@ -324,6 +330,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                             className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-xl transition-all active:scale-90"
                           >
                             <Send size={16} />
+                          </button>
+                        </td>
+                      );
+                    }
+
+                    if (key === 'actions_toggle_active') {
+                      const isCurrentActive = item.isActive !== false;
+                      return (
+                        <td key={j} className="px-6 py-4 text-center">
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const docRef = doc(db, 'Inscriptions', item.id);
+                                await updateDoc(docRef, { isActive: !isCurrentActive });
+                              } catch (err) {
+                                console.error("Error updating visibility:", err);
+                              }
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 hover:scale-[1.03] active:scale-95 flex items-center justify-center gap-1.5 mx-auto border ${
+                              isCurrentActive
+                                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                            }`}
+                          >
+                            <span className={`w-2 h-2 rounded-full ${isCurrentActive ? 'bg-green-500' : 'bg-red-500'}`} />
+                            {isCurrentActive ? 'Activé' : 'Désactivé'}
                           </button>
                         </td>
                       );

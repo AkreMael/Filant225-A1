@@ -131,9 +131,11 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
         return;
       }
 
+      const activeInscriptions = inscriptions.filter((doc: any) => doc.isActive !== false);
+
       const normalizedQuery = searchQuery.toLowerCase().trim();
       if (!normalizedQuery) {
-        setSearchResults(inscriptions);
+        setSearchResults(activeInscriptions);
         setHasSearched(true);
         setIsPerformingSearch(false);
         return;
@@ -141,7 +143,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
 
       const keywords = normalizedQuery.split(/\s+/).filter(k => k.length > 1);
 
-      const filtered = inscriptions.filter((doc: any) => {
+      const filtered = activeInscriptions.filter((doc: any) => {
         const name = (doc.name || doc.companyName || doc.agencyName || '').toLowerCase();
         const city = (doc.city || doc.agencyCity || doc.companyCity || doc.equipmentCity || '').toLowerCase();
         const profileType = (doc.profileType || '').toLowerCase();
