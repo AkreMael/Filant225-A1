@@ -282,6 +282,45 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         return;
       }
 
+      // 1.5. Update QR Code Activations status instantly if it relates to the activation tunnel
+      if (paymentType === 'Inscription' || needed === 310) {
+        try {
+          await databaseService.updateQRCodeActivation(user.phone, {
+            status: "En attente paiement activation (7 100 FCFA)",
+            fraisDossierPayes: true,
+          });
+          console.log("Updated QRCodeActivation to: En attente paiement activation for", user.phone);
+        } catch (qrErr) {
+          console.error("Error updating QR Code Activation instantly during wallet payment:", qrErr);
+        }
+      } else if (paymentType === 'Activation' || needed === 7100) {
+        try {
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+          await databaseService.updateQRCodeActivation(user.phone, {
+            status: "Code QR Actif",
+            isVerified: true,
+            expiryDate: expiryDate.toISOString(),
+            activationDate: new Date().toISOString(),
+          });
+          console.log("Updated QRCodeActivation to: Code QR Actif for", user.phone);
+        } catch (qrErr) {
+          console.error("Error updating QR Code Activation instantly during wallet payment:", qrErr);
+        }
+      } else if (paymentType === 'Renouvellement' || needed === 500) {
+        try {
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+          await databaseService.updateQRCodeActivation(user.phone, {
+            status: "Code QR Actif",
+            expiryDate: expiryDate.toISOString(),
+          });
+          console.log("Updated QRCodeActivation to: Code QR Actif (renewed) for", user.phone);
+        } catch (qrErr) {
+          console.error("Error updating QR Code Activation instantly during wallet payment:", qrErr);
+        }
+      }
+
       // 2. Publish offer if requested
       if (paymentType === "Publication" && formData) {
         try {

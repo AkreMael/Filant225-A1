@@ -116,6 +116,12 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
   
   const getStepNumber = () => {
       if (qrData?.requiresRegistration) return 1;
+      if (qrData?.fraisDossierPayes === true) {
+          if (currentStatus.includes("7 100") || currentStatus.includes("activation")) return 3;
+          if (isActive) return 4;
+          if (currentStatus.includes("500")) return 5;
+          return 3; // Par défaut, passe à l'étape 3 si les frais sont payés
+      }
       if (currentStatus.includes("310")) return 2;
       if (currentStatus.includes("7 100")) return 3;
       if (isActive) return 4;
