@@ -52,6 +52,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
   // Form error message helper
   const [formErrors, setFormErrors] = useState<string>('');
+  const [isSubmittingWithDelay, setIsSubmittingWithDelay] = useState(false);
 
   // Days list constant matching system
   const DURATION_DAYS_OPTIONS = [
@@ -222,6 +223,100 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     }
   };
 
+  const startDelayedSubmissionAndPayment = async (
+    item: InscriptionResult,
+    amount: number,
+    chatMsgText: string,
+    answersData: Record<string, any>
+  ) => {
+    if (isSubmittingWithDelay) return;
+    setIsSubmittingWithDelay(true);
+    setFormErrors('');
+
+    const startTime = Date.now();
+
+    try {
+      // 1. Create Service Request Data
+      const serviceRequestData = {
+        userId: chatUserId,
+        userName: user.name || 'Utilisateur',
+        phone: user.phone || 'Non spécifié',
+        city: user.city || 'Non spécifiée',
+        serviceTitle: `Demande de service : ${item.titleOrActivity}`,
+        formType: 'service_request_search',
+        answers: {
+          'Nom du prestataire': item.name,
+          'Ville du prestataire': item.city,
+          'Activité recherchée': item.titleOrActivity,
+          'Type de profil': item.profileType,
+          ...answersData
+        },
+        totalPrice: amount,
+        readStatus: 'NON LU',
+        prestataireName: item.name,
+        prestataireCity: item.city,
+        prestataireActivity: item.titleOrActivity
+      };
+
+      // 2. Format chat message
+      const chatMsg = {
+        sender: 'user' as const,
+        text: chatMsgText,
+        timestamp: Date.now()
+      };
+
+      // 3. Save to administrators DB & private chat
+      await Promise.all([
+        databaseService.saveServiceRequest(serviceRequestData),
+        databaseService.savePrivateChatMessage(chatUserId, chatMsg)
+      ]);
+
+      // Calculate elapsed time and sleep up to 2 seconds
+      const elapsed = Date.now() - startTime;
+      const delayRemaining = Math.max(0, 2000 - elapsed);
+      if (delayRemaining > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayRemaining));
+      }
+
+      // Reset fields representing the form state
+      setAgenceZone('');
+      setTravailleurCity('');
+      setTravailleurSalaryOrBudget('');
+      setTravailleurDesc('');
+      setTravailleurStep(0);
+      setEquipCity('');
+      setEquipDays('1 jour');
+      setEquipBudget('');
+      setEquipDesc('');
+      setEquipStep(0);
+      setEntrepriseNeed('');
+
+      // Hide the form view by setting selectedItemForForm to null
+      setSelectedItemForForm(null);
+
+      // Now open the payment screen automatically
+      window.dispatchEvent(new CustomEvent('trigger-payment-view', {
+        detail: {
+          title: item.name,
+          amount: amount.toString(),
+          paymentType: "Mise en relation",
+          waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${amount}`,
+          onSuccess: () => {
+            // Once payment of "Mise en relation" is approved/finished,
+            // direct the user to the chat screen to view their saved message.
+            onSelectTab(Tab.UserChat);
+          }
+        }
+      }));
+
+    } catch (error) {
+      console.error("Error during delayed submission process:", error);
+      setFormErrors("Une erreur est survenue lors de l'enregistrement de votre demande.");
+    } finally {
+      setIsSubmittingWithDelay(false);
+    }
+  };
+
   const handleAgenceSubmit = () => {
     if (!agenceZone.trim()) {
       setFormErrors('Veuillez remplir le champ Zone ou lieu recherché');
@@ -248,17 +343,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       'Zone ou lieu recherché': zone
     };
 
-    window.dispatchEvent(new CustomEvent('trigger-payment-view', {
-      detail: {
-        title: selectedItemForForm.name,
-        amount: amount.toString(),
-        paymentType: "Mise en relation",
-        waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${amount}`,
-        onSuccess: () => {
-          handleSuccessSubmission(selectedItemForForm, amount, chatMsgText, answersData);
-        }
-      }
-    }));
+    startDelayedSubmissionAndPayment(selectedItemForForm, amount, chatMsgText, answersData);
   };
 
   const handleTravailleurSubmit = () => {
@@ -292,17 +377,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       'Description du besoin': travailleurDesc.trim()
     };
 
-    window.dispatchEvent(new CustomEvent('trigger-payment-view', {
-      detail: {
-        title: selectedItemForForm.name,
-        amount: amount.toString(),
-        paymentType: "Mise en relation",
-        waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${amount}`,
-        onSuccess: () => {
-          handleSuccessSubmission(selectedItemForForm, amount, chatMsgText, answersData);
-        }
-      }
-    }));
+    startDelayedSubmissionAndPayment(selectedItemForForm, amount, chatMsgText, answersData);
   };
 
   const handleEquipSubmit = () => {
@@ -334,17 +409,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       'Matériel options souhaitées': equipDesc.trim()
     };
 
-    window.dispatchEvent(new CustomEvent('trigger-payment-view', {
-      detail: {
-        title: selectedItemForForm.name,
-        amount: amount.toString(),
-        paymentType: "Mise en relation",
-        waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${amount}`,
-        onSuccess: () => {
-          handleSuccessSubmission(selectedItemForForm, amount, chatMsgText, answersData);
-        }
-      }
-    }));
+    startDelayedSubmissionAndPayment(selectedItemForForm, amount, chatMsgText, answersData);
   };
 
   const handleEntrepriseSubmit = () => {
@@ -369,22 +434,28 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       'Service demandé à l\'entreprise': entrepriseNeed.trim()
     };
 
-    window.dispatchEvent(new CustomEvent('trigger-payment-view', {
-      detail: {
-        title: selectedItemForForm.name,
-        amount: amount.toString(),
-        paymentType: "Mise en relation",
-        waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${amount}`,
-        onSuccess: () => {
-          handleSuccessSubmission(selectedItemForForm, amount, chatMsgText, answersData);
-        }
-      }
-    }));
+    startDelayedSubmissionAndPayment(selectedItemForForm, amount, chatMsgText, answersData);
   };
 
   if (selectedItemForForm) {
     return (
-      <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-300 font-sans" id="demande-recherche-form-view">
+      <div className="relative flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-300 font-sans" id="demande-recherche-form-view">
+        {/* Loading overlay for the 2 seconds information saving */}
+        {isSubmittingWithDelay && (
+          <div className="absolute inset-0 z-[1100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-100 flex flex-col items-center justify-center text-center space-y-4 animate-in zoom-in-95 duration-300">
+              <div className="relative">
+                <div className="w-14 h-14 border-4 border-orange-100 rounded-full"></div>
+                <div className="absolute inset-0 w-14 h-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-base font-black uppercase tracking-wide text-slate-900">Enregistrement en cours...</h4>
+                <p className="text-[10px] text-slate-500 font-extrabold uppercase tracking-tight">Vos informations sont sagement enregistrées dans la messagerie et chez l'administrateur avant le paiement.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header with back button */}
         <header className="p-4 flex items-center gap-4 bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
           <button 
