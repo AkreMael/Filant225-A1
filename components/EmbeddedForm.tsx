@@ -547,117 +547,114 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                     </div>
 
                     {/* Results Container */}
-                    <div className="w-full flex-1 min-h-[160px] flex flex-col items-center justify-center mb-6">
-                        {isPerformingSearch ? (
-                            <div className="flex flex-col items-center gap-3 text-orange-500 py-8">
-                                <div className="w-8 h-8 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
-                                <span className="text-[10px] font-black uppercase tracking-wider animate-pulse">Recherche en temps réel...</span>
-                            </div>
-                        ) : !hasSearched ? (
-                            <div className="text-center py-6 px-4 bg-orange-50/50 rounded-3xl border border-orange-100/50 space-y-3">
-                                <span className="text-[10px] font-black text-orange-600 bg-orange-100 px-3 py-1 rounded-full uppercase tracking-wider">Base de données active</span>
-                                <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                                    Cliquez sur <strong>"Lancer la recherche"</strong> pour interroger les inscriptions de travailleurs, équipements, agences ou entreprises enregistrées.
-                                </p>
-                            </div>
-                        ) : searchResults.length === 0 ? (
-                            <div className="text-center py-8 px-5 bg-gray-50 rounded-3xl border border-gray-100 space-y-4 w-full">
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-relaxed">
-                                    Aucun inscrit ne correspond à "{searchQuery}"
-                                </p>
-                                <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
-                                    Vous pouvez néanmoins continuer pour soumettre votre demande personnalisée à nos services.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="w-full space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-hide py-1">
-                                <div className="flex justify-between items-center px-1 mb-1">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                        {searchResults.length} {searchResults.length > 1 ? 'Résultats trouvés' : 'Résultat trouvé'}
-                                    </span>
+                    {(isPerformingSearch || hasSearched) && (
+                        <div className="w-full flex-1 min-h-[160px] flex flex-col items-center justify-center mb-6">
+                            {isPerformingSearch ? (
+                                <div className="flex flex-col items-center gap-3 text-orange-500 py-8">
+                                    <div className="w-8 h-8 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
+                                    <span className="text-[10px] font-black uppercase tracking-wider animate-pulse">Recherche en temps réel...</span>
                                 </div>
-                                
-                                {searchResults.map((item, index) => {
-                                    let displayProfession = "";
-                                    let badgeColor = "";
-                                    let badgeText = "";
+                            ) : !hasSearched ? (
+                                null
+                            ) : searchResults.length === 0 ? (
+                                <div className="text-center py-8 px-5 bg-gray-50 rounded-3xl border border-gray-100 space-y-4 w-full">
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-relaxed">
+                                        Aucun inscrit ne correspond à "{searchQuery}"
+                                    </p>
+                                    <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
+                                        Vous pouvez néanmoins continuer pour soumettre votre demande personnalisée à nos services.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="w-full space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-hide py-1">
+                                    <div className="flex justify-between items-center px-1 mb-1">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                            {searchResults.length} {searchResults.length > 1 ? 'Résultats trouvés' : 'Résultat trouvé'}
+                                        </span>
+                                    </div>
                                     
-                                    if (item.profileType === 'Travailleur') {
-                                        displayProfession = item.job || "Travailleur";
-                                        badgeColor = "bg-blue-50 text-blue-600 border border-blue-100";
-                                        badgeText = "Travailleur";
-                                    } else if (item.profileType === 'Propriétaire') {
-                                        displayProfession = item.equipmentType || "Équipement";
-                                        badgeColor = "bg-purple-50 text-purple-600 border border-purple-100";
-                                        badgeText = "Équipement";
-                                    } else if (item.profileType === 'Agence') {
-                                        displayProfession = item.agencyName || "Agence Immobilière";
-                                        badgeColor = "bg-emerald-50 text-emerald-600 border border-emerald-100";
-                                        badgeText = "Agence";
-                                    } else if (item.profileType === 'Entreprise') {
-                                        displayProfession = item.companyName || "Entreprise";
-                                        badgeColor = "bg-amber-50 text-amber-600 border border-amber-100";
-                                        badgeText = "Entreprise";
-                                    } else {
-                                        displayProfession = "Inscrit";
-                                        badgeColor = "bg-gray-50 text-gray-600 border border-gray-100";
-                                        badgeText = "Inscrit";
-                                    }
+                                    {searchResults.map((item, index) => {
+                                        let displayProfession = "";
+                                        let badgeColor = "";
+                                        let badgeText = "";
+                                        
+                                        if (item.profileType === 'Travailleur') {
+                                            displayProfession = item.job || "Travailleur";
+                                            badgeColor = "bg-blue-50 text-blue-600 border border-blue-100";
+                                            badgeText = "Travailleur";
+                                        } else if (item.profileType === 'Propriétaire') {
+                                            displayProfession = item.equipmentType || "Équipement";
+                                            badgeColor = "bg-purple-50 text-purple-600 border border-purple-100";
+                                            badgeText = "Équipement";
+                                        } else if (item.profileType === 'Agence') {
+                                            displayProfession = item.agencyName || "Agence Immobilière";
+                                            badgeColor = "bg-emerald-50 text-emerald-600 border border-emerald-100";
+                                            badgeText = "Agence";
+                                        } else if (item.profileType === 'Entreprise') {
+                                            displayProfession = item.companyName || "Entreprise";
+                                            badgeColor = "bg-amber-50 text-amber-600 border border-amber-100";
+                                            badgeText = "Entreprise";
+                                        } else {
+                                            displayProfession = "Inscrit";
+                                            badgeColor = "bg-gray-50 text-gray-600 border border-gray-100";
+                                            badgeText = "Inscrit";
+                                        }
 
-                                    return (
-                                        <div 
-                                            key={item.id || index}
-                                            className="w-full bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
-                                        >
-                                            <div className="space-y-1 flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-black text-gray-900 truncate uppercase">
-                                                        {item.name || item.companyName || item.agencyName}
-                                                    </span>
-                                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${badgeColor}`}>
-                                                        {badgeText}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-col gap-0.5">
-                                                    <span className="text-[11px] font-bold text-gray-600 pr-1 truncate">
-                                                        📍 {item.city || item.agencyCity || item.companyCity || item.equipmentCity || "Non spécifiée"}
-                                                    </span>
-                                                    <span className="text-[10px] font-semibold text-gray-400 truncate">
-                                                        💼 {displayProfession}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            
-                                            <button
-                                                onClick={() => {
-                                                    const newAnswers = { ...answers };
-                                                    const resultCity = item.city || item.agencyCity || item.companyCity || item.equipmentCity;
-                                                    if (resultCity) {
-                                                        newAnswers.serviceCity = resultCity;
-                                                        newAnswers.workLocation = resultCity;
-                                                        newAnswers.commune = resultCity;
-                                                        newAnswers.city = resultCity;
-                                                        newAnswers.location = resultCity;
-                                                    }
-                                                    const chosenName = item.name || item.companyName || item.agencyName;
-                                                    if (chosenName) {
-                                                        newAnswers.chosenWorkerName = chosenName;
-                                                        newAnswers.description = `Demande concernant l'inscrit : ${chosenName}`;
-                                                        newAnswers.workDescription = `Demande concernant l'inscrit : ${chosenName}`;
-                                                    }
-                                                    setAnswers(newAnswers);
-                                                    setIsSearchingInDb(false);
-                                                }}
-                                                className="bg-orange-500 hover:bg-orange-600 text-white font-black text-[10px] uppercase px-4 py-2.5 rounded-xl shadow-md active:scale-95 transition-all cursor-pointer"
+                                        return (
+                                            <div 
+                                                key={item.id || index}
+                                                className="w-full bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
                                             >
-                                                Afficher
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
+                                                <div className="space-y-1 flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-black text-gray-900 truncate uppercase">
+                                                            {item.name || item.companyName || item.agencyName}
+                                                        </span>
+                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${badgeColor}`}>
+                                                            {badgeText}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-[11px] font-bold text-gray-600 pr-1 truncate">
+                                                            📍 {item.city || item.agencyCity || item.companyCity || item.equipmentCity || "Non spécifiée"}
+                                                        </span>
+                                                        <span className="text-[10px] font-semibold text-gray-400 truncate">
+                                                            💼 {displayProfession}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <button
+                                                    onClick={() => {
+                                                        const newAnswers = { ...answers };
+                                                        const resultCity = item.city || item.agencyCity || item.companyCity || item.equipmentCity;
+                                                        if (resultCity) {
+                                                            newAnswers.serviceCity = resultCity;
+                                                            newAnswers.workLocation = resultCity;
+                                                            newAnswers.commune = resultCity;
+                                                            newAnswers.city = resultCity;
+                                                            newAnswers.location = resultCity;
+                                                        }
+                                                        const chosenName = item.name || item.companyName || item.agencyName;
+                                                        if (chosenName) {
+                                                            newAnswers.chosenWorkerName = chosenName;
+                                                            newAnswers.description = `Demande concernant l'inscrit : ${chosenName}`;
+                                                            newAnswers.workDescription = `Demande concernant l'inscrit : ${chosenName}`;
+                                                        }
+                                                        setAnswers(newAnswers);
+                                                        setIsSearchingInDb(false);
+                                                    }}
+                                                    className="bg-orange-500 hover:bg-orange-600 text-white font-black text-[10px] uppercase px-4 py-2.5 rounded-xl shadow-md active:scale-95 transition-all cursor-pointer"
+                                                >
+                                                    Afficher
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Direct Submit Action */}
                     <div className="w-full mt-2 pt-4 border-t border-gray-100 flex flex-col items-center">
