@@ -137,6 +137,13 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
 
   const [errors, setErrors] = useState<string[]>([]);
 
+  const getInputClass = (fieldName: string) => {
+    const hasError = errors.includes(fieldName);
+    return `w-full bg-white border-2 rounded-2xl py-3 px-4 text-black font-semibold text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all ${
+      hasError ? 'border-red-500 bg-red-55/30' : 'border-blue-500'
+    }`;
+  };
+
   const validateForm = () => {
     const newErrors: string[] = [];
     
@@ -341,10 +348,9 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     switch (selectedProfile) {
       case 'Travailleur':
         return (
-          <div className="space-y-3">
-            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Travailleur</h2>
+          <div className="space-y-4">
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Métier *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Métier *</label>
               <input 
                 id="job"
                 type="text"
@@ -354,20 +360,21 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('job')) setErrors(errors.filter(e => e !== 'job'));
                 }}
                 placeholder="Ex: Électricien, Menuisier..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('job') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('job')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">A appris : *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">A appris : *</label>
               <div className="flex flex-wrap gap-2 mt-1">
                 {['Sur le tas', 'Formation professionnelle', 'Diplôme'].map((opt) => (
                   <button
                     key={opt}
+                    type="button"
                     onClick={() => {
                         setFormData({...formData, learnedFrom: opt as any});
                         if (errors.includes('learnedFrom')) setErrors(errors.filter(e => e !== 'learnedFrom'));
                     }}
-                    className={`px-3 py-1.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.learnedFrom === opt ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('learnedFrom') ? 'bg-red-50 border-red-200 text-red-400' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                    className={`px-4 py-2.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.learnedFrom === opt ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('learnedFrom') ? 'bg-red-50 border-red-200 text-red-500 font-bold' : 'bg-white border-blue-500/60 text-black'}`}
                   >
                     {opt}
                   </button>
@@ -375,16 +382,17 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               </div>
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Disponibilité *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Disponibilité *</label>
               <div className="flex flex-wrap gap-2 mt-1">
                 {['Toujours disponible', 'Disponible en permanence'].map((opt) => (
                   <button
                     key={opt}
+                    type="button"
                     onClick={() => {
                         setFormData({...formData, availability: opt});
                         if (errors.includes('availability')) setErrors(errors.filter(e => e !== 'availability'));
                     }}
-                    className={`px-3 py-1.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.availability === opt ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('availability') ? 'bg-red-50 border-red-200 text-red-50/30 text-red-400' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                    className={`px-4 py-2.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${formData.availability === opt ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('availability') ? 'bg-red-50 border-red-200 text-red-500 font-bold' : 'bg-white border-blue-500/60 text-black'}`}
                   >
                     {opt}
                   </button>
@@ -392,7 +400,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               </div>
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Zone de déplacement *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Zone de déplacement *</label>
               <input 
                 id="movementZone"
                 type="text"
@@ -402,11 +410,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('movementZone')) setErrors(errors.filter(e => e !== 'movementZone'));
                 }}
                 placeholder="Ex: Toute la ville, Cocody uniquement..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('movementZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('movementZone')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Description du savoir-faire *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Description du savoir-faire *</label>
               <textarea 
                 id="skillsDescription"
                 value={formData.skillsDescription}
@@ -415,18 +423,16 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('skillsDescription')) setErrors(errors.filter(e => e !== 'skillsDescription'));
                 }}
                 placeholder="Décrivez vos compétences..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[60px] ${errors.includes('skillsDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`${getInputClass('skillsDescription')} min-h-[80px]`}
               />
             </div>
           </div>
-
         );
       case 'Propriétaire':
         return (
-          <div className="space-y-3">
-            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Propriétaire</h2>
+          <div className="space-y-4">
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Type d’équipement *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Type d’équipement *</label>
               <input 
                 type="text"
                 value={formData.equipmentType}
@@ -435,11 +441,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('equipmentType')) setErrors(errors.filter(e => e !== 'equipmentType'));
                 }}
                 placeholder="Ex: Bétonnière, Échafaudage..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentType') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('equipmentType')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Catégorie d’équipement *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Catégorie d’équipement *</label>
               <input 
                 type="text"
                 value={formData.equipmentCategory}
@@ -448,11 +454,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('equipmentCategory')) setErrors(errors.filter(e => e !== 'equipmentCategory'));
                 }}
                 placeholder="Ex: Construction, Transport..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentCategory') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('equipmentCategory')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Quantité disponible *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Quantité disponible *</label>
               <input 
                 type="number"
                 value={formData.quantity}
@@ -461,11 +467,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('quantity')) setErrors(errors.filter(e => e !== 'quantity'));
                 }}
                 placeholder="Ex: 1"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('quantity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('quantity')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville où l'équipement est situé *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Ville où l'équipement est situé *</label>
               <input 
                 type="text"
                 value={formData.equipmentCity}
@@ -474,11 +480,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('equipmentCity')) setErrors(errors.filter(e => e !== 'equipmentCity'));
                 }}
                 placeholder="Ville de localisation"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('equipmentCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('equipmentCity')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Prix de location en 1 jour *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Prix de location en 1 jour *</label>
               <input 
                 type="text"
                 value={formData.rentalPrice}
@@ -487,11 +493,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('rentalPrice')) setErrors(errors.filter(e => e !== 'rentalPrice'));
                 }}
                 placeholder="Ex: 5000 CFA"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('rentalPrice') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('rentalPrice')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Description de l’équipement *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Description de l’équipement *</label>
               <textarea 
                 value={formData.equipmentDescription}
                 onChange={(e) => {
@@ -499,18 +505,16 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('equipmentDescription')) setErrors(errors.filter(e => e !== 'equipmentDescription'));
                 }}
                 placeholder="Détails techniques, état..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('equipmentDescription') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`${getInputClass('equipmentDescription')} min-h-[80px]`}
               />
             </div>
           </div>
-
         );
       case 'Agence':
         return (
-          <div className="space-y-3">
-            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Agence</h2>
+          <div className="space-y-4">
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Nom de l'agence *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Nom de l'agence *</label>
               <input 
                 type="text"
                 value={formData.agencyName}
@@ -519,11 +523,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyName')) setErrors(errors.filter(e => e !== 'agencyName'));
                 }}
                 placeholder="Nom de votre agence"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyName') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('agencyName')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville où l'agence est située *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Ville où l'agence est située *</label>
               <input 
                 type="text"
                 value={formData.agencyCity}
@@ -532,11 +536,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyCity')) setErrors(errors.filter(e => e !== 'agencyCity'));
                 }}
                 placeholder="Ville du siège"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('agencyCity')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Numéro de l’agence *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Numéro de l’agence *</label>
               <input 
                 type="text"
                 value={formData.agencyPhone}
@@ -545,11 +549,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyPhone')) setErrors(errors.filter(e => e !== 'agencyPhone'));
                 }}
                 placeholder="Téléphone de l'agence"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyPhone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('agencyPhone')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Type de biens proposés : *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Type de biens proposés : *</label>
               <div className="flex flex-wrap gap-2 mt-1">
                 {['Appartement', 'Terrain', 'Automobile'].map((opt) => {
                   const selectedTypes = formData.propertyTypes ? formData.propertyTypes.split(',').map(s => s.trim()) : [];
@@ -557,6 +561,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                   return (
                     <button
                       key={opt}
+                      type="button"
                       onClick={() => {
                           let newTypes: string[];
                           if (isSelected) {
@@ -568,7 +573,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                           setFormData({...formData, propertyTypes: newPropertyTypesString});
                           if (errors.includes('propertyTypes')) setErrors(errors.filter(e => e !== 'propertyTypes'));
                       }}
-                      className={`px-3 py-1.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${isSelected ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('propertyTypes') ? 'bg-red-50 border-red-200 text-red-400' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-4 py-2.5 rounded-xl border-2 text-[10px] font-bold uppercase transition-all ${isSelected ? 'bg-orange-500 border-orange-500 text-white shadow-md' : errors.includes('propertyTypes') ? 'bg-red-50 border-red-200 text-red-500 font-bold' : 'bg-white border-blue-500/60 text-black'}`}
                     >
                       {opt}
                     </button>
@@ -577,7 +582,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               </div>
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Zone d’activité *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Zone d’activité *</label>
               <input 
                 type="text"
                 value={formData.agencyZone}
@@ -586,18 +591,16 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('agencyZone')) setErrors(errors.filter(e => e !== 'agencyZone'));
                 }}
                 placeholder="Ex: Abidjan, Côte Ouest..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('agencyZone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('agencyZone')}
               />
             </div>
           </div>
-
         );
       case 'Entreprise':
         return (
-          <div className="space-y-3">
-            <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Inscription Entreprise</h2>
+          <div className="space-y-4">
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Nom de l'entreprise *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Nom de l'entreprise *</label>
               <input 
                 type="text"
                 value={formData.companyName}
@@ -606,11 +609,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyName')) setErrors(errors.filter(e => e !== 'companyName'));
                 }}
                 placeholder="Ex: BTP Services CI"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyName') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('companyName')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville de l’entreprise *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Ville de l’entreprise *</label>
               <input 
                 type="text"
                 value={formData.companyCity}
@@ -619,11 +622,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyCity')) setErrors(errors.filter(e => e !== 'companyCity'));
                 }}
                 placeholder="Ville du siège"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyCity') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('companyCity')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Numéro de l’entreprise *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Numéro de l’entreprise *</label>
               <input 
                 type="text"
                 value={formData.companyPhone}
@@ -632,11 +635,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyPhone')) setErrors(errors.filter(e => e !== 'companyPhone'));
                 }}
                 placeholder="Téléphone de l'entreprise"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyPhone') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('companyPhone')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Domaine d'activité *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Domaine d'activité *</label>
               <input 
                 type="text"
                 value={formData.companyDomain}
@@ -645,11 +648,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyDomain')) setErrors(errors.filter(e => e !== 'companyDomain'));
                 }}
                 placeholder="Ex: Bâtiment, Transport..."
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('companyDomain') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('companyDomain')}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Services proposés *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Services proposés *</label>
               <textarea 
                 value={formData.companyServices}
                 onChange={(e) => {
@@ -657,11 +660,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('companyServices')) setErrors(errors.filter(e => e !== 'companyServices'));
                 }}
                 placeholder="Décrivez vos services"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all min-h-[50px] ${errors.includes('companyServices') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={`${getInputClass('companyServices')} min-h-[80px]`}
               />
             </div>
             <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Salaire proposé par mois ou semaine *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Salaire proposé par mois ou semaine *</label>
               <input 
                 type="text"
                 value={formData.proposedSalary}
@@ -670,230 +673,263 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
                     if (errors.includes('proposedSalary')) setErrors(errors.filter(e => e !== 'proposedSalary'));
                 }}
                 placeholder="Ex: 150 000 CFA / mois"
-                className={`w-full bg-slate-50 border-2 rounded-2xl py-2 px-4 text-slate-800 font-bold text-xs outline-none focus:border-orange-500 transition-all ${errors.includes('proposedSalary') ? 'border-red-500 bg-red-50/30' : 'border-slate-100'}`}
+                className={getInputClass('proposedSalary')}
               />
             </div>
           </div>
-
         );
       default:
         return null;
     }
   };
 
+  const isStep2Form = step === 2 && !isSaved;
+
   return (
-    <div className="flex flex-col h-full bg-[#0f172a] text-white font-sans overflow-y-auto scrollbar-hide">
+    <div className={`flex flex-col h-full font-sans overflow-y-auto scrollbar-hide transition-colors duration-300 ${isStep2Form ? 'bg-white text-slate-900' : 'bg-[#0f172a] text-white'}`}>
       {/* Header */}
-      <header className="pt-8 pb-6 px-6 flex flex-col items-center text-center relative">
-        <button 
-          onClick={onBack}
-          className="absolute left-6 top-8 p-2 bg-white/10 rounded-xl active:scale-90 transition-all"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+      {!isStep2Form ? (
+        <header className="pt-8 pb-6 px-6 flex flex-col items-center text-center relative shrink-0">
+          <button 
+            type="button"
+            onClick={onBack}
+            className="absolute left-6 top-8 p-2 bg-white/10 rounded-xl active:scale-90 transition-all text-white"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
 
-        <div className="flex items-center gap-1 mb-2">
-          <span className="text-orange-500 font-black text-3xl tracking-tighter">FILANT</span>
-          <span className="text-white font-bold text-3xl tracking-tighter opacity-90">225</span>
-        </div>
-        <h2 className="text-lg font-medium text-white/90">Inscription intelligente</h2>
-        <p className="text-gray-400 text-xs mt-2 max-w-[280px]">
-          Nous vous invitons à vous inscrire sur la plateforme afin d’être rapidement mis en relation avec des clients.
-        </p>
-        <p className="text-gray-500 text-[10px] mt-1 italic font-light tracking-tight">
-          Frais d’inscription : 310.CFA fin
-        </p>
-      </header>
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-orange-500 font-black text-3xl tracking-tighter">FILANT</span>
+            <span className="text-white font-bold text-3xl tracking-tighter opacity-90">225</span>
+          </div>
+          <h2 className="text-lg font-medium text-white/90">Inscription intelligente</h2>
+          <p className="text-gray-400 text-xs mt-2 max-w-[280px]">
+            Nous vous invitons à vous inscrire sur la plateforme afin d’être rapidement mis en relation avec des clients.
+          </p>
+          <p className="text-gray-500 text-[10px] mt-1 italic font-light tracking-tight">
+            Frais d’inscription : 310.CFA fin
+          </p>
+        </header>
+      ) : (
+        <header className="pt-6 pb-4 px-6 flex flex-col items-start relative border-b border-slate-100 bg-white shrink-0">
+          <button 
+            type="button"
+            onClick={() => setStep(1)}
+            className="p-2 bg-slate-100 rounded-xl active:scale-90 transition-all text-slate-800 hover:bg-slate-200"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          
+          <div className="mt-4 text-left">
+            <h2 className="text-xl font-black text-slate-950 uppercase tracking-tight">INSCRIPTION</h2>
+            <p className="text-slate-500 text-xs mt-1">
+              Complétez vos coordonnées et spécificités de <span className="text-blue-600 font-bold">{selectedProfile}</span>.
+            </p>
+          </div>
+        </header>
+      )}
 
-      {/* Main Card */}
-      <main className="flex-1 px-4 pb-10">
+      {/* Main Container */}
+      <main className={`flex-1 flex flex-col ${isStep2Form ? 'p-0 bg-white w-full' : 'px-4 pb-10'}`}>
         <motion.div 
           key={step}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
-          className="bg-white rounded-[2.5rem] shadow-2xl p-6 min-h-[500px] flex flex-col"
+          className={`flex flex-col flex-1 ${
+            isStep2Form 
+              ? 'bg-white p-6 w-full max-w-xl mx-auto' 
+              : 'bg-white rounded-[2.5rem] shadow-2xl p-6 min-h-[500px]'
+          }`}
         >
           {/* Connexion Rapide & Progress */}
-          <div className="flex justify-between items-center mb-8 px-2">
-            <span className="text-slate-800 font-black text-sm uppercase tracking-wider">Connexion rapide</span>
+          <div className="flex justify-between items-center mb-8 px-2 shrink-0">
+            <span className="text-slate-850 font-black text-sm uppercase tracking-wider">
+              {isStep2Form ? "Étape 2 sur 2" : "Connexion rapide"}
+            </span>
             <div className="flex gap-1">
               <div className={`w-8 h-1.5 rounded-full transition-all duration-500 ${step >= 1 ? 'bg-green-500' : 'bg-gray-200'}`}></div>
-              <div className={`w-8 h-1.5 rounded-full transition-all duration-500 ${step >= 2 ? 'bg-orange-500' : 'bg-gray-200'}`}></div>
+              <div className={`w-8 h-1.5 rounded-full transition-all duration-500 ${step >= 2 ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
               <div className={`w-8 h-1.5 rounded-full transition-all duration-500 ${selectedProfile ? 'bg-green-500' : 'bg-gray-200'}`}></div>
             </div>
           </div>
 
-          <div className="text-center mb-8">
-            <h1 className="text-slate-900 font-black text-3xl tracking-tighter mb-1 uppercase">INSCRIPTION</h1>
-            <h3 className="text-slate-400 font-bold text-sm tracking-widest uppercase">ÉTAPE {step} : {step === 1 ? 'PROFIL' : 'INFORMATION'}</h3>
-          </div>
-
-        <div className="flex-1 overflow-y-auto scrollbar-hide px-4">
-          {isSaved ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-8 animate-in fade-in zoom-in duration-500">
-               <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <Check className="w-12 h-12 text-green-600 stroke-[3]" />
-               </div>
-               <div className="space-y-4">
-                  <h3 className="text-2xl font-black text-slate-900 leading-tight uppercase tracking-tight">Validation Réussie !</h3>
-                  <p className="text-slate-500 font-medium leading-relaxed">
-                    Votre inscription en tant que <span className="text-orange-600 font-black">{selectedProfile}</span> a été enregistrée avec succès.
-                  </p>
-                  <div className="p-6 bg-orange-50 rounded-3xl border border-orange-100">
-                     <p className="text-orange-900 font-bold text-sm">
-                        Pour finaliser et activer votre mise en ligne, veuillez régler les frais de dossier de :
-                     </p>
-                     <p className="text-3xl font-black text-orange-600 mt-2">310 FCFA</p>
-                  </div>
-               </div>
-
-               <div className="w-full pt-8 space-y-4">
-                  <button
-                    onClick={handlePayRegistration}
-                    disabled={paymentInitiated}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-3xl flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest disabled:opacity-50"
-                  >
-                    {paymentInitiated ? 'Redirection Wave...' : 'Payer les frais (310 FCFA)'}
-                    {!paymentInitiated && <ArrowRight className="w-5 h-5" />}
-                  </button>
-                  <button
-                    onClick={handleModify}
-                    className="w-full py-4 rounded-3xl border-2 border-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Briefcase className="w-3 h-3" />
-                    Modifier mes informations
-                  </button>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center mt-2">Paiement sécurisé via Wave</p>
-               </div>
-            </div>
-          ) : step === 1 ? (
-            <div className="px-2 mb-6">
-              <h4 className="text-slate-600 font-black text-xs uppercase tracking-[0.2em] mb-4">QUI ÊTES-VOUS ?</h4>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {profiles.map((profile) => (
-                  <button
-                    key={profile.id}
-                    disabled={!profile.active}
-                    onClick={() => {
-                      setSelectedProfile(profile.id as ProfileType);
-                      setStep(2);
-                    }}
-                    className={`
-                      relative p-4 rounded-3xl border-2 transition-all duration-300 text-left flex flex-col justify-between h-[120px]
-                      ${!profile.active ? 'bg-slate-50 border-slate-100 opacity-60' : 
-                        selectedProfile === profile.id ? 'bg-orange-50 border-orange-500 ring-2 ring-orange-500/10' : 'bg-slate-50 border-slate-200'}
-                    `}
-                  >
-                    <div className={`p-2 rounded-xl w-fit ${selectedProfile === profile.id && profile.active ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-400'}`}>
-                      {profile.icon}
-                    </div>
-                    
-                    <div className="mt-2 text-wrap">
-                      <p className={`text-[10px] font-black leading-tight uppercase ${selectedProfile === profile.id && profile.active ? 'text-orange-600' : 'text-slate-500'}`}>
-                        {profile.label}
-                      </p>
-                    </div>
-
-                    {selectedProfile === profile.id && profile.active && (
-                      <div className="absolute top-2 right-2 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                        <Check className="w-3 h-3 text-white stroke-[4]" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="px-2 mb-6 space-y-6">
-              <h4 className="text-slate-600 font-black text-xs uppercase tracking-[0.2em] mb-4">VOS DÉTAILS PERSONNELS</h4>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Nom complet (fixé)</label>
-                    <input 
-                      type="text"
-                      value={formData.name}
-                      readOnly
-                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-2 px-4 text-slate-500 font-bold text-[11px] outline-none cursor-not-allowed opacity-80"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Ville actuelle (fixée)</label>
-                    <input 
-                      type="text"
-                      value={formData.city}
-                      readOnly
-                      className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-2 px-4 text-slate-500 font-bold text-[11px] outline-none cursor-not-allowed opacity-80"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1 mb-1 block">Numéro personnel (fixé)</label>
-                   <input 
-                     type="text"
-                     value={formData.phone}
-                     readOnly
-                     className="w-full bg-slate-100 border-2 border-slate-200 rounded-2xl py-2 px-4 text-slate-500 font-bold text-[11px] outline-none cursor-not-allowed opacity-80"
-                   />
-                </div>
-
-                <div className="h-[2px] bg-slate-100 my-4"></div>
-
-                <h4 className="text-slate-600 font-black text-[10px] uppercase tracking-[0.2em] mb-4">Spécificités {selectedProfile}</h4>
-
-                {renderCategoryFields()}
-              </div>
+          {!isStep2Form && (
+            <div className="text-center mb-8 shrink-0">
+              <h1 className="text-slate-900 font-black text-3xl tracking-tighter mb-1 uppercase">INSCRIPTION</h1>
+              <h3 className="text-slate-400 font-bold text-sm tracking-widest uppercase">ÉTAPE {step} : {step === 1 ? 'PROFIL' : 'INFORMATION'}</h3>
             </div>
           )}
-        </div>
 
-        {!isSaved && (
-          <div className="mt-auto pt-6 px-2">
-            <AnimatePresence>
-              {errors.length > 0 && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="mb-4 p-3 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3"
-                >
-                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-[10px] font-black">!</span>
+          <div className="flex-1 overflow-y-auto scrollbar-hide px-1">
+            {isSaved ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-8 animate-in fade-in zoom-in duration-500">
+                 <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <Check className="w-12 h-12 text-green-600 stroke-[3]" />
+                 </div>
+                 <div className="space-y-4">
+                    <h3 className="text-2xl font-black text-slate-900 leading-tight uppercase tracking-tight">Validation Réussie !</h3>
+                    <p className="text-slate-500 font-medium leading-relaxed">
+                      Votre inscription en tant que <span className="text-orange-600 font-black">{selectedProfile}</span> a été enregistrée avec succès.
+                    </p>
+                    <div className="p-6 bg-orange-50 rounded-3xl border border-orange-100">
+                       <p className="text-orange-900 font-bold text-sm">
+                          Pour finaliser et activer votre mise en ligne, veuillez régler les frais de dossier de :
+                       </p>
+                       <p className="text-3xl font-black text-orange-600 mt-2">310 FCFA</p>
+                    </div>
+                 </div>
+
+                 <div className="w-full pt-8 space-y-4">
+                    <button
+                      type="button"
+                      onClick={handlePayRegistration}
+                      disabled={paymentInitiated}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-5 rounded-3xl flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest disabled:opacity-50"
+                    >
+                      {paymentInitiated ? 'Redirection Wave...' : 'Payer les frais (310 FCFA)'}
+                      {!paymentInitiated && <ArrowRight className="w-5 h-5" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleModify}
+                      className="w-full py-4 rounded-3xl border-2 border-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Briefcase className="w-3 h-3" />
+                      Modifier mes informations
+                    </button>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest text-center mt-2">Paiement sécurisé via Wave</p>
+                 </div>
+              </div>
+            ) : step === 1 ? (
+              <div className="px-2 mb-6">
+                <h4 className="text-slate-600 font-black text-xs uppercase tracking-[0.2em] mb-4">QUI ÊTES-VOUS ?</h4>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {profiles.map((profile) => (
+                    <button
+                      key={profile.id}
+                      type="button"
+                      disabled={!profile.active}
+                      onClick={() => {
+                        setSelectedProfile(profile.id as ProfileType);
+                      }}
+                      className={`
+                        relative p-4 rounded-3xl border-2 transition-all duration-300 text-left flex flex-col justify-between h-[120px]
+                        ${!profile.active ? 'bg-slate-50 border-slate-100 opacity-60' : 
+                          selectedProfile === profile.id ? 'bg-orange-50 border-orange-500 ring-2 ring-orange-500/10' : 'bg-slate-50 border-slate-200'}
+                      `}
+                    >
+                      <div className={`p-2 rounded-xl w-fit ${selectedProfile === profile.id && profile.active ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                        {profile.icon}
+                      </div>
+                      
+                      <div className="mt-2 text-wrap">
+                        <p className={`text-[10px] font-black leading-tight uppercase ${selectedProfile === profile.id && profile.active ? 'text-orange-600' : 'text-slate-500'}`}>
+                          {profile.label}
+                        </p>
+                      </div>
+
+                      {selectedProfile === profile.id && profile.active && (
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                          <Check className="w-3 h-3 text-white stroke-[4]" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="px-2 mb-6 space-y-6">
+                <h4 className="text-slate-800 font-black text-xs uppercase tracking-[0.2em] mb-4">VOS DÉTAILS PERSONNELS</h4>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-[0.12em] ml-1 mb-1.5 block">Nom complet (fixé)</label>
+                      <input 
+                        type="text"
+                        value={formData.name}
+                        readOnly
+                        className="w-full bg-slate-150 border-2 border-slate-300 rounded-2xl py-3 px-4 text-slate-800 font-black text-xs outline-none cursor-not-allowed opacity-90"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-[0.12em] ml-1 mb-1.5 block">Ville actuelle (fixée)</label>
+                      <input 
+                        type="text"
+                        value={formData.city}
+                        readOnly
+                        className="w-full bg-slate-150 border-2 border-slate-300 rounded-2xl py-3 px-4 text-slate-800 font-black text-xs outline-none cursor-not-allowed opacity-90"
+                      />
+                    </div>
                   </div>
-                  <p className="text-red-600 text-[10px] font-bold uppercase tracking-tight">
-                    Veuillez remplir tous les champs obligatoires (*)
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <button
-              onClick={handleNext}
-              disabled={isSubmitting}
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 active:scale-95 transition-all text-white font-black py-5 rounded-3xl flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(249,115,22,0.3)]"
-            >
-              {isSubmitting ? (
-                 <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <span className="text-lg uppercase tracking-wider">{step === 1 ? 'Suivant' : 'S’inscrire'}</span>
-                  <ArrowRight className="w-6 h-6" />
-                </>
-              )}
-            </button>
-            {step === 2 && (
-              <button 
-                onClick={() => setStep(1)}
-                className="w-full mt-4 text-slate-400 font-bold text-xs uppercase tracking-widest"
-              >
-                Retour
-              </button>
+
+                  <div>
+                     <label className="text-[10px] font-black text-slate-700 uppercase tracking-[0.12em] ml-1 mb-1.5 block">Numéro personnel (fixé)</label>
+                     <input 
+                       type="text"
+                       value={formData.phone}
+                       readOnly
+                       className="w-full bg-slate-150 border-2 border-slate-300 rounded-2xl py-3 px-4 text-slate-800 font-black text-xs outline-none cursor-not-allowed opacity-90"
+                     />
+                  </div>
+
+                  <div className="h-[2px] bg-slate-100 my-4"></div>
+
+                  <h4 className="text-slate-800 font-black text-xs uppercase tracking-[0.2em] mb-4">Spécificités {selectedProfile}</h4>
+
+                  {renderCategoryFields()}
+                </div>
+              </div>
             )}
           </div>
-        )}
+
+          {!isSaved && (
+            <div className="mt-auto pt-6 px-2 shrink-0">
+              <AnimatePresence>
+                {errors.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="mb-4 p-3 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3"
+                  >
+                    <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-[10px] font-black">!</span>
+                    </div>
+                    <p className="text-red-600 text-[10px] font-bold uppercase tracking-tight">
+                      Veuillez remplir tous les champs obligatoires (*)
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={isSubmitting}
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 active:scale-95 transition-all text-white font-black py-5 rounded-3xl flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(249,115,22,0.3)]"
+              >
+                {isSubmitting ? (
+                   <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <span className="text-lg uppercase tracking-wider">{step === 1 ? 'Suivant' : 'S’inscrire'}</span>
+                    <ArrowRight className="w-6 h-6" />
+                  </>
+                )}
+              </button>
+              {step === 2 && (
+                <button 
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="w-full mt-4 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition-colors"
+                >
+                  Retour
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
       </main>
 
