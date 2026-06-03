@@ -1223,7 +1223,7 @@ export const databaseService = {
         ...paymentData, 
         userPhone: phone || userId,
         waveNumber: waveNumber || 'N/A',
-        status: 'Paiement non validé',
+        status: paymentData.status || 'Paiement non validé',
         adminReadStatus: 'NON LU',
         rtdbPath: rtdbPath,
         timestamp: rtdbTimestamp() 
@@ -1239,57 +1239,101 @@ export const databaseService = {
   validatePaymentStatus: async (payment: any) => {
     if (!payment.rtdbPath) return;
     try {
+      const isDeposit = payment.paymentType === 'Dépôt' || payment.title === 'Dépôt vers le compte principal';
+      const successStatus = isDeposit ? 'Dépôt validé' : 'Paiement validé';
+
       await update(rtdbRef(rtdb, payment.rtdbPath), {
-        status: 'Paiement validé',
+        status: successStatus,
         adminReadStatus: 'LU'
       });
 
       const userPhone = (payment.userPhone || payment.phone || '').replace(/\D/g, '');
       const userId = (payment.userId || userPhone).replace(/\D/g, '');
 
-      // --- LOGIQUE DE DÉBLOCAGE PAR TYPE DE PAIEMENT ---
-      if (userId) {
-        if (payment.paymentType === 'Inscription' || payment.amount === '310') {
-          // Étape 2 -> 3
-          await databaseService.updateQRCodeActivation(userId, {
-            status: "En attente paiement activation (7 100 FCFA)",
-            fraisDossierPayes: true,
-            updatedAt: serverTimestamp()
-          });
-        } else if (payment.paymentType === 'Activation' || payment.amount === '7100') {
-          // Étape 3 -> 4 (Actif)
-          const expiryDate = new Date();
-          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+      if (isDeposit) {
+        // --- LOGIQUE SPÉCIFIQUE DÉPÔT ---
+        const amountNum = parseFloat(payment.amount);
+        if (!isNaN(amountNum) && amountNum > 0) {
+          const walletRef = doc(db, 'Wallets', userPhone);
           
-          await databaseService.updateQRCodeActivation(userId, {
-            status: "Code QR Actif",
-            isVerified: true,
-            expiryDate: expiryDate.toISOString(),
-            activationDate: new Date().toISOString(),
+          // 1. Update wallet balance
+          await setDoc(walletRef, {
+            phone: userPhone,
+            name: payment.userName || 'Utilisateur',
+            city: payment.city || 'Non spécifiée',
+            balance: increment(amountNum),
             updatedAt: serverTimestamp()
-          });
-        } else if (payment.paymentType === 'Renouvellement' || payment.amount === '500') {
-           const expiryDate = new Date();
-           expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-           await databaseService.updateQRCodeActivation(userId, {
-              status: "Code QR Actif",
-              expiryDate: expiryDate.toISOString(),
-              updatedAt: serverTimestamp()
-           });
-        }
-      }
+          }, { merge: true });
 
-      // Send automatic message to user
-      if (userId) {
-        const msg = {
-          text: `✅ Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) a été validé avec succès par l'administrateur. L'étape suivante est maintenant débloquée.`,
-          sender: 'admin',
-          timestamp: new Date().toISOString(),
-          isRead: false,
-          adminReadStatus: 'LU'
-        };
-        await databaseService.saveTypedChatMessage('Assistant', userId, msg);
-        await databaseService.saveTypedChatMessage('Privee', userId, msg);
+          // 2. Record transaction in account history
+          await addDoc(collection(db, 'WalletTransactions'), {
+            phone: userPhone,
+            userName: payment.userName || 'Utilisateur',
+            userCity: payment.city || 'Non spécifiée',
+            type: 'DEPOSIT',
+            amount: amountNum,
+            paymentNumber: payment.waveNumber || 'N/A',
+            status: 'SUCCESS',
+            timestamp: Date.now(),
+            dateStr: new Date().toLocaleString('fr-FR')
+          });
+
+          // 3. Send notification to the user
+          const msg = {
+            text: `🤖 DÉPÔT VALIDÉ : Un dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA a été crédité avec succès sur votre Portefeuille FILANT°225. Votre solde a été mis à jour d'un montant de +${amountNum.toLocaleString('fr-FR')} FCFA.`,
+            sender: 'admin',
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            adminReadStatus: 'LU'
+          };
+          await databaseService.saveTypedChatMessage('Assistant', userPhone, msg);
+          await databaseService.saveTypedChatMessage('Privee', userPhone, msg);
+        }
+      } else {
+        // --- LOGIQUE DE DÉBLOCAGE PAR TYPE DE PAIEMENT STANDARD ---
+        if (userId) {
+          if (payment.paymentType === 'Inscription' || payment.amount === '310') {
+            // Étape 2 -> 3
+            await databaseService.updateQRCodeActivation(userId, {
+              status: "En attente paiement activation (7 100 FCFA)",
+              fraisDossierPayes: true,
+              updatedAt: serverTimestamp()
+            });
+          } else if (payment.paymentType === 'Activation' || payment.amount === '7100') {
+            // Étape 3 -> 4 (Actif)
+            const expiryDate = new Date();
+            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+            
+            await databaseService.updateQRCodeActivation(userId, {
+              status: "Code QR Actif",
+              isVerified: true,
+              expiryDate: expiryDate.toISOString(),
+              activationDate: new Date().toISOString(),
+              updatedAt: serverTimestamp()
+            });
+          } else if (payment.paymentType === 'Renouvellement' || payment.amount === '500') {
+             const expiryDate = new Date();
+             expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+             await databaseService.updateQRCodeActivation(userId, {
+                status: "Code QR Actif",
+                expiryDate: expiryDate.toISOString(),
+                updatedAt: serverTimestamp()
+             });
+          }
+        }
+
+        // Send automatic message to user
+        if (userId) {
+          const msg = {
+            text: `✅ Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) a été validé avec succès par l'administrateur. L'étape suivante est maintenant débloquée.`,
+            sender: 'admin',
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            adminReadStatus: 'LU'
+          };
+          await databaseService.saveTypedChatMessage('Assistant', userId, msg);
+          await databaseService.saveTypedChatMessage('Privee', userId, msg);
+        }
       }
     } catch (e) {
       console.error("Error validating payment:", e);
@@ -1299,8 +1343,11 @@ export const databaseService = {
   invalidatePaymentStatus: async (payment: any) => {
     if (!payment.rtdbPath) return;
     try {
+      const isDeposit = payment.paymentType === 'Dépôt' || payment.title === 'Dépôt vers le compte principal';
+      const failStatus = isDeposit ? 'Dépôt non validé' : 'Paiement non validé';
+
       await update(rtdbRef(rtdb, payment.rtdbPath), {
-        status: 'Paiement non validé',
+        status: failStatus,
         adminReadStatus: 'LU'
       });
 
@@ -1308,8 +1355,14 @@ export const databaseService = {
       const userId = (payment.userId || userPhone).replace(/\D/g, '');
 
       if (userId) {
+        let msgText = `Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) est en cours de traitement. Veuillez patienter jusqu’à la validation finale. Vous recevrez un message une fois la transaction confirmée. En cas de validation, votre paiement sera pris en compte et nous pourrons vous contacter si nécessaire.`;
+        
+        if (isDeposit) {
+          msgText = `❌ Votre demande de dépôt de ${parseFloat(payment.amount).toLocaleString('fr-FR')} FCFA sur votre compte principal n'a pas été validée par l'administrateur. Aucun crédit n'a été ajouté à votre portefeuille.`;
+        }
+
         const msg = {
-          text: `Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) est en cours de traitement. Veuillez patienter jusqu’à la validation finale. Vous recevrez un message une fois la transaction confirmée. En cas de validation, votre paiement sera pris en compte et nous pourrons vous contacter si nécessaire.`,
+          text: msgText,
           sender: 'admin',
           timestamp: new Date().toISOString(),
           isRead: false,

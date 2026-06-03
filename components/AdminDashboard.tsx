@@ -496,8 +496,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     if (key === 'status') {
                       const s = String(val);
                       if (activeTab === 'payments') {
-                         const isValidated = s === 'Paiement validé';
-                         const isNotValidated = s === 'Paiement non validé';
+                         const isValidated = s === 'Paiement validé' || s === 'Dépôt validé';
+                         const isNotValidated = s === 'Paiement non validé' || s === 'Dépôt non validé';
                          
                          return (
                            <td key={j} className="px-6 py-4">
@@ -514,7 +514,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                   }`}
                                 >
                                   <ShieldCheck size={14} className={isValidated ? 'text-white' : 'text-slate-300'} />
-                                  Paiement validé
+                                  {item.paymentType === 'Dépôt' ? 'Dépôt validé' : 'Paiement validé'}
                                 </button>
                                 
                                 <button 
@@ -529,7 +529,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                   }`}
                                 >
                                   <AlertCircle size={14} className={isNotValidated ? 'text-white' : 'text-slate-300'} />
-                                  Paiement non validé
+                                  {item.paymentType === 'Dépôt' ? 'Dépôt non validé' : 'Paiement non validé'}
                                 </button>
                              </div>
                            </td>

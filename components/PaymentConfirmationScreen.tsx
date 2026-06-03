@@ -147,12 +147,12 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     const unsub = onValue(statusRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        if (data.status === 'Paiement validé') {
+        if (data.status === 'Paiement validé' || data.status === 'Dépôt validé') {
           setIsSuccess(true);
           setIsProcessing(false);
           setIsNonValidated(false);
           if (onSuccess) setTimeout(onSuccess, 1500);
-        } else if (data.status === 'Paiement non validé') {
+        } else if (data.status === 'Paiement non validé' || data.status === 'Dépôt non validé') {
           setIsNonValidated(true);
           setIsProcessing(false);
         } else {
@@ -170,6 +170,42 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     const needed = parseFloat(currentAmount);
     if (isNaN(needed) || needed <= 0) {
       alert("Montant invalide.");
+      return;
+    }
+
+    if (paymentType === 'Dépôt') {
+      if (waveNumber.length !== 10) {
+        alert("Veuillez saisir votre numéro Wave à 10 chiffres.");
+        return;
+      }
+      setIsProcessing(true);
+      setIsNonValidated(false);
+      try {
+        const path = await databaseService.savePaymentToRTDB({
+          userId: user.phone.replace(/\D/g, ''),
+          userName: user.name,
+          phone: user.phone,
+          city: user.city || 'Non spécifiée',
+          amount: currentAmount,
+          title: "Dépôt vers le compte principal",
+          serviceType: "Dépôt vers le compte principal",
+          paymentType: "Dépôt",
+          waveNumber: waveNumber,
+          timestamp: Date.now(),
+          status: 'Paiement non validé'
+        });
+
+        if (path) {
+          setPaymentPath(path);
+        } else {
+          alert("Une erreur s'est produite lors de l'enregistrement du dépôt.");
+          setIsProcessing(false);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Une erreur s'est produite.");
+        setIsProcessing(false);
+      }
       return;
     }
 
@@ -280,7 +316,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
   };
 
   const requiredAmountNum = parseFloat(currentAmount) || 0;
-  const isInsufficient = wallet.balance < requiredAmountNum;
+  const isInsufficient = paymentType === 'Dépôt' ? false : (wallet.balance < requiredAmountNum);
 
   const renderDepositOverlayContent = () => {
     const handleConfirmDeposit = async () => {
@@ -409,7 +445,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
       <main className="flex-1 overflow-y-auto p-6 flex flex-col items-center relative">
           <div className="text-center mb-6 w-full">
               <h2 className="text-xl font-black text-gray-900 leading-tight">
-                  service de : {title}
+                  {paymentType === 'Dépôt' ? "Dépôt vers le compte principal" : `service de : ${title}`}
               </h2>
               <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">
                   CLIENT : {user.name} • {paymentType.toUpperCase()}
@@ -424,7 +460,51 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             isValidated={isValidated}
           />
 
-          {loadingWallet ? (
+          {paymentType === 'Dépôt' && (
+            <div className="w-full max-w-[340px] px-2 mb-4 font-sans mt-4">
+              <div className="bg-slate-50 border-2 border-slate-100 rounded-3xl p-5 space-y-2">
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                  Numéro de paiement Wave
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">🇨🇮 +225</span>
+                  <input 
+                    type="text"
+                    maxLength={10}
+                    value={waveNumber}
+                    disabled={!!paymentPath}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, '');
+                      if (clean.length <= 10) setWaveNumber(clean);
+                    }}
+                    placeholder="00 00 00 00 00" 
+                    className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl pl-20 pr-5 py-3 text-base font-black text-slate-900 outline-none placeholder-slate-200 transition-all font-sans"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {paymentType === 'Dépôt' ? (
+            <div className="w-full max-w-[340px] px-2 mb-6 font-sans">
+              <div className="bg-gradient-to-br from-blue-900 to-indigo-950 text-white rounded-3xl p-5 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black tracking-widest uppercase text-blue-200 block font-sans font-black">Type d'opération</span>
+                  <span className="text-[10px] font-black uppercase text-green-300 bg-green-500/20 px-2 py-0.5 rounded-lg border border-green-500/30">RECHARGE</span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <div>
+                    <span className="text-[8.5px] font-black text-blue-200 uppercase tracking-widest font-sans font-black">Mode de dépôt</span>
+                    <p className="text-lg font-black text-white">Wave Mobile Money</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[8.5px] font-black text-blue-200 uppercase tracking-widest font-sans font-black">Montant d'expédition</span>
+                    <p className="text-2xl font-black text-green-400 tracking-tight">{(parseFloat(currentAmount) || 0).toLocaleString('fr-FR')} <span className="text-xs font-bold text-green-300">FCFA</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : loadingWallet ? (
             <div className="p-6 text-center animate-pulse flex flex-col items-center gap-3 w-full">
               <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               <p className="text-[10px] font-bold uppercase text-slate-400">Vérification de votre compte...</p>
@@ -487,10 +567,22 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     <p className="font-black text-xs uppercase tracking-wider">Débit du portefeuille en cours</p>
                     <p className="text-[10px] leading-relaxed text-blue-800/80 font-medium">Votre compte est débité en toute sécurité par cryptage local...</p>
                   </div>
+                ) : paymentPath ? (
+                  <div className="text-orange-600 block bg-orange-50 p-4 rounded-2xl border-2 border-orange-100 space-y-2 animate-pulse">
+                    <p className="font-black text-xs uppercase tracking-wider">Dépôt en attente de validation</p>
+                    <p className="text-[10px] leading-relaxed text-orange-850 font-semibold font-sans">
+                      Votre demande de <span className="font-black text-lg text-orange-700">{parseFloat(currentAmount).toLocaleString('fr-FR')} FCFA</span> a été enregistrée avec succès.
+                    </p>
+                    <p className="text-[9px] leading-relaxed text-orange-800">
+                      Veuillez patienter pendant que l'administrateur valide votre dépôt. Le solde de votre compte sera rechargé instantanément après confirmation.
+                    </p>
+                  </div>
                 ) : isInsufficient ? (
                   <span className="text-rose-500 text-xs font-black uppercase tracking-wide">Solde insuffisant pour commander ce service.</span>
                 ) : (
-                  "Validez la transaction pour continuer l'opération du service."
+                  paymentType === 'Dépôt' 
+                    ? "Saisissez le montant et confirmez le dépôt pour soumettre à la validation administrative."
+                    : "Validez la transaction pour continuer l'opération du service."
                 )}
               </div>
           </div>
@@ -502,15 +594,17 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               </div>
               <button 
                 onClick={handlePay}
-                disabled={isProcessing || isSuccess || !isValidated || isInsufficient || loadingWallet}
+                disabled={isProcessing || isSuccess || !isValidated || isInsufficient || loadingWallet || !!paymentPath}
                 className={`flex-1 font-black py-4 px-6 rounded-2xl shadow-xl transform active:scale-95 transition-all text-xl uppercase tracking-wider min-h-[72px] flex items-center justify-center cursor-pointer font-sans ${
                     isSuccess
                         ? 'bg-green-500 text-white shadow-green-200'
                         : isProcessing 
                             ? 'bg-gray-100 cursor-default shadow-none' 
-                            : (isValidated && !isInsufficient && !loadingWallet) 
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                            : paymentPath
+                                ? 'bg-orange-100 text-orange-500 border-2 border-orange-200 cursor-default shadow-none'
+                                : (isValidated && !isInsufficient && !loadingWallet) 
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                 }`}
               >
                 {isProcessing ? (
@@ -525,7 +619,9 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                         </svg>
                         <span>Validé</span>
                     </div>
-                ) : 'Payer avec le Portefeuille'}
+                ) : paymentPath ? (
+                    <span className="text-orange-500 text-sm font-black">EN ATTENTE ADMIN</span>
+                ) : paymentType === 'Dépôt' ? 'Confirmer le dépôt' : 'Payer avec le Portefeuille'}
               </button>
           </div>
       </main>
