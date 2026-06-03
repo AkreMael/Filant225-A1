@@ -53,7 +53,8 @@ type AdminTab =
   | 'workers'
   | 'equipments'
   | 'agencies'
-  | 'companies';
+  | 'companies'
+  | 'wallets';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -66,6 +67,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [sendingMission, setSendingMission] = useState(false);
   const [viewingConversation, setViewingConversation] = useState<{ id: string, name: string, messages: any[] } | null>(null);
   const [itemToDelete, setItemToDelete] = useState<{ id: string, collectionName: string, rtdbPath?: string } | null>(null);
+
+  // FILANT°225 Admin wallet states
+  const [wallets, setWallets] = useState<any[]>([]);
+  const [walletTransactions, setWalletTransactions] = useState<any[]>([]);
+  const [selectedWalletUser, setSelectedWalletUser] = useState<any | null>(null);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [isProcessingRefund, setIsProcessingRefund] = useState(false);
   
   // Data States
   const [data, setData] = useState<Record<string, any[]>>({
@@ -148,6 +157,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setData(prev => ({ ...prev, missions: snap.docs.map(doc => ({ ...doc.data(), id: doc.id })) }));
     });
 
+    // 6. Wallets & Transactions
+    const unsubWallets = databaseService.subscribeToAllWallets((walletList) => {
+      setWallets(walletList);
+    });
+
+    const unsubWalletTxs = databaseService.subscribeToAllWalletTransactions((txList) => {
+      setWalletTransactions(txList);
+    });
+
     setLoading(false);
 
     return () => {
@@ -160,6 +178,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       unsubRequests();
       unsubMissions();
       unsubQRCodes();
+      unsubWallets();
+      unsubWalletTxs();
     };
   }, []);
 
@@ -557,6 +577,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
     { id: 'connections', label: 'Connexions', icon: BarChart3 },
     { id: 'inscriptions', label: 'Inscriptions', icon: Briefcase },
+    { id: 'wallets', label: 'Compte des utilisateurs', icon: Users },
     { id: 'assistant', label: 'Messagerie Assistant', icon: MessageSquare },
     { id: 'qrcodes', label: 'Gestion QR Code', icon: QrCode },
     { id: 'private', label: 'Messagerie Privée', icon: Mail },
@@ -1142,6 +1163,254 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
             data.inscriptions.filter(i => i.profileType === 'Entreprise'),
             'Inscriptions'
           )}
+
+          {activeTab === 'wallets' && (() => {
+            const handleProcessRefund = async () => {
+              if (!selectedWalletUser) return;
+              const amountNum = parseFloat(refundAmount);
+              if (isNaN(amountNum) || amountNum <= 0) {
+                alert("Veuillez saisir un montant valide.");
+                return;
+              }
+              if (!refundReason.trim()) {
+                alert("Veuillez spécifier la raison du remboursement.");
+                return;
+              }
+
+              setIsProcessingRefund(true);
+              try {
+                await databaseService.processWalletRefund(
+                  selectedWalletUser.phone,
+                  selectedWalletUser.name || 'Utilisateur',
+                  selectedWalletUser.city || 'Non spécifiée',
+                  amountNum,
+                  refundReason.trim()
+                );
+
+                alert("Le remboursement a été validé avec succès et l'utilisateur a été notifié par messagerie.");
+                setRefundAmount('');
+                setRefundReason('');
+                setSelectedWalletUser(prev => prev ? { ...prev, balance: (prev.balance || 0) + amountNum } : null);
+              } catch (err: any) {
+                console.error(err);
+                alert("Une erreur s'est produite lors du remboursement : " + err.message);
+              } finally {
+                setIsProcessingRefund(false);
+              }
+            };
+
+            return (
+              <div className="space-y-6">
+                {!selectedWalletUser ? (
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-slate-800 animate-in fade-in duration-300">
+                    <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                      <div>
+                        <h3 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-white">Portefeuilles FILANT°225</h3>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Solde et historique de paiement des utilisateurs</p>
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto scrollbar-hide">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-gray-100/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nom de l’utilisateur</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ville de l’utilisateur</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Numéro de l’utilisateur</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Solde Actuel</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
+                          {wallets.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="px-6 py-12 text-center text-xs font-black text-gray-400 uppercase tracking-widest">
+                                Aucun portefeuille trouvé
+                              </td>
+                            </tr>
+                          ) : (
+                            wallets.filter(w => {
+                              if (!searchTerm) return true;
+                              const term = searchTerm.toLowerCase();
+                              return (w.name || '').toLowerCase().includes(term) || 
+                                     (w.city || '').toLowerCase().includes(term) || 
+                                     (w.phone || '').includes(term);
+                            }).map((w) => (
+                              <tr key={w.id} className="hover:bg-gray-50/60 dark:hover:bg-slate-800/50 transition-colors">
+                                <td className="px-6 py-4 font-black text-xs uppercase text-slate-800 dark:text-white">{w.name || 'Utilisateur'}</td>
+                                <td className="px-6 py-4 font-bold text-xs uppercase text-slate-500 dark:text-slate-400">{w.city || 'Non spécifiée'}</td>
+                                <td className="px-6 py-4 font-mono text-xs text-slate-600 dark:text-slate-300">+225 {w.phone}</td>
+                                <td className="px-6 py-4">
+                                  <span className="bg-blue-50 dark:bg-blue-950 px-3 py-1 rounded-full text-xs font-black text-blue-700 dark:text-blue-300">
+                                    {(w.balance || 0).toLocaleString('fr-FR')} FCFA
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <button
+                                    onClick={() => setSelectedWalletUser(w)}
+                                    className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[10.5px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all shadow-sm cursor-pointer"
+                                  >
+                                    Détails
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6 animate-in slide-in-from-right duration-300">
+                    <header className="flex items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm">
+                      <button 
+                        onClick={() => {
+                          setSelectedWalletUser(null);
+                          setRefundAmount('');
+                          setRefundReason('');
+                        }} 
+                        className="p-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl active:scale-90 transition-all text-slate-600 dark:text-slate-400 cursor-pointer"
+                      >
+                        <ArrowLeft size={16} />
+                      </button>
+                      <div>
+                        <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-white">Détails Compes : {selectedWalletUser.name}</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                          +225 {selectedWalletUser.phone} • {selectedWalletUser.city}
+                        </p>
+                      </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <span className="text-[8.5px] font-black tracking-widest uppercase text-slate-400 block">Solde Actuel</span>
+                        <p className="text-2xl font-black text-blue-600 dark:text-blue-400 tracking-tight mt-1">
+                          {(selectedWalletUser.balance || 0).toLocaleString('fr-FR')} <span className="text-xs font-bold">FCFA</span>
+                        </p>
+                      </div>
+
+                      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <span className="text-[8.5px] font-black tracking-widest uppercase text-slate-400 block">Total Déposé</span>
+                        <p className="text-2xl font-black text-green-600 dark:text-green-400 tracking-tight mt-1">
+                          {walletTransactions
+                            .filter(tx => tx.phone === selectedWalletUser.phone && tx.type === 'DEPOSIT')
+                            .reduce((sum, tx) => sum + (tx.amount || 0), 0)
+                            .toLocaleString('fr-FR')} <span className="text-xs font-bold">FCFA</span>
+                        </p>
+                      </div>
+
+                      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <span className="text-[8.5px] font-black tracking-widest uppercase text-slate-400 block">Total Dépensé</span>
+                        <p className="text-2xl font-black text-rose-600 dark:text-rose-400 tracking-tight mt-1">
+                          {walletTransactions
+                            .filter(tx => tx.phone === selectedWalletUser.phone && tx.type === 'PAYMENT')
+                            .reduce((sum, tx) => sum + (tx.amount || 0), 0)
+                            .toLocaleString('fr-FR')} <span className="text-xs font-bold">FCFA</span>
+                        </p>
+                      </div>
+
+                      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <span className="text-[8.5px] font-black tracking-widest uppercase text-slate-400 block">Total Remboursé</span>
+                        <p className="text-2xl font-black text-amber-600 dark:text-amber-400 tracking-tight mt-1">
+                          {walletTransactions
+                            .filter(tx => tx.phone === selectedWalletUser.phone && tx.type === 'REFUND')
+                            .reduce((sum, tx) => sum + (tx.amount || 0), 0)
+                            .toLocaleString('fr-FR')} <span className="text-xs font-bold">FCFA</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-6 shadow-sm flex flex-col">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-950 dark:text-white mb-4">Historique des opérations complet</h4>
+                        <div className="space-y-3 overflow-y-auto max-h-[360px] pr-2">
+                          {walletTransactions.filter(tx => tx.phone === selectedWalletUser.phone).length === 0 ? (
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest text-center py-12">Aucune transaction trouvée</p>
+                          ) : (
+                            walletTransactions
+                              .filter(tx => tx.phone === selectedWalletUser.phone)
+                              .map((tx) => (
+                                <div key={tx.id} className="flex justify-between items-center p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-black uppercase text-slate-900 dark:text-white">
+                                      {tx.type === 'DEPOSIT' && `Dépôt Wave • +225 ${tx.paymentNumber || ''}`}
+                                      {tx.type === 'PAYMENT' && `Achat : ${tx.serviceName || 'Service'}`}
+                                      {tx.type === 'REFUND' && `Remboursement`}
+                                    </p>
+                                    <p className="text-[9.5px] font-medium text-slate-400">
+                                      {tx.dateStr || (tx.timestamp ? new Date(tx.timestamp).toLocaleString('fr-FR') : 'Date inconnue')}
+                                    </p>
+                                    {tx.type === 'REFUND' && tx.reason && (
+                                      <p className="text-[9.5px] font-bold text-amber-600 lowercase bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-100 dark:border-amber-900/35 max-w-[280px] inline-block truncate">
+                                        motif: {tx.reason}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="text-right">
+                                    <p className={`text-sm font-black tracking-tight ${
+                                      tx.type === 'DEPOSIT' || tx.type === 'REFUND' ? 'text-green-600' : 'text-rose-600'
+                                    }`}>
+                                      {tx.type === 'DEPOSIT' || tx.type === 'REFUND' ? '+' : '-'}{tx.amount.toLocaleString('fr-FR')} FCFA
+                                    </p>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mt-1">{tx.id.substring(0, 8)}</p>
+                                  </div>
+                                </div>
+                              ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 rounded-3xl shadow-sm flex flex-col justify-between">
+                        <div className="space-y-4">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-blue-900 dark:text-blue-400">Formulaire de remboursement</h4>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase leading-relaxed">
+                            La validation ré-créditera immédiatement le compte de l'utilisateur, écrira une transaction de type REMBOURSEMENT et lui enverra un message automatique de confirmation.
+                          </p>
+
+                          <div className="space-y-3 pt-2">
+                            <div>
+                              <label className="block text-[8.5px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">Montant (FCFA)</label>
+                              <input 
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={refundAmount}
+                                onChange={(e) => setRefundAmount(e.target.value.replace(/\D/g, ''))}
+                                placeholder="Ex: 530" 
+                                className="w-full bg-slate-50 dark:bg-slate-805 border-2 border-slate-100 dark:border-slate-700 rounded-2xl px-4 py-3 text-sm font-black text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[8.5px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1">Motif / Justification</label>
+                              <textarea 
+                                rows={3}
+                                value={refundReason}
+                                onChange={(e) => setRefundReason(e.target.value)}
+                                placeholder="Écrivez la raison du remboursement..." 
+                                className="w-full bg-slate-50 dark:bg-slate-805 border-2 border-slate-100 dark:border-slate-700 rounded-2xl px-4 py-3 text-xs font-medium text-slate-900 dark:text-white outline-none resize-none focus:border-blue-500 transition-all"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={handleProcessRefund}
+                          disabled={isProcessingRefund || !refundAmount || !refundReason.trim()}
+                          className={`w-full py-4 mt-6 rounded-2xl text-[10.5px] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-lg cursor-pointer ${
+                            isProcessingRefund || !refundAmount || !refundReason.trim()
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                          }`}
+                        >
+                          {isProcessingRefund ? "Validation..." : "Valider le remboursement"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {activeTab === 'payments' && renderTable(
                 ['Nom', 'Ville', 'Numéro', 'Wave', 'Montant', 'Statut', 'Date'],

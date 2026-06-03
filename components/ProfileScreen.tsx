@@ -194,10 +194,23 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [view, setView] = useState<'main' | 'contacts'>('main');
+  const [view, setView] = useState<'main' | 'contacts' | 'deposit'>('main');
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [showScanner, setShowScanner] = useState(false);
   const [showIdModal, setShowIdModal] = useState(false);
+
+  // FILANT°225 wallet states
+  const [wallet, setWallet] = useState<{ phone: string; balance: number; name: string; city: string }>({
+    phone: user.phone || '',
+    balance: 0,
+    name: user.name || '',
+    city: user.city || ''
+  });
+  const [walletTransactions, setWalletTransactions] = useState<any[]>([]);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositPhone, setDepositPhone] = useState(user.phone || '');
+  const [isDepositing, setIsDepositing] = useState(false);
+  const [depositSuccess, setDepositSuccess] = useState(false);
   const [idImages, setIdImages] = useState(() => {
     if (user?.phone) {
       const storedFront = localStorage.getItem(`filant_id_image_front_${user.phone}`);
@@ -250,13 +263,30 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   }, [user?.phone, profileImage]);
 
   useEffect(() => {
+    let unsubWallet = () => {};
+    let unsubWalletTxs = () => {};
+
     if (user?.phone) {
       setContacts(databaseService.getContacts(user.phone));
+
+      unsubWallet = databaseService.subscribeToWallet(user.phone, (walletData) => {
+        setWallet(walletData);
+      });
+
+      unsubWalletTxs = databaseService.subscribeToWalletTransactions(user.phone, (txs) => {
+        setWalletTransactions(txs);
+      });
     }
+
     requestAnimationFrame(() => {
         if (panelRef.current) panelRef.current.classList.remove('translate-x-full');
         if (overlayRef.current) overlayRef.current.classList.remove('opacity-0');
     });
+
+    return () => {
+      unsubWallet();
+      unsubWalletTxs();
+    };
   }, [user?.phone]);
 
   const handleBack = () => {
@@ -363,6 +393,82 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
             </p>
         </div>
         <div className="flex-1 space-y-6 pb-32">
+            {/* Portefeuille FILANT°225 Section */}
+            <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-black text-white rounded-3xl mx-4 p-6 shadow-xl relative overflow-hidden border border-slate-800">
+              <div className="absolute top-0 right-0 w-44 h-44 bg-blue-500/10 rounded-full blur-[40px] pointer-events-none"></div>
+              
+              <div className="flex items-center justify-between mb-4 relative z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                    <svg className="w-4.5 h-4.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Compte Utilisateur</h3>
+                    <p className="text-[8.5px] font-bold text-slate-400/80 uppercase">FILANT°225 PORTEFEUILLE</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setDepositAmount('');
+                    setDepositPhone(user.phone || '');
+                    setDepositSuccess(false);
+                    setView('deposit');
+                  }}
+                  className="px-4.5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-[9.5px] font-black uppercase tracking-wider text-white rounded-xl shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
+                >
+                  Dépôt
+                </button>
+              </div>
+
+              <div className="space-y-1 relative z-10">
+                <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest block">Solde disponible</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-white tracking-tight">{wallet.balance.toLocaleString('fr-FR')}</span>
+                  <span className="text-xs font-black text-blue-400 uppercase">FCFA</span>
+                </div>
+              </div>
+
+              {/* Minimalist divider */}
+              <div className="h-px bg-slate-800/60 my-4"></div>
+
+              {/* Recent operations snippet list */}
+              <div className="relative z-10">
+                <h4 className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">Historique des opérations</h4>
+                {walletTransactions.length === 0 ? (
+                  <p className="text-[9.5px] font-bold text-slate-500 uppercase tracking-tight py-2 bg-slate-900/45 rounded-xl text-center border border-slate-800/30">Aucune opération enregistrée</p>
+                ) : (
+                  <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                    {walletTransactions.slice(0, 4).map((tx) => (
+                      <div key={tx.id} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/40 last:border-0">
+                        <div className="flex flex-col">
+                          <span className="text-[9.5px] font-black uppercase tracking-tight text-white m truncate max-w-[150px]">
+                            {tx.type === 'DEPOSIT' && `Dépôt via +225 ${tx.paymentNumber || ''}`}
+                            {tx.type === 'PAYMENT' && `${tx.serviceName || 'Paiement'}`}
+                            {tx.type === 'REFUND' && `Remboursement`}
+                          </span>
+                          <span className="text-[7.5px] font-medium text-slate-500 uppercase">
+                            {tx.dateStr || (tx.timestamp ? new Date(tx.timestamp).toLocaleString('fr-FR') : 'N/A')}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className={`text-[10px] font-black tracking-tight ${
+                            tx.type === 'DEPOSIT' || tx.type === 'REFUND' ? 'text-green-400' : 'text-rose-400'
+                          }`}>
+                            {tx.type === 'DEPOSIT' || tx.type === 'REFUND' ? '+' : '-'}{tx.amount.toLocaleString('fr-FR')} FCFA
+                          </span>
+                          {tx.type === 'REFUND' && tx.reason && (
+                            <span className="text-[7.5px] font-bold text-slate-400 lowercase truncate max-w-[120px]">{tx.reason}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-gray-100">
                 <ProfileRow icon={<PayeIcon className="w-10 h-10 text-blue-600" />} title="Modes de paiement" subtitle="ESPÈCES / WAVE" onClick={() => { setActiveTab(Tab.Payment); handleClose(); }} rightElement={<div className="bg-green-100 px-2.5 py-1 rounded-lg flex items-center gap-1.5"><span className="text-[10px] font-black text-green-700 uppercase tracking-tighter">Actif</span><ChevronRight className="h-3 w-3 text-green-700" /></div>} />
                 <div className="h-px bg-gray-50 mx-4"></div>
@@ -628,6 +734,146 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     </div>
   );
 
+  const renderDepositView = () => {
+    const handleConfirmDeposit = async () => {
+      const amountNum = parseFloat(depositAmount);
+      if (isNaN(amountNum) || amountNum <= 0) {
+        onShowPopup("Veuillez saisir un montant valide.", "alert");
+        return;
+      }
+      if (depositPhone.length < 10) {
+        onShowPopup("Veuillez saisir les 10 chiffres de votre numéro de paiement.", "alert");
+        return;
+      }
+
+      setIsDepositing(true);
+      try {
+        await databaseService.createDeposit(
+          user.phone,
+          user.name || 'Utilisateur',
+          user.city || 'Non spécifiée',
+          amountNum,
+          depositPhone
+        );
+        setDepositSuccess(true);
+      } catch (err) {
+        console.error(err);
+        onShowPopup("Échec du dépôt. Veuillez réessayer.", "alert");
+      } finally {
+        setIsDepositing(false);
+      }
+    };
+
+    if (depositSuccess) {
+      return (
+        <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-300 font-sans p-6 text-center justify-center items-center">
+          <div className="w-16 h-16 bg-green-50 rounded-full border-2 border-green-500 flex items-center justify-center text-green-600 mb-6 animate-bounce">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Dépôt Réussi !</h2>
+          <p className="text-slate-500 font-bold uppercase tracking-tight text-[11px] max-w-xs mb-8 leading-relaxed">
+            Votre dépôt de <span className="text-green-600 font-extrabold">{parseFloat(depositAmount).toLocaleString('fr-FR')} FCFA</span> a été validé et crédité sur votre compte.
+          </p>
+          <button
+            onClick={() => {
+              setView('main');
+              setDepositSuccess(false);
+              setDepositAmount('');
+            }}
+            className="w-full max-w-[240px] py-4 bg-slate-900 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl transition-all active:scale-95 cursor-pointer"
+          >
+            Fermer
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col h-full bg-[#F3F3F3] animate-in slide-in-from-right duration-300 font-sans">
+        <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100">
+          <button onClick={() => setView('main')} className="p-2 -ml-2 text-gray-800 hover:bg-gray-100 rounded-full transition-colors active:scale-90">
+            <BackIcon />
+          </button>
+          <h1 className="flex-1 text-center font-black uppercase text-[12px] tracking-tight mr-10">Dépôt de compte</h1>
+        </header>
+
+        <div className="flex-1 p-6 space-y-6">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-5">
+            <div>
+              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                Saisir le montant à déposer (FCFA)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="Ex: 530"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value.replace(/\D/g, ''))}
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-500 rounded-2xl px-5 py-4 text-base font-black text-slate-900 outline-none transition-all placeholder-slate-200"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                Numéro de paiement Wave
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
+                  <span className="text-base">🇨🇮</span>
+                  <span className="text-xs font-black text-slate-400">+225</span>
+                </div>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  placeholder="00 00 00 00 00"
+                  value={depositPhone}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    if (val.length <= 10) setDepositPhone(val);
+                  }}
+                  className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-500 rounded-2xl pl-20 pr-5 py-4 text-base font-black text-slate-900 outline-none transition-all placeholder-slate-200"
+                />
+              </div>
+              {depositPhone.length > 0 && depositPhone.length < 10 && (
+                <p className="text-[8.5px] font-bold text-orange-500 mt-2 ml-2 animate-pulse">
+                  Veuillez saisir les 10 chiffres du numéro
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="text-center px-4">
+            <p className="text-[10px] font-bold text-gray-400 uppercase leading-relaxed">
+              En confirmant l'opération, le solde de votre Portefeuille FILANT°225 sera instantanément crédité.
+            </p>
+          </div>
+
+          <button
+            onClick={handleConfirmDeposit}
+            disabled={isDepositing || !depositAmount || depositPhone.length !== 10}
+            className={`w-full py-4 text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg transition-all active:scale-[0.98] cursor-pointer ${
+              isDepositing || !depositAmount || depositPhone.length !== 10
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20'
+            }`}
+          >
+            {isDepositing ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                <span>Validation...</span>
+              </div>
+            ) : (
+              'Confirmer l\'opération'
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="absolute inset-0 z-[100] flex justify-end" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div ref={overlayRef} className="absolute inset-0 bg-black/40 transition-opacity duration-300 opacity-0" onClick={handleClose}></div>
@@ -640,6 +886,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                         <ContactListView contacts={contacts} onDelete={handleDeleteContact} />
                     </div>
                 )}
+                {view === 'deposit' && renderDepositView()}
             </main>
         </div>
         {showScanner && <ScannerOverlay onScan={handleScanResult} onClose={() => setShowScanner(false)} />}

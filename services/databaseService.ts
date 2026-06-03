@@ -1,6 +1,6 @@
 import { User, Worker, Offer, FavoriteRequest, PersonalRequest, Notification } from '../types';
 import { db, auth, rtdb, storage } from '../firebase';
-import { doc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, orderBy, deleteDoc, getDoc, onSnapshot, writeBatch, updateDoc, where, limit } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, orderBy, deleteDoc, getDoc, onSnapshot, writeBatch, updateDoc, where, limit, increment } from 'firebase/firestore';
 import { ref as rtdbRef, push, set, serverTimestamp as rtdbTimestamp, get, update, onValue, remove } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL, uploadString } from 'firebase/storage';
 
@@ -1752,5 +1752,244 @@ export const databaseService = {
   savePlacement: async (data: any, additional?: any) => {
     // Pro logic removed
     return true;
+  },
+
+  // --- FILANT°225 USER WALLET (PORTEFEUILLE) SYSTEM ---
+  getWallet: async (phone: string) => {
+    try {
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const walletRef = doc(db, 'Wallets', sanitizedPhone);
+      const snap = await getDoc(walletRef);
+      if (snap.exists()) {
+        const walletData = snap.data();
+        return {
+          phone: sanitizedPhone,
+          balance: walletData.balance || 0,
+          name: walletData.name || 'Inconnu',
+          city: walletData.city || 'Non spécifiée'
+        };
+      }
+      return {
+        phone: sanitizedPhone,
+        balance: 0,
+        name: 'Inconnu',
+        city: 'Non spécifiée'
+      };
+    } catch (error) {
+      console.error("Error in getWallet:", error);
+      return {
+        phone: phone.replace(/\D/g, ''),
+        balance: 0,
+        name: 'Inconnu',
+        city: 'Non spécifiée'
+      };
+    }
+  },
+
+  subscribeToWallet: (phone: string, callback: (wallet: any) => void) => {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    const walletRef = doc(db, 'Wallets', sanitizedPhone);
+    return onSnapshot(walletRef, (snap) => {
+      if (snap.exists()) {
+        const walletData = snap.data();
+        callback({
+          phone: sanitizedPhone,
+          balance: walletData.balance || 0,
+          name: walletData.name || 'Inconnu',
+          city: walletData.city || 'Non spécifiée'
+        });
+      } else {
+        callback({
+          phone: sanitizedPhone,
+          balance: 0,
+          name: 'Inconnu',
+          city: 'Non spécifiée'
+        });
+      }
+    }, (error) => {
+      console.error("Error subscribing to wallet:", error);
+    });
+  },
+
+  subscribeToWalletTransactions: (phone: string, callback: (txs: any[]) => void) => {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    const q = query(
+      collection(db, 'WalletTransactions'),
+      where('phone', '==', sanitizedPhone),
+      orderBy('timestamp', 'desc')
+    );
+    return onSnapshot(q, (snap) => {
+      const txs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(txs);
+    }, (error) => {
+      console.error("Error subscribing to wallet transactions:", error);
+    });
+  },
+
+  createDeposit: async (phone: string, name: string, city: string, amount: number, paymentNumber: string) => {
+    try {
+      await databaseService.ensureAuth();
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const walletRef = doc(db, 'Wallets', sanitizedPhone);
+      
+      await setDoc(walletRef, {
+        phone: sanitizedPhone,
+        name: name,
+        city: city,
+        balance: increment(amount),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      const txRef = await addDoc(collection(db, 'WalletTransactions'), {
+        phone: sanitizedPhone,
+        userName: name,
+        userCity: city,
+        type: 'DEPOSIT',
+        amount: amount,
+        paymentNumber: paymentNumber,
+        status: 'SUCCESS',
+        timestamp: Date.now(),
+        dateStr: new Date().toLocaleString('fr-FR')
+      });
+      return txRef.id;
+    } catch (error) {
+      console.error("Error in createDeposit:", error);
+      throw error;
+    }
+  },
+
+  processWalletPayment: async (phone: string, name: string, city: string, amount: number, serviceName: string, reference: string) => {
+    try {
+      await databaseService.ensureAuth();
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const walletRef = doc(db, 'Wallets', sanitizedPhone);
+
+      // Check balance
+      const snap = await getDoc(walletRef);
+      const currentBalance = snap.exists() ? (snap.data().balance || 0) : 0;
+      if (currentBalance < amount) {
+        return { success: false, error: 'Fonds insuffisants. Veuillez effectuer un dépôt pour poursuivre votre demande.' };
+      }
+
+      // Deduct
+      await setDoc(walletRef, {
+        phone: sanitizedPhone,
+        name: name,
+        city: city,
+        balance: increment(-amount),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      // Save transaction
+      await addDoc(collection(db, 'WalletTransactions'), {
+        phone: sanitizedPhone,
+        userName: name,
+        userCity: city,
+        type: 'PAYMENT',
+        amount: amount,
+        serviceName: serviceName,
+        reference: reference,
+        status: 'SUCCESS',
+        timestamp: Date.now(),
+        dateStr: new Date().toLocaleString('fr-FR')
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error in processWalletPayment:", error);
+      throw error;
+    }
+  },
+
+  processWalletRefund: async (phone: string, name: string, city: string, amount: number, reason: string) => {
+    try {
+      await databaseService.ensureAuth();
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const walletRef = doc(db, 'Wallets', sanitizedPhone);
+
+      // Add to balance
+      await setDoc(walletRef, {
+        phone: sanitizedPhone,
+        name: name,
+        city: city,
+        balance: increment(amount),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      // Save refund transaction
+      await addDoc(collection(db, 'WalletTransactions'), {
+        phone: sanitizedPhone,
+        userName: name,
+        userCity: city,
+        type: 'REFUND',
+        amount: amount,
+        reason: reason,
+        status: 'SUCCESS',
+        timestamp: Date.now(),
+        dateStr: new Date().toLocaleString('fr-FR')
+      });
+
+      // Send notifications to both chat databases
+      const msgText = `🔔 *Remboursement Portefeuille FILANT°225*\n\nUn remboursement de *${amount} FCFA* a été crédité sur votre compte FILANT°225.\n\n• *Motif :* ${reason}\n\nVotre solde a été mis à jour instantanément.`;
+      const adminMsg = {
+        text: msgText,
+        sender: 'admin' as const,
+        timestamp: Date.now(),
+        isRead: false,
+        adminReadStatus: 'LU'
+      };
+
+      await databaseService.savePrivateChatMessage(sanitizedPhone, adminMsg);
+      await databaseService.saveAssistantChatMessage(sanitizedPhone, adminMsg);
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error in processWalletRefund:", error);
+      throw error;
+    }
+  },
+
+  getAllWallets: async () => {
+    try {
+      await databaseService.ensureAuth();
+      const q = query(collection(db, 'Wallets'), orderBy('updatedAt', 'desc'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("Error in getAllWallets:", error);
+      return [];
+    }
+  },
+
+  getAllWalletTransactions: async () => {
+    try {
+      await databaseService.ensureAuth();
+      const q = query(collection(db, 'WalletTransactions'), orderBy('timestamp', 'desc'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("Error in getAllWalletTransactions:", error);
+      return [];
+    }
+  },
+
+  subscribeToAllWallets: (callback: (wallets: any[]) => void) => {
+    const q = query(collection(db, 'Wallets'), orderBy('updatedAt', 'desc'));
+    return onSnapshot(q, (snap) => {
+      const wallets = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(wallets);
+    }, (error) => {
+      console.error("Error subscribing to all wallets:", error);
+    });
+  },
+
+  subscribeToAllWalletTransactions: (callback: (txs: any[]) => void) => {
+    const q = query(collection(db, 'WalletTransactions'), orderBy('timestamp', 'desc'));
+    return onSnapshot(q, (snap) => {
+      const txs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(txs);
+    }, (error) => {
+      console.error("Error subscribing to all wallet transactions:", error);
+    });
   }
 };
