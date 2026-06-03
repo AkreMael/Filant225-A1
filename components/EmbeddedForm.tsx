@@ -114,83 +114,6 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     return getFormImage(title);
   }, [imageUrl, title]);
 
-  const [isSearchingInDb, setIsSearchingInDb] = useState(true);
-  const [searchQuery, setSearchQuery] = useState(title.replace(/ Rapide$/i, '').trim());
-  const [isPerformingSearch, setIsPerformingSearch] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
-
-  const handlePerformDbSearch = async () => {
-    setIsPerformingSearch(true);
-    try {
-      const inscriptions = await databaseService.getInscriptions();
-      if (!inscriptions || inscriptions.length === 0) {
-        setSearchResults([]);
-        setHasSearched(true);
-        setIsPerformingSearch(false);
-        return;
-      }
-
-      const activeInscriptions = inscriptions.filter((doc: any) => doc.isActive !== false);
-
-      const normalizedQuery = searchQuery.toLowerCase().trim();
-      if (!normalizedQuery) {
-        setSearchResults(activeInscriptions);
-        setHasSearched(true);
-        setIsPerformingSearch(false);
-        return;
-      }
-
-      const keywords = normalizedQuery.split(/\s+/).filter(k => k.length > 1);
-
-      const filtered = activeInscriptions.filter((doc: any) => {
-        const name = (doc.name || doc.companyName || doc.agencyName || '').toLowerCase();
-        const city = (doc.city || doc.agencyCity || doc.companyCity || doc.equipmentCity || '').toLowerCase();
-        const profileType = (doc.profileType || '').toLowerCase();
-        
-        let mainField = '';
-        let subField = '';
-        
-        if (doc.profileType === 'Travailleur') {
-          mainField = (doc.job || '').toLowerCase();
-          subField = (doc.skillsDescription || '').toLowerCase();
-        } else if (doc.profileType === 'Propriétaire') {
-          mainField = (doc.equipmentType || '').toLowerCase();
-          subField = (doc.equipmentCategory || '').toLowerCase();
-        } else if (doc.profileType === 'Agence') {
-          mainField = (doc.propertyTypes || '').toLowerCase();
-          subField = (doc.agencyZone || '').toLowerCase();
-        } else if (doc.profileType === 'Entreprise') {
-          mainField = (doc.companyDomain || '').toLowerCase();
-          subField = (doc.companyServices || '').toLowerCase();
-        }
-        
-        const stringToSearch = `${name} ${city} ${profileType} ${mainField} ${subField}`;
-
-        if (keywords.length > 0) {
-          return keywords.every(kw => stringToSearch.includes(kw));
-        }
-        return stringToSearch.includes(normalizedQuery);
-      });
-
-      setSearchResults(filtered);
-      setHasSearched(true);
-    } catch (error) {
-      console.error("Error searching inscriptions:", error);
-      showToast("Impossible de récupérer les inscriptions.");
-    } finally {
-      setIsPerformingSearch(false);
-    }
-  };
-
-  useEffect(() => {
-    if (currentQuestion) {
-        if (currentQuestion.type === 'text' || currentQuestion.type === 'date' || currentQuestion.type === 'select') {
-            setInputValue((answers[currentQuestion.key] as string) || currentQuestion.defaultValue || '');
-        }
-    }
-  }, [step, currentQuestion, answers]);
-
   const handleNext = (val?: string) => {
     const valueToSave = val !== undefined ? val : inputValue;
     if (!valueToSave.trim()) return;
@@ -489,13 +412,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                 </div>
             )}
             <button 
-              onClick={() => {
-                if (!isSearchingInDb) {
-                  setIsSearchingInDb(true);
-                } else {
-                  onClose();
-                }
-              }} 
+              onClick={onClose} 
               className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
@@ -518,160 +435,6 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                 <div className="h-1 w-20 bg-orange-500 mt-1 rounded-full"></div>
             </div>
 
-            {isSearchingInDb ? (
-                <div className="w-full max-w-md flex flex-col items-center animate-in fade-in duration-300">
-                    <p className="text-[10px] text-center text-gray-400 font-extrabold uppercase tracking-widest pl-1 mb-6">
-                        Recherche en temps réel dans notre base de données d'inscrits
-                    </p>
-
-                    {/* Search Input and Button */}
-                    <div className="w-full space-y-4 mb-6">
-                        <div className="bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all shadow-inner">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handlePerformDbSearch()}
-                                className="bg-transparent w-full py-4 text-sm font-black text-gray-800 outline-none placeholder:text-gray-400 placeholder:font-normal"
-                                placeholder="Rechercher un métier ou catégorie (ex: Plombier)..."
-                            />
-                        </div>
-                        
-                        <button
-                            onClick={handlePerformDbSearch}
-                            disabled={isPerformingSearch}
-                            className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer"
-                        >
-                            {isPerformingSearch ? <Spinner /> : <span>Lancer la recherche</span>}
-                        </button>
-                    </div>
-
-                    {/* Results Container */}
-                    {(isPerformingSearch || hasSearched) && (
-                        <div className="w-full flex-1 min-h-[160px] flex flex-col items-center justify-center mb-6">
-                            {isPerformingSearch ? (
-                                <div className="flex flex-col items-center gap-3 text-orange-500 py-8">
-                                    <div className="w-8 h-8 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
-                                    <span className="text-[10px] font-black uppercase tracking-wider animate-pulse">Recherche en temps réel...</span>
-                                </div>
-                            ) : !hasSearched ? (
-                                null
-                            ) : searchResults.length === 0 ? (
-                                <div className="text-center py-8 px-5 bg-gray-50 rounded-3xl border border-gray-100 space-y-4 w-full">
-                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-relaxed">
-                                        Aucun inscrit ne correspond à "{searchQuery}"
-                                    </p>
-                                    <p className="text-[11px] text-gray-400 leading-relaxed font-medium">
-                                        Vous pouvez néanmoins continuer pour soumettre votre demande personnalisée à nos services.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="w-full space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-hide py-1">
-                                    <div className="flex justify-between items-center px-1 mb-1">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                            {searchResults.length} {searchResults.length > 1 ? 'Résultats trouvés' : 'Résultat trouvé'}
-                                        </span>
-                                    </div>
-                                    
-                                    {searchResults.map((item, index) => {
-                                        let displayProfession = "";
-                                        let badgeColor = "";
-                                        let badgeText = "";
-                                        
-                                        if (item.profileType === 'Travailleur') {
-                                            displayProfession = item.job || "Travailleur";
-                                            badgeColor = "bg-blue-50 text-blue-600 border border-blue-100";
-                                            badgeText = "Travailleur";
-                                        } else if (item.profileType === 'Propriétaire') {
-                                            displayProfession = item.equipmentType || "Équipement";
-                                            badgeColor = "bg-purple-50 text-purple-600 border border-purple-100";
-                                            badgeText = "Équipement";
-                                        } else if (item.profileType === 'Agence') {
-                                            displayProfession = item.agencyName || "Agence Immobilière";
-                                            badgeColor = "bg-emerald-50 text-emerald-600 border border-emerald-100";
-                                            badgeText = "Agence";
-                                        } else if (item.profileType === 'Entreprise') {
-                                            displayProfession = item.companyName || "Entreprise";
-                                            badgeColor = "bg-amber-50 text-amber-600 border border-amber-100";
-                                            badgeText = "Entreprise";
-                                        } else {
-                                            displayProfession = "Inscrit";
-                                            badgeColor = "bg-gray-50 text-gray-600 border border-gray-100";
-                                            badgeText = "Inscrit";
-                                        }
-
-                                        return (
-                                            <div 
-                                                key={item.id || index}
-                                                className="w-full bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
-                                            >
-                                                <div className="space-y-1 flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-black text-gray-900 truncate uppercase">
-                                                            {item.name || item.companyName || item.agencyName}
-                                                        </span>
-                                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${badgeColor}`}>
-                                                            {badgeText}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-[11px] font-bold text-gray-600 pr-1 truncate">
-                                                            📍 {item.city || item.agencyCity || item.companyCity || item.equipmentCity || "Non spécifiée"}
-                                                        </span>
-                                                        <span className="text-[10px] font-semibold text-gray-400 truncate">
-                                                            💼 {displayProfession}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                
-                                                <button
-                                                    onClick={() => {
-                                                        const newAnswers = { ...answers };
-                                                        const resultCity = item.city || item.agencyCity || item.companyCity || item.equipmentCity;
-                                                        if (resultCity) {
-                                                            newAnswers.serviceCity = resultCity;
-                                                            newAnswers.workLocation = resultCity;
-                                                            newAnswers.commune = resultCity;
-                                                            newAnswers.city = resultCity;
-                                                            newAnswers.location = resultCity;
-                                                        }
-                                                        const chosenName = item.name || item.companyName || item.agencyName;
-                                                        if (chosenName) {
-                                                            newAnswers.chosenWorkerName = chosenName;
-                                                            newAnswers.description = `Demande concernant l'inscrit : ${chosenName}`;
-                                                            newAnswers.workDescription = `Demande concernant l'inscrit : ${chosenName}`;
-                                                        }
-                                                        setAnswers(newAnswers);
-                                                        setIsSearchingInDb(false);
-                                                    }}
-                                                    className="bg-orange-500 hover:bg-orange-600 text-white font-black text-[10px] uppercase px-4 py-2.5 rounded-xl shadow-md active:scale-95 transition-all cursor-pointer"
-                                                >
-                                                    Afficher
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Direct Submit Action */}
-                    <div className="w-full mt-2 pt-4 border-t border-gray-100 flex flex-col items-center">
-                        <button
-                            onClick={() => {
-                                setIsSearchingInDb(false);
-                            }}
-                            className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 font-black py-4 rounded-2xl text-[10px] uppercase tracking-wider transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
-                        >
-                            📁 Continuer vers la demande classique
-                        </button>
-                        <p className="text-[10px] text-gray-400 font-semibold text-center mt-3 leading-relaxed">
-                            Si vous préférez rédiger une demande de service d'un agent Filant°225 directement sans consulter d'abord la base de données.
-                        </p>
-                    </div>
-                </div>
-            ) : (
                 <>
                 {isWorker && !isBlurredImage && !isRapidTitle && (
                   <div className="flex gap-3 mb-8">
@@ -912,7 +675,6 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                     </div>
                 </div>
                 </>
-            )}
         </motion.div>
       </div>
     </motion.div>
