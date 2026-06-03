@@ -715,19 +715,21 @@ export const databaseService = {
         });
         console.log("Inscription saved/updated successfully for profile:", sanitizedPhone);
 
-        // Send automated message on registration completion
-        try {
-          const autoMsg = {
-            text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
-            sender: 'admin',
-            isRead: false,
-            adminReadStatus: 'LU'
-          };
-          await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, autoMsg);
-          await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
-        } catch (msgErr) {
-          console.error("Error sending auto message after inscription:", msgErr);
-        }
+        // Send automated message on registration completion with 1.2s delay to preserve proper chat sequence
+        setTimeout(async () => {
+          try {
+            const autoMsg = {
+              text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
+              sender: 'admin',
+              isRead: false,
+              adminReadStatus: 'LU'
+            };
+            await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, autoMsg);
+            await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
+          } catch (msgErr) {
+            console.error("Error sending auto message after inscription:", msgErr);
+          }
+        }, 1250);
 
         return true;
       } else {
@@ -752,16 +754,22 @@ export const databaseService = {
             await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, userMsg);
             await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, userMsg);
 
-            const autoMsg = {
-              text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
-              sender: 'admin',
-              isRead: false,
-              adminReadStatus: 'LU'
-            };
-            await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, autoMsg);
-            await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
+            setTimeout(async () => {
+              try {
+                const autoMsg = {
+                  text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
+                  sender: 'admin',
+                  isRead: false,
+                  adminReadStatus: 'LU'
+                };
+                await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, autoMsg);
+                await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
+              } catch (msgErr) {
+                console.error("Error sending auto message after inscription fallback:", msgErr);
+              }
+            }, 1250);
           } catch (msgErr) {
-            console.error("Error sending auto message after inscription fallback:", msgErr);
+            console.error("Error sending user registration message fallback to chat:", msgErr);
           }
         }
 
@@ -1350,24 +1358,26 @@ export const databaseService = {
         adminReadStatus: 'NON LU'
       });
 
-      // Send automated message after service request submission
+      // Send automated message after service request submission with 1.25s delay
       const phoneRaw = requestData.phone || '';
       const sanitizedPhone = phoneRaw.replace(/\D/g, '');
       const userId = requestData.userId || sanitizedPhone;
 
       if (userId) {
-        try {
-          const autoMsg = {
-            text: "Merci pour votre demande. Votre demande est en cours de traitement. Chaque demande est transmise à notre service de mise en relation. Un agent ou un partenaire vous contactera dans les meilleurs délais.",
-            sender: 'admin',
-            isRead: false,
-            adminReadStatus: 'LU'
-          };
-          await databaseService.saveTypedChatMessage('Assistant', userId, autoMsg);
-          await databaseService.saveTypedChatMessage('Privee', userId, autoMsg);
-        } catch (msgErr) {
-          console.error("Error sending auto message after service request:", msgErr);
-        }
+        setTimeout(async () => {
+          try {
+            const autoMsg = {
+              text: "Merci pour votre demande. Votre demande est en cours de traitement. Chaque demande est transmise à notre service de mise en relation. Un agent ou un partenaire vous contactera dans les meilleurs délais.",
+              sender: 'admin',
+              isRead: false,
+              adminReadStatus: 'LU'
+            };
+            await databaseService.saveTypedChatMessage('Assistant', userId, autoMsg);
+            await databaseService.saveTypedChatMessage('Privee', userId, autoMsg);
+          } catch (msgErr) {
+            console.error("Error sending auto message after service request:", msgErr);
+          }
+        }, 1250);
       }
 
       return docRef.id;

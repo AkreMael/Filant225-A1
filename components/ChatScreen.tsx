@@ -54,10 +54,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!window.visualViewport) return;
-
     const handleResize = () => {
-      setViewportHeight(window.visualViewport.height);
+      const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      setViewportHeight(height);
       
       // Auto-scroll when keyboard status changes
       setTimeout(() => {
@@ -65,14 +64,20 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
       }, 150);
     };
 
-    window.visualViewport.addEventListener('resize', handleResize);
-    window.visualViewport.addEventListener('scroll', handleResize);
+    window.addEventListener('resize', handleResize);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+      window.visualViewport.addEventListener('scroll', handleResize);
+    }
     
     handleResize();
 
     return () => {
-      window.visualViewport?.removeEventListener('resize', handleResize);
-      window.visualViewport?.removeEventListener('scroll', handleResize);
+      window.removeEventListener('resize', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+        window.visualViewport.removeEventListener('scroll', handleResize);
+      }
     };
   }, []);
 
@@ -469,7 +474,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
             }}
             placeholder="Écrivez votre message..."
             className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-1 font-semibold text-slate-800 placeholder:text-slate-400 resize-none max-h-28 overflow-y-auto scrollbar-hide focus:outline-none"
-            style={{ height: '24px' }}
+            style={{ height: 'auto' }}
           />
         </div>
         <button
