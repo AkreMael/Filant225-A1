@@ -44,11 +44,11 @@ const UsersIcon: React.FC<{className?: string}> = ({className}) => <svg xmlns="h
 // --- HELPERS ---
 const ProfileAvatar = ({ imageUrl, onUpload, isLocked }: { imageUrl?: string | null, onUpload: () => void, isLocked: boolean }) => (
     <div className="relative">
-        <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-sm relative">
+        <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm relative">
             {imageUrl ? (
                 <img src={imageUrl} alt="Profile" className="w-full h-full object-cover" />
             ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-gray-400 mt-4" viewBox="0 0 24 24" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mt-2" viewBox="0 0 24 24" fill="currentColor">
                     <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 a4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
                 </svg>
             )}
@@ -56,14 +56,14 @@ const ProfileAvatar = ({ imageUrl, onUpload, isLocked }: { imageUrl?: string | n
         <button 
             onClick={isLocked ? undefined : onUpload}
             disabled={isLocked}
-            className={`absolute bottom-0 right-0 w-9 h-9 rounded-full border-2 border-white flex items-center justify-center shadow-md transition-all ${isLocked ? 'bg-green-500 cursor-default scale-110' : 'bg-blue-600 text-white active:scale-90 hover:bg-blue-700'}`}
+            className={`absolute bottom-0 right-0 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-md transition-all ${isLocked ? 'bg-green-500 cursor-default scale-110' : 'bg-blue-600 text-white active:scale-90 hover:bg-blue-700'}`}
         >
             {isLocked ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
             ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
             )}
@@ -194,7 +194,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [view, setView] = useState<'main' | 'contacts'>('main');
+  const [view, setView] = useState<'main' | 'contacts' | 'history'>('main');
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [showScanner, setShowScanner] = useState(false);
   const [showIdModal, setShowIdModal] = useState(false);
@@ -371,15 +371,15 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
             </button>
             <h1 className="flex-1 text-center font-black uppercase text-base tracking-tight mr-10">Mon Espace Profil</h1>
         </header>
-        <div className="flex flex-col items-center justify-center pt-8 pb-8 px-4 bg-white shadow-sm mb-6">
+        <div className="flex flex-col items-center justify-center pt-5 pb-5 px-4 bg-white shadow-sm mb-4">
             <ProfileAvatar imageUrl={profileImage} onUpload={() => fileInputRef.current?.click()} isLocked={isProfileLocked} />
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-            <div className="flex items-center gap-2 mt-5">
-                <h1 className="text-2xl font-black text-gray-900 capitalize tracking-tight">{user.name || 'Utilisateur'}</h1>
-                <div className="bg-orange-100 p-1 rounded-full"><ChevronRight className="h-4 w-4 text-orange-500" /></div>
+            <div className="flex items-center gap-1.5 mt-3">
+                <h1 className="text-xl font-black text-gray-900 capitalize tracking-tight">{user.name || 'Utilisateur'}</h1>
+                <div className="bg-orange-100 p-0.5 rounded-full"><ChevronRight className="h-3.5 w-3.5 text-orange-500" /></div>
             </div>
-            <p className="text-gray-400 font-bold text-sm mt-0.5 tracking-tighter uppercase">Résidence: {user.city || 'Non spécifiée'}</p>
-            <p className="text-slate-900 font-black text-sm mt-2 bg-gray-100 px-3 py-1 rounded-full">
+            <p className="text-gray-400 font-bold text-xs mt-0.5 tracking-tighter uppercase">Résidence: {user.city || 'Non spécifiée'}</p>
+            <p className="text-slate-900 font-extrabold text-xs mt-1.5 bg-gray-100 px-3 py-0.5 rounded-full">
                 {(() => {
                     const p = user.phone || '';
                     if (p.startsWith('+')) return p;
@@ -390,9 +390,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
         </div>
         <div className="flex-1 space-y-6 pb-32">
             {/* Portefeuille FILANT°225 Section */}
-            <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-black text-white rounded-3xl mx-4 p-6 shadow-xl relative overflow-hidden border border-slate-800">
+            <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-black text-white rounded-3xl mx-4 p-5 shadow-xl relative overflow-hidden border border-slate-800 animate-in fade-in duration-300">
               <div className="absolute top-0 right-0 w-44 h-44 bg-blue-500/10 rounded-full blur-[40px] pointer-events-none"></div>
               
+              {/* Card Header row with Logo and History triggers */}
               <div className="flex items-center justify-between mb-4 relative z-10">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-white border border-slate-700 flex items-center justify-center p-0.5 shadow-sm">
@@ -405,10 +406,36 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                   </div>
                   <div>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Compte Utilisateur</h3>
-                    <p className="text-[8.5px] font-bold text-slate-400/80 uppercase">FILANT°225 PORTEFEUILLE</p>
+                    <p className="text-[8.5px] font-bold text-slate-400/80 uppercase font-mono">FILANT°225 PORTEFEUILLE</p>
                   </div>
                 </div>
+
+                {/* Micro icon History button directly on the wallet */}
                 <button
+                  type="button"
+                  onClick={() => setView('history')}
+                  className="p-2 bg-white/10 hover:bg-white/15 active:scale-95 text-slate-200 hover:text-white rounded-full border border-white/10 transition-all flex items-center justify-center cursor-pointer shadow-md"
+                  title="Historique des virement"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Solde available */}
+              <div className="mb-4 relative z-10">
+                <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest block font-sans">Solde disponible</span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-3xl font-black text-white tracking-tight">{wallet.balance.toLocaleString('fr-FR')}</span>
+                  <span className="text-xs font-black text-blue-400 uppercase">FCFA</span>
+                </div>
+              </div>
+
+              {/* Elegant wide-layout centered deposit button */}
+              <div className="relative z-10 pt-1">
+                <button
+                  type="button"
                   onClick={() => {
                     onClose(); // Close ProfileScreen overlay
                     window.dispatchEvent(new CustomEvent('trigger-payment-view', {
@@ -420,56 +447,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                       }
                     }));
                   }}
-                  className="px-4.5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-[9.5px] font-black uppercase tracking-wider text-white rounded-xl shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-[9.5px] font-black uppercase tracking-[0.15em] text-white rounded-xl shadow-lg shadow-blue-900/30 transition-all cursor-pointer flex items-center justify-center gap-2 border border-blue-500/20"
                 >
-                  Dépôt
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span>Recharger le solde</span>
                 </button>
-              </div>
-
-              <div className="space-y-1 relative z-10">
-                <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest block">Solde disponible</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-white tracking-tight">{wallet.balance.toLocaleString('fr-FR')}</span>
-                  <span className="text-xs font-black text-blue-400 uppercase">FCFA</span>
-                </div>
-              </div>
-
-              {/* Minimalist divider */}
-              <div className="h-px bg-slate-800/60 my-4"></div>
-
-              {/* Recent operations snippet list */}
-              <div className="relative z-10">
-                <h4 className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-2">Historique des opérations</h4>
-                {walletTransactions.length === 0 ? (
-                  <p className="text-[9.5px] font-bold text-slate-500 uppercase tracking-tight py-2 bg-slate-900/45 rounded-xl text-center border border-slate-800/30">Aucune opération enregistrée</p>
-                ) : (
-                  <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
-                    {walletTransactions.slice(0, 4).map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/40 last:border-0">
-                        <div className="flex flex-col">
-                          <span className="text-[9.5px] font-black uppercase tracking-tight text-white m truncate max-w-[150px]">
-                            {tx.type === 'DEPOSIT' && `Dépôt via +225 ${tx.paymentNumber || ''}`}
-                            {tx.type === 'PAYMENT' && `${tx.serviceName || 'Paiement'}`}
-                            {tx.type === 'REFUND' && `Remboursement`}
-                          </span>
-                          <span className="text-[7.5px] font-medium text-slate-500 uppercase">
-                            {tx.dateStr || (tx.timestamp ? new Date(tx.timestamp).toLocaleString('fr-FR') : 'N/A')}
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <span className={`text-[10px] font-black tracking-tight ${
-                            tx.type === 'DEPOSIT' || tx.type === 'REFUND' ? 'text-green-400' : 'text-rose-400'
-                          }`}>
-                            {tx.type === 'DEPOSIT' || tx.type === 'REFUND' ? '+' : '-'}{tx.amount.toLocaleString('fr-FR')} FCFA
-                          </span>
-                          {tx.type === 'REFUND' && tx.reason && (
-                            <span className="text-[7.5px] font-bold text-slate-400 lowercase truncate max-w-[120px]">{tx.reason}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 
@@ -738,6 +722,88 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     </div>
   );
 
+  const renderHistoryView = () => (
+    <div className="bg-[#F3F3F3] h-full flex flex-col animate-in slide-in-from-right duration-300">
+      <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10 w-full">
+        <button onClick={() => setView('main')} className="p-2 -ml-2 hover:bg-gray-100 rounded-full active:scale-95 transition-transform flex items-center justify-center">
+          <BackIcon className="w-6 h-6 text-black"/>
+        </button>
+        <h1 className="flex-1 text-center font-black uppercase text-sm tracking-tight mr-10">Historique des Opérations</h1>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {walletTransactions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+            <svg className="w-12 h-12 mb-2 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-xs font-bold uppercase tracking-widest text-center">Aucune opération trouvée</p>
+          </div>
+        ) : (
+          <div className="space-y-3.5">
+            {walletTransactions.map((tx) => {
+              const isDeposit = tx.type === 'DEPOSIT' || tx.type === 'REFUND';
+              return (
+                <div key={tx.id} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between gap-3 animate-in fade-in duration-200">
+                  <div className="flex gap-2.5">
+                    {/* Visual icon badge */}
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                      tx.type === 'DEPOSIT' ? 'bg-green-50 text-green-600 border border-green-100' :
+                      tx.type === 'REFUND' ? 'bg-cyan-50 text-cyan-600 border border-cyan-100' :
+                      'bg-slate-50 text-slate-700 border border-slate-150'
+                    }`}>
+                      {tx.type === 'DEPOSIT' ? (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      ) : tx.type === 'REFUND' ? (
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 15H20" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4 animate-in zoom-in duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-normal">
+                        {tx.type === 'DEPOSIT' && `Dépôt de Fonds`}
+                        {tx.type === 'PAYMENT' && (tx.serviceName || `Débit Service`)}
+                        {tx.type === 'REFUND' && `Remboursement`}
+                      </span>
+                      {tx.paymentNumber && (
+                        <span className="text-[9px] font-extrabold text-[#33C4F3] uppercase tracking-normal">
+                          Depuis: +225 {tx.paymentNumber}
+                        </span>
+                      )}
+                      {tx.reason && (
+                        <span className="text-[9.5px] font-bold text-gray-500 italic mt-0.5 leading-tight">
+                          Motif: {tx.reason}
+                        </span>
+                      )}
+                      <span className="text-[8px] font-bold text-gray-400 mt-1 uppercase font-mono">
+                        {tx.dateStr || (tx.timestamp ? new Date(tx.timestamp).toLocaleString('fr-FR') : 'N/A')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end shrink-0">
+                    <span className={`text-xs font-black tracking-tight ${isDeposit ? 'text-green-600' : 'text-rose-600'}`}>
+                      {isDeposit ? '+' : '-'}{tx.amount.toLocaleString('fr-FR')} FCFA
+                    </span>
+                    <span className="text-[7.5px] font-black uppercase tracking-widest text-slate-300 mt-1">SÉCURISÉ</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="absolute inset-0 z-[100] flex justify-end" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div ref={overlayRef} className="absolute inset-0 bg-black/40 transition-opacity duration-300 opacity-0" onClick={handleClose}></div>
@@ -750,6 +816,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                         <ContactListView contacts={contacts} onDelete={handleDeleteContact} />
                     </div>
                 )}
+                {view === 'history' && renderHistoryView()}
             </main>
         </div>
         {showScanner && <ScannerOverlay onScan={handleScanResult} onClose={() => setShowScanner(false)} />}
