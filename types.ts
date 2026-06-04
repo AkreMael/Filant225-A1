@@ -37,6 +37,8 @@ export interface Notification {
   message: string;
   timestamp: number;
   isRead: boolean;
+  imageUrl?: string;
+  hasButton?: boolean;
 }
 
 export interface Worker {

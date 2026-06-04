@@ -1206,24 +1206,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div className={`px-3 py-1 border-2 border-slate-200 rounded-lg text-sm font-bold ${isClient ? 'text-slate-900 border-slate-200' : 'text-white border-white'} font-mono tracking-wider select-none bg-white/5 shadow-sm`}>
                         {formattedDate}
                     </div>
-                    {!isAdmin(user) && (
-                        <button 
-                            onClick={() => handleMainServiceClick('notifications')}
-                            className="relative active:scale-90 transition-transform focus:outline-none"
-                            aria-label="Notifications"
-                        >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-                                unreadNotifCount > 0 ? 'animate-blink-red-green' : ''
-                            }`}>
-                                <NotificationIcon />
-                            </div>
-                            {unreadNotifCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold px-1 rounded-full border border-white shadow-sm">
-                                    {unreadNotifCount}
-                                </span>
-                            )}
-                        </button>
-                    )}
                     {isAdmin(user) ? (
                         <button 
                             onClick={() => onNavigate('admin_dashboard')}

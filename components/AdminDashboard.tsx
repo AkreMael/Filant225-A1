@@ -29,7 +29,8 @@ import {
   X,
   FileText,
   Send,
-  Trash2
+  Trash2,
+  Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -54,7 +55,8 @@ type AdminTab =
   | 'equipments'
   | 'agencies'
   | 'companies'
-  | 'wallets';
+  | 'wallets'
+  | 'notifications';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -75,6 +77,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [refundAmount, setRefundAmount] = useState('');
   const [refundReason, setRefundReason] = useState('');
   const [isProcessingRefund, setIsProcessingRefund] = useState(false);
+  
+  // Notifications Admin States
+  const [notifImageUrl, setNotifImageUrl] = useState('');
+  const [notifMessage, setNotifMessage] = useState('');
+  const [notifHasButton, setNotifHasButton] = useState(false);
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
+  const [sendingCustomNotif, setSendingCustomNotif] = useState(false);
   
   // Data States
   const [data, setData] = useState<Record<string, any[]>>({
@@ -209,6 +218,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'payments' as AdminTab, label: 'Paiements', value: data.payments.length, unread: getUnreadCount('payments'), icon: CreditCard, color: 'text-orange-500' },
     { id: 'requests' as AdminTab, label: 'Demandes', value: data.requests.length, unread: getUnreadCount('requests'), icon: FileText, color: 'text-rose-500' },
     { id: 'scanner' as AdminTab, label: 'Scanner', value: data.scanner.length, unread: getUnreadCount('scanner'), icon: Scan, color: 'text-purple-500' },
+    { id: 'notifications' as AdminTab, label: 'Notifications', value: 'Créer', unread: 0, icon: Bell, color: 'text-rose-600' },
   ];
 
   const formatDate = (val: any) => {
@@ -585,6 +595,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'payments', label: 'Paiements', icon: CreditCard },
     { id: 'requests', label: 'Demandes clients', icon: FileText },
     { id: 'missions', label: 'Missions', icon: Send },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'workers', label: 'Travailleurs', icon: HardHat },
     { id: 'equipments', label: 'Équipements', icon: Factory },
     { id: 'agencies', label: 'Agences Immobilières', icon: Home },
@@ -635,6 +646,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       console.error("Error sending mission:", error);
     } finally {
       setSendingMission(false);
+    }
+  };
+
+  const handleSendCustomNotification = async () => {
+    if (!notifMessage.trim()) {
+      alert("Veuillez saisir un message de notification.");
+      return;
+    }
+    if (selectedRecipientIds.length === 0) {
+      alert("Veuillez sélectionner au moins un destinataire.");
+      return;
+    }
+
+    setSendingCustomNotif(true);
+    try {
+      const promises = selectedRecipientIds.map(async (phone) => {
+        await databaseService.sendNotificationToFirestore(phone, {
+          title: "Notification",
+          message: notifMessage.trim(),
+          imageUrl: notifImageUrl.trim() || undefined,
+          hasButton: notifHasButton
+        });
+      });
+
+      await Promise.all(promises);
+      alert(`Notification envoyée avec succès à ${selectedRecipientIds.length} utilisateur(s).`);
+      
+      // Clear form inputs
+      setNotifMessage('');
+      setNotifImageUrl('');
+      setNotifHasButton(false);
+      setSelectedRecipientIds([]);
+    } catch (err) {
+      console.error("Error sending custom notifications:", err);
+      alert("Une erreur est survenue lors de l'envoi de la notification.");
+    } finally {
+      setSendingCustomNotif(false);
     }
   };
 
@@ -1418,6 +1466,186 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 data.payments,
                 'Paiements'
               )}
+
+          {activeTab === 'notifications' && (() => {
+            const uniqueRecipients = Array.from(
+              new Map(
+                data.connections
+                  .filter((c: any) => c.phone || c.id)
+                  .map((c: any) => [ (c.phone || c.id).replace(/\D/g, ''), c ])
+              ).values()
+            ).map((c: any) => ({
+              id: (c.phone || c.id).replace(/\D/g, ''),
+              name: c.name || 'Utilisateur Inconnu',
+              phone: c.phone || c.id,
+              city: c.city || 'Non spécifiée'
+            }));
+
+            const filteredRecipients = uniqueRecipients.filter(u => 
+              u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+              u.phone.includes(searchTerm) || 
+              u.city.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            const handleToggleSelectAll = () => {
+              if (selectedRecipientIds.length === uniqueRecipients.length) {
+                setSelectedRecipientIds([]);
+              } else {
+                setSelectedRecipientIds(uniqueRecipients.map(u => u.id));
+              }
+            };
+
+            const handleToggleRecipient = (id: string) => {
+              setSelectedRecipientIds(prev => 
+                prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]
+              );
+            };
+
+            return (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="flex justify-between items-center bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-6 rounded-3xl shadow-xl">
+                  <div>
+                    <h2 className="text-xl font-black uppercase tracking-tight">Système de Notifications</h2>
+                    <p className="text-xs font-bold text-blue-100/80 uppercase tracking-wider mt-1">Diffusez des messages ciblés aux utilisateurs de l'application</p>
+                  </div>
+                  <div className="bg-white/10 p-3 rounded-2xl">
+                    <Bell size={24} className="text-white" />
+                  </div>
+                </div>
+
+                <div className="grid lg:grid-cols-5 gap-8">
+                  {/* Left Column - Form fields (3 cols) */}
+                  <div className="lg:col-span-3 bg-white dark:bg-slate-900 rounded-3xl shadow-md p-6 border border-gray-100 dark:border-slate-800 space-y-6">
+                    <h3 className="font-bold text-sm tracking-widest text-slate-400 dark:text-slate-500 uppercase">1. Contenu de la Notification</h3>
+                    
+                    <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-wider text-gray-400">Lien de l’image</label>
+                      <input 
+                        type="text" 
+                        value={notifImageUrl}
+                        onChange={e => setNotifImageUrl(e.target.value)}
+                        placeholder="Insérer l'URL de l'image (ex: https://i.supaimg.com/...)"
+                        className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-xs font-bold outline-none ring-0 focus:ring-2 focus:ring-blue-500/50 transition-all font-mono"
+                      />
+                      {notifImageUrl.trim() && (
+                        <div className="mt-2 border border-gray-100 dark:border-slate-800 rounded-2xl p-2 bg-gray-50 dark:bg-slate-900 flex justify-center">
+                          <img 
+                            src={notifImageUrl} 
+                            alt="Aperçu" 
+                            className="max-h-40 rounded-xl object-contain" 
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-wider text-gray-400">Texte de la notification</label>
+                      <textarea 
+                        value={notifMessage}
+                        onChange={e => setNotifMessage(e.target.value)}
+                        placeholder="Saisissez le texte ou le message à envoyer de façon claire..."
+                        rows={5}
+                        className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-xs font-bold outline-none ring-0 focus:ring-2 focus:ring-blue-500/50 transition-all"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-805/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-800">
+                      <input 
+                        type="checkbox" 
+                        id="hasButtonCheck"
+                        checked={notifHasButton}
+                        onChange={e => setNotifHasButton(e.target.checked)}
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 focus:ring-2"
+                      />
+                      <label htmlFor="hasButtonCheck" className="text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                        Afficher un bouton d’action dans la notification (Action pour fermer / confirmer)
+                      </label>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
+                      <button 
+                        onClick={handleSendCustomNotification}
+                        disabled={sendingCustomNotif || !notifMessage.trim() || selectedRecipientIds.length === 0}
+                        className="w-full bg-blue-600 text-white font-black py-4 px-6 rounded-2xl hover:bg-blue-700 active:scale-95 disabled:bg-gray-200 disabled:dark:bg-slate-805/50 disabled:text-gray-400 disabled:pointer-events-none transition-all text-xs font-mono tracking-widest uppercase flex items-center justify-center gap-2 shadow-xl shadow-blue-500/10"
+                      >
+                        {sendingCustomNotif ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                            Envoi en cours...
+                          </>
+                        ) : (
+                          <>
+                            <Send size={16} />
+                            Envoyer la notification ({selectedRecipientIds.length})
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right Column - Recipients selector (2 cols) */}
+                  <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl shadow-md p-6 border border-gray-100 dark:border-slate-800 flex flex-col h-[500px]">
+                    <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-800 mb-4">
+                      <h3 className="font-bold text-sm tracking-widest text-slate-400 dark:text-slate-500 uppercase">2. Destinataires</h3>
+                      <button 
+                        type="button"
+                        onClick={handleToggleSelectAll}
+                        className="text-[10px] font-black uppercase text-blue-600 hover:text-blue-850 hover:underline"
+                      >
+                        {selectedRecipientIds.length === uniqueRecipients.length ? "Désélectionner tout" : "Tout sélectionner"}
+                      </button>
+                    </div>
+
+                    {/* Scrollable Recipients list */}
+                    <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide">
+                      {filteredRecipients.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
+                          <AlertCircle size={24} className="mb-2" />
+                          <p className="text-xs font-bold uppercase tracking-wider">Aucun utilisateur trouvé</p>
+                          {searchTerm && <p className="text-[10px] mt-1">Ajustez votre terme de recherche</p>}
+                        </div>
+                      ) : (
+                        filteredRecipients.map((recipient) => {
+                          const isSelected = selectedRecipientIds.includes(recipient.id);
+                          return (
+                            <div 
+                              key={recipient.id}
+                              onClick={() => handleToggleRecipient(recipient.id)}
+                              className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer hover:bg-gray-50/50 dark:hover:bg-slate-805/45 border transition-all ${
+                                isSelected 
+                                  ? 'border-blue-500/30 bg-blue-50/10' 
+                                  : 'border-gray-50 dark:border-slate-800'
+                              }`}
+                            >
+                              <input 
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}} // Swallowed: handeled by container onClick
+                                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 focus:ring-2 pointer-events-none"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">{recipient.name}</p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate mt-0.5">{recipient.city} • {recipient.phone}</p>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 text-right">
+                      <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                        {selectedRecipientIds.length} / {uniqueRecipients.length} Sélectionnés
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
               {activeTab === 'requests' && (
                 <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-slate-800">
