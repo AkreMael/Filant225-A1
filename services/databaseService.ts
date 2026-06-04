@@ -143,7 +143,6 @@ const workerDataList = [
   { name: 'Femme de ménage', description: 'Entretien ménager rigoureux et soins à domicile.', category: 'Disponible' },
   { name: 'Caissier', description: 'Gère les paiements, la caisse et l’accueil dans les commerces.', category: 'Disponible' },
   { name: 'Réceptionniste', description: 'Accueille les clients dans hôtels, entreprises ou agences.', category: 'Disponible' },
-  { name: 'Nounou', description: 'Garde les enfants, aide aux devoirs et accompagne la famille.', category: 'Disponible' },
   { name: 'Baby-sitter', description: 'Garde les enfants de façon ponctuelle ou régulière.', category: 'Disponible' },
   { name: 'Jardinier', description: 'Entretient les jardins, pelouses, fleurs et espaces verts.', category: 'Disponible' },
   { name: 'Couturier', description: 'Coupe, confectionne et retouche des vêtements.', category: 'Disponible' },

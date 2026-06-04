@@ -235,7 +235,6 @@ export const SEARCHABLE_TITLES = [
     { title: "Femme de ménage", type: "worker" },
     { title: "Caissier", type: "worker" },
     { title: "Réceptionniste", type: "worker" },
-    { title: "Nounou", type: "worker" },
     { title: "Baby-sitter", type: "worker" },
     { title: "Jardinier", type: "worker" },
     { title: "Couturier", type: "worker" },

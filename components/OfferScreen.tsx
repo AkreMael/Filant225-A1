@@ -57,7 +57,6 @@ const SEARCHABLE_TITLES = [
     { title: "Femme de ménage", type: "worker" },
     { title: "Caissier", type: "worker" },
     { title: "Réceptionniste", type: "worker" },
-    { title: "Nounou", type: "worker" },
     { title: "Baby-sitter", type: "worker" },
     { title: "Jardinier", type: "worker" },
     { title: "Couturier", type: "worker" },
@@ -140,7 +139,6 @@ const carouselItems = [
     { title: "Animateur (d’événements)", name: "Mariam", city: "Bouaké", description: "Maçonnerie et rénovation", price: "1 000 000 F", img: INTERV_IMAGES.macon },
     { title: "Cuisinier / hôtel Pro", name: "Bintou", city: "Yamoussoukro", description: "Peinture et finitions", price: "35 000 F", img: INTERV_IMAGES.peintre },
     { title: "Vendeuse (en boutique)", name: "Kore", city: "San-Pédro", description: "Réalisation et montage vidéo pro", price: "50 000 F", img: INTERV_IMAGES.videaste },
-    { title: "Nounou / Garde d’enfants", name: "Puck", city: "Daloa", description: "Soutien et soins aux malades", price: "40 000 F", img: INTERV_IMAGES.garde_malade },
     { title: "Technicien (sonorisation)", name: "Fenrir", city: "Korhogo", description: "Assistance quotidienne à domicile", price: "30 000 F", img: INTERV_IMAGES.aide_domicile },
 ];
 

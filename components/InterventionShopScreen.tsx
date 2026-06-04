@@ -216,7 +216,6 @@ const generalWorkerDataList = [
     { title: 'Femme de ménage', description: 'Entretien ménager rigoureux de maisons.', category: 'worker' },
     { title: 'Caissier', description: 'Opérations d’encaissement et suivi de caisse.', category: 'worker' },
     { title: 'Réceptionniste', description: 'Accueil hôtels et agences.', category: 'worker' },
-    { title: 'Nounou', description: 'Garde éducative d’enfants à domicile.', category: 'worker' },
     { title: 'Baby-sitter', description: 'Garde ponctuelle d’enfants pour vous soulager.', category: 'worker' },
     { title: 'Jardinier', description: 'Entretien jardins et pelouses.', category: 'worker' },
     { title: 'Couturier', description: 'Coupe et couture de vêtements de tout type.', category: 'worker' },
