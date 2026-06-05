@@ -1075,12 +1075,12 @@ const App: React.FC = () => {
 
             <AnimatePresence>
               {activeNotificationModal && (
-                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
                   <motion.div 
-                    initial={{ scale: 0.9, opacity: 0 }}
+                    initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-gray-100 dark:border-slate-800 overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-300"
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    className="w-full max-w-sm rounded-[2rem] shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative border-none bg-slate-900"
                   >
                     {/* Dismiss X button on top right */}
                     <button 
@@ -1090,21 +1090,21 @@ const App: React.FC = () => {
                         }
                         setActiveNotificationModal(null);
                       }}
-                      className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors"
+                      className="absolute top-4 right-4 z-[2010] w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white border-2 border-white/60 transition-all shadow-md active:scale-90"
                       aria-label="Fermer"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <svg className="w-5 h-5 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
 
-                    {/* Image space if present */}
+                    {/* Image space if present - Full format, Borderless, Fits to edges */}
                     {activeNotificationModal.imageUrl && (
-                      <div className="w-full h-48 bg-slate-50 dark:bg-slate-950 relative overflow-hidden border-b border-gray-100 dark:border-slate-800 pt-3 flex items-center justify-center">
+                      <div className="w-full bg-slate-900 overflow-hidden flex items-center justify-center">
                         <img 
                           src={activeNotificationModal.imageUrl} 
                           alt="Notification" 
-                          className="w-full h-full object-contain filter drop-shadow-md"
+                          className="w-full h-auto max-h-[65vh] object-cover block"
                           referrerPolicy="no-referrer"
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = 'none';
@@ -1113,24 +1113,16 @@ const App: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Text / Message area */}
-                    <div className="p-6 text-center space-y-3">
-                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
+                    {/* Blue Banner - Under the image with no background spacing */}
+                    <div className="bg-[#0B01AA] text-white p-5 flex items-center justify-between gap-4 w-full">
+                      <div className="flex-1">
+                        <p className="text-white text-sm sm:text-base font-bold leading-snug">
+                          {activeNotificationModal.message}
+                        </p>
                       </div>
-                      <h4 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                        {activeNotificationModal.title || "Notification"}
-                      </h4>
-                      <p className="text-sm font-semibold text-slate-600 dark:text-slate-350 leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto pr-1">
-                        {activeNotificationModal.message}
-                      </p>
-                    </div>
-
-                    {/* Button space ONLY if enabled by Admin */}
-                    {activeNotificationModal.hasButton && (
-                      <div className="p-6 pt-0">
+                      
+                      {/* Button space ONLY if enabled by Admin */}
+                      {activeNotificationModal.hasButton && (
                         <button 
                           onClick={() => {
                             if (currentUser?.phone) {
@@ -1138,12 +1130,12 @@ const App: React.FC = () => {
                             }
                             setActiveNotificationModal(null);
                           }}
-                          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black uppercase text-xs font-mono tracking-widest rounded-2xl transition-all duration-200 active:scale-95 shadow-lg shadow-blue-500/20"
+                          className="bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs px-5 py-2.5 rounded-2xl transition-all duration-200 shadow-md whitespace-nowrap shrink-0"
                         >
-                          Compris
+                          cliquez ici
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </motion.div>
                 </div>
               )}
