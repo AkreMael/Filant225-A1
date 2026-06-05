@@ -16,9 +16,10 @@ interface DemandeRechercheScreenProps {
   onBack: () => void;
   user: User;
   onSelectTab: (tab: Tab) => void;
+  initialQuery?: string;
 }
 
-export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ onBack, user, onSelectTab }) => {
+export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ onBack, user, onSelectTab, initialQuery }) => {
   const [queryInput, setQueryInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<InscriptionResult[] | null>(null);
@@ -80,6 +81,69 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     };
     fetchDBInscriptions();
   }, []);
+
+  // Run automatic search if initialQuery prop is set
+  useEffect(() => {
+    if (initialQuery && inscriptionsFromDB.length > 0) {
+      setQueryInput(initialQuery);
+      
+      const normalizedTerm = initialQuery.toLowerCase();
+      const matches: InscriptionResult[] = inscriptionsFromDB
+        .filter((item: any) => {
+          if (item.isActive === false) return false;
+          
+          const textToSearch = [
+            item.name,
+            item.city,
+            item.profileType,
+            item.job,
+            item.equipmentType,
+            item.equipmentCategory,
+            item.agencyName,
+            item.propertyTypes,
+            item.companyName,
+            item.companyDomain,
+            item.companyServices,
+            item.equipmentDescription,
+            item.skillsDescription
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+          return textToSearch.includes(normalizedTerm);
+        })
+        .map((item: any) => {
+          let titleOrActivity = '';
+          if (item.profileType === 'Travailleur') {
+            titleOrActivity = item.job || 'Travailleur Qualifié';
+          } else if (item.profileType === 'Propriétaire') {
+            titleOrActivity = `${item.equipmentType || item.equipmentCategory || 'Équipement'}`;
+          } else if (item.profileType === 'Agence' || item.profileType === 'Agence immobilière') {
+            titleOrActivity = item.agencyName || 'Agence Immobilière';
+            if (item.propertyTypes) {
+              titleOrActivity += ` (${item.propertyTypes})`;
+            }
+          } else if (item.profileType === 'Entreprise') {
+            titleOrActivity = item.companyName || 'Entreprise';
+            if (item.companyDomain) {
+              titleOrActivity += ` (${item.companyDomain})`;
+            }
+          }
+
+          return {
+            id: item.id || Math.random().toString(),
+            name: item.name || item.agencyName || item.companyName || 'Prestataire',
+            city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
+            profileType: (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur',
+            titleOrActivity,
+            description: item.skillsDescription || item.equipmentDescription || item.companyServices || ''
+          };
+        });
+
+      setResults(matches);
+    }
+  }, [initialQuery, inscriptionsFromDB]);
 
   const handleSearch = () => {
     const term = queryInput.trim();

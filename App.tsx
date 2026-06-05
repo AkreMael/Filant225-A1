@@ -415,6 +415,7 @@ const App: React.FC = () => {
   const [lastNotificationId, setLastNotificationId] = useState<string | null>(null);
   const [activeNotificationModal, setActiveNotificationModal] = useState<Notification | null>(null);
   const [locationInitialTab, setLocationInitialTab] = useState<'appartement' | 'equipement'>('appartement');
+  const [demandeRechercheInitialQuery, setDemandeRechercheInitialQuery] = useState<string>('');
   const [interactiveModalContext, setInteractiveModalContext] = useState<InteractiveModalContext | null>(null);
   const [shopCategory, setShopCategory] = useState<'intervention' | 'immobilier' | 'equipement' | 'travailleurs'>('intervention');
 
@@ -677,6 +678,29 @@ const App: React.FC = () => {
       setMenuView(view);
   };
 
+  const handleNotificationButtonAction = (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche', searchFilter?: string) => {
+    switch (action) {
+      case 'travailleurs':
+        navigateTo({ activeTab: Tab.Menu, menuView: 'worker_list' });
+        break;
+      case 'equipements':
+        setLocationInitialTab('equipement');
+        navigateTo({ activeTab: Tab.Menu, menuView: 'location_hub' });
+        break;
+      case 'agences':
+        setLocationInitialTab('appartement');
+        navigateTo({ activeTab: Tab.Menu, menuView: 'location_hub' });
+        break;
+      case 'recherche':
+        setDemandeRechercheInitialQuery(searchFilter || '');
+        navigateTo({ activeTab: Tab.Menu, menuView: 'demande_recherche' });
+        break;
+      default:
+        navigateTo({ activeTab: Tab.Menu, menuView: 'hub' });
+        break;
+    }
+  };
+
   const handleScanResultGlobal = (data: string) => {
     setShowScannerGlobal(false);
     
@@ -832,6 +856,7 @@ const App: React.FC = () => {
               setActiveTab(tab);
               setMenuView('hub');
             }}
+            initialQuery={demandeRechercheInitialQuery}
           />;
           break;
         case 'admin_dashboard':
@@ -1114,27 +1139,51 @@ const App: React.FC = () => {
                     )}
 
                     {/* Blue Banner - Under the image with no background spacing */}
-                    <div className="bg-[#0B01AA] text-white p-5 flex items-center justify-between gap-4 w-full">
-                      <div className="flex-1">
+                    <div className="bg-[#0B01AA] text-white p-5 flex flex-col gap-4 w-full">
+                      <div>
                         <p className="text-white text-sm sm:text-base font-bold leading-snug">
                           {activeNotificationModal.message}
                         </p>
                       </div>
                       
                       {/* Button space ONLY if enabled by Admin */}
-                      {activeNotificationModal.hasButton && (
-                        <button 
-                          onClick={() => {
-                            if (currentUser?.phone) {
-                              databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
-                            }
-                            setActiveNotificationModal(null);
-                          }}
-                          className="bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs px-5 py-2.5 rounded-2xl transition-all duration-200 shadow-md whitespace-nowrap shrink-0"
-                        >
-                          cliquez ici
-                        </button>
-                      )}
+                      <div className="flex flex-col gap-2.5 w-full">
+                        {/* Classic Single Button Fallback */}
+                        {activeNotificationModal.hasButton && (!activeNotificationModal.buttons || activeNotificationModal.buttons.length === 0) && (
+                          <button 
+                            onClick={() => {
+                              if (currentUser?.phone) {
+                                databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
+                              }
+                              setActiveNotificationModal(null);
+                            }}
+                            className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
+                          >
+                            cliquez ici
+                          </button>
+                        )}
+
+                        {/* Multiple Dynamic Redirection Buttons */}
+                        {activeNotificationModal.buttons && activeNotificationModal.buttons.length > 0 && (
+                          <div className="grid grid-cols-1 gap-2.5 w-full">
+                            {activeNotificationModal.buttons.map((btn, idx) => (
+                              <button 
+                                key={idx}
+                                onClick={() => {
+                                  if (currentUser?.phone) {
+                                    databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
+                                  }
+                                  setActiveNotificationModal(null);
+                                  handleNotificationButtonAction(btn.action, btn.searchFilter);
+                                }}
+                                className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
+                              >
+                                {btn.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 </div>

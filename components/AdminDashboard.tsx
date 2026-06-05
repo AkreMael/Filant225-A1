@@ -84,6 +84,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [notifHasButton, setNotifHasButton] = useState(false);
   const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
   const [sendingCustomNotif, setSendingCustomNotif] = useState(false);
+  const [notifButtonTravailleurs, setNotifButtonTravailleurs] = useState(false);
+  const [notifButtonEquipements, setNotifButtonEquipements] = useState(false);
+  const [notifButtonAgences, setNotifButtonAgences] = useState(false);
+  const [notifButtonRecherche, setNotifButtonRecherche] = useState(false);
   
   // Data States
   const [data, setData] = useState<Record<string, any[]>>({
@@ -659,6 +663,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       return;
     }
 
+    const buttonsList: any[] = [];
+    if (notifButtonTravailleurs) {
+      buttonsList.push({ label: "Formulaire Travailleurs", action: "travailleurs" });
+    }
+    if (notifButtonEquipements) {
+      buttonsList.push({ label: "Location d’équipements", action: "equipements" });
+    }
+    if (notifButtonAgences) {
+      buttonsList.push({ label: "Agences immobilières", action: "agences" });
+    }
+    if (notifButtonRecherche) {
+      buttonsList.push({ label: "Recherche", action: "recherche" });
+    }
+
     setSendingCustomNotif(true);
     try {
       const promises = selectedRecipientIds.map(async (phone) => {
@@ -666,7 +684,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           title: "Notification",
           message: notifMessage.trim(),
           imageUrl: notifImageUrl.trim() || undefined,
-          hasButton: notifHasButton
+          hasButton: notifHasButton || buttonsList.length > 0,
+          buttons: buttonsList.length > 0 ? buttonsList : undefined
         });
       });
 
@@ -677,6 +696,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setNotifMessage('');
       setNotifImageUrl('');
       setNotifHasButton(false);
+      setNotifButtonTravailleurs(false);
+      setNotifButtonEquipements(false);
+      setNotifButtonAgences(false);
+      setNotifButtonRecherche(false);
       setSelectedRecipientIds([]);
     } catch (err) {
       console.error("Error sending custom notifications:", err);
@@ -1561,8 +1584,73 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 focus:ring-2"
                       />
                       <label htmlFor="hasButtonCheck" className="text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-                        Afficher un bouton d’action dans la notification (Action pour fermer / confirmer)
+                        Afficher un bouton d’action classique dans la notification ("Compris" pour confirmer)
                       </label>
+                    </div>
+
+                    <div className="space-y-4 bg-gray-50 dark:bg-slate-805/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-800">
+                      <div>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">Boutons de redirection dynamique</h4>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-relaxed">Ajoutez des boutons de redirection directe vers les différentes sections de l'application :</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                          notifButtonTravailleurs 
+                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          <input 
+                            type="checkbox" 
+                            checked={notifButtonTravailleurs}
+                            onChange={e => setNotifButtonTravailleurs(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="text-xs font-bold font-mono tracking-tight">Formulaire Travailleurs</span>
+                        </label>
+
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                          notifButtonEquipements 
+                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          <input 
+                            type="checkbox" 
+                            checked={notifButtonEquipements}
+                            onChange={e => setNotifButtonEquipements(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="text-xs font-bold font-mono tracking-tight">Location équipement</span>
+                        </label>
+
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                          notifButtonAgences 
+                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          <input 
+                            type="checkbox" 
+                            checked={notifButtonAgences}
+                            onChange={e => setNotifButtonAgences(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="text-xs font-bold font-mono tracking-tight">Agences immobilières</span>
+                        </label>
+
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                          notifButtonRecherche 
+                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          <input 
+                            type="checkbox" 
+                            checked={notifButtonRecherche}
+                            onChange={e => setNotifButtonRecherche(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="text-xs font-bold font-mono tracking-tight">Recherche</span>
+                        </label>
+                      </div>
                     </div>
 
                     <div className="pt-4 border-t border-gray-100 dark:border-slate-800">

@@ -31,6 +31,12 @@ export interface User {
   idCardStatus?: string;
 }
 
+export interface NotificationButton {
+  label: string;
+  action: 'travailleurs' | 'equipements' | 'agences' | 'recherche';
+  searchFilter?: string; // Optional filter for search
+}
+
 export interface Notification {
   id: string;
   title: string;
@@ -39,6 +45,7 @@ export interface Notification {
   isRead: boolean;
   imageUrl?: string;
   hasButton?: boolean;
+  buttons?: NotificationButton[];
 }
 
 export interface Worker {
