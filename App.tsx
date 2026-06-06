@@ -141,7 +141,7 @@ const App: React.FC = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminForceAppView, setAdminForceAppView] = useState(false);
   const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>('hub');
-  const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Assistant' | 'Privee' } | null>(null);
+  const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Privee' } | null>(null);
   const [offerSubView, setOfferSubView] = useState<'main' | 'shop'>('main');
   
   const [navHistory, setNavHistory] = useState<NavigationPoint[]>([]);
@@ -189,14 +189,13 @@ const App: React.FC = () => {
 
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [privateUnreadCount, setPrivateUnreadCount] = useState(0);
-  const [assistantUnreadCount, setAssistantUnreadCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   useEffect(() => {
     if (!isAdmin(currentUser)) {
-      setUnreadChatCount(privateUnreadCount + assistantUnreadCount);
+      setUnreadChatCount(privateUnreadCount);
     }
-  }, [privateUnreadCount, assistantUnreadCount, currentUser]);
+  }, [privateUnreadCount, currentUser]);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   useEffect(() => {
@@ -546,14 +545,8 @@ const App: React.FC = () => {
         setPrivateUnreadCount(count);
       });
 
-      // Counter for Assistant Messages
-      const unsubAssistant = databaseService.onUnreadAssistantMessagesCount(chatUserId, (count) => {
-        setAssistantUnreadCount(count);
-      });
-
       return () => {
         unsubPrivate();
-        unsubAssistant();
       };
     }
   }, [currentUser?.phone, currentUser?.userId, currentUser?.id, currentUser?.name, isAuthReady]);

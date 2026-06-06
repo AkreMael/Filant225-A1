@@ -39,7 +39,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface AdminDashboardProps {
   onBack: () => void;
   user: User;
-  onOpenChat: (userId: string, userName: string, type: 'Assistant' | 'Privee') => void;
+  onOpenChat: (userId: string, userName: string, type: 'Privee') => void;
   onSwitchToApp?: () => void;
 }
 
@@ -47,7 +47,6 @@ type AdminTab =
   | 'overview' 
   | 'connections' 
   | 'inscriptions'
-  | 'assistant'
   | 'qrcodes'
   | 'private' 
   | 'scanner' 
@@ -107,7 +106,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     connections: [],
     inscriptions: [],
     qrCodes: [],
-    assistant: [],
     privateMsgs: [],
     scanner: [],
     payments: [],
@@ -140,10 +138,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setData(prev => ({ ...prev, qrCodes: snap.docs.map(doc => ({ ...doc.data(), id: doc.id })) }));
     });
 
-    // 3a. Messagerie Assistant
-    const unsubAssistant = onSnapshot(query(collection(db, 'MessagerieAssistant'), orderBy('timestamp', 'desc'), limit(300)), (snap) => {
-      setData(prev => ({ ...prev, assistant: snap.docs.map(doc => ({ ...doc.data(), id: doc.id })) }));
-    });
+
 
     // 3b. Messagerie Privée (Manual Chats)
     const unsubPrivate = onSnapshot(query(collection(db, 'MessageriePrivee'), orderBy('timestamp', 'desc'), limit(300)), (snap) => {
@@ -197,7 +192,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     return () => {
       unsubConns();
       unsubInscriptions();
-      unsubAssistant();
       unsubPrivate();
       unsubScans();
       unsubPayments();
@@ -213,7 +207,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     switch (tabId) {
       case 'connections': return data.connections.filter(i => i.adminReadStatus === 'NON LU').length;
       case 'inscriptions': return data.inscriptions.filter(i => i.adminReadStatus === 'NON LU').length;
-      case 'assistant': return data.assistant.filter(i => i.adminReadStatus === 'NON LU').length;
       case 'qrcodes': return data.qrCodes.filter(i => i.adminReadStatus === 'NON LU').length;
       case 'private': return data.privateMsgs.filter(i => i.adminReadStatus === 'NON LU').length;
       case 'scanner': return data.scanner.filter(i => i.adminReadStatus === 'NON LU').length;
@@ -230,7 +223,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
   const stats = [
     { id: 'inscriptions' as AdminTab, label: 'Inscriptions', value: data.inscriptions.length, unread: getUnreadCount('inscriptions'), icon: Briefcase, color: 'text-blue-500' },
-    { id: 'assistant' as AdminTab, label: 'Assistant', value: data.assistant.length, unread: getUnreadCount('assistant'), icon: MessageSquare, color: 'text-indigo-500' },
     { id: 'private' as AdminTab, label: 'Privé', value: data.privateMsgs.length, unread: getUnreadCount('private'), icon: Mail, color: 'text-green-500' },
     { id: 'payments' as AdminTab, label: 'Paiements', value: data.payments.length, unread: getUnreadCount('payments'), icon: CreditCard, color: 'text-orange-500' },
     { id: 'requests' as AdminTab, label: 'Demandes', value: data.requests.length, unread: getUnreadCount('requests'), icon: FileText, color: 'text-rose-500' },
@@ -265,11 +257,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       if (itemToDelete.rtdbPath) {
         const { remove, ref } = await import('firebase/database');
         await remove(rtdbRef(rtdb, itemToDelete.rtdbPath));
-      } else if (itemToDelete.collectionName === 'MessageriePrivee_Thread' || itemToDelete.collectionName === 'MessagerieAssistant_Thread') {
+      } else if (itemToDelete.collectionName === 'MessageriePrivee_Thread') {
         const { deleteDoc, doc, getDocs, collection, query, where, writeBatch } = await import('firebase/firestore');
         
-        const type = itemToDelete.collectionName === 'MessageriePrivee_Thread' ? 'Privee' : 'Assistant';
-        const collectionName = `Messagerie${type}`;
+        const collectionName = 'MessageriePrivee';
         
         const batch = writeBatch(db);
 
@@ -605,7 +596,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'connections', label: 'Connexions', icon: BarChart3 },
     { id: 'inscriptions', label: 'Inscriptions', icon: Briefcase },
     { id: 'wallets', label: 'Compte des utilisateurs', icon: Users },
-    { id: 'assistant', label: 'Messagerie Assistant', icon: MessageSquare },
     { id: 'qrcodes', label: 'Gestion QR Code', icon: QrCode },
     { id: 'private', label: 'Messagerie Privée', icon: Mail },
     { id: 'scanner', label: 'Scanner', icon: Scan },
@@ -773,7 +763,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     handleUpdateReadStatus('ServiceRequests', req.id, req.adminReadStatus);
   };
 
-  const handleOpenConversation = (userId: string, name: string, messages: any[], type: 'Assistant' | 'Privee') => {
+  const handleOpenConversation = (userId: string, name: string, messages: any[], type: 'Privee' = 'Privee') => {
     setViewingConversation({ id: userId, name, messages });
     onOpenChat(userId, name, type);
     
@@ -1043,102 +1033,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 'QRCodeActivations'
               )}
 
-              {activeTab === 'assistant' && (
-                <div className="space-y-6">
-                  {(() => {
-                    const messagesByUser: Record<string, any[]> = {};
-                    data.assistant.forEach(msg => {
-                      const key = msg.userId || msg.phone || 'Inconnu';
-                      if (!messagesByUser[key]) messagesByUser[key] = [];
-                      messagesByUser[key].push(msg);
-                    });
 
-                    const allUserKeys = Array.from(new Set([
-                      ...data.connections.map(c => c.userId || c.phone),
-                      ...Object.keys(messagesByUser)
-                    ])).filter(key => key && key !== 'Inconnu');
-
-                    return allUserKeys.map(userId => {
-                        const messages = messagesByUser[userId] || [];
-                        const connection = data.connections.find(k => (k.userId || k.phone) === userId);
-                        const userName = connection?.name || messages[0]?.userName || 'Utilisateur';
-                        const lastActivity = Math.max(
-                          connection?.timestamp ? (typeof connection.timestamp === 'number' ? connection.timestamp : (connection.timestamp?.seconds ? connection.timestamp.seconds * 1000 : 0)) : 0,
-                          ...messages.map(m => m.timestamp?.toMillis ? m.timestamp.toMillis() : (m.timestamp || 0))
-                        );
-                        return { userId, userName, messages, lastActivity };
-                      })
-                      .filter(u => {
-                        if (u.messages.length === 0) return false;
-                        if (!searchTerm) return true;
-                        const term = searchTerm.toLowerCase();
-                        return u.userName.toLowerCase().includes(term) || u.userId.toLowerCase().includes(term);
-                      })
-                      .sort((a, b) => b.lastActivity - a.lastActivity)
-                      .map((userGroup, i) => {
-                        const { userId, userName, messages } = userGroup;
-                        const hasUnread = messages.some(m => m.adminReadStatus === 'NON LU');
-                        return (
-                          <div 
-                            key={i} 
-                            onClick={() => handleOpenConversation(userId, userName, messages, 'Assistant')}
-                            className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-xl border overflow-hidden transition-all cursor-pointer hover:shadow-2xl active:scale-[0.99] ${hasUnread ? 'border-amber-400 shadow-amber-500/10' : 'border-gray-100 dark:border-slate-800'}`}
-                          >
-                            <div className="bg-gray-50/50 dark:bg-slate-800/30 px-6 py-4 flex justify-between items-center border-b border-gray-100 dark:border-slate-800">
-                              <div className="flex items-center gap-3">
-                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[10px] font-black ${hasUnread ? 'bg-amber-500 animate-pulse' : 'bg-indigo-600'}`}>
-                                   {userName?.charAt(0) || 'U'}
-                                 </div>
-                               <div className="flex flex-col">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">
-                                        {userName || 'Utilisateur'}
-                                      </span>
-                                  {hasUnread && (
-                                    <span className="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded-full">
-                                      Nouveau
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
-                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                              <div className="relative group">
-                                  <button 
-                                      onClick={() => handleOpenConversation(userId, userName, messages, 'Assistant')}
-                                      className="bg-indigo-600/10 text-indigo-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase hover:bg-indigo-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
-                                  >
-                                      <MessageSquare size={14} />
-                                      Répondre (Assistant)
-                                  </button>
-                                  
-                                  {messages.filter(m => m.adminReadStatus === 'NON LU').length > 0 && (
-                                  <button 
-                                      onClick={() => handleOpenConversation(userId, userName, messages, 'Assistant')}
-                                      className="absolute -top-2 -right-2 bg-red-500 text-white min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-lg"
-                                  >
-                                      {messages.filter(m => m.adminReadStatus === 'NON LU').length}
-                                  </button>
-                                )}
-                              </div>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setItemToDelete({ id: userId, collectionName: 'MessagerieAssistant_Thread' });
-                                }}
-                                className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                          </div>
-                          </div>
-                        </div>
-                        );
-                    });
-                  })()}
-                </div>
-              )}
 
               {activeTab === 'private' && (
                 <div className="space-y-6">

@@ -699,7 +699,6 @@ export const databaseService = {
             sender: 'user',
             type: 'inscription_submission'
           };
-          await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, userMsg);
           await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, userMsg);
         } catch (msgErr) {
           console.error("Error sending user inscription message to chat:", msgErr);
@@ -723,7 +722,6 @@ export const databaseService = {
               isRead: false,
               adminReadStatus: 'LU'
             };
-            await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, autoMsg);
             await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
           } catch (msgErr) {
             console.error("Error sending auto message after inscription:", msgErr);
@@ -746,24 +744,22 @@ export const databaseService = {
           try {
             const activity = inscriptionData.job || inscriptionData.equipmentType || inscriptionData.agencyName || inscriptionData.companyName || 'Inscrit';
             const userMsg = {
-              text: `📝 *Nouveau Formulaire d'Inscription Soumis*\n\nJe viens de terminer mon inscription sur FILANT°225.\n\n• *Nom :* ${inscriptionData.name || 'Utilisateur'}\n• *Ville :* ${inscriptionData.city || 'Non spécifiée'}\n• *Type de Profil :* ${inscriptionData.profileType || 'Inscrit'}\n• *Activité/Catégorie :* ${activity}`,
-              sender: 'user',
-              type: 'inscription_submission'
-            };
-            await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, userMsg);
-            await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, userMsg);
+            text: `📝 *Nouveau Formulaire d'Inscription Soumis*\n\nJe viens de terminer mon inscription sur FILANT°225.\n\n• *Nom :* ${inscriptionData.name || 'Utilisateur'}\n• *Ville :* ${inscriptionData.city || 'Non spécifiée'}\n• *Type de Profil :* ${inscriptionData.profileType || 'Inscrit'}\n• *Activité/Catégorie :* ${activity}`,
+            sender: 'user',
+            type: 'inscription_submission'
+          };
+          await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, userMsg);
 
-            setTimeout(async () => {
-              try {
-                const autoMsg = {
-                  text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
-                  sender: 'admin',
-                  isRead: false,
-                  adminReadStatus: 'LU'
-                };
-                await databaseService.saveTypedChatMessage('Assistant', sanitizedPhone, autoMsg);
-                await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
-              } catch (msgErr) {
+          setTimeout(async () => {
+            try {
+              const autoMsg = {
+                text: "Merci pour votre inscription. Votre dossier a bien été reçu. Nous allons examiner vos informations et vous contacter dans les meilleurs délais. Veuillez suivre les différentes étapes de l'application pour finaliser votre mise en relation.",
+                sender: 'admin',
+                isRead: false,
+                adminReadStatus: 'LU'
+              };
+              await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
+            } catch (msgErr) {
                 console.error("Error sending auto message after inscription fallback:", msgErr);
               }
             }, 1250);
@@ -1061,10 +1057,8 @@ export const databaseService = {
   },
 
   saveChatMessage: (phone: string, message: StoredChatMessage) => {
-      // Logic removed as we now use saveAssistantChatMessage or savePrivateChatMessage specifically.
-      // Keeping this as a shell to prevent breakage in legacy code, redirecting to Assistant as default.
       const chatUserId = phone.replace(/\D/g, '');
-      databaseService.saveAssistantChatMessage(chatUserId, message);
+      databaseService.savePrivateChatMessage(chatUserId, message);
   },
 
   syncChatMessageToFirestore: async (phone: string, message: StoredChatMessage) => {
@@ -1201,7 +1195,7 @@ export const databaseService = {
 
   saveAssistantRequest: async (requestData: any) => {
     const userId = (requestData.phone || requestData.userId || '').replace(/\D/g, '');
-    return databaseService.saveTypedChatMessage('Assistant', userId, {
+    return databaseService.saveTypedChatMessage('Privee', userId, {
       ...requestData,
       type: 'assistant_request'
     });
@@ -1285,7 +1279,6 @@ export const databaseService = {
             isRead: false,
             adminReadStatus: 'LU'
           };
-          await databaseService.saveTypedChatMessage('Assistant', userPhone, msg);
           await databaseService.saveTypedChatMessage('Privee', userPhone, msg);
         }
       } else {
@@ -1330,7 +1323,6 @@ export const databaseService = {
             isRead: false,
             adminReadStatus: 'LU'
           };
-          await databaseService.saveTypedChatMessage('Assistant', userId, msg);
           await databaseService.saveTypedChatMessage('Privee', userId, msg);
         }
       }
@@ -1367,7 +1359,6 @@ export const databaseService = {
           isRead: false,
           adminReadStatus: 'LU'
         };
-        await databaseService.saveTypedChatMessage('Assistant', userId, msg);
         await databaseService.saveTypedChatMessage('Privee', userId, msg);
       }
     } catch (e) {
@@ -1424,7 +1415,6 @@ export const databaseService = {
               isRead: false,
               adminReadStatus: 'LU'
             };
-            await databaseService.saveTypedChatMessage('Assistant', userId, autoMsg);
             await databaseService.saveTypedChatMessage('Privee', userId, autoMsg);
           } catch (msgErr) {
             console.error("Error sending auto message after service request:", msgErr);
@@ -1532,27 +1522,11 @@ export const databaseService = {
 
   onTotalUnreadAdminMessagesCount: (callback: (count: number) => void) => {
     try {
-      // We listen to the global collections for 'NON LU' messages
-      const qAssistant = query(collection(db, 'MessagerieAssistant'), where('adminReadStatus', '==', 'NON LU'));
       const qPrivate = query(collection(db, 'MessageriePrivee'), where('adminReadStatus', '==', 'NON LU'));
       
-      let assistantUnread = 0;
-      let privateUnread = 0;
-
-      const unsubA = onSnapshot(qAssistant, (snap) => {
-        assistantUnread = snap.size;
-        callback(assistantUnread + privateUnread);
-      });
-
-      const unsubP = onSnapshot(qPrivate, (snap) => {
-        privateUnread = snap.size;
-        callback(assistantUnread + privateUnread);
-      });
-
-      return () => {
-        unsubA();
-        unsubP();
-      };
+      return onSnapshot(qPrivate, (snap) => {
+        callback(snap.size);
+      }, (error) => console.error("Error listening to total admin unread count:", error));
     } catch (e) {
       console.error("Error listening to total admin unread count:", e);
       return () => {};
@@ -1997,7 +1971,6 @@ export const databaseService = {
       };
 
       await databaseService.savePrivateChatMessage(sanitizedPhone, adminMsg);
-      await databaseService.saveAssistantChatMessage(sanitizedPhone, adminMsg);
 
       return { success: true };
     } catch (error) {

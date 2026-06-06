@@ -21,7 +21,7 @@ interface ChatScreenProps {
   targetUser?: User; // Only for admin
   isAdmin: boolean;
   onBack: () => void;
-  type?: 'Assistant' | 'Privee';
+  type?: 'Privee';
 }
 
 const WhatsAppIcon = () => (
@@ -103,22 +103,22 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   // Effect to handle sending our typing status
   useEffect(() => {
     if (!inputText.trim()) {
-      databaseService.setTypingStatus(type as 'Assistant' | 'Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
+      databaseService.setTypingStatus('Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
       return;
     }
 
-    databaseService.setTypingStatus(type as 'Assistant' | 'Privee', chatUserId, isAdmin ? 'admin' : 'user', true);
+    databaseService.setTypingStatus('Privee', chatUserId, isAdmin ? 'admin' : 'user', true);
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     
     typingTimeoutRef.current = setTimeout(() => {
-      databaseService.setTypingStatus(type as 'Assistant' | 'Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
+      databaseService.setTypingStatus('Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
     }, 3000);
 
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
-  }, [inputText, chatUserId, isAdmin, type]);
+  }, [inputText, chatUserId, isAdmin]);
 
   useEffect(() => {
     let unsubscribe: any;
@@ -126,9 +126,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     
     const setupChat = async () => {
       setIsLoading(true);
-      const onUpdate = type === 'Assistant' 
-        ? databaseService.onAssistantChatUpdate 
-        : databaseService.onPrivateChatUpdate;
+      const onUpdate = databaseService.onPrivateChatUpdate;
 
       unsubscribe = onUpdate(chatUserId, (msgs) => {
         setMessages(msgs);
@@ -142,17 +140,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         );
 
         if (hasUnreadFromOther) {
-          if (type === 'Assistant') {
-            databaseService.markAssistantMessagesAsRead(chatUserId, otherSide);
-          } else {
-            databaseService.markPrivateMessagesAsRead(chatUserId, otherSide);
-          }
+          databaseService.markPrivateMessagesAsRead(chatUserId, otherSide);
         }
       });
 
       // Listen to the OTHER side's typing status
       unsubscribeTyping = databaseService.onTypingStatusChange(
-        type as 'Assistant' | 'Privee', 
+        'Privee', 
         chatUserId, 
         isAdmin ? 'user' : 'admin', 
         (status) => setIsTyping(status)
@@ -165,9 +159,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
       if (unsubscribe) unsubscribe();
       if (unsubscribeTyping) unsubscribeTyping();
       // Ensure we clear our typing status on unmount
-      databaseService.setTypingStatus(type as 'Assistant' | 'Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
+      databaseService.setTypingStatus('Privee', chatUserId, isAdmin ? 'admin' : 'user', false);
     };
-  }, [chatUserId, type, isAdmin]);
+  }, [chatUserId, isAdmin]);
 
   const displayMessages = useMemo(() => {
     if (isAdmin) return messages;
@@ -212,12 +206,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
 
     try {
       if (typeof textOverride !== 'string') setInputText('');
-      
-      const saveFunction = type === 'Assistant'
-        ? databaseService.saveAssistantChatMessage
-        : databaseService.savePrivateChatMessage;
-
-      await saveFunction(chatUserId, newMessage);
+      await databaseService.savePrivateChatMessage(chatUserId, newMessage);
     } catch (error) {
       console.error("Error in handleSendMessage:", error);
     }
@@ -256,11 +245,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
 
     if (!deleteConfirm.messageId) return;
     
-    const deleteFunction = type === 'Assistant'
-        ? databaseService.deleteAssistantChatMessage
-        : databaseService.deletePrivateChatMessage;
-
-    const success = await deleteFunction(chatUserId, deleteConfirm.messageId);
+    const success = await databaseService.deletePrivateChatMessage(chatUserId, deleteConfirm.messageId);
     if (success) {
       setDeleteConfirm({show: false, messageId: null});
     }
