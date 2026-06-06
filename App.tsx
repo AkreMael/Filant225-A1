@@ -55,7 +55,7 @@ const maelUser: User = {
 };
 
 type InteractiveModalContext = {
-  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service';
+  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service' | 'stage' | 'formation' | 'simple_demande';
   title: string;
   imageUrl?: string | string[];
   isBlurredImage?: boolean;
@@ -70,7 +70,7 @@ interface PaymentConfirmationContext {
   paymentType: string;
   onSuccess?: () => void;
   formData?: {
-    formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service';
+    formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service' | 'stage' | 'formation' | 'simple_demande';
     formTitle: string;
     data: any;
     whatsappMessage: string;
@@ -414,6 +414,12 @@ const App: React.FC = () => {
 
   const [lastNotificationId, setLastNotificationId] = useState<string | null>(null);
   const [activeNotificationModal, setActiveNotificationModal] = useState<Notification | null>(null);
+  const [activeNotificationStepIndex, setActiveNotificationStepIndex] = useState<number>(0);
+
+  useEffect(() => {
+    setActiveNotificationStepIndex(0);
+  }, [activeNotificationModal?.id]);
+
   const [locationInitialTab, setLocationInitialTab] = useState<'appartement' | 'equipement'>('appartement');
   const [demandeRechercheInitialQuery, setDemandeRechercheInitialQuery] = useState<string>('');
   const [interactiveModalContext, setInteractiveModalContext] = useState<InteractiveModalContext | null>(null);
@@ -678,22 +684,102 @@ const App: React.FC = () => {
       setMenuView(view);
   };
 
-  const handleNotificationButtonAction = (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche', searchFilter?: string) => {
+  const isImageUrl = (url?: string): boolean => {
+    if (!url) return false;
+    const clean = url.trim().toLowerCase();
+    return clean.includes('supaimg.com') ||
+           clean.endsWith('.jpg') ||
+           clean.endsWith('.jpeg') ||
+           clean.endsWith('.png') ||
+           clean.endsWith('.webp') ||
+           clean.endsWith('.gif') ||
+           clean.endsWith('.svg') ||
+           clean.startsWith('data:image/');
+  };
+
+  const handleUniversalLink = (url?: string) => {
+    if (!url) return;
+    const clean = url.trim();
+    const lower = clean.toLowerCase();
+
+    // Check if it matches worker form
+    if (lower.includes('worker_list') || lower.includes('travailleur') || lower === 'travailleurs') {
+      setInteractiveModalContext({
+        formType: 'personal_worker',
+        title: "Demande de service Travailleur",
+      });
+    }
+    // Check if equipment form
+    else if (lower.includes('location_hub') || lower.includes('equipement') || lower === 'equipements') {
+      setLocationInitialTab('equipement');
+      setInteractiveModalContext({
+        formType: 'personal_location',
+        title: "Location d'Équipement"
+      });
+    }
+    // Check if agency / apartment form
+    else if (lower.includes('appartement') || lower.includes('agence') || lower.includes('immobilier') || lower === 'agences') {
+      setLocationInitialTab('appartement');
+      setInteractiveModalContext({
+        formType: 'location',
+        title: "Demande de Logement (Agence)"
+      });
+    }
+    // Check if search / request page
+    else if (lower.includes('recherche') || lower.includes('demande_recherche') || lower === 'recherche') {
+      navigateTo({ activeTab: Tab.Menu, menuView: 'demande_recherche' });
+    }
+    // Check if simple request form
+    else if (lower.includes('simple_demande') || lower.includes('demande') || lower === 'simple_demande') {
+      setInteractiveModalContext({
+        formType: 'simple_demande',
+        title: "Formulaire de Demande"
+      });
+    }
+    // Check if dynamic http target
+    else if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      window.open(clean, '_blank');
+    }
+    // General fallback as target page inside app
+    else {
+      navigateTo({ activeTab: Tab.Menu, menuView: clean as any });
+    }
+  };
+
+  const handleNotificationButtonAction = (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next', searchFilter?: string) => {
     switch (action) {
       case 'travailleurs':
-        navigateTo({ activeTab: Tab.Menu, menuView: 'worker_list' });
+        setInteractiveModalContext({
+          formType: 'personal_worker',
+          title: "Demande de service Travailleur",
+        });
         break;
       case 'equipements':
         setLocationInitialTab('equipement');
-        navigateTo({ activeTab: Tab.Menu, menuView: 'location_hub' });
+        setInteractiveModalContext({
+          formType: 'personal_location',
+          title: "Location d'Équipement"
+        });
         break;
       case 'agences':
         setLocationInitialTab('appartement');
-        navigateTo({ activeTab: Tab.Menu, menuView: 'location_hub' });
+        setInteractiveModalContext({
+          formType: 'location',
+          title: "Demande de Logement (Agence)"
+        });
         break;
       case 'recherche':
         setDemandeRechercheInitialQuery(searchFilter || '');
         navigateTo({ activeTab: Tab.Menu, menuView: 'demande_recherche' });
+        break;
+      case 'simple_demande':
+        setInteractiveModalContext({
+          formType: 'simple_demande',
+          title: "Formulaire de Demande"
+        });
+        break;
+      case 'next':
+        // Handled directly inside step navigation
         break;
       default:
         navigateTo({ activeTab: Tab.Menu, menuView: 'hub' });
@@ -1099,95 +1185,139 @@ const App: React.FC = () => {
             )}
 
             <AnimatePresence>
-              {activeNotificationModal && (
-                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-                  <motion.div 
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    className="w-full max-w-sm rounded-[2rem] shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative border-none bg-slate-900"
-                  >
-                    {/* Dismiss X button on top right */}
-                    <button 
-                      onClick={() => {
-                        if (currentUser?.phone) {
-                          databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
-                        }
-                        setActiveNotificationModal(null);
-                      }}
-                      className="absolute top-4 right-4 z-[2010] w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white border-2 border-white/60 transition-all shadow-md active:scale-90"
-                      aria-label="Fermer"
+              {activeNotificationModal && (() => {
+                const pages = [
+                  { 
+                    message: activeNotificationModal.message, 
+                    imageUrl: activeNotificationModal.imageUrl, 
+                    buttons: activeNotificationModal.buttons || [] 
+                  },
+                  ...(activeNotificationModal.steps || []).map((st: any) => ({
+                    message: st.message,
+                    imageUrl: st.imageUrl,
+                    buttons: st.buttons || []
+                  }))
+                ];
+                
+                const currentPageIndex = Math.min(activeNotificationStepIndex, pages.length - 1);
+                const currentPage = pages[currentPageIndex] || pages[0];
+                const currentMessage = currentPage?.message;
+                const currentImageUrl = currentPage?.imageUrl;
+                const currentButtons = currentPage?.buttons || [];
+                const isLastPage = currentPageIndex === pages.length - 1;
+
+                const renderedButtons = [...currentButtons];
+                if (!isLastPage) {
+                  if (!renderedButtons.some(b => b.action === 'next')) {
+                    renderedButtons.push({ label: 'Suivant', action: 'next' as any });
+                  }
+                } else if (currentImageUrl && !isImageUrl(currentImageUrl)) {
+                  if (renderedButtons.length === 0) {
+                    renderedButtons.push({ label: 'Ouvrir', action: 'url_link' as any });
+                  }
+                }
+
+                return (
+                  <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+                    <motion.div 
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.95, opacity: 0 }}
+                      className="w-full max-w-sm rounded-[2rem] shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative border-none bg-slate-900"
                     >
-                      <svg className="w-5 h-5 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                      {/* Dismiss X button on top right */}
+                      <button 
+                        onClick={() => {
+                          if (currentUser?.phone) {
+                            databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
+                          }
+                          setActiveNotificationModal(null);
+                        }}
+                        className="absolute top-4 right-4 z-[2010] w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white border-2 border-white/60 transition-all shadow-md active:scale-90"
+                        aria-label="Fermer"
+                      >
+                        <svg className="w-5 h-5 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
 
-                    {/* Image space if present - Full format, Borderless, Fits to edges */}
-                    {activeNotificationModal.imageUrl && (
-                      <div className="w-full bg-slate-900 overflow-hidden flex items-center justify-center">
-                        <img 
-                          src={activeNotificationModal.imageUrl} 
-                          alt="Notification" 
-                          className="w-full h-auto max-h-[65vh] object-cover block"
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Blue Banner - Under the image with no background spacing */}
-                    <div className="bg-[#0B01AA] text-white p-5 flex flex-col gap-4 w-full">
-                      <div>
-                        <p className="text-white text-sm sm:text-base font-bold leading-snug">
-                          {activeNotificationModal.message}
-                        </p>
-                      </div>
-                      
-                      {/* Button space ONLY if enabled by Admin */}
-                      <div className="flex flex-col gap-2.5 w-full">
-                        {/* Classic Single Button Fallback */}
-                        {activeNotificationModal.hasButton && (!activeNotificationModal.buttons || activeNotificationModal.buttons.length === 0) && (
-                          <button 
-                            onClick={() => {
-                              if (currentUser?.phone) {
-                                databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
-                              }
-                              setActiveNotificationModal(null);
+                      {/* Image space if present - Full format, Borderless, Fits to edges */}
+                      {currentImageUrl && isImageUrl(currentImageUrl) && (
+                        <div className="w-full bg-slate-900 overflow-hidden flex items-center justify-center">
+                          <img 
+                            src={currentImageUrl} 
+                            alt="Notification" 
+                            className="w-full h-auto max-h-[65vh] object-cover block"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
                             }}
-                            className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
-                          >
-                            cliquez ici
-                          </button>
-                        )}
+                          />
+                        </div>
+                      )}
 
-                        {/* Multiple Dynamic Redirection Buttons */}
-                        {activeNotificationModal.buttons && activeNotificationModal.buttons.length > 0 && (
-                          <div className="grid grid-cols-1 gap-2.5 w-full">
-                            {activeNotificationModal.buttons.map((btn, idx) => (
-                              <button 
-                                key={idx}
-                                onClick={() => {
-                                  if (currentUser?.phone) {
-                                    databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
-                                  }
-                                  setActiveNotificationModal(null);
-                                  handleNotificationButtonAction(btn.action, btn.searchFilter);
-                                }}
-                                className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
-                              >
-                                {btn.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                      {/* Blue Banner - Under the image with no background spacing */}
+                      <div className="bg-[#0B01AA] text-white p-5 flex flex-col gap-4 w-full">
+                        <div>
+                          <p className="text-white text-sm sm:text-base font-bold leading-snug">
+                            {currentMessage}
+                          </p>
+                        </div>
+                        
+                        {/* Button space */}
+                        <div className="flex flex-col gap-2.5 w-full">
+                          {/* Classic Single Button Fallback */}
+                          {activeNotificationModal.hasButton && renderedButtons.length === 0 && (
+                            <button 
+                              onClick={() => {
+                                if (currentUser?.phone) {
+                                  databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
+                                }
+                                setActiveNotificationModal(null);
+                                if (currentImageUrl && !isImageUrl(currentImageUrl)) {
+                                  handleUniversalLink(currentImageUrl);
+                                }
+                              }}
+                              className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
+                            >
+                              cliquez ici
+                            </button>
+                          )}
+
+                          {/* Multiple Dynamic Redirection Buttons or Autogenerated Next/Link Buttons */}
+                          {renderedButtons.length > 0 && (
+                            <div className="grid grid-cols-1 gap-2.5 w-full">
+                              {renderedButtons.map((btn, idx) => (
+                                <button 
+                                  key={idx}
+                                  onClick={() => {
+                                    if (btn.action === 'next') {
+                                      setActiveNotificationStepIndex(prev => prev + 1);
+                                    } else {
+                                      if (currentUser?.phone) {
+                                        databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
+                                      }
+                                      setActiveNotificationModal(null);
+                                      if (btn.action === 'url_link') {
+                                        handleUniversalLink(currentImageUrl);
+                                      } else {
+                                        handleNotificationButtonAction(btn.action as any, btn.searchFilter);
+                                      }
+                                    }
+                                  }}
+                                  className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
+                                >
+                                  {btn.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                </div>
-              )}
+                    </motion.div>
+                  </div>
+                );
+              })()}
             </AnimatePresence>
 
             <AnimatePresence>

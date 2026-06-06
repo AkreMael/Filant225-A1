@@ -30,7 +30,9 @@ import {
   FileText,
   Send,
   Trash2,
-  Bell
+  Bell,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -88,6 +90,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [notifButtonEquipements, setNotifButtonEquipements] = useState(false);
   const [notifButtonAgences, setNotifButtonAgences] = useState(false);
   const [notifButtonRecherche, setNotifButtonRecherche] = useState(false);
+  const [notifButtonSimpleDemande, setNotifButtonSimpleDemande] = useState(false);
+  const [additionalSteps, setAdditionalSteps] = useState<Array<{
+    message: string;
+    imageUrl: string;
+    buttonTravailleurs: boolean;
+    buttonEquipements: boolean;
+    buttonAgences: boolean;
+    buttonRecherche: boolean;
+    buttonSimpleDemande: boolean;
+  }>>([]);
   
   // Data States
   const [data, setData] = useState<Record<string, any[]>>({
@@ -663,6 +675,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       return;
     }
 
+    // Validate additional steps
+    const emptyStepIdx = additionalSteps.findIndex((st, i) => !st.message.trim());
+    if (emptyStepIdx !== -1) {
+      alert(`Veuillez saisir le texte du message pour l'étape ${emptyStepIdx + 2}.`);
+      return;
+    }
+
     const buttonsList: any[] = [];
     if (notifButtonTravailleurs) {
       buttonsList.push({ label: "Formulaire Travailleurs", action: "travailleurs" });
@@ -676,6 +695,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     if (notifButtonRecherche) {
       buttonsList.push({ label: "Recherche", action: "recherche" });
     }
+    if (notifButtonSimpleDemande) {
+      buttonsList.push({ label: "Formulaire de Demande", action: "simple_demande" });
+    }
+
+    const steps = additionalSteps.map(step => {
+      const stepButtons: any[] = [];
+      if (step.buttonTravailleurs) {
+        stepButtons.push({ label: "Formulaire Travailleurs", action: "travailleurs" });
+      }
+      if (step.buttonEquipements) {
+        stepButtons.push({ label: "Location d’équipements", action: "equipements" });
+      }
+      if (step.buttonAgences) {
+        stepButtons.push({ label: "Agences immobilières", action: "agences" });
+      }
+      if (step.buttonRecherche) {
+        stepButtons.push({ label: "Recherche", action: "recherche" });
+      }
+      if (step.buttonSimpleDemande) {
+        stepButtons.push({ label: "Formulaire de Demande", action: "simple_demande" });
+      }
+      return {
+        message: step.message.trim(),
+        imageUrl: step.imageUrl.trim() || undefined,
+        buttons: stepButtons.length > 0 ? stepButtons : undefined
+      };
+    });
 
     setSendingCustomNotif(true);
     try {
@@ -685,7 +731,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           message: notifMessage.trim(),
           imageUrl: notifImageUrl.trim() || undefined,
           hasButton: notifHasButton || buttonsList.length > 0,
-          buttons: buttonsList.length > 0 ? buttonsList : undefined
+          buttons: buttonsList.length > 0 ? buttonsList : undefined,
+          steps: steps.length > 0 ? steps : undefined
         });
       });
 
@@ -700,6 +747,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setNotifButtonEquipements(false);
       setNotifButtonAgences(false);
       setNotifButtonRecherche(false);
+      setNotifButtonSimpleDemande(false);
+      setAdditionalSteps([]);
       setSelectedRecipientIds([]);
     } catch (err) {
       console.error("Error sending custom notifications:", err);
@@ -1542,14 +1591,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     <h3 className="font-bold text-sm tracking-widest text-slate-400 dark:text-slate-500 uppercase">1. Contenu de la Notification</h3>
                     
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-wider text-gray-400">Lien de l’image</label>
-                      <input 
-                        type="text" 
-                        value={notifImageUrl}
-                        onChange={e => setNotifImageUrl(e.target.value)}
-                        placeholder="Insérer l'URL de l'image (ex: https://i.supaimg.com/...)"
-                        className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-xs font-bold outline-none ring-0 focus:ring-2 focus:ring-blue-500/50 transition-all font-mono"
-                      />
+                      <label className="text-xs font-black uppercase tracking-wider text-gray-400">Champ de lien universel (Image, site web, formulaire, application)</label>
+                      <div className="flex gap-3">
+                        <input 
+                          type="text" 
+                          value={notifImageUrl}
+                          onChange={e => setNotifImageUrl(e.target.value)}
+                          placeholder="Insérer l'URL de l'image, formulaire, de site ou d'application..."
+                          className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl px-4 py-3.5 text-xs font-bold outline-none ring-0 focus:ring-2 focus:ring-blue-500/50 transition-all font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const text = await navigator.clipboard.readText();
+                              setNotifImageUrl(text);
+                            } catch (err) {
+                              alert("Veuillez coller le lien de façon manuelle.");
+                            }
+                          }}
+                          className="px-5 bg-gray-100 hover:bg-gray-250 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 font-bold rounded-2xl text-xs active:scale-95 transition-all outline-none border border-gray-105 dark:border-slate-700"
+                        >
+                          Coller
+                        </button>
+                      </div>
                       {notifImageUrl.trim() && (
                         <div className="mt-2 border border-gray-100 dark:border-slate-800 rounded-2xl p-2 bg-gray-50 dark:bg-slate-900 flex justify-center">
                           <img 
@@ -1650,7 +1715,190 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                           />
                           <span className="text-xs font-bold font-mono tracking-tight">Recherche</span>
                         </label>
+
+                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                          notifButtonSimpleDemande 
+                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          <input 
+                            type="checkbox" 
+                            checked={notifButtonSimpleDemande}
+                            onChange={e => setNotifButtonSimpleDemande(e.target.checked)}
+                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                          />
+                          <span className="text-xs font-bold font-mono tracking-tight">Formulaire de Demande</span>
+                        </label>
                       </div>
+                    </div>
+
+                    {/* Multi-steps sequence editor */}
+                    <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">Étapes de notification supplémentaires (Pages liées)</h4>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Créez un parcours de plusieurs pages s'affichant l'une après l'autre</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAdditionalSteps(prev => [
+                            ...prev,
+                            {
+                              message: '',
+                              imageUrl: '',
+                              buttonTravailleurs: false,
+                              buttonEquipements: false,
+                              buttonAgences: false,
+                              buttonRecherche: false,
+                              buttonSimpleDemande: false
+                            }
+                          ])}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-emerald-650 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-sm hover:shadow active:scale-95 transition-all font-mono"
+                        >
+                          <Plus size={14} /> Étape (+)
+                        </button>
+                      </div>
+
+                      {additionalSteps.length > 0 && (
+                        <div className="space-y-4">
+                          {additionalSteps.map((step, idx) => (
+                            <div key={idx} className="p-4 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl relative space-y-3">
+                              {/* Delete button of the step */}
+                              <button
+                                type="button"
+                                onClick={() => setAdditionalSteps(prev => prev.filter((_, i) => i !== idx))}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                              >
+                                <X size={16} />
+                              </button>
+
+                              <h5 className="text-xs font-black uppercase tracking-wider text-indigo-650 dark:text-indigo-400">Étape {idx + 2} (Page {idx + 2})</h5>
+
+                              {/* Universal Link field for Step */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Lien universel (Image, site, etc.) pour l'étape {idx + 2}</label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={step.imageUrl}
+                                    onChange={e => {
+                                      const newVal = e.target.value;
+                                      setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, imageUrl: newVal } : s));
+                                    }}
+                                    placeholder="Lien de l'image ou de redirection"
+                                    className="flex-grow bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold outline-none"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      try {
+                                        const text = await navigator.clipboard.readText();
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, imageUrl: text } : s));
+                                      } catch (err) {
+                                        alert("Veuillez coller le lien manuellement.");
+                                      }
+                                    }}
+                                    className="px-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-850 text-gray-600 dark:text-gray-400 rounded-xl font-bold text-xs active:scale-95 transition-all outline-none"
+                                  >
+                                    Coller
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Message field for Step */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Texte du message pour l'étape {idx + 2}</label>
+                                <textarea
+                                  value={step.message}
+                                  onChange={e => {
+                                    const newVal = e.target.value;
+                                    setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, message: newVal } : s));
+                                  }}
+                                  placeholder="Saisissez le texte pour cette page..."
+                                  rows={3}
+                                  className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold outline-none"
+                                />
+                              </div>
+
+                              {/* Buttons checkboxes for step */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">Boutons optionnels pour l'étape {idx + 2}</label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {/* Step Travailleurs Button */}
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={step.buttonTravailleurs}
+                                      onChange={e => {
+                                        const checked = e.target.checked;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonTravailleurs: checked } : s));
+                                      }}
+                                      className="w-3.5 h-3.5 rounded text-blue-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-600">Travailleurs</span>
+                                  </label>
+
+                                  {/* Step Equipements Button */}
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={step.buttonEquipements}
+                                      onChange={e => {
+                                        const checked = e.target.checked;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonEquipements: checked } : s));
+                                      }}
+                                      className="w-3.5 h-3.5 rounded text-blue-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-600">Equipements</span>
+                                  </label>
+
+                                  {/* Step Agences Button */}
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={step.buttonAgences}
+                                      onChange={e => {
+                                        const checked = e.target.checked;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonAgences: checked } : s));
+                                      }}
+                                      className="w-3.5 h-3.5 rounded text-blue-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-600">Agences Immo</span>
+                                  </label>
+
+                                  {/* Step Recherche Button */}
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={step.buttonRecherche}
+                                      onChange={e => {
+                                        const checked = e.target.checked;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonRecherche: checked } : s));
+                                      }}
+                                      className="w-3.5 h-3.5 rounded text-blue-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-600">Recherche</span>
+                                  </label>
+
+                                  {/* Step Simple Demande Button */}
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={step.buttonSimpleDemande}
+                                      onChange={e => {
+                                        const checked = e.target.checked;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonSimpleDemande: checked } : s));
+                                      }}
+                                      className="w-3.5 h-3.5 rounded text-blue-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-600">Demande simple</span>
+                                  </label>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-4 border-t border-gray-100 dark:border-slate-800">

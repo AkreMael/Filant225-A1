@@ -33,8 +33,14 @@ export interface User {
 
 export interface NotificationButton {
   label: string;
-  action: 'travailleurs' | 'equipements' | 'agences' | 'recherche';
+  action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'url_link';
   searchFilter?: string; // Optional filter for search
+}
+
+export interface NotificationStep {
+  message: string;
+  imageUrl?: string;
+  buttons?: NotificationButton[];
 }
 
 export interface Notification {
@@ -46,6 +52,7 @@ export interface Notification {
   imageUrl?: string;
   hasButton?: boolean;
   buttons?: NotificationButton[];
+  steps?: NotificationStep[];
 }
 
 export interface Worker {
@@ -83,7 +90,7 @@ export interface FavoriteRequest {
   id: string;
   title: string;
   date: string; // ISO string
-  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service';
+  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service' | 'stage' | 'formation' | 'simple_demande';
   answers: Record<string, string | null>;
   userInfo: User;
   totalPrice?: number;

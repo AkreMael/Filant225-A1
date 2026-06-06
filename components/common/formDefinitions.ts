@@ -529,7 +529,14 @@ export const formationQuestions: Question[] = [
   { key: 'city', text: () => "Dans quelle ville souhaitez-vous vous former ?", type: 'text', placeholder: 'Ex: Abidjan, Yamoussoukro' },
 ];
 
+export const simpleDemandeQuestions: Question[] = [
+  { key: 'city', text: () => "Ville de la demande ?", type: 'text', placeholder: 'Ex: Abidjan, Cocody' },
+  { key: 'budget', text: () => "Montant proposé ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 15 000 FCFA' },
+  { key: 'contact_phone', text: () => "Numéro de téléphone à contacter ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 0708091011' }
+];
+
 export const getQuestionsForType = (formType: string, title: string, serviceMode?: string): Question[] => {
+    if (formType === 'simple_demande') return simpleDemandeQuestions;
     if (formType === 'stage') return stageQuestions;
     if (formType === 'formation') return formationQuestions;
     if (formType === 'night_service') return [

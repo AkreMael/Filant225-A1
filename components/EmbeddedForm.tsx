@@ -15,7 +15,7 @@ const Spinner = () => (
 
 interface EmbeddedFormProps {
   title: string;
-  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service' | 'stage' | 'formation';
+  formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service' | 'stage' | 'formation' | 'simple_demande';
   user: User;
   onClose: () => void;
   description?: string;
