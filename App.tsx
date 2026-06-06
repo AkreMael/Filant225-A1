@@ -449,7 +449,7 @@ const App: React.FC = () => {
     'stage_formation_hub'
   ];
 
-  const shouldShowAdminDashboard = isAdmin(currentUser) && !adminForceAppView;
+  const shouldShowAdminDashboard = isAdmin(currentUser) && !adminForceAppView && !adminChatContext;
 
   const isFullScreenView = shouldShowAdminDashboard ||
                            (activeTab === Tab.Menu && FULL_SCREEN_MENU_VIEWS.includes(menuView)) || 
