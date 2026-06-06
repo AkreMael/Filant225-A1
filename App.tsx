@@ -139,6 +139,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.Menu);
   const [showFullRegistration, setShowFullRegistration] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [adminForceAppView, setAdminForceAppView] = useState(false);
   const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>('hub');
   const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Assistant' | 'Privee' } | null>(null);
   const [offerSubView, setOfferSubView] = useState<'main' | 'shop'>('main');
@@ -346,6 +347,9 @@ const App: React.FC = () => {
             }
 
             setCurrentUser(fullUser);
+            if (isAdmin(fullUser)) {
+              setIsAdminAuthenticated(true);
+            }
             databaseService.saveActiveUser(fullUser);
             if (isAuthChecking) {
               setShowSplash(true);
@@ -445,7 +449,10 @@ const App: React.FC = () => {
     'stage_formation_hub'
   ];
 
-  const isFullScreenView = (activeTab === Tab.Menu && FULL_SCREEN_MENU_VIEWS.includes(menuView)) || 
+  const shouldShowAdminDashboard = isAdmin(currentUser) && !adminForceAppView;
+
+  const isFullScreenView = shouldShowAdminDashboard ||
+                           (activeTab === Tab.Menu && FULL_SCREEN_MENU_VIEWS.includes(menuView)) || 
                            (activeTab === Tab.Offer && offerSubView === 'shop') ||
                            activeTab === Tab.Emergency ||
                            activeTab === Tab.Admin ||
@@ -511,7 +518,9 @@ const App: React.FC = () => {
     databaseService.saveActiveUser(user);
     
     // Redirect to admin dashboard if admin
-    if (user.phone === '0705052632') {
+    if (isAdmin(user)) {
+      setAdminForceAppView(false);
+      setIsAdminAuthenticated(true);
       setMenuView('admin_dashboard');
     }
     
@@ -892,7 +901,21 @@ const App: React.FC = () => {
 
   let activeScreen: React.ReactNode;
 
-  switch (activeTab) {
+  if (shouldShowAdminDashboard) {
+    activeScreen = (
+      <AdminDashboard 
+        onBack={handleBack} 
+        user={displayUser} 
+        onOpenChat={(userId, userName, type) => {
+          setIsAdminAuthenticated(true);
+          setActiveTab(Tab.Admin);
+          setAdminChatContext({ userId, userName, type });
+        }}
+        onSwitchToApp={() => setAdminForceAppView(true)}
+      />
+    );
+  } else {
+    switch (activeTab) {
     case Tab.Menu:
       switch (menuView) {
         case 'worker_list':
@@ -955,6 +978,7 @@ const App: React.FC = () => {
                 setActiveTab(Tab.Admin);
                 setAdminChatContext({ userId, userName, type });
               }}
+              onSwitchToApp={() => setAdminForceAppView(true)}
             />
           );
           break;
@@ -1050,6 +1074,7 @@ const App: React.FC = () => {
               onBack={handleBack} 
               user={displayUser}
               onOpenChat={(userId, userName, type) => setAdminChatContext({ userId, userName, type })}
+              onSwitchToApp={() => setAdminForceAppView(true)}
             />
           );
         }
@@ -1078,9 +1103,10 @@ const App: React.FC = () => {
         unreadChatCount={unreadChatCount}
       />;
       break;
+    }
   }
 
-  const isAdminView = (menuView === 'admin_dashboard' && activeTab === Tab.Menu) || (activeTab === Tab.Admin && isAdminAuthenticated);
+  const isAdminView = shouldShowAdminDashboard || (menuView === 'admin_dashboard' && activeTab === Tab.Menu) || (activeTab === Tab.Admin && isAdminAuthenticated);
 
   if (currentUser?.isBlocked) {
     return (

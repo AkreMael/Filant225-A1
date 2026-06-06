@@ -40,6 +40,7 @@ interface AdminDashboardProps {
   onBack: () => void;
   user: User;
   onOpenChat: (userId: string, userName: string, type: 'Assistant' | 'Privee') => void;
+  onSwitchToApp?: () => void;
 }
 
 type AdminTab = 
@@ -60,7 +61,7 @@ type AdminTab =
   | 'wallets'
   | 'notifications';
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat, onSwitchToApp }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -799,7 +800,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           </div>
         </div>
         
-        <div className="hidden sm:flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {onSwitchToApp && (
+            <button
+              onClick={onSwitchToApp}
+              className="px-3.5 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black text-[10px] sm:text-xs uppercase tracking-wider rounded-2xl shadow-md cursor-pointer active:scale-95 transition-all outline-none border-none flex items-center justify-center gap-2"
+            >
+              Accéder à l’application
+            </button>
+          )}
+          
+          <div className="hidden sm:flex items-center gap-4">
              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                 <input 
@@ -813,6 +824,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
              <button className="p-2.5 bg-gray-100 dark:bg-slate-800 rounded-xl text-gray-500">
                 <MoreVertical size={18} />
              </button>
+          </div>
         </div>
       </div>
 
