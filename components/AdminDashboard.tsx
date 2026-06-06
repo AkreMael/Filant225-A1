@@ -738,18 +738,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
       await Promise.all(promises);
       alert(`Notification envoyée avec succès à ${selectedRecipientIds.length} utilisateur(s).`);
-      
-      // Clear form inputs
-      setNotifMessage('');
-      setNotifImageUrl('');
-      setNotifHasButton(false);
-      setNotifButtonTravailleurs(false);
-      setNotifButtonEquipements(false);
-      setNotifButtonAgences(false);
-      setNotifButtonRecherche(false);
-      setNotifButtonSimpleDemande(false);
-      setAdditionalSteps([]);
-      setSelectedRecipientIds([]);
     } catch (err) {
       console.error("Error sending custom notifications:", err);
       alert("Une erreur est survenue lors de l'envoi de la notification.");
