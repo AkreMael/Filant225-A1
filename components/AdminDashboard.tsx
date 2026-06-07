@@ -1434,19 +1434,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 'Paiements'
               )}
 
-          {activeTab === 'notifications' && (() => {
+           {activeTab === 'notifications' && (() => {
+            const allUsersCombined = [
+              ...(data.connections || []).map((c: any) => ({
+                id: (c.phone || c.id || '').replace(/\D/g, ''),
+                name: c.name || 'Utilisateur',
+                phone: c.phone || c.id,
+                city: c.city || 'Non spécifiée'
+              })),
+              ...(data.inscriptions || []).map((i: any) => ({
+                id: (i.phone || i.id || '').replace(/\D/g, ''),
+                name: i.name || 'Utilisateur',
+                phone: i.phone || i.id,
+                city: i.city || 'Non spécifiée'
+              }))
+            ].filter(u => u.id);
+
             const uniqueRecipients = Array.from(
-              new Map(
-                data.connections
-                  .filter((c: any) => c.phone || c.id)
-                  .map((c: any) => [ (c.phone || c.id).replace(/\D/g, ''), c ])
-              ).values()
-            ).map((c: any) => ({
-              id: (c.phone || c.id).replace(/\D/g, ''),
-              name: c.name || 'Utilisateur Inconnu',
-              phone: c.phone || c.id,
-              city: c.city || 'Non spécifiée'
-            }));
+              new Map(allUsersCombined.map(u => [u.id, u])).values()
+            );
 
             const filteredRecipients = uniqueRecipients.filter(u => 
               u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 

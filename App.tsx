@@ -689,14 +689,30 @@ const App: React.FC = () => {
   const isImageUrl = (url?: string): boolean => {
     if (!url) return false;
     const clean = url.trim().toLowerCase();
-    return clean.includes('supaimg.com') ||
-           clean.endsWith('.jpg') ||
-           clean.endsWith('.jpeg') ||
-           clean.endsWith('.png') ||
-           clean.endsWith('.webp') ||
-           clean.endsWith('.gif') ||
-           clean.endsWith('.svg') ||
-           clean.startsWith('data:image/');
+    
+    if (clean.startsWith('data:image/')) return true;
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) return false;
+    
+    if (
+      clean.includes('supaimg.com') ||
+      clean.includes('picsum.photos') ||
+      clean.includes('firebasestorage.googleapis.com') ||
+      clean.includes('images.unsplash.com') ||
+      clean.includes('imgur.com')
+    ) {
+      return true;
+    }
+    
+    try {
+      const urlPath = clean.split('?')[0];
+      const extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.bmp'];
+      if (extensions.some(ext => urlPath.endsWith(ext))) {
+         return true;
+      }
+    } catch (e) {}
+
+    const imageRegex = /\.(jpg|jpeg|png|webp|gif|svg|bmp)(\?|#|$)/i;
+    return imageRegex.test(clean);
   };
 
   const handleUniversalLink = (url?: string) => {
@@ -934,7 +950,17 @@ const App: React.FC = () => {
           />;
           break;
         case 'notifications':
-          activeScreen = <NotificationsScreen onBack={handleBack} user={displayUser} />;
+          activeScreen = (
+            <NotificationsScreen 
+              onBack={handleBack} 
+              user={displayUser} 
+              onViewDetails={(notif) => {
+                setActiveNotificationModal(notif);
+              }}
+              onNotificationAction={handleNotificationButtonAction}
+              onUniversalLink={handleUniversalLink}
+            />
+          );
           break;
         case 'emergency_form':
           activeScreen = <EmergencyFormScreen onBack={handleBack} user={displayUser} />;
@@ -1242,7 +1268,7 @@ const App: React.FC = () => {
                       initial={{ scale: 0.95, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       exit={{ scale: 0.95, opacity: 0 }}
-                      className="w-full max-w-sm rounded-[2rem] shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative border-none bg-slate-900"
+                      className="w-full max-w-sm rounded-[2rem] shadow-[0_25px_60px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative border-none bg-slate-900 max-h-[90vh] md:max-h-[85vh]"
                     >
                       {/* Dismiss X button on top right */}
                       <button 
@@ -1260,77 +1286,80 @@ const App: React.FC = () => {
                         </svg>
                       </button>
 
-                      {/* Image space if present - Full format, Borderless, Fits to edges */}
-                      {currentImageUrl && isImageUrl(currentImageUrl) && (
-                        <div className="w-full bg-slate-900 overflow-hidden flex items-center justify-center">
-                          <img 
-                            src={currentImageUrl} 
-                            alt="Notification" 
-                            className="w-full h-auto max-h-[65vh] object-cover block"
-                            referrerPolicy="no-referrer"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Blue Banner - Under the image with no background spacing */}
-                      <div className="bg-[#0B01AA] text-white p-5 flex flex-col gap-4 w-full">
-                        <div>
-                          <p className="text-white text-sm sm:text-base font-bold leading-snug">
-                            {currentMessage}
-                          </p>
-                        </div>
-                        
-                        {/* Button space */}
-                        <div className="flex flex-col gap-2.5 w-full">
-                          {/* Classic Single Button Fallback */}
-                          {activeNotificationModal.hasButton && renderedButtons.length === 0 && (
-                            <button 
-                              onClick={() => {
-                                if (currentUser?.phone) {
-                                  databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
-                                }
-                                setActiveNotificationModal(null);
-                                if (currentImageUrl && !isImageUrl(currentImageUrl)) {
-                                  handleUniversalLink(currentImageUrl);
-                                }
+                      {/* Scrollable container for Content */}
+                      <div className="overflow-y-auto flex-1 flex flex-col scrollbar-hide rounded-[2rem]">
+                        {/* Image space if present - Full format, Borderless, Fits to edges */}
+                        {currentImageUrl && isImageUrl(currentImageUrl) && (
+                          <div className="w-full bg-slate-900 overflow-hidden flex items-center justify-center flex-shrink-0">
+                            <img 
+                              src={currentImageUrl} 
+                              alt="Notification" 
+                              className="w-full h-auto max-h-[45vh] object-cover block"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
                               }}
-                              className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
-                            >
-                              cliquez ici
-                            </button>
-                          )}
+                            />
+                          </div>
+                        )}
 
-                          {/* Multiple Dynamic Redirection Buttons or Autogenerated Next/Link Buttons */}
-                          {renderedButtons.length > 0 && (
-                            <div className="grid grid-cols-1 gap-2.5 w-full">
-                              {renderedButtons.map((btn, idx) => (
-                                <button 
-                                  key={idx}
-                                  onClick={() => {
-                                    if (btn.action === 'next') {
-                                      setActiveNotificationStepIndex(prev => prev + 1);
-                                    } else {
-                                      if (currentUser?.phone) {
-                                        databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
-                                      }
-                                      setActiveNotificationModal(null);
-                                      if (btn.action === 'url_link') {
-                                        handleUniversalLink(currentImageUrl);
+                        {/* Blue Banner - Under the image with no background spacing */}
+                        <div className="bg-[#0B01AA] text-white p-5 flex flex-col gap-4 w-full flex-grow">
+                          <div>
+                            <p className="text-white text-sm sm:text-base font-bold leading-snug whitespace-pre-wrap break-words">
+                              {currentMessage}
+                            </p>
+                          </div>
+                          
+                          {/* Button space */}
+                          <div className="flex flex-col gap-2.5 w-full mt-auto">
+                            {/* Classic Single Button Fallback */}
+                            {activeNotificationModal.hasButton && renderedButtons.length === 0 && (
+                              <button 
+                                onClick={() => {
+                                  if (currentUser?.phone) {
+                                    databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
+                                  }
+                                  setActiveNotificationModal(null);
+                                  if (currentImageUrl && !isImageUrl(currentImageUrl)) {
+                                    handleUniversalLink(currentImageUrl);
+                                  }
+                                }}
+                                className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
+                              >
+                                cliquez ici
+                              </button>
+                            )}
+
+                            {/* Multiple Dynamic Redirection Buttons or Autogenerated Next/Link Buttons */}
+                            {renderedButtons.length > 0 && (
+                              <div className="grid grid-cols-1 gap-2.5 w-full">
+                                {renderedButtons.map((btn, idx) => (
+                                  <button 
+                                    key={idx}
+                                    onClick={() => {
+                                      if (btn.action === 'next') {
+                                        setActiveNotificationStepIndex(prev => prev + 1);
                                       } else {
-                                        handleNotificationButtonAction(btn.action as any, btn.searchFilter);
+                                        if (currentUser?.phone) {
+                                          databaseService.markNotificationAsReadInFirestore(currentUser.phone, activeNotificationModal.id);
+                                        }
+                                        setActiveNotificationModal(null);
+                                        if (btn.action === 'url_link') {
+                                          handleUniversalLink(currentImageUrl);
+                                        } else {
+                                          handleNotificationButtonAction(btn.action as any, btn.searchFilter);
+                                        }
                                       }
-                                    }
-                                  }}
-                                  className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
-                                >
-                                  {btn.label}
-                                </button>
-                              ))}
-                            </div>
-                          )}
+                                    }}
+                                    className="w-full bg-white hover:bg-slate-50 active:scale-95 text-[#F25C05] font-black uppercase text-xs py-3.5 rounded-2xl transition-all duration-200 shadow-md text-center"
+                                  >
+                                    {btn.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </motion.div>

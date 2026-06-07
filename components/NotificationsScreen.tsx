@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Notification } from '../types';
 import { databaseService } from '../services/databaseService';
@@ -11,11 +10,49 @@ const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w
 interface NotificationsScreenProps {
   onBack: () => void;
   user: User;
+  onViewDetails?: (notification: Notification) => void;
+  onNotificationAction?: (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next', searchFilter?: string) => void;
+  onUniversalLink?: (url: string) => void;
 }
 
-const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack, user }) => {
+const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ 
+  onBack, 
+  user,
+  onViewDetails,
+  onNotificationAction,
+  onUniversalLink
+}) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const isImageUrl = (url?: string): boolean => {
+    if (!url) return false;
+    const clean = url.trim().toLowerCase();
+    
+    if (clean.startsWith('data:image/')) return true;
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) return false;
+    
+    if (
+      clean.includes('supaimg.com') ||
+      clean.includes('picsum.photos') ||
+      clean.includes('firebasestorage.googleapis.com') ||
+      clean.includes('images.unsplash.com') ||
+      clean.includes('imgur.com')
+    ) {
+      return true;
+    }
+    
+    try {
+      const urlPath = clean.split('?')[0];
+      const extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.bmp'];
+      if (extensions.some(ext => urlPath.endsWith(ext))) {
+         return true;
+      }
+    } catch (e) {}
+
+    const imageRegex = /\.(jpg|jpeg|png|webp|gif|svg|bmp)(\?|#|$)/i;
+    return imageRegex.test(clean);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -80,26 +117,87 @@ const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack, user 
         ) : (
           <div className="space-y-4">
              {notifications.map(n => (
-                 <div key={n.id} className={`bg-white p-5 rounded-3xl shadow-sm border ${n.isRead ? 'border-gray-100' : 'border-blue-200 bg-blue-50/30'} animate-in slide-in-from-bottom-2 relative group`}>
-                    <button 
-                       onClick={() => handleDeleteOne(n.id)}
-                       className="absolute top-4 right-4 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
-                       title="Supprimer"
-                    >
-                       <TrashIcon />
-                    </button>
-                    <div className="flex justify-between items-start mb-2 pr-8">
-                        <div className="flex items-center gap-2">
-                          {!n.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
-                          <h4 className="font-black text-slate-900 uppercase text-xs tracking-tight">{n.title}</h4>
-                        </div>
-                        <span className="text-[10px] font-bold text-gray-400">{new Date(n.timestamp).toLocaleDateString()}</span>
-                    </div>
-                    <div className="text-sm text-gray-600 leading-relaxed font-medium break-words whitespace-pre-wrap">
-                      <Linkify text={n.message} />
-                    </div>
-                 </div>
-             ))}
+                  <div key={n.id} className={`bg-white p-5 rounded-3xl shadow-sm border ${n.isRead ? 'border-gray-100' : 'border-blue-200 bg-blue-50/30'} animate-in slide-in-from-bottom-2 relative group`}>
+                     <button 
+                        onClick={() => handleDeleteOne(n.id)}
+                        className="absolute top-4 right-4 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                        title="Supprimer"
+                     >
+                        <TrashIcon />
+                     </button>
+                     <div className="flex justify-between items-start mb-2 pr-8">
+                         <div className="flex items-center gap-2">
+                           {!n.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full"></span>}
+                           <h4 className="font-black text-slate-900 uppercase text-xs tracking-tight">{n.title}</h4>
+                         </div>
+                         <span className="text-[10px] font-bold text-gray-400">{new Date(n.timestamp).toLocaleDateString()}</span>
+                     </div>
+                     <div className="text-sm text-gray-600 leading-relaxed font-medium break-words whitespace-pre-wrap">
+                       <Linkify text={n.message} />
+                     </div>
+
+                     {/* Notification Image Preview */}
+                     {n.imageUrl && isImageUrl(n.imageUrl) && (
+                       <div 
+                         className="mt-3 rounded-2xl overflow-hidden max-h-48 bg-slate-50 flex items-center justify-center border border-gray-100 cursor-pointer hover:opacity-95 transition-opacity"
+                         onClick={() => onViewDetails?.(n)}
+                       >
+                         <img 
+                           src={n.imageUrl} 
+                           alt="" 
+                           className="w-full h-48 object-cover" 
+                           referrerPolicy="no-referrer"
+                         />
+                       </div>
+                     )}
+
+                     {/* Dynamic Redirection Buttons or Walkthrough Opening */}
+                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-50">
+                       <div className="flex flex-wrap gap-2">
+                         {n.buttons && n.buttons.length > 0 ? (
+                           n.buttons.map((btn, idx) => (
+                             <button
+                               key={idx}
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 onNotificationAction?.(btn.action as any, btn.searchFilter);
+                               }}
+                               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
+                             >
+                               {btn.label}
+                             </button>
+                           ))
+                         ) : n.hasButton && (
+                           <button
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               if (n.imageUrl && !isImageUrl(n.imageUrl)) {
+                                 onUniversalLink?.(n.imageUrl);
+                               } else {
+                                 onViewDetails?.(n);
+                               }
+                             }}
+                             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
+                           >
+                             Cliquez ici
+                           </button>
+                         )}
+                       </div>
+
+                       {onViewDetails && (
+                         <button
+                           onClick={() => onViewDetails(n)}
+                           className="text-[10px] font-black uppercase text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1.5 hover:underline"
+                         >
+                           <span>Afficher</span>
+                           <svg className="w-3.5 h-3.5 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth={2.5}>
+                             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                           </svg>
+                         </button>
+                       )}
+                     </div>
+                  </div>
+              ))}
           </div>
         )}
       </main>
