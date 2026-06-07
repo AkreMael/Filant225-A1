@@ -1102,10 +1102,21 @@ export const databaseService = {
 
   sendNotificationToFirestore: async (phone: string, notification: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) => {
     const sanitizedPhone = phone.replace(/\D/g, '');
+    const cleanObject = (obj: any): any => {
+      if (obj === null || typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) return obj.map(cleanObject);
+      const cleaned: any = {};
+      Object.keys(obj).forEach(key => {
+        if (obj[key] !== undefined) {
+          cleaned[key] = cleanObject(obj[key]);
+        }
+      });
+      return cleaned;
+    };
     try {
       const notifRef = collection(db, 'Clients', sanitizedPhone, 'notifications');
       await addDoc(notifRef, {
-        ...notification,
+        ...cleanObject(notification),
         timestamp: serverTimestamp(),
         isRead: false
       });
