@@ -34,6 +34,7 @@ import { databaseService, SavedContact } from './services/databaseService';
 import { messagingService } from './services/messagingService';
 import app from './firebase';
 import { getAnalytics } from "firebase/analytics";
+import { Analytics } from '@vercel/analytics/react';
 
 import { auth, db } from './firebase';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
@@ -1431,6 +1432,7 @@ const App: React.FC = () => {
           />
         </div>
       </div>
+      <Analytics />
     </GlobalRippleEffect>
   );
 };
