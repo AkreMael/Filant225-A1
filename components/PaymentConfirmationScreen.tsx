@@ -237,6 +237,9 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 
         if (path) {
           setPaymentPath(path);
+          // Rediriger automatiquement vers le lien de paiement Wave
+          const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${currentAmount}`;
+          window.open(link, '_blank');
         } else {
           alert("Une erreur s'est produite lors de l'enregistrement du dépôt.");
           setIsProcessing(false);
@@ -431,6 +434,9 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           setIsEditingWaveNumber(false);
           setPendingDepositPath(path);
           setDepositSuccess(true);
+          // Rediriger automatiquement vers le lien de paiement Wave
+          const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${depositAmount}`;
+          window.open(link, '_blank');
         } else {
           alert("Erreur lors de l'enregistrement de votre demande.");
         }
