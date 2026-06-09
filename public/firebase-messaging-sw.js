@@ -28,3 +28,95 @@ messaging.onBackgroundMessage((payload) => {
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
+
+// ====== PWA CACHE IMPLEMENTATION FOR OFFLINE COMPATIBILITY ======
+const CACHE_NAME = 'filant225-pwa-cache-v1';
+const ASSETS_TO_PRECACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
+];
+
+// Installation event: cache Shell assets
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        console.log('[Service Worker] Precaching shell assets');
+        return cache.addAll(ASSETS_TO_PRECACHE).catch(err => {
+          console.warn('[Service Worker] Non-blocking precaching warning:', err);
+        });
+      })
+      .then(() => self.skipWaiting())
+  );
+});
+
+// Activation event: clear obsolete caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('[Service Worker] Deleting obsolete cache:', cache);
+            return caches.delete(cache);
+          }
+        })
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
+// Fetch event: Network-first caching strategy with dynamic fallbacks
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Bypass cache completely for dynamic resources
+  if (
+    request.method !== 'GET' ||
+    url.pathname.includes('/api/') ||
+    url.hostname.includes('googleapis.com') ||
+    url.hostname.includes('firebase') ||
+    url.hostname.includes('firestore') ||
+    url.pathname.startsWith('/@') || 
+    url.pathname.includes('/vite') ||
+    url.protocol === 'ws:' ||
+    url.protocol === 'wss:'
+  ) {
+    return; // Passthrough
+  }
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        // Cache valid responses matching the application origin or local files
+        if (response && response.status === 200 && (response.type === 'basic' || url.origin === self.location.origin)) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Safe offline cache retrieval
+        return caches.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Redirect page navigation offline to the standard PWA index.html shell
+          if (request.headers.get('accept')?.includes('text/html')) {
+            return caches.match('/index.html') || caches.match('/');
+          }
+          return new Response('Connexion perdue. FILANT°225 nécessite une connexion internet pour actualiser ces données.', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({ 'Content-Type': 'text/plain; charset=utf-8' })
+          });
+        });
+      })
+  );
+});

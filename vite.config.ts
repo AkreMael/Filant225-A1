@@ -14,36 +14,103 @@ export default defineConfig(({ mode }) => {
         react(),
         VitePWA({
           registerType: 'autoUpdate',
-          includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+          includeAssets: ['favicon.ico', 'icons/*'],
           workbox: {
-            maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 // 5MB
+            maximumFileSizeToCacheInBytes: 10 * 1024 * 1024 // 10MB
           },
           manifest: {
-            name: 'FILANT°225',
-            short_name: 'FILANT225',
-            description: 'Plateforme de services (offres, travailleurs, urgence, position, carte, etc.)',
-            theme_color: '#0f172a',
-            background_color: '#0f172a',
-            display: 'standalone',
-            orientation: 'any',
+            id: "com.filant225.app",
+            name: "FILANT°225",
+            short_name: "FILANT°225",
+            description: "Réseau de services, mise en relation, de sécurité et de paiements sécurisés en Côte d'Ivoire.",
+            theme_color: "#f97316",
+            background_color: "#ffffff",
+            display: "standalone",
+            orientation: "portrait",
             icons: [
               {
-                src: 'https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png',
-                sizes: '192x192',
-                type: 'image/png',
-                purpose: 'any'
+                "src": "/icons/icon-72x72.png",
+                "sizes": "72x72",
+                "type": "image/png",
+                "purpose": "any"
               },
               {
-                src: 'https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png',
-                sizes: '512x512',
-                type: 'image/png',
-                purpose: 'any'
+                "src": "/icons/icon-72x72-maskable.png",
+                "sizes": "72x72",
+                "type": "image/png",
+                "purpose": "maskable"
               },
               {
-                src: 'https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png',
-                sizes: '512x512',
-                type: 'image/png',
-                purpose: 'maskable'
+                "src": "/icons/icon-96x96.png",
+                "sizes": "96x96",
+                "type": "image/png",
+                "purpose": "any"
+              },
+              {
+                "src": "/icons/icon-96x96-maskable.png",
+                "sizes": "96x96",
+                "type": "image/png",
+                "purpose": "maskable"
+              },
+              {
+                "src": "/icons/icon-128x128.png",
+                "sizes": "128x128",
+                "type": "image/png",
+                "purpose": "any"
+              },
+              {
+                "src": "/icons/icon-128x128-maskable.png",
+                "sizes": "128x128",
+                "type": "image/png",
+                "purpose": "maskable"
+              },
+              {
+                "src": "/icons/icon-192x192.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any"
+              },
+              {
+                "src": "/icons/icon-192x192-maskable.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "maskable"
+              },
+              {
+                "src": "/icons/icon-256x256.png",
+                "sizes": "256x256",
+                "type": "image/png",
+                "purpose": "any"
+              },
+              {
+                "src": "/icons/icon-256x256-maskable.png",
+                "sizes": "256x256",
+                "type": "image/png",
+                "purpose": "maskable"
+              },
+              {
+                "src": "/icons/icon-384x384.png",
+                "sizes": "384x384",
+                "type": "image/png",
+                "purpose": "any"
+              },
+              {
+                "src": "/icons/icon-384x384-maskable.png",
+                "sizes": "384x384",
+                "type": "image/png",
+                "purpose": "maskable"
+              },
+              {
+                "src": "/icons/icon-512x512.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any"
+              },
+              {
+                "src": "/icons/icon-512x512-maskable.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "maskable"
               }
             ]
           }
