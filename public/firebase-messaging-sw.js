@@ -41,7 +41,8 @@ const ASSETS_TO_PRECACHE = [
   '/icons/icon-144x144.png',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  '/screenshots/screenshot-mobile.png'
+  '/screenshots/screenshot-mobile.png',
+  '/screenshots/screenshot-desktop.png'
 ];
 
 // Installation event: cache Shell assets
