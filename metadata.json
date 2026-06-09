@@ -1,6 +1,6 @@
 {
   "name": "FILANT°225",
-  "description": "Plateforme de services (offres, travailleurs, urgence, position, carte, etc.)",
+  "description": "Réseau de services, mise en relation, de sécurité et de paiements sécurisés en Côte d'Ivoire. FILANT°225 vous connecte avec des professionnels certifiés en toute simplicité.",
   "requestFramePermissions": [
     "camera",
     "geolocation"
