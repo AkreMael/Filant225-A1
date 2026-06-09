@@ -33,16 +33,16 @@ messaging.onBackgroundMessage((payload) => {
 const CACHE_NAME = 'filant225-pwa-cache-v1';
 const ASSETS_TO_PRECACHE = [
   '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-72x72.png',
-  '/icons/icon-96x96.png',
-  '/icons/icon-128x128.png',
-  '/icons/icon-144x144.png',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/screenshots/screenshot-mobile.png',
-  '/screenshots/screenshot-desktop.png'
+  'index.html',
+  'manifest.json',
+  'icons/icon-72x72.png',
+  'icons/icon-96x96.png',
+  'icons/icon-128x128.png',
+  'icons/icon-144x144.png',
+  'icons/icon-192x192.png',
+  'icons/icon-512x512.png',
+  'screenshots/screenshot-mobile.png',
+  'screenshots/screenshot-desktop.png'
 ];
 
 // Installation event: cache Shell assets

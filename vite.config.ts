@@ -30,97 +30,97 @@ export default defineConfig(({ mode }) => {
             theme_color: "#000000",
             icons: [
               {
-                "src": "/icons/icon-72x72.png",
+                "src": "icons/icon-72x72.png",
                 "sizes": "72x72",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-72x72-maskable.png",
+                "src": "icons/icon-72x72-maskable.png",
                 "sizes": "72x72",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-96x96.png",
+                "src": "icons/icon-96x96.png",
                 "sizes": "96x96",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-96x96-maskable.png",
+                "src": "icons/icon-96x96-maskable.png",
                 "sizes": "96x96",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-128x128.png",
+                "src": "icons/icon-128x128.png",
                 "sizes": "128x128",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-128x128-maskable.png",
+                "src": "icons/icon-128x128-maskable.png",
                 "sizes": "128x128",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-144x144.png",
+                "src": "icons/icon-144x144.png",
                 "sizes": "144x144",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-144x144-maskable.png",
+                "src": "icons/icon-144x144-maskable.png",
                 "sizes": "144x144",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-192x192.png",
+                "src": "icons/icon-192x192.png",
                 "sizes": "192x192",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-192x192-maskable.png",
+                "src": "icons/icon-192x192-maskable.png",
                 "sizes": "192x192",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-256x256.png",
+                "src": "icons/icon-256x256.png",
                 "sizes": "256x256",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-256x256-maskable.png",
+                "src": "icons/icon-256x256-maskable.png",
                 "sizes": "256x256",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-384x384.png",
+                "src": "icons/icon-384x384.png",
                 "sizes": "384x384",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-384x384-maskable.png",
+                "src": "icons/icon-384x384-maskable.png",
                 "sizes": "384x384",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-512x512.png",
+                "src": "icons/icon-512x512.png",
                 "sizes": "512x512",
                 "type": "image/png",
                 "purpose": "any maskable"
               },
               {
-                "src": "/icons/icon-512x512-maskable.png",
+                "src": "icons/icon-512x512-maskable.png",
                 "sizes": "512x512",
                 "type": "image/png",
                 "purpose": "any maskable"
@@ -128,13 +128,13 @@ export default defineConfig(({ mode }) => {
             ],
             screenshots: [
               {
-                "src": "/screenshots/screenshot-mobile.png",
+                "src": "screenshots/screenshot-mobile.png",
                 "sizes": "540x720",
                 "type": "image/png",
                 "form_factor": "narrow"
               },
               {
-                "src": "/screenshots/screenshot-desktop.png",
+                "src": "screenshots/screenshot-desktop.png",
                 "sizes": "1920x1080",
                 "type": "image/png",
                 "form_factor": "wide"
