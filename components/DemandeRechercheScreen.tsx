@@ -39,19 +39,22 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     setSearchingCityName(item.city);
     // Automatically select/pin profile representation but keep loading state active
     setPinnedProfile(null);
+
+    // Immediately scroll up to the top of the page so the user sees the search animation and city search status
+    const mainEl = document.getElementById('demande-recherche-main') || document.querySelector('#demande-recherche-screen main');
+    if (mainEl) {
+      mainEl.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    const outerEl = document.getElementById('demande-recherche-screen');
+    if (outerEl) {
+      outerEl.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     
     setTimeout(() => {
       setPinnedProfile(item);
       setRetrievingProfileId(null);
       setIsSearchingVille(false);
-      
-      // Auto-scroll screen smoothly to reveal the newly pinned profile card in "la zone supérieure"
-      const el = document.getElementById('demande-recherche-screen');
-      if (el) {
-        el.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 320, behavior: 'smooth' });
-      }
     }, 2800); // 2.8 seconds simulated satellite lock routing
   };
 
@@ -1049,7 +1052,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
+      <main id="demande-recherche-main" className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
         {/* 3D World Map & Automatic City Search Locator Panel */}
         <div className="relative overflow-hidden bg-gradient-to-b from-[#f2faf9] via-[#e2f1f0] to-[#cfe7e8] rounded-3xl p-5 shadow-xl border border-[#c6e3e1] h-80 flex flex-col justify-between" id="dynamic-3d-locator-map">
           <style dangerouslySetInnerHTML={{__html: `
