@@ -834,6 +834,9 @@ const App: React.FC = () => {
         databaseService.saveIndividualScan(currentUser, newContact);
         databaseService.saveContacts(currentUser.phone, updatedContacts, currentUser);
         
+        // Envoi automatique d'un message de félicitations à l'utilisateur scanné
+        databaseService.sendAutomatedCongratsMessageAfterScan(currentUser, info);
+
         showPopup("Information validée et intégrée dans l'Assistance QR !", "alert");
         
         // Redirection automatique vers l'Assistance QR

@@ -1531,6 +1531,89 @@ export const databaseService = {
     }
   },
 
+  sendAutomatedCongratsMessageAfterScan: async (currentUser: any, parsedInfo: { name: string, title?: string, city?: string, details?: string }) => {
+    try {
+      if (!parsedInfo.name || !currentUser) return false;
+      
+      const inscriptions = await databaseService.getInscriptions();
+      if (!inscriptions || !Array.isArray(inscriptions)) {
+        console.log("No inscriptions found or could not fetch them.");
+        return false;
+      }
+
+      const normalizeStr = (str: string) => {
+        try {
+          return (str || '')
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, ' ');
+        } catch (e) {
+          return (str || '').toLowerCase().trim();
+        }
+      };
+
+      const targetName = normalizeStr(parsedInfo.name);
+      const targetCity = normalizeStr(parsedInfo.city || '');
+
+      // 1. First find any inscription whose name matches normalized
+      let candidates = inscriptions.filter((ins: any) => {
+        const insName = normalizeStr(ins.name);
+        return insName === targetName || insName.includes(targetName) || targetName.includes(insName);
+      });
+
+      if (candidates.length === 0) {
+        console.log(`No matching inscription found for name: ${parsedInfo.name}`);
+        return false;
+      }
+
+      // 2. If multiple candidates, filter by city if specified
+      let matchedInscr = candidates[0];
+      if (candidates.length > 1 && parsedInfo.city) {
+        const withCityMatch = candidates.filter((ins: any) => {
+          const insCity = normalizeStr(ins.city || ins.agencyCity || ins.companyCity || ins.equipmentCity || '');
+          return insCity === targetCity || insCity.includes(targetCity) || targetCity.includes(insCity);
+        });
+        if (withCityMatch.length > 0) {
+          matchedInscr = withCityMatch[0];
+        }
+      }
+
+      const rawPhone = (matchedInscr as any).id || (matchedInscr as any).phone;
+      if (!rawPhone) {
+        console.log("Matched inscription has no phone number associated.");
+        return false;
+      }
+
+      const sanitizedPhone = rawPhone.replace(/\D/g, '');
+      if (!sanitizedPhone) return false;
+
+      // Ensure we don't send a congrats message to the scanner themselves if they scanned their own QR code
+      const scannerPhone = (currentUser.phone || '').replace(/\D/g, '');
+      if (sanitizedPhone === scannerPhone) {
+        console.log("Scanner scanned themselves. Skipping automated congrats message.");
+        return false;
+      }
+
+      const scannerName = currentUser.name || "un utilisateur";
+      const autoMsg = {
+        text: `Félicitations, vous avez été scanné par ${scannerName} pour une mission.`,
+        sender: 'admin',
+        isRead: false,
+        adminReadStatus: 'LU',
+        timestamp: Date.now()
+      };
+
+      await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, autoMsg);
+      console.log(`Successfully sent congrats message to ${sanitizedPhone} (Scanned by ${scannerName})`);
+      return true;
+    } catch (err) {
+      console.error("Error in sendAutomatedCongratsMessageAfterScan:", err);
+      return false;
+    }
+  },
+
   onTotalUnreadAdminMessagesCount: (callback: (count: number) => void) => {
     try {
       const qPrivate = query(collection(db, 'MessageriePrivee'), where('adminReadStatus', '==', 'NON LU'));

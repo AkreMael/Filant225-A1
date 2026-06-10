@@ -4,7 +4,7 @@ import { Tab, User } from '../types';
 import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap, Search, ArrowLeft, X, ChevronRight, Send } from 'lucide-react';
 import MenuBackground from './common/MenuBackground';
 import { databaseService, SavedContact } from '../services/databaseService';
-import ScannerOverlay from './ScannerOverlay';
+import ScannerOverlay, { extractQRInfo } from './ScannerOverlay';
 import { SEARCHABLE_TITLES } from './common/formDefinitions';
 import { audioService } from '../services/audioService';
 import { chatService } from '../services/chatService';
@@ -1069,10 +1069,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const handleScanResult = (data: string) => {
     setShowScanner(false);
-    const parseKeyValue = (text: string, key: string) => {
-        const regex = new RegExp(`${key}\\s*[:=]\\s*([^\\n]+)`, 'i');
-        return text.match(regex)?.[1]?.trim();
-    };
+    const info = extractQRInfo(data);
+    
     const sanitizePhoneNumber = (phone: string): string => {
         if (!phone) return '';
         let cleanPhone = phone.replace(/[\s-.]/g, '');
@@ -1080,24 +1078,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         return cleanPhone;
     };
 
-    const title = parseKeyValue(data, 'Poste') || parseKeyValue(data, 'Titre') || 'Assistant QR';
-    const name = parseKeyValue(data, 'Nom') || parseKeyValue(data, 'Prénom') || 'Travailleur';
-    const phone = parseKeyValue(data, 'Tél') || parseKeyValue(data, 'Phone') || parseKeyValue(data, 'WhatsApp') || parseKeyValue(data, 'Téléphone');
-    const city = parseKeyValue(data, 'Ville') || parseKeyValue(data, 'Localité') || parseKeyValue(data, 'Commune') || 'Non spécifiée';
-    const details = parseKeyValue(data, 'Details') || parseKeyValue(data, 'Infos') || parseKeyValue(data, 'Détails');
-
-    let info: any = null;
-    if (name && phone) {
-        info = { name, phone: sanitizePhoneNumber(phone), city, title, details };
-    }
-
-    if (info) {
+    if (info.name && user) {
         const currentContacts = databaseService.getContacts(user.phone);
         const newContact: SavedContact = {
             id: Date.now().toString(),
             title: info.title || 'Assistant QR',
             name: info.name,
-            phone: info.phone,
+            phone: info.phone && info.phone !== 'N/A' ? sanitizePhoneNumber(info.phone) : 'N/A',
             city: info.city,
             review: info.details || info.city 
         };
@@ -1106,6 +1093,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         // Enregistrement individuel proactif pour garantir la persistence et visibilité admin
         databaseService.saveIndividualScan(user, newContact);
         databaseService.saveContacts(user.phone, updatedContacts, user);
+        
+        // Envoi automatique d'un message de félicitations à l'utilisateur scanné
+        databaseService.sendAutomatedCongratsMessageAfterScan(user, info);
         
         onShowPopup("Information validée et intégrée dans l'Assistance QR !", "alert");
     } else {

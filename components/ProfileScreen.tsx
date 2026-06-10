@@ -334,12 +334,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
         if (cleanPhone.startsWith('+225')) cleanPhone = cleanPhone.slice(4);
         return cleanPhone;
     };
-    if (info.name && info.phone !== 'N/A') {
+    if (info.name && user) {
         const newContact: SavedContact = {
             id: Date.now().toString(),
             title: info.title,
             name: info.name,
-            phone: sanitizePhone(info.phone),
+            phone: info.phone && info.phone !== 'N/A' ? sanitizePhone(info.phone) : 'N/A',
             city: info.city,
             review: info.details || info.city 
         };
@@ -349,6 +349,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
         // Enregistrement individuel proactif pour garantir la persistence et visibilité admin
         databaseService.saveIndividualScan(user, newContact);
         databaseService.saveContacts(user.phone, updated, user);
+        
+        // Envoi automatique d'un message de félicitations à l'utilisateur scanné
+        databaseService.sendAutomatedCongratsMessageAfterScan(user, info);
         
         onShowPopup("Information validée et intégrée dans l'Assistance QR !", "alert");
         setView('contacts');
