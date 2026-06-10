@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Tab } from '../types';
 import { databaseService } from '../services/databaseService';
-import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle, X } from 'lucide-react';
 
 interface InscriptionResult {
   id: string;
@@ -25,6 +25,35 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   const [results, setResults] = useState<InscriptionResult[] | null>(null);
   const [inscriptionsFromDB, setInscriptionsFromDB] = useState<any[]>([]);
   const [isLinking, setIsLinking] = useState(false);
+
+  // New states for top profile display & retrieval animation
+  const [pinnedProfile, setPinnedProfile] = useState<InscriptionResult | null>(null);
+  const [retrievingProfileId, setRetrievingProfileId] = useState<string | null>(null);
+  const [isSearchingVille, setIsSearchingVille] = useState(false);
+  const [searchingCityName, setSearchingCityName] = useState('');
+
+  // Handle simulated profile retrieval duration before pinning it to top of search screen
+  const handleRetrieveProfile = (item: InscriptionResult) => {
+    setRetrievingProfileId(item.id);
+    setIsSearchingVille(true);
+    setSearchingCityName(item.city);
+    // Automatically select/pin profile representation but keep loading state active
+    setPinnedProfile(null);
+    
+    setTimeout(() => {
+      setPinnedProfile(item);
+      setRetrievingProfileId(null);
+      setIsSearchingVille(false);
+      
+      // Auto-scroll screen smoothly to reveal the newly pinned profile card in "la zone supérieure"
+      const el = document.getElementById('demande-recherche-screen');
+      if (el) {
+        el.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 320, behavior: 'smooth' });
+      }
+    }, 2800); // 2.8 seconds simulated satellite lock routing
+  };
 
   // New subpath states for "Demande de service" form
   const [selectedItemForForm, setSelectedItemForForm] = useState<InscriptionResult | null>(null);
@@ -1021,16 +1050,261 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
       {/* Main Container */}
       <main className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
-        {/* Banner */}
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-6 text-white shadow-xl border-2 border-white/20 relative overflow-hidden">
-          <div className="absolute right-[-10px] bottom-[-20px] opacity-10">
-            <Search className="w-40 h-40 transform rotate-12" />
+        {/* 3D World Map & Automatic City Search Locator Panel */}
+        <div className="relative overflow-hidden bg-gradient-to-b from-[#f2faf9] via-[#e2f1f0] to-[#cfe7e8] rounded-3xl p-5 shadow-xl border border-[#c6e3e1] h-80 flex flex-col justify-between" id="dynamic-3d-locator-map">
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes marker-bounce {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-5px); }
+            }
+            @keyframes radar-ripple {
+              0% { r: 1px; opacity: 0.9; stroke-width: 1.5; }
+              100% { r: 40px; opacity: 0; stroke-width: 0.5; }
+            }
+            @keyframes map-sweep {
+              0% { transform: scale(0.98); opacity: 0.95; }
+              50% { transform: scale(1.01); opacity: 1; }
+              100% { transform: scale(0.98); opacity: 0.95; }
+            }
+            @keyframes rotate-globe {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+            @keyframes loader-progress {
+              0% { width: 0%; }
+              100% { width: 100%; }
+            }
+          `}} />
+
+          {/* Rotating Globe Accessory Widget (Top Right) */}
+          <div className="absolute top-4 right-4 w-12 h-12 bg-[#2dadac]/15 rounded-full border border-[#2dadac]/35 flex items-center justify-center overflow-hidden z-10 shadow-inner">
+            <svg 
+              className="w-8 h-8 text-[#2dadac]" 
+              style={{ animation: 'rotate-globe 40s linear infinite' }}
+              viewBox="0 0 100 100" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="1.2"
+            >
+              <circle cx="50" cy="50" r="45" />
+              <ellipse cx="50" cy="50" rx="45" ry="12" />
+              <ellipse cx="50" cy="50" rx="45" ry="28" />
+              <ellipse cx="50" cy="50" rx="12" ry="45" />
+              <ellipse cx="50" cy="50" rx="28" ry="45" />
+              <line x1="5" y1="50" x2="95" y2="50" />
+              <line x1="50" y1="5" x2="50" y2="95" />
+            </svg>
           </div>
-          <div className="relative z-10 space-y-2">
-            <h2 className="text-xl font-black uppercase tracking-tight leading-none text-white">Recherche Intelligente</h2>
-            <p className="text-xs text-orange-50/90 font-medium leading-relaxed">
-              Consultez instantanément les profils certifiés de FILANT°225. Saisissez l'activité recherchée pour initier une mise en relation directe.
-            </p>
+
+          {/* Interactive Status Info Banner (Top Left) */}
+          <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-[#2dadac]/15 backdrop-blur-md px-3.5 py-2 rounded-full border border-[#2dadac]/35 text-[10px] font-black uppercase tracking-wider text-[#1d706f]">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f25c34] opacity-80"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#f25c34]"></span>
+            </span>
+            <span>
+              {isSearchingVille ? `Localisation de ${searchingCityName}` : 'Recherche Côte d’Ivoire Active'}
+            </span>
+          </div>
+
+          {/* Isometric World Map Grid & Landmasses */}
+          <div className="absolute inset-0 z-0 opacity-90 pointer-events-none flex items-center justify-center translate-y-3">
+            <svg viewBox="0 0 600 300" className="w-full h-full text-[#2dadac] filter drop-shadow-[0_8px_16px_rgba(43,159,158,0.18)]">
+              {/* Latitude & Longitude lines creating 3D horizon */}
+              <g stroke="#b8e2e0" strokeWidth="0.8" fill="none">
+                <path d="M 50,80 Q 300,120 550,80" />
+                <path d="M 50,140 Q 300,180 550,140" />
+                <path d="M 50,200 Q 300,240 550,200" strokeWidth="1.2" stroke="#aad6d4" />
+                <path d="M 50,260 Q 300,300 550,260" />
+                
+                <path d="M 120,40 Q 180,180 120,320" strokeDasharray="2 3" />
+                <path d="M 220,40 Q 280,180 220,320" strokeDasharray="2 3" />
+                <path d="M 320,40 Q 380,180 320,320" strokeWidth="1" stroke="#aad6d4" />
+                <path d="M 420,40 Q 480,180 420,320" strokeDasharray="2 3" />
+                <path d="M 520,40 Q 580,180 520,320" strokeDasharray="2 3" />
+              </g>
+
+              {/* Continents filled with high-contrast teal matching screenshot */}
+              <g fill="#33a1a1" fillOpacity="0.85" stroke="#2a8585" strokeWidth="0.5">
+                {/* North America */}
+                <path d="M 60,110 C 75,85 110,75 140,80 C 170,85 190,70 195,50 C 180,30 140,40 110,45 C 90,48 70,35 60,40 C 45,47 40,65 52,90 Z" />
+                <path d="M 100,105 C 120,112 145,115 160,122 C 175,128 178,142 165,155 C 150,170 142,160 135,148 C 122,142 110,135 100,125 Z" />
+                {/* South America */}
+                <path d="M 165,155 C 185,158 195,170 185,190 C 178,205 188,225 182,245 C 176,265 160,285 152,295 C 146,290 140,265 148,240 C 154,220 150,195 152,180 C 154,168 160,160 165,155 Z" />
+                {/* Greenland */}
+                <path d="M 205,35 C 220,30 238,25 245,35 C 250,42 240,55 230,58 C 215,62 205,50 205,35 Z" />
+                {/* Eurasia & Africa */}
+                <path d="M 285,100 C 310,95 340,90 355,75 C 370,60 390,48 415,52 C 440,55 455,72 470,80 C 490,90 520,85 530,105 C 500,120 480,110 465,118 C 450,125 435,140 405,138 C 385,136 365,145 350,130 C 330,115 310,120 285,100 Z" />
+                <path d="M 285,100 C 305,115 320,130 315,150 C 310,170 325,188 320,205 C 315,222 295,245 285,255 C 275,240 270,220 278,198 C 284,180 275,160 270,145 C 265,130 275,115 285,100 Z" />
+                {/* Australia */}
+                <path d="M 445,185 C 465,180 485,190 495,205 C 490,225 470,235 455,225 C 440,215 435,195 445,185 Z" />
+                <circle cx="340" cy="210" r="2" />
+                <circle cx="218" cy="115" r="3" />
+                <circle cx="490" cy="110" r="3.5" />
+              </g>
+
+              {/* Bouncing red location pins on continents */}
+              <g>
+                {[
+                  { cx: 120, cy: 95 }, // NA
+                  { cx: 175, cy: 200 }, // SA
+                  { cx: 340, cy: 75 }, // Europe
+                  { cx: 485, cy: 215 }, // Australia
+                  { cx: 430, cy: 110 }, // Asia
+                ].map((pt, i) => (
+                  <g key={`static-pin-${i}`} className="animate-[marker-bounce_3s_infinite_ease-in-out]" style={{ animationDelay: `${i * 0.4}s` }}>
+                    {/* Shadow underneath */}
+                    <ellipse cx={pt.cx} cy={pt.cy} rx="2" ry="0.8" fill="black" fillOpacity="0.3" />
+                    {/* Pin vector */}
+                    <path 
+                      d="M 0,-15 A 5,5 0 0,0 -5,-10 C -5,-5 0,2 0,2 C 0,2 5,-5 5,-10 A 5,5 0 0,0 0,-15 Z" 
+                      fill="#f25c34" 
+                      transform={`translate(${pt.cx}, ${pt.cy})`}
+                    />
+                    <circle cx={pt.cx} cy={pt.cy - 10} r="1.5" fill="white" />
+                  </g>
+                ))}
+              </g>
+
+              {/* Dynamic Target Finder / Satellite Lock routing radar sweep lines */}
+              {isSearchingVille && (
+                <g>
+                  {/* Concentric pulsing circles focusing over searched city */}
+                  <circle 
+                    cx={
+                      searchingCityName.toLowerCase().includes('bassam') ? 326 :
+                      searchingCityName.toLowerCase().includes('abidjan') || searchingCityName.toLowerCase().includes('cocody') ? 318 :
+                      searchingCityName.toLowerCase().includes('bouake') ? 322 :
+                      searchingCityName.toLowerCase().includes('yamoussoukro') ? 317 : 318
+                    } 
+                    cy={155} 
+                    r="8" 
+                    fill="none" 
+                    stroke="#2dadac" 
+                    strokeWidth="1.8"
+                  >
+                    <animate attributeName="r" values="3;42" dur="1.2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="1;0" dur="1.2s" repeatCount="indefinite" />
+                  </circle>
+                  <circle 
+                    cx={
+                      searchingCityName.toLowerCase().includes('bassam') ? 326 :
+                      searchingCityName.toLowerCase().includes('abidjan') || searchingCityName.toLowerCase().includes('cocody') ? 318 :
+                      searchingCityName.toLowerCase().includes('bouake') ? 322 :
+                      searchingCityName.toLowerCase().includes('yamoussoukro') ? 317 : 318
+                    } 
+                    cy={155} 
+                    r="12" 
+                    fill="none" 
+                    stroke="#f25c34" 
+                    strokeWidth="2.5"
+                  >
+                    <animate attributeName="r" values="4;65" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.9;0" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
+                  </circle>
+                </g>
+              )}
+
+              {/* Primary Active Côte d'Ivoire Locator node - Blinking and Pulses */}
+              <g className="animate-[marker-bounce_2s_infinite_ease-in-out]">
+                <circle 
+                  cx={318} 
+                  cy={155} 
+                  r="6" 
+                  fill="none" 
+                  stroke="#2dadac" 
+                  strokeWidth="1.2"
+                  className="animate-[radar-ripple_2s_infinite_linear]"
+                />
+                <ellipse cx={318} cy={158} rx="3" ry="1" fill="black" fillOpacity="0.4" />
+                <path 
+                  d="M 0,-18 A 7,7 0 0,0 -7,-11 C -7,-4 0,3 0,3 C 0,3 7,-4 7,-11 A 7,7 0 0,0 0,-18 Z" 
+                  fill="#f25c34" 
+                  transform="translate(318, 155)"
+                />
+                <circle cx={318} cy={144} r="2" fill="white" />
+              </g>
+            </svg>
+          </div>
+
+          {/* Bottom Floating Area */}
+          <div className="relative z-10 w-full mt-auto">
+            {/* 1. Searching/Locating City State */}
+            {isSearchingVille && (
+              <div className="bg-slate-900/90 backdrop-blur-md p-4 text-white rounded-2xl border border-slate-700/60 flex flex-col items-center justify-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 text-[#2dadac] animate-spin" />
+                  <span className="text-[10px] uppercase font-black tracking-widest text-[#2dadac] animate-pulse">Recherche automatique de la ville...</span>
+                </div>
+                <p className="text-xs font-bold font-sans text-center">
+                  Ciblage GPS : <span className="text-[#f25c34] font-black">{searchingCityName.toUpperCase()}</span>
+                </p>
+                <div className="w-1/2 bg-slate-800 h-1 rounded-full overflow-hidden relative">
+                  <div className="absolute top-0 left-0 bg-[#f25c34] h-full rounded-full" style={{ animation: 'loader-progress 2.8s linear' }} />
+                </div>
+              </div>
+            )}
+
+            {/* 2. Pinned Profile details (Constructed EXACTLY like the user screenshot image) */}
+            {pinnedProfile && !isSearchingVille && (
+              <div className="bg-white rounded-2xl p-4 shadow-xl border border-emerald-100/80 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300" id="pinned-selected-profile">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  {/* Glowing Green Maps locator icon badge on the left */}
+                  <div className="w-12 h-12 bg-[#ebf7f5] rounded-full flex items-center justify-center border-2 border-emerald-400 flex-shrink-0 shadow-inner relative">
+                    <span className="absolute inset-0 bg-emerald-400/10 rounded-full animate-ping" style={{ animationDuration: '3s' }}></span>
+                    <MapPin className="h-5 w-5 text-emerald-500 fill-emerald-100 stroke-[2.5]" />
+                  </div>
+
+                  {/* Information block */}
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-1.5 flex-wrap leading-none">
+                      <span className="text-xs font-black uppercase tracking-tight text-slate-800 truncate">{pinnedProfile.name}</span>
+                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest">{pinnedProfile.profileType}</span>
+                    </div>
+                    
+                    <span className="text-[10px] font-black uppercase text-slate-500 block leading-none">{pinnedProfile.city}</span>
+                    
+                    <div className="pt-1 leading-none">
+                      <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider block leading-none">ACTIVITÉ / TITRE :</span>
+                      <span className="text-[11.5px] text-slate-800 font-extrabold block truncate leading-none mt-0.5">{pinnedProfile.titleOrActivity}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions: DEMANDE and close buttons */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => setSelectedItemForForm(pinnedProfile)}
+                    className="bg-[#f06e30] hover:bg-[#e05d1f] active:scale-95 text-white py-3 px-5 rounded-xl font-black uppercase text-[11px] tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5"
+                    id="pinned-submit-demande-btn"
+                  >
+                    <span>DEMANDE</span>
+                  </button>
+                  <button 
+                    onClick={() => setPinnedProfile(null)}
+                    className="p-1 px-2 text-slate-400 hover:text-slate-600 rounded text-[9px] font-extrabold uppercase transition-colors"
+                    title="Désélectionner"
+                  >
+                    Masquer
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Normal idle status when no profile is active */}
+            {!pinnedProfile && !isSearchingVille && (
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-[#c6e3e1] flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-300">
+                <div className="space-y-1">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-[#1d706f] flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    <span>Recherche Automatique de Profils</span>
+                  </h4>
+                  <p className="text-[11px] text-[#257371]/80 font-bold leading-relaxed max-w-lg">
+                    Scanner et simulation de liaison satellite à travers la Côte d'Ivoire. Choisissez un prestataire dans les résultats pour cibler sa localisation et soumettre une demande.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1161,16 +1435,23 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
                     {/* Action button next to result */}
                     <button
-                      onClick={() => setSelectedItemForForm(item)}
-                      disabled={isLinking}
+                      onClick={() => handleRetrieveProfile(item)}
+                      disabled={isLinking || retrievingProfileId !== null}
                       className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black uppercase text-[10px] tracking-wider py-2.5 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all font-sans"
                     >
-                      {isLinking ? (
+                      {retrievingProfileId === item.id ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Récupération...</span>
+                        </>
+                      ) : isLinking ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <MessageSquare className="h-3.5 w-3.5" />
+                        <>
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span>Demande de service</span>
+                        </>
                       )}
-                      <span>Demande de service</span>
                     </button>
                   </div>
                 ))}
