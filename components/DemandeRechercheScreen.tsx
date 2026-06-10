@@ -37,22 +37,26 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     setRetrievingProfileId(item.id);
     setIsSearchingVille(true);
     setSearchingCityName(item.city);
-    // Automatically select/pin profile representation but keep loading state active
-    setPinnedProfile(null);
+    // Pin the profile immediately so it renders at the top without delay
+    setPinnedProfile(item);
 
-    // Immediately scroll up to the top of the page so the user sees the search animation and city search status
-    const mainEl = document.getElementById('demande-recherche-main') || document.querySelector('#demande-recherche-screen main');
-    if (mainEl) {
-      mainEl.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    const outerEl = document.getElementById('demande-recherche-screen');
-    if (outerEl) {
-      outerEl.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // Scroll all possible scroll containers (including App's .scroll-container) to top smoothly and immediately
+    const selectors = ['.scroll-container', '#demande-recherche-main', '#demande-recherche-screen', 'main', '.overflow-y-auto'];
+    selectors.forEach(sel => {
+      const elements = document.querySelectorAll(sel);
+      elements.forEach(el => {
+        try {
+          el.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (e) {
+          try {
+            el.scrollTop = 0;
+          } catch (err) {}
+        }
+      });
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
     setTimeout(() => {
-      setPinnedProfile(item);
       setRetrievingProfileId(null);
       setIsSearchingVille(false);
     }, 2800); // 2.8 seconds simulated satellite lock routing
@@ -1232,8 +1236,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
           {/* Bottom Floating Area */}
           <div className="relative z-10 w-full mt-auto">
-            {/* 1. Searching/Locating City State */}
-            {isSearchingVille && (
+            {/* 1. Searching/Locating City State (Only show if there is no pinned profile details yet) */}
+            {isSearchingVille && !pinnedProfile && (
               <div className="bg-slate-900/90 backdrop-blur-md p-4 text-white rounded-2xl border border-slate-700/60 flex flex-col items-center justify-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 text-[#2dadac] animate-spin" />
@@ -1248,14 +1252,26 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               </div>
             )}
 
-            {/* 2. Pinned Profile details (Constructed EXACTLY like the user screenshot image) */}
-            {pinnedProfile && !isSearchingVille && (
-              <div className="bg-white rounded-2xl p-4 shadow-xl border border-emerald-100/80 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300" id="pinned-selected-profile">
+            {/* 2. Pinned Profile details (Constructed EXACTLY like the user screenshot image, showing live geolocating progress if currently matching) */}
+            {pinnedProfile && (
+              <div className={`bg-white rounded-2xl p-4 shadow-xl border transition-all duration-300 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300 ${
+                isSearchingVille ? 'border-orange-200 bg-orange-50/5' : 'border-emerald-100/80 bg-white'
+              }`} id="pinned-selected-profile">
                 <div className="flex items-center gap-3.5 min-w-0">
-                  {/* Glowing Green Maps locator icon badge on the left */}
-                  <div className="w-12 h-12 bg-[#ebf7f5] rounded-full flex items-center justify-center border-2 border-emerald-400 flex-shrink-0 shadow-inner relative">
-                    <span className="absolute inset-0 bg-emerald-400/10 rounded-full animate-ping" style={{ animationDuration: '3s' }}></span>
-                    <MapPin className="h-5 w-5 text-emerald-500 fill-emerald-100 stroke-[2.5]" />
+                  {/* Glowing Maps locator icon badge on the left */}
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 flex-shrink-0 shadow-inner relative transition-colors duration-300 ${
+                    isSearchingVille 
+                      ? 'bg-[#fdf4f2] border-orange-400' 
+                      : 'bg-[#ebf7f5] border-emerald-400'
+                  }`}>
+                    <span className={`absolute inset-0 rounded-full animate-ping ${
+                      isSearchingVille ? 'bg-orange-400/30 font-bold' : 'bg-emerald-400/20'
+                    }`} style={{ animationDuration: isSearchingVille ? '1s' : '3s' }}></span>
+                    <MapPin className={`h-5 w-5 stroke-[2.5] transition-colors duration-300 ${
+                      isSearchingVille 
+                        ? 'text-orange-500 fill-orange-100' 
+                        : 'text-emerald-500 fill-emerald-100'
+                    }`} />
                   </div>
 
                   {/* Information block */}
@@ -1268,28 +1284,46 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     <span className="text-[10px] font-black uppercase text-slate-500 block leading-none">{pinnedProfile.city}</span>
                     
                     <div className="pt-1 leading-none">
-                      <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider block leading-none">ACTIVITÉ / TITRE :</span>
-                      <span className="text-[11.5px] text-slate-800 font-extrabold block truncate leading-none mt-0.5">{pinnedProfile.titleOrActivity}</span>
+                      <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider block leading-none">
+                        {isSearchingVille ? 'CIBLAGE SATELLITE :' : 'ACTIVITÉ / TITRE :'}
+                      </span>
+                      <span className="text-[11.5px] text-slate-800 font-extrabold block truncate leading-none mt-0.5">
+                        {pinnedProfile.titleOrActivity}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Actions: DEMANDE and close buttons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 flex-shrink-0">
-                  <button
-                    onClick={() => setSelectedItemForForm(pinnedProfile)}
-                    className="bg-[#f06e30] hover:bg-[#e05d1f] active:scale-95 text-white py-3 px-5 rounded-xl font-black uppercase text-[11px] tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5"
-                    id="pinned-submit-demande-btn"
-                  >
-                    <span>DEMANDE</span>
-                  </button>
-                  <button 
-                    onClick={() => setPinnedProfile(null)}
-                    className="p-1 px-2 text-slate-400 hover:text-slate-600 rounded text-[9px] font-extrabold uppercase transition-colors"
-                    title="Désélectionner"
-                  >
-                    Masquer
-                  </button>
+                {/* Actions: DEMANDE and close buttons OR dynamic geolocating status */}
+                <div className="flex-shrink-0 min-w-[125px] flex items-center justify-end">
+                  {isSearchingVille ? (
+                    <div className="flex flex-col items-end space-y-1 w-full">
+                      <div className="flex items-center gap-1 text-[#f25c34] font-black text-[9px] uppercase tracking-wide animate-pulse">
+                        <Loader2 className="w-3 h-3 text-[#f25c34] animate-spin" />
+                        <span>LOCALISATION...</span>
+                      </div>
+                      <div className="w-24 bg-slate-100 h-1 rounded-full overflow-hidden relative border border-slate-200">
+                        <div className="absolute top-0 left-0 bg-[#f25c34] h-full rounded-full" style={{ animation: 'loader-progress 2.8s linear' }} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5">
+                      <button
+                        onClick={() => setSelectedItemForForm(pinnedProfile)}
+                        className="bg-[#f06e30] hover:bg-[#e05d1f] active:scale-95 text-white py-3 px-5 rounded-xl font-black uppercase text-[11px] tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5 animate-in zoom-in-95 duration-200"
+                        id="pinned-submit-demande-btn"
+                      >
+                        <span>DEMANDE</span>
+                      </button>
+                      <button 
+                        onClick={() => setPinnedProfile(null)}
+                        className="p-1 px-2 text-slate-400 hover:text-slate-600 rounded text-[9px] font-extrabold uppercase transition-colors"
+                        title="Désélectionner"
+                      >
+                        Masquer
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
