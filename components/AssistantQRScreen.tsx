@@ -45,7 +45,7 @@ const AssistantQRScreen: React.FC<AssistantQRScreenProps> = ({ onBack, user, onS
                    `*Service:* ${contact.title}\n` +
                    `*Nom:* ${contact.name}\n` +
                    `*Ville:* ${contact.city || 'Non spécifiée'}\n` +
-                   `*Numéro:* +225 ${contact.phone}\n\n` +
+                   (contact.phone && contact.phone !== 'N/A' ? `*Numéro:* +225 ${contact.phone}\n\n` : `\n`) +
                    `Bonjour FILANT°225, voici les informations pour ma demande.`;
       return `https://wa.me/${COMPANY_PHONE}?text=${encodeURIComponent(text)}`;
   };
@@ -63,11 +63,6 @@ const AssistantQRScreen: React.FC<AssistantQRScreenProps> = ({ onBack, user, onS
           <BackIcon className="h-6 w-6 text-gray-800 dark:text-white" />
         </button>
         <h1 className="flex-1 text-center font-black uppercase text-base tracking-tight mr-10 text-gray-900">ASSISTANCE QR</h1>
-        {contacts.length > 0 && (
-          <button onClick={handleClearAll} className="p-2 text-red-500 active:scale-90 transition-transform">
-            <TrashIcon />
-          </button>
-        )}
       </header>
 
       <div className="p-4 bg-white shadow-sm border-b border-gray-100">
@@ -121,14 +116,20 @@ const AssistantQRScreen: React.FC<AssistantQRScreenProps> = ({ onBack, user, onS
                 <div className="flex flex-col">
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Contact WhatsApp</p>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                    <p className="text-green-600 font-black text-sm tracking-tight">+225 {contact.phone}</p>
+                    {contact.phone && contact.phone !== 'N/A' ? (
+                      <>
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                        <p className="text-green-600 font-black text-sm tracking-tight">+225 {contact.phone}</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>
+                        <p className="text-amber-600 font-black text-xs tracking-tight">Uniquement Administrateur</p>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2.5">
-                  <button onClick={() => handleDelete(contact.id)} className="p-2.5 bg-red-50 text-red-500 rounded-full active:scale-90 transition-transform shadow-sm">
-                    <TrashIcon />
-                  </button>
                   <a href={`tel:${COMPANY_PHONE}`} className="p-2.5 bg-blue-600 text-white rounded-full shadow-lg active:scale-90 transition-transform flex items-center justify-center">
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                   </a>

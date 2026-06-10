@@ -24,11 +24,11 @@ export const extractQRInfo = (data: string) => {
         const json = JSON.parse(data);
         if (json.name || json.nom) {
             return {
-                title: json.title || json.poste || json.service || 'Assistant QR',
+                title: json.profil || json.title || json.poste || json.service || 'Assistant QR',
                 name: json.name || json.nom || 'Prestataire',
                 phone: json.phone || json.tel || 'N/A',
                 city: json.city || json.ville || 'Non spécifiée',
-                details: json.details || json.infos || ''
+                details: json.activite || json.identite || json.details || json.infos || ''
             };
         }
     } catch (e) {}
@@ -57,13 +57,14 @@ export const extractQRInfo = (data: string) => {
     const lines = (data || '').split('\n').map(l => l.trim()).filter(Boolean);
     
     const parseKeyValue = (text: string, key: string) => {
-        const regex = new RegExp(`${key}\\s*[:=]\\s*([^\\n\\r]+)`, 'i');
+        const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(`${escapedKey}\\s*[:=]\\s*([^\\n\\r]+)`, 'i');
         return text.match(regex)?.[1]?.trim();
     };
 
-    // Tentative 1: Format structuré avec clés
-    const title = parseKeyValue(data, 'Métier') || 
-                  parseKeyValue(data, 'MÉTIER') || 
+    // Parse with new keys
+    const title = parseKeyValue(data, 'Profil') || 
+                  parseKeyValue(data, 'Métier') || 
                   parseKeyValue(data, 'Poste') || 
                   parseKeyValue(data, 'Titre') || 
                   parseKeyValue(data, 'Service') ||
@@ -72,29 +73,39 @@ export const extractQRInfo = (data: string) => {
                   parseKeyValue(data, 'Nom de l’agence') ||
                   parseKeyValue(data, "Nom de l'agence") ||
                   parseKeyValue(data, 'Nom type d’équipement') ||
-                  parseKeyValue(data, "Nom type d'équipement");
-    const name = parseKeyValue(data, 'Nom') || parseKeyValue(data, 'Prénom') || parseKeyValue(data, 'Prestataire');
-    const phone = parseKeyValue(data, 'Numéro') || parseKeyValue(data, 'NUMÉRO') || parseKeyValue(data, 'Tél') || parseKeyValue(data, 'Phone') || parseKeyValue(data, 'WhatsApp') || parseKeyValue(data, 'Téléphone');
-    const city = parseKeyValue(data, 'Ville') || parseKeyValue(data, 'Localité') || parseKeyValue(data, 'Commune');
-    const details = parseKeyValue(data, 'Details') || parseKeyValue(data, 'Infos') || parseKeyValue(data, 'Détails');
+                  parseKeyValue(data, "Nom type d'équipement") ||
+                  'Assistant QR';
 
-    // Tentative 2: Fallback si les clés sont absentes (format ligne par ligne)
-    if (!name && lines.length >= 2) {
+    const details = parseKeyValue(data, 'Activité/Identité') ||
+                    parseKeyValue(data, 'Activite/Identite') ||
+                    parseKeyValue(data, 'Activité') ||
+                    parseKeyValue(data, 'Identité') ||
+                    parseKeyValue(data, 'Details') || 
+                    parseKeyValue(data, 'Infos') || 
+                    parseKeyValue(data, 'Détails') ||
+                    '';
+
+    const name = parseKeyValue(data, 'Nom') || parseKeyValue(data, 'Prénom') || parseKeyValue(data, 'Prestataire') || 'Prestataire';
+    const city = parseKeyValue(data, 'Ville') || parseKeyValue(data, 'Localité') || parseKeyValue(data, 'Commune') || 'Non spécifiée';
+    const phone = parseKeyValue(data, 'Numéro') || parseKeyValue(data, 'NUMÉRO') || parseKeyValue(data, 'Tél') || parseKeyValue(data, 'Phone') || parseKeyValue(data, 'WhatsApp') || parseKeyValue(data, 'Téléphone') || 'N/A';
+
+    // Fallback if the keys are completely absent (format line by line)
+    if (!parseKeyValue(data, 'Nom') && !parseKeyValue(data, 'Profil') && lines.length >= 2) {
         return {
             title: lines[0] || 'Assistant QR',
             name: lines[1] || 'Prestataire',
             city: lines[2] || 'Non spécifiée',
-            phone: lines[3] || lines[1], // Heuristique si 3 lignes
+            phone: lines[3] || 'N/A',
             details: lines.slice(4).join(' ') || ''
         };
     }
 
     return {
-        title: title || 'Assistant QR',
-        name: name || 'Prestataire',
-        phone: phone || 'N/A',
-        city: city || 'Non spécifiée',
-        details: details || ''
+        title,
+        name,
+        phone,
+        city,
+        details
     };
 };
 
@@ -264,18 +275,29 @@ const ScannerOverlay: React.FC<ScannerOverlayProps> = ({ onScan, onClose }) => {
                           <div className="flex flex-col">
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Contact structuré</p>
                               <div className="flex items-center gap-1.5">
-                                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                  <p className="text-green-600 font-black text-lg tracking-tight">+225 {parsedInfo.phone}</p>
+                                  {parsedInfo.phone && parsedInfo.phone !== 'N/A' ? (
+                                      <>
+                                          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                          <p className="text-green-600 font-black text-lg tracking-tight">+225 {parsedInfo.phone}</p>
+                                      </>
+                                  ) : (
+                                      <>
+                                          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                                          <p className="text-amber-600 font-black text-sm tracking-tight">Uniquement Administrateur</p>
+                                      </>
+                                  )}
                               </div>
                           </div>
-                          <div className="flex gap-2">
-                               <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center shadow-md">
-                                  <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.886-.001 2.269.655 4.288 1.902 5.941l-1.442 5.253 5.354-1.405z" /></svg>
-                               </div>
-                               <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
-                                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                               </div>
-                          </div>
+                          {parsedInfo.phone && parsedInfo.phone !== 'N/A' && (
+                              <div className="flex gap-2">
+                                   <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center shadow-md">
+                                      <svg className="w-5 h-5 text-white fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.886-.001 2.269.655 4.288 1.902 5.941l-1.442 5.253 5.354-1.405z" /></svg>
+                                   </div>
+                                   <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
+                                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                   </div>
+                              </div>
+                          )}
                       </div>
                   </div>
               )}

@@ -100,15 +100,7 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
       }
     }
 
-    if (profileType === 'Entreprise') {
-      return `Nom de l’entreprise: ${displayProfession}\nNom: ${name}\nVille: ${city}\nNuméro: ${phone}`;
-    } else if (profileType === 'Agence') {
-      return `Nom de l’agence: ${displayProfession}\nNom: ${name}\nVille: ${city}\nNuméro: ${phone}`;
-    } else if (profileType === 'Équipement') {
-      return `Nom type d’équipement: ${displayProfession}\nNom: ${name}\nVille: ${city}\nNuméro: ${phone}`;
-    } else {
-      return `Nom: ${name}\nMétier: ${displayProfession}\nVille: ${city}\nNuméro: ${phone}`;
-    }
+    return `Profil: ${profileType}\nActivité/Identité: ${displayProfession}\nNom: ${name}\nVille: ${city}`;
   };
 
   const currentStatus = qrData?.status || "Inscrivez-vous maintenant pour accéder aux missions, services et mises en relation disponibles sur FILANT°225.\n\n📌 Travailleurs\n📌 Équipements\n📌 Agences immobilières\n📌 Entreprises\n\n💳 Inscription : 310 FCFA seulement";

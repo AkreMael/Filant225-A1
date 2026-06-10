@@ -818,13 +818,13 @@ const App: React.FC = () => {
         return cleanPhone;
     };
 
-    if (info.name && info.phone !== 'N/A' && currentUser) {
+    if (info.name && currentUser) {
         const currentContacts = databaseService.getContacts(currentUser.phone);
         const newContact: SavedContact = {
             id: Date.now().toString(),
             title: info.title,
             name: info.name,
-            phone: sanitizePhone(info.phone),
+            phone: info.phone && info.phone !== 'N/A' ? sanitizePhone(info.phone) : 'N/A',
             city: info.city,
             review: info.details || info.city 
         };
