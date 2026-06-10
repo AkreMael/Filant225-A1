@@ -1370,25 +1370,6 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               </button>
             </div>
           </div>
-
-          <button
-            onClick={handleSearch}
-            disabled={isLoading || !queryInput.trim()}
-            className="w-full bg-slate-900 text-white py-4 px-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 transform active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
-            id="search-main-action-btn"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Recherche en cours...</span>
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4 stroke-[2.5]" />
-                <span>Demande de recherche</span>
-              </>
-            )}
-          </button>
         </div>
 
         {/* Loading Spinner Area */}
