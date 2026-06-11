@@ -5,7 +5,7 @@ import { databaseService } from '../services/databaseService';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../firebase';
-import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { Briefcase, Calendar, Clock, ChevronRight } from 'lucide-react';
 
 interface MyQRCodeScreenProps {
@@ -23,20 +23,75 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
 
   useEffect(() => {
     if (!user.phone) return;
+    
+    const getPhoneVariants = (phoneVal: string): string[] => {
+      if (!phoneVal) return [];
+      const raw = phoneVal.trim();
+      const sanitized = raw.replace(/\D/g, '');
+      const variants = new Set<string>([raw, sanitized]);
+      
+      if (sanitized.length > 10 && sanitized.startsWith('225')) {
+        const short = sanitized.substring(3);
+        variants.add(short);
+        variants.add(`+225${short}`);
+        variants.add(`225${short}`);
+        variants.add(`+225 ${short}`);
+      } else if (sanitized.length === 10) {
+        variants.add(`225${sanitized}`);
+        variants.add(`+225${sanitized}`);
+        variants.add(`+225 ${sanitized}`);
+      }
+      return Array.from(variants).filter(Boolean);
+    };
+
+    const possibleIds = getPhoneVariants(user.phone);
     const sanitizedPhone = user.phone.replace(/\D/g, '');
     
-    // Listen to missions for this user
+    // Listen to missions for this user using 'in' operator to match any potential phone format
     const missionsQuery = query(
       collection(db, 'Missions'),
-      where('userId', '==', user.phone), // Try both phone and sanitized if needed, but usually it's the raw phone
-      orderBy('timestamp', 'desc')
+      where('userId', 'in', possibleIds)
     );
 
     const unsubMissions = onSnapshot(missionsQuery, (snap) => {
-      setMissions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      let fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      fetched.sort((a: any, b: any) => {
+        const timeA = a.timestamp?.seconds || a.timestamp?.toMillis?.() || 0;
+        const timeB = b.timestamp?.seconds || b.timestamp?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+      setMissions(fetched);
     }, (err) => {
-      // Fallback if userId is different or query fails (e.g. missing index)
-      console.warn("Missions listener error:", err);
+      console.warn("Missions query error, falling back to dynamic search:", err);
+      // Fallback: listen to latest 150 missions and run absolute client-side matching
+      const fallbackQuery = query(
+        collection(db, 'Missions'),
+        limit(150)
+      );
+      
+      const unsubFallback = onSnapshot(fallbackQuery, (fallbackSnap) => {
+        let fetched = fallbackSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const normalizedTarget = user.phone.replace(/\D/g, '').slice(-8); // compare last 8 digits for maximum resilience
+        
+        let filtered = fetched.filter((m: any) => {
+          const mUserId = (m.userId || '').replace(/\D/g, '');
+          const mUserPhone = (m.userPhone || m.phone || '').replace(/\D/g, '');
+          
+          return (
+            possibleIds.includes(m.userId) ||
+            (mUserId.length > 0 && (mUserId.endsWith(normalizedTarget) || normalizedTarget.endsWith(mUserId))) ||
+            (mUserPhone.length > 0 && (mUserPhone.endsWith(normalizedTarget) || normalizedTarget.endsWith(mUserPhone)))
+          );
+        });
+        
+        filtered.sort((a: any, b: any) => {
+          const timeA = a.timestamp?.seconds || a.timestamp?.toMillis?.() || 0;
+          const timeB = b.timestamp?.seconds || b.timestamp?.toMillis?.() || 0;
+          return timeB - timeA;
+        });
+        setMissions(filtered);
+      });
+      return () => unsubFallback();
     });
 
     const activationRef = doc(db, 'QRCodeActivations', sanitizedPhone);

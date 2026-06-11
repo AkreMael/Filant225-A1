@@ -637,10 +637,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     setSendingMission(true);
     try {
       const status = statusOverride || missionForm.status;
+      const rawUserPhone = selectedItemForDetails.phone || selectedItemForDetails.userId || selectedItemForDetails.id || '';
+      const sanitizedPhone = rawUserPhone.replace(/\D/g, '');
+      
       await addDoc(collection(db, 'Missions'), {
         title: missionForm.title,
         message: missionForm.message,
-        userId: selectedItemForDetails.userId || selectedItemForDetails.phone,
+        userId: rawUserPhone,
+        userPhone: rawUserPhone,
+        sanitizedPhone: sanitizedPhone,
         status: status,
         adminReadStatus: 'NON LU',
         timestamp: serverTimestamp()
