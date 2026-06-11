@@ -212,20 +212,42 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     // Preparation immédiate du message
     const message = generateWhatsAppMessage(title, questions, answers, user, totalPrice, serviceMode, count);
 
+    // Build the submission message text based on requested format
+    let customText = "";
+    if (formType === 'simple_demande') {
+        customText = `📝 *Nouveau Formulaire de Demande Soumis*\n\n`;
+        customText += `• *Notification d'origine :* ${title}\n\n`;
+        customText += `--- DÉTAILS DE LA DEMANDE ---\n`;
+        
+        questions.forEach(q => {
+            const answer = answers[q.key];
+            if (answer !== undefined && answer !== null) {
+                customText += `• *${q.text(answers).replace(/\?$/, '')} :* ${answer}\n`;
+            }
+        });
+
+        customText += `\n--- IDENTITÉ DE L'UTILISATEUR ---\n`;
+        customText += `• *Nom :* ${user.name || 'Non spécifié'}\n`;
+        customText += `• *Ville de l'utilisateur :* ${user.city || 'Non spécifiée'}\n`;
+        customText += `• *Numéro de téléphone enregistré :* ${user.phone || 'Non spécifié'}\n`;
+    } else {
+        customText = `Nouveau formulaire soumis : ${title}\n\n${message}`;
+    }
+
     // Sauvegarde directe dans la messagerie privée sans ouvrir le chat
     const sanitizedPhone = user.phone.replace(/\D/g, '');
     const chatUserId = sanitizedPhone || user.userId || user.id || `${user.name}_${sanitizedPhone}`;
     
     const chatMsg = {
         sender: 'user',
-        text: `Nouveau formulaire soumis : ${title}\n\n${message}`,
+        text: customText,
         timestamp: Date.now(),
         type: 'form_submission',
         formData: {
             title,
             formType,
             answers,
-            totalPrice
+            totalPrice: formType === 'simple_demande' ? 0 : totalPrice
         }
     };
 
@@ -258,7 +280,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                 answers: answers,
                 adminReadStatus: 'NON LU'
             });
-        } else {
+        } else if (formType !== 'simple_demande') {
             // Save as a service request for the admin dashboard (this triggers the automated response)
             await databaseService.saveServiceRequest({
                 userId: chatUserId,
@@ -292,6 +314,45 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
   };
 
   if (showConfirmation) {
+    if (formType === 'simple_demande') {
+      return (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-white z-[700] flex flex-col font-sans p-8 items-center justify-center text-center animate-in fade-in duration-300"
+        >
+          <div className="w-full max-w-[320px] flex flex-col items-center">
+              {/* Logo area */}
+              <div className="relative w-48 h-48 mb-8">
+                  <div className="w-full h-full bg-white rounded-[2.3rem] shadow-2xl border-4 border-orange-50 flex items-center justify-center p-2.5 overflow-hidden">
+                      <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                  </div>
+              </div>
+
+              <div className="space-y-6 mb-12">
+                  <p className="text-xl font-bold text-gray-900 leading-tight">
+                      Votre demande a été envoyée avec succès !
+                  </p>
+                  
+                  <p className="text-[14px] font-semibold text-gray-400 leading-relaxed">
+                      Les détails de votre demande ont été transmis directement à l'administrateur dans votre messagerie privée.
+                  </p>
+              </div>
+
+              <div className="w-full">
+                  <button 
+                    onClick={onClose}
+                    className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-4 rounded-2xl text-lg shadow-xl active:scale-[0.98] transition-all"
+                  >
+                      Compris
+                  </button>
+              </div>
+          </div>
+        </motion.div>
+      );
+    }
+
     return (
       <motion.div 
         initial={{ opacity: 0 }}
@@ -454,14 +515,16 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                   </div>
                 )}
 
-                <div className="flex flex-col items-center mb-8 bg-orange-50 px-8 py-3 rounded-2xl border border-orange-100 shadow-sm">
-                    <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">
-                        {isBlurredImage ? "Dépôt de candidature (Embauche)" : (isRapidTitle ? "Intervention Immédiate" : (formType === 'stage' || formType === 'formation') ? "Frais de communication du service" : "Frais de mise en relation")}
-                    </span>
-                    <span className="text-2xl font-black text-orange-600">{totalPrice} CFA</span>
-                </div>
+                {formType !== 'simple_demande' && (
+                  <div className="flex flex-col items-center mb-8 bg-orange-50 px-8 py-3 rounded-2xl border border-orange-100 shadow-sm">
+                      <span className="text-[9px] font-black text-orange-400 uppercase tracking-widest">
+                          {isBlurredImage ? "Dépôt de candidature (Embauche)" : (isRapidTitle ? "Intervention Immédiate" : (formType === 'stage' || formType === 'formation') ? "Frais de communication du service" : "Frais de mise en relation")}
+                      </span>
+                      <span className="text-2xl font-black text-orange-600">{totalPrice} CFA</span>
+                  </div>
+                )}
 
-                {!isAppart && (
+                {formType !== 'simple_demande' && !isAppart && (
                   <div className="flex flex-col items-center mb-8">
                       <span className="text-[11px] font-black uppercase text-gray-800 mb-3">{isWorker ? 'Personne' : 'Quantité'}</span>
                       <div className="flex items-center gap-6">
@@ -625,7 +688,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                           disabled={isSending}
                           className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-5 rounded-3xl text-xl uppercase tracking-wider shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 min-h-[68px] cursor-pointer"
                         >
-                            {isSending ? <Spinner /> : <span>Confirmé</span>}
+                            {isSending ? <Spinner /> : <span>{formType === 'simple_demande' ? 'Envoyer la demande' : 'Confirmé'}</span>}
                         </button>
                         
                         <button 
@@ -666,13 +729,17 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                           {isFormComplete ? "Prêt à transmettre" : `${remainingFields} champs à remplir`}
                         </span>
 
-                        <button 
-                          onClick={() => handleAction('whatsapp')}
-                          disabled={isSending}
-                          className="w-14 h-14 bg-[#16a34a] rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform p-3 cursor-pointer"
-                        >
-                            {isSending ? <Spinner /> : <Phone className="w-full h-full text-white" fill="currentColor" />}
-                        </button>
+                        {formType !== 'simple_demande' ? (
+                          <button 
+                            onClick={() => handleAction('whatsapp')}
+                            disabled={isSending}
+                            className="w-14 h-14 bg-[#16a34a] rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-transform p-3 cursor-pointer"
+                          >
+                              {isSending ? <Spinner /> : <Phone className="w-full h-full text-white" fill="currentColor" />}
+                          </button>
+                        ) : (
+                          <div className="w-14"></div>
+                        )}
                     </div>
                 </div>
                 </>

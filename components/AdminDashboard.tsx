@@ -86,19 +86,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [notifHasButton, setNotifHasButton] = useState(false);
   const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
   const [sendingCustomNotif, setSendingCustomNotif] = useState(false);
-  const [notifButtonTravailleurs, setNotifButtonTravailleurs] = useState(false);
-  const [notifButtonEquipements, setNotifButtonEquipements] = useState(false);
-  const [notifButtonAgences, setNotifButtonAgences] = useState(false);
   const [notifButtonRecherche, setNotifButtonRecherche] = useState(false);
   const [notifButtonSimpleDemande, setNotifButtonSimpleDemande] = useState(false);
+  const [notifButtonQrCode, setNotifButtonQrCode] = useState(false);
+  const [notifButtonPaiement, setNotifButtonPaiement] = useState(false);
+  const [notifPaiementAmount, setNotifPaiementAmount] = useState('');
   const [additionalSteps, setAdditionalSteps] = useState<Array<{
     message: string;
     imageUrl: string;
-    buttonTravailleurs: boolean;
-    buttonEquipements: boolean;
-    buttonAgences: boolean;
     buttonRecherche: boolean;
     buttonSimpleDemande: boolean;
+    buttonQrCode: boolean;
+    buttonPaiement: boolean;
+    paiementAmount: string;
   }>>([]);
   
   // Data States
@@ -679,38 +679,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     }
 
     const buttonsList: any[] = [];
-    if (notifButtonTravailleurs) {
-      buttonsList.push({ label: "Formulaire Travailleurs", action: "travailleurs" });
-    }
-    if (notifButtonEquipements) {
-      buttonsList.push({ label: "Location d’équipements", action: "equipements" });
-    }
-    if (notifButtonAgences) {
-      buttonsList.push({ label: "Agences immobilières", action: "agences" });
-    }
     if (notifButtonRecherche) {
       buttonsList.push({ label: "Recherche", action: "recherche" });
     }
     if (notifButtonSimpleDemande) {
       buttonsList.push({ label: "Formulaire de Demande", action: "simple_demande" });
     }
+    if (notifButtonQrCode) {
+      buttonsList.push({ label: "Voir le code QR", action: "qr_code" });
+    }
+    if (notifButtonPaiement) {
+      const amt = parseFloat(notifPaiementAmount) || 0;
+      buttonsList.push({ 
+        label: `Paiement (${amt.toLocaleString('fr-FR')} CFA)`, 
+        action: "paiement", 
+        amount: amt 
+      });
+    }
 
     const steps = additionalSteps.map(step => {
       const stepButtons: any[] = [];
-      if (step.buttonTravailleurs) {
-        stepButtons.push({ label: "Formulaire Travailleurs", action: "travailleurs" });
-      }
-      if (step.buttonEquipements) {
-        stepButtons.push({ label: "Location d’équipements", action: "equipements" });
-      }
-      if (step.buttonAgences) {
-        stepButtons.push({ label: "Agences immobilières", action: "agences" });
-      }
       if (step.buttonRecherche) {
         stepButtons.push({ label: "Recherche", action: "recherche" });
       }
       if (step.buttonSimpleDemande) {
         stepButtons.push({ label: "Formulaire de Demande", action: "simple_demande" });
+      }
+      if (step.buttonQrCode) {
+        stepButtons.push({ label: "Voir le code QR", action: "qr_code" });
+      }
+      if (step.buttonPaiement) {
+        const amt = parseFloat(step.paiementAmount) || 0;
+        stepButtons.push({ 
+          label: `Paiement (${amt.toLocaleString('fr-FR')} CFA)`, 
+          action: "paiement", 
+          amount: amt 
+        });
       }
       return {
         message: step.message.trim(),
@@ -1565,76 +1569,63 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider leading-relaxed">Ajoutez des boutons de redirection directe vers les différentes sections de l'application :</p>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                          notifButtonTravailleurs 
-                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
-                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
-                        }`}>
-                          <input 
-                            type="checkbox" 
-                            checked={notifButtonTravailleurs}
-                            onChange={e => setNotifButtonTravailleurs(e.target.checked)}
-                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
-                          />
-                          <span className="text-xs font-bold font-mono tracking-tight">Formulaire Travailleurs</span>
-                        </label>
+                      <div className="space-y-3 pt-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                            notifButtonRecherche 
+                              ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                              : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={notifButtonRecherche}
+                              onChange={e => setNotifButtonRecherche(e.target.checked)}
+                              className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="text-xs font-bold font-mono tracking-tight">Recherche</span>
+                          </label>
 
-                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                          notifButtonEquipements 
-                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
-                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
-                        }`}>
-                          <input 
-                            type="checkbox" 
-                            checked={notifButtonEquipements}
-                            onChange={e => setNotifButtonEquipements(e.target.checked)}
-                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
-                          />
-                          <span className="text-xs font-bold font-mono tracking-tight">Location équipement</span>
-                        </label>
+                          <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                            notifButtonQrCode 
+                              ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                              : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={notifButtonQrCode}
+                              onChange={e => setNotifButtonQrCode(e.target.checked)}
+                              className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="text-xs font-bold font-mono tracking-tight">Voir le code QR</span>
+                          </label>
 
-                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                          notifButtonAgences 
-                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
-                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
-                        }`}>
-                          <input 
-                            type="checkbox" 
-                            checked={notifButtonAgences}
-                            onChange={e => setNotifButtonAgences(e.target.checked)}
-                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
-                          />
-                          <span className="text-xs font-bold font-mono tracking-tight">Agences immobilières</span>
-                        </label>
+                          <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                            notifButtonPaiement 
+                              ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                              : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={notifButtonPaiement}
+                              onChange={e => setNotifButtonPaiement(e.target.checked)}
+                              className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="text-xs font-bold font-mono tracking-tight">Paiement</span>
+                          </label>
+                        </div>
 
-                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                          notifButtonRecherche 
-                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
-                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
-                        }`}>
-                          <input 
-                            type="checkbox" 
-                            checked={notifButtonRecherche}
-                            onChange={e => setNotifButtonRecherche(e.target.checked)}
-                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
-                          />
-                          <span className="text-xs font-bold font-mono tracking-tight">Recherche</span>
-                        </label>
-
-                        <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
-                          notifButtonSimpleDemande 
-                            ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
-                            : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
-                        }`}>
-                          <input 
-                            type="checkbox" 
-                            checked={notifButtonSimpleDemande}
-                            onChange={e => setNotifButtonSimpleDemande(e.target.checked)}
-                            className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
-                          />
-                          <span className="text-xs font-bold font-mono tracking-tight">Formulaire de Demande</span>
-                        </label>
+                        {notifButtonPaiement && (
+                          <div className="p-3 bg-white dark:bg-slate-900 border border-gray-105 dark:border-slate-800 rounded-xl space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                            <label className="text-[10px] font-black uppercase text-gray-400">Montant (CFA)</label>
+                            <input 
+                              type="number" 
+                              value={notifPaiementAmount}
+                              onChange={e => setNotifPaiementAmount(e.target.value)}
+                              placeholder="Saisissez le montant en CFA (ex: 5000)..."
+                              className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1652,11 +1643,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                             {
                               message: '',
                               imageUrl: '',
-                              buttonTravailleurs: false,
-                              buttonEquipements: false,
-                              buttonAgences: false,
                               buttonRecherche: false,
-                              buttonSimpleDemande: false
+                              buttonSimpleDemande: false,
+                              buttonQrCode: false,
+                              buttonPaiement: false,
+                              paiementAmount: ''
                             }
                           ])}
                           className="flex items-center gap-1.5 px-3 py-2 bg-emerald-650 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-sm hover:shadow active:scale-95 transition-all font-mono"
@@ -1727,51 +1718,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               </div>
 
                               {/* Buttons checkboxes for step */}
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">Boutons optionnels pour l'étape {idx + 2}</label>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                  {/* Step Travailleurs Button */}
-                                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                                    <input
-                                      type="checkbox"
-                                      checked={step.buttonTravailleurs}
-                                      onChange={e => {
-                                        const checked = e.target.checked;
-                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonTravailleurs: checked } : s));
-                                      }}
-                                      className="w-3.5 h-3.5 rounded text-blue-600"
-                                    />
-                                    <span className="text-[10px] font-bold text-gray-600">Travailleurs</span>
-                                  </label>
-
-                                  {/* Step Equipements Button */}
-                                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                                    <input
-                                      type="checkbox"
-                                      checked={step.buttonEquipements}
-                                      onChange={e => {
-                                        const checked = e.target.checked;
-                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonEquipements: checked } : s));
-                                      }}
-                                      className="w-3.5 h-3.5 rounded text-blue-600"
-                                    />
-                                    <span className="text-[10px] font-bold text-gray-600">Equipements</span>
-                                  </label>
-
-                                  {/* Step Agences Button */}
-                                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                                    <input
-                                      type="checkbox"
-                                      checked={step.buttonAgences}
-                                      onChange={e => {
-                                        const checked = e.target.checked;
-                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonAgences: checked } : s));
-                                      }}
-                                      className="w-3.5 h-3.5 rounded text-blue-600"
-                                    />
-                                    <span className="text-[10px] font-bold text-gray-600">Agences Immo</span>
-                                  </label>
-
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                   {/* Step Recherche Button */}
                                   <label className="flex items-center gap-2 cursor-pointer select-none">
                                     <input
@@ -1783,23 +1732,53 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                       }}
                                       className="w-3.5 h-3.5 rounded text-blue-600"
                                     />
-                                    <span className="text-[10px] font-bold text-gray-600">Recherche</span>
+                                    <span className="text-[10px] font-bold text-gray-605">Recherche</span>
                                   </label>
 
-                                  {/* Step Simple Demande Button */}
+                                  {/* Step Voir le code QR Button */}
                                   <label className="flex items-center gap-2 cursor-pointer select-none">
                                     <input
                                       type="checkbox"
-                                      checked={step.buttonSimpleDemande}
+                                      checked={step.buttonQrCode}
                                       onChange={e => {
                                         const checked = e.target.checked;
-                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonSimpleDemande: checked } : s));
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonQrCode: checked } : s));
                                       }}
                                       className="w-3.5 h-3.5 rounded text-blue-600"
                                     />
-                                    <span className="text-[10px] font-bold text-gray-600">Demande simple</span>
+                                    <span className="text-[10px] font-bold text-gray-605">Voir le code QR</span>
+                                  </label>
+
+                                  {/* Step Paiement Button */}
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={step.buttonPaiement}
+                                      onChange={e => {
+                                        const checked = e.target.checked;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonPaiement: checked } : s));
+                                      }}
+                                      className="w-3.5 h-3.5 rounded text-blue-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-605">Paiement</span>
                                   </label>
                                 </div>
+
+                                {step.buttonPaiement && (
+                                  <div className="p-2.5 bg-white dark:bg-slate-900 border border-gray-105 dark:border-slate-850 rounded-xl space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                                    <label className="text-[9px] font-black uppercase text-gray-400">Montant pour l'étape {idx + 2} (CFA)</label>
+                                    <input 
+                                      type="number" 
+                                      value={step.paiementAmount}
+                                      onChange={e => {
+                                        const val = e.target.value;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, paiementAmount: val } : s));
+                                      }}
+                                      placeholder="Ex: 5000..."
+                                      className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-[11px] font-bold outline-none"
+                                    />
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}

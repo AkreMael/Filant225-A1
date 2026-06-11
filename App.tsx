@@ -798,7 +798,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleNotificationButtonAction = (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next', searchFilter?: string) => {
+  const handleNotificationButtonAction = (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next' | 'qr_code' | 'paiement', searchFilter?: string, notificationMessage?: string, amount?: number) => {
     switch (action) {
       case 'travailleurs':
         setInteractiveModalContext({
@@ -810,7 +810,7 @@ const App: React.FC = () => {
         setLocationInitialTab('equipement');
         setInteractiveModalContext({
           formType: 'personal_location',
-          title: "Location d'Équipement"
+          title: "Location d’Équipement"
         });
         break;
       case 'agences':
@@ -827,12 +827,25 @@ const App: React.FC = () => {
       case 'simple_demande':
         setInteractiveModalContext({
           formType: 'simple_demande',
-          title: "Formulaire de Demande"
+          title: notificationMessage || "Formulaire de Demande"
         });
         break;
       case 'next':
         // Handled directly inside step navigation
         break;
+      case 'qr_code':
+        navigateTo({ activeTab: Tab.MyQRCode });
+        break;
+      case 'paiement': {
+        const payAmount = amount || 0;
+        setPaymentConfirmationContext({
+          title: "Règlement demandé",
+          amount: payAmount.toString(),
+          paymentType: "Paiement de Notification",
+          waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${payAmount}`
+        });
+        break;
+      }
       default:
         navigateTo({ activeTab: Tab.Menu, menuView: 'hub' });
         break;
@@ -1388,7 +1401,7 @@ const App: React.FC = () => {
                                         if (btn.action === 'url_link') {
                                           handleUniversalLink(currentImageUrl);
                                         } else {
-                                          handleNotificationButtonAction(btn.action as any, btn.searchFilter);
+                                          handleNotificationButtonAction(btn.action as any, btn.searchFilter, currentMessage, (btn as any).amount);
                                         }
                                       }
                                     }}

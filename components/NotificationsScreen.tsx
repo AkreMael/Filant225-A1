@@ -11,7 +11,7 @@ interface NotificationsScreenProps {
   onBack: () => void;
   user: User;
   onViewDetails?: (notification: Notification) => void;
-  onNotificationAction?: (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next', searchFilter?: string) => void;
+  onNotificationAction?: (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next' | 'qr_code' | 'paiement', searchFilter?: string, notificationMessage?: string, amount?: number) => void;
   onUniversalLink?: (url: string) => void;
 }
 
@@ -160,7 +160,7 @@ const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
                                key={idx}
                                onClick={(e) => {
                                  e.stopPropagation();
-                                 onNotificationAction?.(btn.action as any, btn.searchFilter);
+                                 onNotificationAction?.(btn.action as any, btn.searchFilter, n.message, (btn as any).amount);
                                }}
                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-xl transition-all shadow-sm active:scale-95"
                              >
