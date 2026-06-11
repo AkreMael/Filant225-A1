@@ -272,8 +272,8 @@ export const SEARCHABLE_TITLES = [
 
 // --- PRICE CALCULATION ---
 export const calculateTotalPrice = (formType: string, answers: Answers, serviceMode?: string, count: number = 1, title: string = ''): number => {
-    // 0. Stage et Formation sont des forfaits de communication à 100 CFA
-    if (formType === 'stage' || formType === 'formation') {
+    // 0. Stage, Formation et Demande Simple sont des forfaits de communication à 100 CFA
+    if (formType === 'stage' || formType === 'formation' || formType === 'simple_demande') {
         return 100;
     }
 
@@ -530,9 +530,8 @@ export const formationQuestions: Question[] = [
 ];
 
 export const simpleDemandeQuestions: Question[] = [
-  { key: 'city', text: () => "Ville de la demande ?", type: 'text', placeholder: 'Ex: Abidjan, Cocody' },
-  { key: 'budget', text: () => "Montant proposé ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 15 000 FCFA' },
-  { key: 'contact_phone', text: () => "Numéro de téléphone à contacter ?", type: 'text', inputType: 'tel', placeholder: 'Ex: 0708091011' }
+  { key: 'city', text: () => "Ville de la demande", type: 'text', placeholder: "Saisissez la ville concernée..." },
+  { key: 'contact_phone', text: () => "Numéro de téléphone du correspondant", type: 'text', inputType: 'tel', placeholder: "Indiquez le numéro du correspondant..." }
 ];
 
 export const getQuestionsForType = (formType: string, title: string, serviceMode?: string): Question[] => {

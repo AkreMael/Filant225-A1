@@ -247,7 +247,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
             title,
             formType,
             answers,
-            totalPrice: formType === 'simple_demande' ? 0 : totalPrice
+            totalPrice: totalPrice
         }
     };
 
@@ -303,8 +303,28 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
             window.open(`https://wa.me/2250705052632?text=${encodeURIComponent(message)}`, '_blank');
         }
 
-        // Afficher l'écran de confirmation
-        setShowConfirmation(true);
+        if (formType === 'simple_demande') {
+            const payAmount = 100;
+            const payMessage = generateWhatsAppMessage("Paiement des frais de communication", questions, answers, user, payAmount, serviceMode, count);
+            window.dispatchEvent(new CustomEvent('trigger-payment-view', { 
+              detail: {
+                title: "Paiement des frais de communication",
+                amount: payAmount.toString(),
+                paymentType: 'simple_demande',
+                waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${payAmount}`,
+                formData: {
+                    formType: 'simple_demande',
+                    formTitle: "Paiement des frais de communication",
+                    data: answers,
+                    whatsappMessage: payMessage
+                }
+              }
+            }));
+            onClose();
+        } else {
+            // Afficher l'écran de confirmation
+            setShowConfirmation(true);
+        }
     } catch (error) {
         console.error("Error saving form to private chat:", error);
         showToast("Erreur lors de l'enregistrement. Réessayez.");

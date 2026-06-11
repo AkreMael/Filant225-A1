@@ -1586,6 +1586,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                           </label>
 
                           <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                            notifButtonSimpleDemande 
+                              ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                              : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={notifButtonSimpleDemande}
+                              onChange={e => setNotifButtonSimpleDemande(e.target.checked)}
+                              className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="text-xs font-bold font-mono tracking-tight">Formulaire de demande</span>
+                          </label>
+
+                          <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
                             notifButtonQrCode 
                               ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
                               : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
@@ -1720,7 +1734,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               {/* Buttons checkboxes for step */}
                               <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">Boutons optionnels pour l'étape {idx + 2}</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
                                   {/* Step Recherche Button */}
                                   <label className="flex items-center gap-2 cursor-pointer select-none">
                                     <input
@@ -1732,7 +1746,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                       }}
                                       className="w-3.5 h-3.5 rounded text-blue-600"
                                     />
-                                    <span className="text-[10px] font-bold text-gray-605">Recherche</span>
+                                    <span className="text-[10px] font-bold text-gray-650">Recherche</span>
+                                  </label>
+
+                                  {/* Step Formulaire de demande Button */}
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={step.buttonSimpleDemande}
+                                      onChange={e => {
+                                        const checked = e.target.checked;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonSimpleDemande: checked } : s));
+                                      }}
+                                      className="w-3.5 h-3.5 rounded text-blue-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-650">Formulaire de demande</span>
                                   </label>
 
                                   {/* Step Voir le code QR Button */}
@@ -1746,7 +1774,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                       }}
                                       className="w-3.5 h-3.5 rounded text-blue-600"
                                     />
-                                    <span className="text-[10px] font-bold text-gray-605">Voir le code QR</span>
+                                    <span className="text-[10px] font-bold text-gray-650">Voir le code QR</span>
                                   </label>
 
                                   {/* Step Paiement Button */}
@@ -1760,7 +1788,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                       }}
                                       className="w-3.5 h-3.5 rounded text-blue-600"
                                     />
-                                    <span className="text-[10px] font-bold text-gray-605">Paiement</span>
+                                    <span className="text-[10px] font-bold text-gray-650">Paiement</span>
                                   </label>
                                 </div>
 
