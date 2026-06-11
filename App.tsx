@@ -127,6 +127,39 @@ interface NavigationPoint {
 }
 
 const App: React.FC = () => {
+  const [globalViewportHeight, setGlobalViewportHeight] = useState<string>('100dvh');
+
+  useEffect(() => {
+    const handleViewportUpdate = () => {
+      const targetHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      setGlobalViewportHeight(`${targetHeight}px`);
+    };
+
+    window.addEventListener('resize', handleViewportUpdate);
+    window.addEventListener('focus', handleViewportUpdate);
+    document.addEventListener('visibilitychange', handleViewportUpdate);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportUpdate);
+      window.visualViewport.addEventListener('scroll', handleViewportUpdate);
+    }
+
+    handleViewportUpdate();
+
+    // Trigger update automatically to catch delayed changes and external tab switch
+    const interval = setInterval(handleViewportUpdate, 500);
+
+    return () => {
+      window.removeEventListener('resize', handleViewportUpdate);
+      window.removeEventListener('focus', handleViewportUpdate);
+      document.removeEventListener('visibilitychange', handleViewportUpdate);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportUpdate);
+        window.visualViewport.removeEventListener('scroll', handleViewportUpdate);
+      }
+      clearInterval(interval);
+    };
+  }, []);
+
   const [currentUser, setCurrentUser] = useState<User | null>(() => databaseService.getActiveUser());
   const [isAuthChecking, setIsAuthChecking] = useState(() => !databaseService.getActiveUser());
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -850,8 +883,8 @@ const App: React.FC = () => {
   if (!hasCompletedFirstLaunch) {
       return (
         <GlobalRippleEffect>
-          <div className="flex justify-center bg-white w-full h-full min-h-[100dvh]">
-            <div className="w-full max-w-[480px] h-[100dvh] relative flex flex-col overflow-hidden bg-white shadow-2xl">
+          <div className="flex justify-center bg-white w-full" style={{ minHeight: globalViewportHeight }}>
+            <div className="w-full max-w-[480px] relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
               <div className="flex-1 relative overflow-hidden">
                 {!showSmartRegistration ? (
                   <FirstLaunchScreen onComplete={handleFirstLaunchComplete} />
@@ -875,8 +908,8 @@ const App: React.FC = () => {
   if (!currentUser) {
     return (
         <GlobalRippleEffect>
-          <div className="flex justify-center bg-white w-full h-full min-h-[100dvh]">
-            <div className="w-full max-w-[480px] h-[100dvh] relative flex flex-col overflow-hidden bg-white shadow-2xl">
+          <div className="flex justify-center bg-white w-full" style={{ minHeight: globalViewportHeight }}>
+            <div className="w-full max-w-[480px] relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
               <div className="flex-1 relative overflow-hidden">
                 <LoginScreen onLoginSuccess={handleLogin} onShowPopup={showPopup} />
                 {popup.show && (
@@ -899,8 +932,8 @@ const App: React.FC = () => {
 
   if (showSplash) {
       return (
-          <div className="flex justify-center bg-white w-full h-full min-h-[100dvh]">
-            <div className="w-full max-w-[480px] h-[100dvh] relative flex flex-col overflow-hidden bg-white shadow-2xl">
+          <div className="flex justify-center bg-white w-full" style={{ minHeight: globalViewportHeight }}>
+            <div className="w-full max-w-[480px] relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
               <div className="flex-1 relative overflow-hidden">
                 <SplashScreen 
                   userName={currentUser.name} 
@@ -1154,8 +1187,11 @@ const App: React.FC = () => {
 
   return (
     <GlobalRippleEffect>
-      <div className="flex justify-center bg-white w-full min-h-[100dvh]">
-        <div className={`w-full ${isAdminView ? 'admin-layout' : 'max-w-[480px]'} h-[100dvh] relative flex flex-col bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 shadow-2xl overflow-hidden`}>
+      <div className="flex justify-center bg-white w-full" style={{ minHeight: globalViewportHeight }}>
+        <div 
+          className={`w-full ${isAdminView ? 'admin-layout' : 'max-w-[480px]'} relative flex flex-col bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 shadow-2xl overflow-hidden`}
+          style={{ height: globalViewportHeight, minHeight: globalViewportHeight, maxHeight: globalViewportHeight }}
+        >
           
           {/* App Content Area */}
           <div className="flex-1 relative flex flex-col overflow-hidden">
