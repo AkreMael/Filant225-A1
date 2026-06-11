@@ -40,27 +40,87 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     // Pin the profile immediately so it renders at the top without delay
     setPinnedProfile(item);
 
-    // Scroll all possible scroll containers (including App's .scroll-container) to top smoothly and immediately
-    const selectors = ['.scroll-container', '#demande-recherche-main', '#demande-recherche-screen', 'main', '.overflow-y-auto'];
-    selectors.forEach(sel => {
-      const elements = document.querySelectorAll(sel);
-      elements.forEach(el => {
-        try {
-          el.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch (e) {
+    // Scroll helper to target all potential scroll containers smoothly and immediately
+    const performScroll = (behavior: 'smooth' | 'auto') => {
+      const selectors = [
+        '.scroll-container', 
+        '#demande-recherche-main', 
+        '#demande-recherche-screen', 
+        'main', 
+        '.overflow-y-auto'
+      ];
+      selectors.forEach(sel => {
+        const elements = document.querySelectorAll(sel);
+        elements.forEach(el => {
           try {
-            el.scrollTop = 0;
-          } catch (err) {}
-        }
+            el.scrollTo({ top: 0, behavior });
+          } catch (e) {
+            try {
+              el.scrollTop = 0;
+            } catch (err) {}
+          }
+        });
       });
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      try {
+        window.scrollTo({ top: 0, behavior });
+        document.documentElement.scrollTo({ top: 0, behavior });
+        document.body.scrollTo({ top: 0, behavior });
+      } catch (err) {}
+    };
+
+    // Execute scroll instantly first to react immediately to the click
+    performScroll('auto');
+
+    // Also trigger smooth scrolling across multiple frames & timeouts
+    // to override any layout shifts or delayed renders from React state updates
+    requestAnimationFrame(() => performScroll('smooth'));
+    setTimeout(() => performScroll('smooth'), 10);
+    setTimeout(() => performScroll('smooth'), 50);
+    setTimeout(() => performScroll('smooth'), 100);
+    setTimeout(() => performScroll('smooth'), 200);
+    setTimeout(() => performScroll('smooth'), 400);
     
     setTimeout(() => {
       setRetrievingProfileId(null);
       setIsSearchingVille(false);
     }, 2800); // 2.8 seconds simulated satellite lock routing
   };
+
+  // Automatically scroll to the top of the search view whenever pinning/locating starts
+  useEffect(() => {
+    if (isSearchingVille || pinnedProfile) {
+      const performScroll = (behavior: 'smooth' | 'auto') => {
+        const selectors = [
+          '.scroll-container', 
+          '#demande-recherche-main', 
+          '#demande-recherche-screen', 
+          'main', 
+          '.overflow-y-auto'
+        ];
+        selectors.forEach(sel => {
+          const elements = document.querySelectorAll(sel);
+          elements.forEach(el => {
+            try {
+              el.scrollTo({ top: 0, behavior });
+            } catch (e) {
+              try {
+                el.scrollTop = 0;
+              } catch (err) {}
+            }
+          });
+        });
+        try {
+          window.scrollTo({ top: 0, behavior });
+          document.documentElement.scrollTo({ top: 0, behavior });
+          document.body.scrollTo({ top: 0, behavior });
+        } catch (err) {}
+      };
+
+      performScroll('smooth');
+      const timer = setTimeout(() => performScroll('smooth'), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearchingVille, pinnedProfile]);
 
   // New subpath states for "Demande de service" form
   const [selectedItemForForm, setSelectedItemForForm] = useState<InscriptionResult | null>(null);
