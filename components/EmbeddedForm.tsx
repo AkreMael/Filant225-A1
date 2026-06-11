@@ -13,6 +13,14 @@ const Spinner = () => (
     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
 );
 
+const formatPhoneNumber = (digits: string) => {
+  const parts = [];
+  for (let i = 0; i < digits.length; i += 2) {
+    parts.push(digits.slice(i, i + 2));
+  }
+  return parts.join(' ');
+};
+
 interface EmbeddedFormProps {
   title: string;
   formType: 'worker' | 'location' | 'personal_worker' | 'personal_location' | 'night_service' | 'rapid_building_service' | 'stage' | 'formation' | 'simple_demande';
@@ -517,6 +525,152 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                 <div className="h-1 w-20 bg-orange-500 mt-1 rounded-full"></div>
             </div>
 
+            {formType === 'simple_demande' ? (
+                <div className="w-full max-w-sm flex-1 flex flex-col items-center">
+                    {/* Le cadre de formulaire simple */}
+                    <div className="w-full bg-white border border-slate-150 rounded-2xl p-5 shadow-sm space-y-5 my-2">
+                        {/* Ville de la demande */}
+                        <div className="flex flex-col gap-1.5 w-full text-left align-left items-start">
+                            <label className="text-[10px] font-black uppercase text-gray-500 tracking-wider flex items-center gap-1.5 ml-1">
+                                Ville de la demande
+                                <SpeakerIcon text="Ville de la demande" className="text-orange-500 animate-pulse" />
+                            </label>
+                            <div className="bg-gray-50 border-2 border-slate-100 focus-within:border-orange-500 rounded-xl flex items-center px-4 py-0.5 transition-all w-full">
+                                <input 
+                                    type="text"
+                                    value={(answers['city'] as string) || ''}
+                                    onChange={(e) => {
+                                        setAnswers(prev => ({ ...prev, city: e.target.value }));
+                                    }}
+                                    placeholder="Saisissez la ville concernée (ex: Abidjan, Cocody)..."
+                                    className="bg-transparent w-full py-3.5 text-sm font-bold text-gray-800 outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Numéro de téléphone du correspondant */}
+                        <div className="flex flex-col gap-1.5 w-full text-left align-left items-start">
+                            <label className="text-[10px] font-black uppercase text-gray-500 tracking-wider flex items-center gap-1.5 ml-1">
+                                Numéro de téléphone du correspondant
+                                <SpeakerIcon text="Numéro de téléphone du correspondant" className="text-orange-500 animate-pulse" />
+                            </label>
+                            <div className="bg-gray-50 border-2 border-slate-100 focus-within:border-orange-500 rounded-xl flex items-center px-4 py-0.5 transition-all w-full">
+                                <span className="text-sm font-extrabold text-orange-600 bg-orange-50/50 px-2.5 py-1 rounded-lg border border-orange-200/40 mr-2.5 select-none shrink-0 font-mono">
+                                    +225
+                                </span>
+                                <input 
+                                    type="tel"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    maxLength={14} // 10 digits + 4 spaces
+                                    value={formatPhoneNumber(((answers['contact_phone'] as string) || ''))}
+                                    onChange={(e) => {
+                                        const raw = e.target.value;
+                                        const cleaned = raw.replace(/\D/g, '').slice(0, 10);
+                                        setAnswers(prev => ({ ...prev, contact_phone: cleaned }));
+                                    }}
+                                    placeholder="07 05 05 26 32"
+                                    className="bg-transparent w-full py-3.5 text-sm font-extrabold text-gray-800 outline-none font-mono tracking-wider"
+                                />
+                            </div>
+                            <p className="text-[9px] text-gray-400 font-bold italic ml-1">
+                                Restreint au format de 10 chiffres (ex: 07 05 05 26 32)
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Envoyer Button */}
+                    <div className="w-full mt-4">
+                        <button 
+                            onClick={async () => {
+                                const city = ((answers['city'] as string) || '').trim();
+                                const phone = ((answers['contact_phone'] as string) || '').replace(/\D/g, '');
+                                if (!city) {
+                                    showToast("Veuillez saisir la ville de la demande");
+                                    return;
+                                }
+                                if (phone.length !== 10) {
+                                    showToast("Veuillez saisir un numéro de téléphone à 10 chiffres");
+                                    return;
+                                }
+                                // Envoyer!
+                                setIsSending(true);
+                                
+                                // Preparation immédiate du message
+                                const message = generateWhatsAppMessage(title, questions, answers, user, totalPrice, serviceMode, count);
+
+                                let customText = `📝 *Nouveau Formulaire de Demande Soumis*\n\n`;
+                                customText += `• *Notification d'origine :* ${title}\n\n`;
+                                customText += `--- DÉTAILS DE LA DEMANDE ---\n`;
+                                customText += `• *Ville de la demande :* ${city}\n`;
+                                customText += `• *Numéro de téléphone du correspondant :* +225 ${formatPhoneNumber(phone)}\n\n`;
+                                customText += `--- IDENTITÉ DE L'UTILISATEUR ---\n`;
+                                customText += `• *Nom :* ${user.name || 'Non spécifié'}\n`;
+                                customText += `• *Ville de l'utilisateur :* ${user.city || 'Non spécifiée'}\n`;
+                                customText += `• *Numéro de téléphone enregistré :* ${user.phone || 'Non spécifié'}\n`;
+
+                                const sanitizedPhone = user.phone.replace(/\D/g, '');
+                                const chatUserId = sanitizedPhone || user.userId || user.id || `${user.name}_${sanitizedPhone}`;
+                                
+                                const chatMsg = {
+                                    sender: 'user',
+                                    text: customText,
+                                    timestamp: Date.now(),
+                                    type: 'form_submission',
+                                    formData: {
+                                        title,
+                                        formType,
+                                        answers,
+                                        totalPrice: totalPrice
+                                    }
+                                };
+
+                                try {
+                                    await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
+                                    
+                                    const payAmount = 100;
+                                    const payMessage = generateWhatsAppMessage("Paiement des frais de communication", questions, answers, user, payAmount, serviceMode, count);
+                                    window.dispatchEvent(new CustomEvent('trigger-payment-view', { 
+                                      detail: {
+                                        title: "Paiement des frais de communication",
+                                        amount: payAmount.toString(),
+                                        paymentType: 'simple_demande',
+                                        waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${payAmount}`,
+                                        formData: {
+                                            formType: 'simple_demande',
+                                            formTitle: "Paiement des frais de communication",
+                                            data: answers,
+                                            whatsappMessage: payMessage
+                                        }
+                                      }
+                                    }));
+                                    onClose();
+                                } catch (error) {
+                                    console.error("Error submitting simple demand form:", error);
+                                    showToast("Erreur lors de la soumission. Réessayez.");
+                                } finally {
+                                    setIsSending(false);
+                                }
+                            }}
+                            disabled={isSending}
+                            className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-4 rounded-2xl text-lg uppercase tracking-wider shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 min-h-[56px] cursor-pointer"
+                        >
+                            {isSending ? <Spinner /> : <span>Envoyer la demande</span>}
+                        </button>
+                    </div>
+
+                    <p className="text-gray-400 text-xs leading-relaxed text-center px-4 mt-6">
+                        {description || "Service professionnel de mise en relation FILANT°225. Nous garantissons la compétence et la fiabilité de nos prestataires."}
+                    </p>
+
+                    {/* Toast Alert */}
+                    {toastMessage && (
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-5 py-2 bg-black/90 text-white font-bold text-xs uppercase tracking-wide rounded-full shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-300 z-50 whitespace-nowrap">
+                            {toastMessage}
+                        </div>
+                    )}
+                </div>
+            ) : (
                 <>
                 {isWorker && !isBlurredImage && !isRapidTitle && (
                   <div className="flex gap-3 mb-8">
@@ -763,6 +917,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                     </div>
                 </div>
                 </>
+            )}
         </motion.div>
       </div>
     </motion.div>
