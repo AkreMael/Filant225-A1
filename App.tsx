@@ -445,7 +445,8 @@ const App: React.FC = () => {
     'notifications',
     'assistant_qr',
     'emergency_form',
-    'stage_formation_hub'
+    'stage_formation_hub',
+    'demande_recherche'
   ];
 
   const shouldShowAdminDashboard = isAdmin(currentUser) && !adminForceAppView && !adminChatContext;
