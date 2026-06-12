@@ -10,6 +10,7 @@ interface InscriptionResult {
   profileType: 'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise';
   titleOrActivity: string;
   description?: string;
+  imageLink?: string;
 }
 
 interface DemandeRechercheScreenProps {
@@ -233,7 +234,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
             city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
             profileType: (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur',
             titleOrActivity,
-            description: item.skillsDescription || item.equipmentDescription || item.companyServices || ''
+            description: item.skillsDescription || item.equipmentDescription || item.companyServices || '',
+            imageLink: item.imageLink || ''
           };
         });
 
@@ -311,7 +313,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
           profileType: (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur',
           titleOrActivity,
-          description: item.skillsDescription || item.equipmentDescription || item.companyServices || ''
+          description: item.skillsDescription || item.equipmentDescription || item.companyServices || '',
+          imageLink: item.imageLink || ''
         };
       });
 
@@ -1465,48 +1468,55 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3.5">
                 {results.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl p-5 shadow-md border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center relative overflow-hidden group hover:shadow-xl transition-all"
+                    className="bg-white dark:bg-slate-900 border-2 border-slate-900 rounded-[1.25rem] p-3 flex flex-col justify-between h-full relative overflow-hidden group hover:shadow-xl transition-all"
                   >
-                    <div className="flex gap-4 items-start flex-1 min-w-0">
-                      {/* Icon container */}
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
-                        item.profileType === 'Travailleur' ? 'bg-green-50 text-green-600' :
-                        item.profileType === 'Propriétaire' ? 'bg-purple-50 text-purple-600' :
-                        item.profileType === 'Agence' ? 'bg-blue-50 text-blue-600' :
-                        'bg-orange-50 text-orange-600'
-                      }`}>
-                        {item.profileType === 'Travailleur' ? <Briefcase className="h-5 w-5" /> :
-                         item.profileType === 'Agence' ? <Building className="h-5 w-5" /> :
-                         item.profileType === 'Propriétaire' ? <Compass className="h-5 w-5" /> :
-                         <CheckCircle className="h-5 w-5" />}
-                      </div>
-
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-sans font-black uppercase text-xs tracking-tight text-slate-900 truncate">{item.name}</h4>
-                          <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                            item.profileType === 'Travailleur' ? 'bg-green-50 text-green-700 border border-green-100' :
-                            item.profileType === 'Propriétaire' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
-                            item.profileType === 'Agence' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                            'bg-orange-50 text-orange-700 border border-orange-100'
-                          }`}>
-                            {item.profileType}
+                    <div>
+                      {/* Image container / "Masqué" placeholder */}
+                      {item.imageLink ? (
+                        <div className="w-full aspect-[4/5] overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-850 mb-3 border border-slate-100 dark:border-slate-800/60 relative shrink-0">
+                          <img 
+                            src={item.imageLink} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover animate-fade-in" 
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-[4/5] rounded-xl bg-[#f1f5f9] dark:bg-slate-800/40 flex items-center justify-center border border-slate-100 dark:border-slate-800 mb-3 shrink-0 select-none">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8] dark:text-slate-500">
+                            Masqué
                           </span>
                         </div>
+                      )}
 
-                        <div className="flex items-center gap-1 text-slate-500">
-                          <MapPin className="h-3 w-3 text-slate-400 stroke-[2.5]" />
+                      {/* Info details */}
+                      <div className="space-y-1">
+                        {/* Profile type/category */}
+                        <p className="text-[9.5px] font-black uppercase tracking-wider text-[#e32a8a] dark:text-pink-400">
+                          {item.profileType}
+                        </p>
+
+                        {/* Name */}
+                        <h4 className="font-sans font-extrabold uppercase text-[13px] tracking-tight text-slate-900 dark:text-white leading-tight truncate">
+                          {item.name}
+                        </h4>
+
+                        {/* City */}
+                        <div className="flex items-center gap-1 text-slate-500 mt-1">
+                          <MapPin className="h-3 w-3 text-[#e32a8a] stroke-[2.5]" />
                           <span className="text-[10px] font-black uppercase tracking-tight">{item.city}</span>
                         </div>
 
                         {/* Title of profession or activity */}
-                        <div className="mt-1">
-                          <span className="text-[9px] text-slate-400 font-black uppercase tracking-wider block">Activité / Titre :</span>
-                          <span className="text-xs text-slate-800 font-bold block">{item.titleOrActivity}</span>
+                        <div className="mt-1.5 text-left">
+                          <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block">Activité / Titre</span>
+                          <span className="text-[10px] text-slate-900 dark:text-slate-100 font-black uppercase leading-tight block line-clamp-2 h-8 overflow-hidden">
+                            {item.titleOrActivity}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1515,20 +1525,17 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     <button
                       onClick={() => handleRetrieveProfile(item)}
                       disabled={isLinking || retrievingProfileId !== null}
-                      className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black uppercase text-[10px] tracking-wider py-2.5 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all font-sans"
+                      className="w-full mt-4 bg-[#a6430a] hover:bg-[#8f3908] disabled:bg-gray-300 dark:disabled:bg-slate-800 text-white font-black uppercase text-[9px] tracking-widest py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all font-sans cursor-pointer shrink-0"
                     >
                       {retrievingProfileId === item.id ? (
                         <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin text-white animate-pulse" />
                           <span>Récupération...</span>
                         </>
                       ) : isLinking ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <Loader2 className="h-3 w-3 animate-spin text-white" />
                       ) : (
-                        <>
-                          <MessageSquare className="h-3.5 w-3.5" />
-                          <span>Demande de service</span>
-                        </>
+                        <span>Demande de service</span>
                       )}
                     </button>
                   </div>

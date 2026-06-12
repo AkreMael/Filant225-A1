@@ -72,6 +72,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [viewingConversation, setViewingConversation] = useState<{ id: string, name: string, messages: any[] } | null>(null);
   const [itemToDelete, setItemToDelete] = useState<{ id: string, collectionName: string, rtdbPath?: string } | null>(null);
 
+  // Photo link states for registrations
+  const [localImageLink, setLocalImageLink] = useState('');
+  const [isSavingImageLink, setIsSavingImageLink] = useState(false);
+
   // FILANT°225 Admin wallet states
   const [wallets, setWallets] = useState<any[]>([]);
   const [walletTransactions, setWalletTransactions] = useState<any[]>([]);
@@ -626,6 +630,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     }
 
     setSelectedItemForDetails(enhancedItem);
+    setLocalImageLink(enhancedItem.imageLink || '');
     if (collectionName) {
       handleUpdateReadStatus(collectionName, item.id, item.adminReadStatus, item.rtdbPath);
     }
@@ -2188,6 +2193,62 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         })()}
                     </div>
                  </div>
+
+                 {/* Admin Image Link Edit Section */}
+                 {(selectedItemForDetails.profileType || selectedItemForDetails.typeInscription) && (
+                   <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border border-dashed border-gray-300 dark:border-slate-800/90 space-y-3">
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                       ADMINISTRATEUR : LIEN DE L'IMAGE DU PROFIL
+                     </p>
+                     <div className="flex gap-2.5">
+                       <input
+                         type="text"
+                         value={localImageLink}
+                         onChange={(e) => setLocalImageLink(e.target.value)}
+                         placeholder="Collez ici le lien de l'image (ex: https://.../photo.png)"
+                         className="flex-1 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs font-medium text-slate-900 dark:text-white"
+                       />
+                       <button
+                         onClick={async () => {
+                           if (!selectedItemForDetails.id) return;
+                           setIsSavingImageLink(true);
+                           try {
+                             const docRef = doc(db, 'Inscriptions', selectedItemForDetails.id);
+                             await updateDoc(docRef, { imageLink: localImageLink });
+                             
+                             // Update selected item in details so UI updates instantly
+                             setSelectedItemForDetails((prev: any) => prev ? { ...prev, imageLink: localImageLink } : null);
+                             
+                             // Update local data list too so user doesn't need to reclick
+                             setData((prev: any) => {
+                               const updatedInscriptions = (prev.inscriptions || []).map((ins: any) => {
+                                 if (ins.id === selectedItemForDetails.id) {
+                                   return { ...ins, imageLink: localImageLink };
+                                 }
+                                 return ins;
+                               });
+                               return { ...prev, inscriptions: updatedInscriptions };
+                             });
+
+                             alert("Lien de l'image mis à jour avec succès !");
+                           } catch (err) {
+                             console.error("Error setting image link:", err);
+                             alert("Erreur lors de la mise à jour du lien d'image.");
+                           } finally {
+                             setIsSavingImageLink(false);
+                           }
+                         }}
+                         disabled={isSavingImageLink}
+                         className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-500 text-white font-black text-[10px] uppercase tracking-wider px-5 py-3 rounded-xl transition-all active:scale-95 shrink-0"
+                       >
+                         {isSavingImageLink ? 'Enregistrement...' : 'Enregistrer'}
+                       </button>
+                     </div>
+                     <p className="text-[9px] text-gray-400 font-bold uppercase leading-relaxed">
+                       Ce champ permet à l'administrateur d'assigner ou modifier l'image du profil. Si le lien est renseigné, l'image s'affichera sur la carte ; sinon, la mention « Masqué » s'affichera.
+                     </p>
+                   </div>
+                 )}
 
                  {/* Status info */}
                  <div className="p-6 bg-slate-900 rounded-[2rem] text-white flex items-center justify-between">
