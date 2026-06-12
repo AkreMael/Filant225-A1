@@ -20,23 +20,26 @@ const AssistantQRScreen: React.FC<AssistantQRScreenProps> = ({ onBack, user, onS
   const COMPANY_PHONE = "2250705052632";
 
   useEffect(() => {
-    setContacts(databaseService.getContacts(user.phone));
-  }, [user.phone]);
+    if (!user?.phone) return;
+    const unsub = databaseService.subscribeToScannedContacts(user.phone, (newContacts) => {
+      setContacts(newContacts);
+    });
+    return () => unsub();
+  }, [user?.phone]);
 
   const handleDelete = (id: string) => {
     onShowPopup("Supprimer ce contact de l'Assistance QR ?", 'confirm', (close) => {
-        const updated = contacts.filter(c => c.id !== id);
-        setContacts(updated);
-        databaseService.saveContacts(user.phone, updated, user);
-        close(); // Ferme automatiquement la fenêtre
+        databaseService.deleteScannedContact(id).then(() => {
+          close(); // Ferme automatiquement la fenêtre
+        });
     });
   };
 
   const handleClearAll = () => {
     onShowPopup("Voulez-vous vider toute votre liste d'Assistance QR ?", 'confirm', (close) => {
-      databaseService.saveContacts(user.phone, [], user);
-      setContacts([]);
-      close(); // Ferme automatiquement la fenêtre
+      databaseService.clearAllScannedContacts(user.phone).then(() => {
+        close(); // Ferme automatiquement la fenêtre
+      });
     });
   };
 

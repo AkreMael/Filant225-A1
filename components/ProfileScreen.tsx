@@ -261,9 +261,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   useEffect(() => {
     let unsubWallet = () => {};
     let unsubWalletTxs = () => {};
+    let unsubContacts = () => {};
 
     if (user?.phone) {
-      setContacts(databaseService.getContacts(user.phone));
+      unsubContacts = databaseService.subscribeToScannedContacts(user.phone, (newContacts) => {
+        setContacts(newContacts);
+      });
 
       unsubWallet = databaseService.subscribeToWallet(user.phone, (walletData) => {
         setWallet(walletData);
@@ -282,6 +285,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     return () => {
       unsubWallet();
       unsubWalletTxs();
+      unsubContacts();
     };
   }, [user?.phone]);
 
@@ -509,16 +513,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
 
   const handleClearContacts = () => {
       onShowPopup("Voulez-vous vider toute votre liste d'Assistance QR ?", 'confirm', (close) => {
-          databaseService.saveContacts(user.phone, [], user);
-          setContacts([]);
-          close();
+          databaseService.clearAllScannedContacts(user.phone).then(() => {
+              close();
+          });
       });
   };
 
   const handleDeleteContact = (id: string) => {
-      const updated = contacts.filter(c => c.id !== id);
-      setContacts(updated);
-      databaseService.saveContacts(user.phone, updated, user);
+      databaseService.deleteScannedContact(id);
   };
 
   const handleIdFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

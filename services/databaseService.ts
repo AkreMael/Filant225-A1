@@ -949,6 +949,58 @@ export const databaseService = {
       }
   },
 
+  subscribeToScannedContacts: (phone: string, callback: (contacts: SavedContact[]) => void) => {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    const q = query(
+      collection(db, 'HistoriqueScans'),
+      where('scannerPhone', '==', sanitizedPhone)
+    );
+    return onSnapshot(q, (snap) => {
+      const docs = snap.docs.map(doc => {
+        const item = doc.data();
+        return {
+          id: doc.id,
+          title: item.title || 'Assistant QR',
+          name: item.name || 'Prestataire',
+          review: item.review || item.city || '',
+          phone: item.phone || 'N/A',
+          city: item.city || 'Abidjan'
+        } as SavedContact;
+      });
+      callback(docs);
+    }, (error) => {
+      console.error("Error subscribing to scanned contacts:", error);
+    });
+  },
+
+  deleteScannedContact: async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'HistoriqueScans', id));
+      return true;
+    } catch (e) {
+      console.error("Error deleting scanned contact from Firestore:", e);
+      return false;
+    }
+  },
+
+  clearAllScannedContacts: async (phone: string) => {
+    try {
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const q = query(
+        collection(db, 'HistoriqueScans'),
+        where('scannerPhone', '==', sanitizedPhone)
+      );
+      const snap = await getDocs(q);
+      const batch = writeBatch(db);
+      snap.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      return true;
+    } catch (e) {
+      console.error("Error clearing all scanned contacts from Firestore:", e);
+      return false;
+    }
+  },
+
   saveContacts: async (phone: string, contacts: SavedContact[], user?: User) => {
       const key = getScopedKey(phone, CONTACTS_KEY_PREFIX);
       localStorage.setItem(key, JSON.stringify(contacts));
