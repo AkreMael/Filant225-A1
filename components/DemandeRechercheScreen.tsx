@@ -20,6 +20,32 @@ interface DemandeRechercheScreenProps {
   initialQuery?: string;
 }
 
+const getCategoryColors = (profileType: 'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise' | string) => {
+  switch (profileType) {
+    case 'Travailleur':
+      return {
+        textColor: 'text-green-600',
+        buttonBg: 'bg-green-600 hover:bg-green-700 active:bg-green-800'
+      };
+    case 'Propriétaire':
+      return {
+        textColor: 'text-purple-600',
+        buttonBg: 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800'
+      };
+    case 'Agence':
+      return {
+        textColor: 'text-blue-600',
+        buttonBg: 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+      };
+    case 'Entreprise':
+    default:
+      return {
+        textColor: 'text-orange-600',
+        buttonBg: 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800'
+      };
+  }
+};
+
 export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ onBack, user, onSelectTab, initialQuery }) => {
   const [queryInput, setQueryInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -1469,77 +1495,80 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3.5">
-                {results.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-white dark:bg-slate-900 border-2 border-slate-900 rounded-[1.25rem] p-3 flex flex-col justify-between h-full relative overflow-hidden group hover:shadow-xl transition-all"
-                  >
-                    <div>
-                      {/* Image container / "Masqué" placeholder */}
-                      {item.imageLink ? (
-                        <div className="w-full aspect-[4/5] overflow-hidden rounded-xl bg-slate-50 dark:bg-slate-850 mb-3 border border-slate-100 dark:border-slate-800/60 relative shrink-0">
-                          <img 
-                            src={item.imageLink} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover animate-fade-in" 
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full aspect-[4/5] rounded-xl bg-[#f1f5f9] dark:bg-slate-800/40 flex items-center justify-center border border-slate-100 dark:border-slate-800 mb-3 shrink-0 select-none">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8] dark:text-slate-500">
-                            Masqué
-                          </span>
-                        </div>
-                      )}
+                {results.map((item) => {
+                  const colors = getCategoryColors(item.profileType);
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white border border-slate-250/70 rounded-[1.25rem] p-3 flex flex-col justify-between h-full relative overflow-hidden group hover:shadow-xl transition-all duration-300"
+                    >
+                      <div>
+                        {/* Image container / "Masqué" placeholder */}
+                        {item.imageLink ? (
+                          <div className="w-full aspect-[4/5] overflow-hidden rounded-xl bg-slate-50 mb-3 border border-slate-100 relative shrink-0">
+                            <img 
+                              src={item.imageLink} 
+                              alt={item.name} 
+                              className="w-full h-full object-cover animate-fade-in" 
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full aspect-[4/5] rounded-xl bg-[#f1f5f9] flex items-center justify-center border border-slate-100 mb-3 shrink-0 select-none">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
+                              Masqué
+                            </span>
+                          </div>
+                        )}
 
-                      {/* Info details */}
-                      <div className="space-y-1">
-                        {/* Profile type/category */}
-                        <p className="text-[9.5px] font-black uppercase tracking-wider text-[#e32a8a] dark:text-pink-400">
-                          {item.profileType}
-                        </p>
+                        {/* Info details */}
+                        <div className="space-y-1">
+                          {/* Profile type/category */}
+                          <p className={`text-[9.5px] font-black uppercase tracking-wider ${colors.textColor}`}>
+                            {item.profileType}
+                          </p>
 
-                        {/* Name */}
-                        <h4 className="font-sans font-extrabold uppercase text-[13px] tracking-tight text-slate-900 dark:text-white leading-tight truncate">
-                          {item.name}
-                        </h4>
+                          {/* Name */}
+                          <h4 className="font-sans font-extrabold uppercase text-[13px] tracking-tight text-slate-900 leading-tight truncate">
+                            {item.name}
+                          </h4>
 
-                        {/* City */}
-                        <div className="flex items-center gap-1 text-slate-500 mt-1">
-                          <MapPin className="h-3 w-3 text-[#e32a8a] stroke-[2.5]" />
-                          <span className="text-[10px] font-black uppercase tracking-tight">{item.city}</span>
-                        </div>
+                          {/* City */}
+                          <div className="flex items-center gap-1 text-slate-900 mt-1">
+                            <MapPin className="h-3 w-3 text-slate-900 stroke-[2.5]" />
+                            <span className="text-[10px] font-black uppercase tracking-tight">{item.city}</span>
+                          </div>
 
-                        {/* Title of profession or activity */}
-                        <div className="mt-1.5 text-left">
-                          <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block">Activité / Titre</span>
-                          <span className="text-[10px] text-slate-900 dark:text-slate-100 font-black uppercase leading-tight block line-clamp-2 h-8 overflow-hidden">
-                            {item.titleOrActivity}
-                          </span>
+                          {/* Title of profession or activity */}
+                          <div className="mt-1.5 text-left">
+                            <span className="text-[9px] text-slate-450 font-extrabold uppercase tracking-wider block">Activité / Titre</span>
+                            <span className="text-[10px] text-slate-900 font-black uppercase leading-tight block line-clamp-2 h-8 overflow-hidden">
+                              {item.titleOrActivity}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Action button next to result */}
-                    <button
-                      onClick={() => handleRetrieveProfile(item)}
-                      disabled={isLinking || retrievingProfileId !== null}
-                      className="w-full mt-4 bg-[#a6430a] hover:bg-[#8f3908] disabled:bg-gray-300 dark:disabled:bg-slate-800 text-white font-black uppercase text-[9px] tracking-widest py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all font-sans cursor-pointer shrink-0"
-                    >
-                      {retrievingProfileId === item.id ? (
-                        <>
-                          <Loader2 className="h-3 w-3 animate-spin text-white animate-pulse" />
-                          <span>Récupération...</span>
-                        </>
-                      ) : isLinking ? (
-                        <Loader2 className="h-3 w-3 animate-spin text-white" />
-                      ) : (
-                        <span>Demande de service</span>
-                      )}
-                    </button>
-                  </div>
-                ))}
+                      {/* Action button next to result */}
+                      <button
+                        onClick={() => handleRetrieveProfile(item)}
+                        disabled={isLinking || retrievingProfileId !== null}
+                        className={`w-full mt-4 ${colors.buttonBg} disabled:bg-gray-300 text-white font-black uppercase text-[9px] tracking-widest py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all font-sans cursor-pointer shrink-0`}
+                      >
+                        {retrievingProfileId === item.id ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin text-white animate-pulse" />
+                            <span>Récupération...</span>
+                          </>
+                        ) : isLinking ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-white" />
+                        ) : (
+                          <span>Demande de service</span>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
