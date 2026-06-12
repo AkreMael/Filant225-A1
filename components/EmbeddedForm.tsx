@@ -698,7 +698,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                   </div>
                 )}
 
-                {formType !== 'simple_demande' && !isAppart && (
+                {formType !== 'simple_demande' && formType !== 'stage' && formType !== 'formation' && !isAppart && (
                   <div className="flex flex-col items-center mb-8">
                       <span className="text-[11px] font-black uppercase text-gray-800 mb-3">{isWorker ? 'Personne' : 'Quantité'}</span>
                       <div className="flex items-center gap-6">
