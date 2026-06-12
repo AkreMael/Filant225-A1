@@ -485,44 +485,46 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
       </div>
 
       {/* WhatsApp Style Curved Footer Input Bar */}
-      <div id="chat_footer" className="p-3 bg-[#f0f2f5] dark:bg-[#1f2c34] flex items-end gap-2.5 shrink-0 shadow-inner">
-        <div className="flex-1 flex items-center min-h-[44px] bg-white dark:bg-[#2a3942] rounded-3xl px-4 py-2 border border-transparent shadow shadow-neutral-100">
-          <textarea
-            id="chat_input_textarea"
-            ref={textareaRef}
-            rows={1}
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            onFocus={() => {
-              setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-              }, 150);
-            }}
-            placeholder="Écrivez votre message..."
-            className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-1 font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 resize-none max-h-24 overflow-y-auto scrollbar-hide focus:outline-none"
-            style={{ height: 'auto' }}
-          />
+      {isAdmin && (
+        <div id="chat_footer" className="p-3 bg-[#f0f2f5] dark:bg-[#1f2c34] flex items-end gap-2.5 shrink-0 shadow-inner">
+          <div className="flex-1 flex items-center min-h-[44px] bg-white dark:bg-[#2a3942] rounded-3xl px-4 py-2 border border-transparent shadow shadow-neutral-100">
+            <textarea
+              id="chat_input_textarea"
+              ref={textareaRef}
+              rows={1}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              onFocus={() => {
+                setTimeout(() => {
+                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 150);
+              }}
+              placeholder="Écrivez votre message..."
+              className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-1 font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 resize-none max-h-24 overflow-y-auto scrollbar-hide focus:outline-none"
+              style={{ height: 'auto' }}
+            />
+          </div>
+          
+          <button
+            id="btn_send_message"
+            onClick={() => handleSendMessage()}
+            disabled={!inputText.trim()}
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md shrink-0 active:scale-90 ${
+              inputText.trim() 
+                ? 'bg-[#00a884] text-white hover:brightness-95 hover:shadow-lg' 
+                : 'bg-slate-300 dark:bg-slate-750 text-slate-400 cursor-not-allowed shadow-none'
+            }`}
+          >
+            <Send size={18} />
+          </button>
         </div>
-        
-        <button
-          id="btn_send_message"
-          onClick={() => handleSendMessage()}
-          disabled={!inputText.trim()}
-          className={`w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md shrink-0 active:scale-90 ${
-            inputText.trim() 
-              ? 'bg-[#00a884] text-white hover:brightness-95 hover:shadow-lg' 
-              : 'bg-slate-300 dark:bg-slate-750 text-slate-400 cursor-not-allowed shadow-none'
-          }`}
-        >
-          <Send size={18} />
-        </button>
-      </div>
+      )}
 
       {/* Confirmation of suppression Modal */}
       {deleteConfirm.show && (
