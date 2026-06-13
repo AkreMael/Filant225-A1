@@ -897,7 +897,7 @@ const App: React.FC = () => {
       return (
         <GlobalRippleEffect>
           <div className="flex justify-center bg-white w-full" style={{ minHeight: globalViewportHeight }}>
-            <div className="w-full max-w-[480px] relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
+            <div className="w-full max-w-full md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
               <div className="flex-1 relative overflow-hidden">
                 {!showSmartRegistration ? (
                   <FirstLaunchScreen onComplete={handleFirstLaunchComplete} />
@@ -922,7 +922,7 @@ const App: React.FC = () => {
     return (
         <GlobalRippleEffect>
           <div className="flex justify-center bg-white w-full" style={{ minHeight: globalViewportHeight }}>
-            <div className="w-full max-w-[480px] relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
+            <div className="w-full max-w-full md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
               <div className="flex-1 relative overflow-hidden">
                 <LoginScreen onLoginSuccess={handleLogin} onShowPopup={showPopup} />
                 {popup.show && (
@@ -946,7 +946,7 @@ const App: React.FC = () => {
   if (showSplash) {
       return (
           <div className="flex justify-center bg-white w-full" style={{ minHeight: globalViewportHeight }}>
-            <div className="w-full max-w-[480px] relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
+            <div className="w-full max-w-full md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
               <div className="flex-1 relative overflow-hidden">
                 <SplashScreen 
                   userName={currentUser.name} 
@@ -1202,7 +1202,7 @@ const App: React.FC = () => {
     <GlobalRippleEffect>
       <div className="flex justify-center bg-white w-full" style={{ minHeight: globalViewportHeight }}>
         <div 
-          className={`w-full ${isAdminView ? 'admin-layout' : 'max-w-[480px]'} relative flex flex-col bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 shadow-2xl overflow-hidden`}
+          className={`w-full ${isAdminView ? 'admin-layout' : 'max-w-full md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl'} relative flex flex-col bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 shadow-2xl overflow-hidden`}
           style={{ height: globalViewportHeight, minHeight: globalViewportHeight, maxHeight: globalViewportHeight }}
         >
           
