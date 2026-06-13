@@ -232,7 +232,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           paymentType: "Dépôt",
           waveNumber: waveNumber,
           timestamp: Date.now(),
-          status: 'Paiement non validé'
+          status: 'En attente'
         });
 
         if (path) {
@@ -354,7 +354,21 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         status: 'Paiement validé' // Approved instantly!
       });
 
-      if (path) setPaymentPath(path);
+      if (path) {
+        setPaymentPath(path);
+        try {
+          const autoMsg = {
+            text: `✅ Votre paiement de ${currentAmount} FCFA (${title || paymentType}) a été validé avec succès. L'étape suivante est maintenant débloquée.`,
+            sender: 'admin',
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            adminReadStatus: 'LU'
+          };
+          await databaseService.saveTypedChatMessage('Privee', user.phone, autoMsg);
+        } catch (msgErr) {
+          console.error("Error sending automatic message for wallet payment:", msgErr);
+        }
+      }
 
       // 4. Save to user favorites and form submissions
       if (formData) {
@@ -425,7 +439,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           paymentType: "Dépôt",
           waveNumber: depositPhone,
           timestamp: Date.now(),
-          status: 'Paiement non validé'
+          status: 'En attente'
         });
 
         if (path) {
@@ -769,6 +783,23 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                   <div className="text-blue-600 block bg-blue-50 p-3 rounded-xl border-2 border-blue-100 animate-pulse space-y-1">
                     <p className="font-black text-[10px] uppercase tracking-wider">Débit du portefeuille en cours</p>
                     <p className="text-[9px] leading-relaxed text-blue-800/80 font-medium">Votre compte est débité en toute sécurité par cryptage local...</p>
+                  </div>
+                ) : (paymentPath && isNonValidated) ? (
+                  <div className="text-rose-600 block bg-rose-50 p-3 rounded-xl border border-rose-150 space-y-2 transition-all">
+                    <p className="font-black text-[10px] uppercase tracking-wider font-sans">❌ DÉPÔT NON VALIDÉ</p>
+                    <p className="text-[9px] leading-relaxed text-rose-950 font-semibold font-sans">
+                      Votre demande de recharge de <span className="font-black text-[11px] text-rose-700">{parseFloat(currentAmount).toLocaleString('fr-FR')} FCFA</span> n'a pas été validée ou n'a pas été détectée par l'administrateur.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setPaymentPath(null);
+                        setIsNonValidated(false);
+                        setIsProcessing(false);
+                      }}
+                      className="w-full py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-[9px] uppercase font-black tracking-wider rounded-lg transition-all cursor-pointer font-sans"
+                    >
+                      essayer de nouveau
+                    </button>
                   </div>
                 ) : paymentPath ? (
                   <div className="text-orange-600 block bg-orange-50 p-3 rounded-xl border-2 border-orange-100 space-y-1 transition-all">

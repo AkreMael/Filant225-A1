@@ -546,8 +546,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                   }}
                                   className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 border-2 ${
                                     isNotValidated 
-                                      ? 'bg-slate-700 text-white border-slate-600 shadow-lg shadow-slate-700/30 scale-[1.02]' 
-                                      : 'bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700 hover:border-orange-400 hover:text-orange-600'
+                                      ? 'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-600/30 scale-[1.02]' 
+                                      : 'bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700 hover:border-rose-400 hover:text-rose-600'
                                   }`}
                                 >
                                   <AlertCircle size={14} className={isNotValidated ? 'text-white' : 'text-slate-300'} />

@@ -1279,7 +1279,7 @@ export const databaseService = {
         ...paymentData, 
         userPhone: phone || userId,
         waveNumber: waveNumber || 'N/A',
-        status: paymentData.status || 'Paiement non validé',
+        status: paymentData.status || 'En attente',
         adminReadStatus: 'NON LU',
         rtdbPath: rtdbPath,
         timestamp: rtdbTimestamp() 
@@ -1308,41 +1308,44 @@ export const databaseService = {
 
       if (isDeposit) {
         // --- LOGIQUE SPÉCIFIQUE DÉPÔT ---
-        const amountNum = parseFloat(payment.amount);
-        if (!isNaN(amountNum) && amountNum > 0) {
-          const walletRef = doc(db, 'Wallets', userPhone);
-          
-          // 1. Update wallet balance
-          await setDoc(walletRef, {
-            phone: userPhone,
-            name: payment.userName || 'Utilisateur',
-            city: payment.city || 'Non spécifiée',
-            balance: increment(amountNum),
-            updatedAt: serverTimestamp()
-          }, { merge: true });
+        // Guard against duplicate credit if already validated
+        if (payment.status !== 'Dépôt validé' && payment.status !== 'Paiement validé') {
+          const amountNum = parseFloat(payment.amount);
+          if (!isNaN(amountNum) && amountNum > 0) {
+            const walletRef = doc(db, 'Wallets', userPhone);
+            
+            // 1. Update wallet balance
+            await setDoc(walletRef, {
+              phone: userPhone,
+              name: payment.userName || 'Utilisateur',
+              city: payment.city || 'Non spécifiée',
+              balance: increment(amountNum),
+              updatedAt: serverTimestamp()
+            }, { merge: true });
 
-          // 2. Record transaction in account history
-          await addDoc(collection(db, 'WalletTransactions'), {
-            phone: userPhone,
-            userName: payment.userName || 'Utilisateur',
-            userCity: payment.city || 'Non spécifiée',
-            type: 'DEPOSIT',
-            amount: amountNum,
-            paymentNumber: payment.waveNumber || 'N/A',
-            status: 'SUCCESS',
-            timestamp: Date.now(),
-            dateStr: new Date().toLocaleString('fr-FR')
-          });
+            // 2. Record transaction in account history
+            await addDoc(collection(db, 'WalletTransactions'), {
+              phone: userPhone,
+              userName: payment.userName || 'Utilisateur',
+              userCity: payment.city || 'Non spécifiée',
+              type: 'DEPOSIT',
+              amount: amountNum,
+              paymentNumber: payment.waveNumber || 'N/A',
+              status: 'SUCCESS',
+              timestamp: Date.now(),
+              dateStr: new Date().toLocaleString('fr-FR')
+            });
 
-          // 3. Send notification to the user
-          const msg = {
-            text: `🤖 DÉPÔT VALIDÉ : Un dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA a été crédité avec succès sur votre Portefeuille FILANT°225. Votre solde a été mis à jour d'un montant de +${amountNum.toLocaleString('fr-FR')} FCFA.`,
-            sender: 'admin',
-            timestamp: new Date().toISOString(),
-            isRead: false,
-            adminReadStatus: 'LU'
-          };
-          await databaseService.saveTypedChatMessage('Privee', userPhone, msg);
+            // 3. Send notification to the user
+            const msg = {
+              text: `🤖 DÉPÔT VALIDÉ : Un dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA a été crédité avec succès sur votre Portefeuille FILANT°225. Votre solde a été mis à jour d'un montant de +${amountNum.toLocaleString('fr-FR')} FCFA.`,
+              sender: 'admin',
+              timestamp: new Date().toISOString(),
+              isRead: false,
+              adminReadStatus: 'LU'
+            };
+            await databaseService.saveTypedChatMessage('Privee', userPhone, msg);
+          }
         }
       } else {
         // --- LOGIQUE DE DÉBLOCAGE PAR TYPE DE PAIEMENT STANDARD ---
@@ -1407,6 +1410,33 @@ export const databaseService = {
 
       const userPhone = (payment.userPhone || payment.phone || '').replace(/\D/g, '');
       const userId = (payment.userId || userPhone).replace(/\D/g, '');
+
+      // Pour les dépôts, si le statut précédent était validé, on l'annule en retirant le montant du portefeuille de l'utilisateur
+      if (isDeposit && (payment.status === 'Dépôt validé' || payment.status === 'Paiement validé')) {
+        const amountNum = parseFloat(payment.amount);
+        if (!isNaN(amountNum) && amountNum > 0) {
+          const walletRef = doc(db, 'Wallets', userPhone);
+          
+          await setDoc(walletRef, {
+            phone: userPhone,
+            balance: increment(-amountNum),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+
+          // Enregistre l'annulation de transaction
+          await addDoc(collection(db, 'WalletTransactions'), {
+            phone: userPhone,
+            userName: payment.userName || 'Utilisateur',
+            userCity: payment.city || 'Non spécifiée',
+            type: 'DEPOSIT_CANCELLED',
+            amount: -amountNum,
+            paymentNumber: payment.waveNumber || 'N/A',
+            status: 'CANCELLED',
+            timestamp: Date.now(),
+            dateStr: new Date().toLocaleString('fr-FR')
+          });
+        }
+      }
 
       if (userId) {
         let msgText = `Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) est en cours de traitement. Veuillez patienter jusqu’à la validation finale. Vous recevrez un message une fois la transaction confirmée. En cas de validation, votre paiement sera pris en compte et nous pourrons vous contacter si nécessaire.`;
