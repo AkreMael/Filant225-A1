@@ -1500,6 +1500,28 @@ export const databaseService = {
         timestamp: serverTimestamp(),
         adminReadStatus: 'NON LU'
       });
+
+      // Send automated message after stage submission with 1.25s delay
+      const phoneRaw = applicationData.phone || '';
+      const sanitizedPhone = phoneRaw.replace(/\D/g, '');
+      const userId = applicationData.userId || sanitizedPhone;
+
+      if (userId) {
+        setTimeout(async () => {
+          try {
+            const autoMsg = {
+              text: "Merci pour votre demande. Votre demande est en cours de traitement. Chaque demande est transmise à notre service de mise en relation. Un agent ou un partenaire vous contactera dans les meilleurs délais.",
+              sender: 'admin',
+              isRead: false,
+              adminReadStatus: 'LU'
+            };
+            await databaseService.saveTypedChatMessage('Privee', userId, autoMsg);
+          } catch (msgErr) {
+            console.error("Error sending auto message after stage request:", msgErr);
+          }
+        }, 1250);
+      }
+
       return docRef.id;
     } catch (error) {
       console.error("Error saving Stage application:", error);
@@ -1515,6 +1537,28 @@ export const databaseService = {
         timestamp: serverTimestamp(),
         adminReadStatus: 'NON LU'
       });
+
+      // Send automated message after formation submission with 1.25s delay
+      const phoneRaw = applicationData.phone || '';
+      const sanitizedPhone = phoneRaw.replace(/\D/g, '');
+      const userId = applicationData.userId || sanitizedPhone;
+
+      if (userId) {
+        setTimeout(async () => {
+          try {
+            const autoMsg = {
+              text: "Merci pour votre demande. Votre demande est en cours de traitement. Chaque demande est transmise à notre service de mise en relation. Un agent ou un partenaire vous contactera dans les meilleurs délais.",
+              sender: 'admin',
+              isRead: false,
+              adminReadStatus: 'LU'
+            };
+            await databaseService.saveTypedChatMessage('Privee', userId, autoMsg);
+          } catch (msgErr) {
+            console.error("Error sending auto message after formation request:", msgErr);
+          }
+        }, 1250);
+      }
+
       return docRef.id;
     } catch (error) {
       console.error("Error saving Formation application:", error);
