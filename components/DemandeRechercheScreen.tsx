@@ -1535,7 +1535,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
                           {/* City */}
                           <div className="flex items-center gap-1 text-slate-900 mt-1">
-                            <MapPin className="h-3 w-3 text-slate-900 stroke-[2.5]" />
+                            <MapPin className="h-3 w-3 text-[#e32a8a] stroke-[2.5]" />
                             <span className="text-[10px] font-black uppercase tracking-tight">{item.city}</span>
                           </div>
 
@@ -1553,7 +1553,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                       <button
                         onClick={() => handleRetrieveProfile(item)}
                         disabled={isLinking || retrievingProfileId !== null}
-                        className={`w-full mt-4 ${colors.buttonBg} disabled:bg-gray-300 text-white font-black uppercase text-[9px] tracking-widest py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all font-sans cursor-pointer shrink-0`}
+                        className="w-full mt-4 bg-[#e32a8a] hover:bg-[#c91f74] disabled:bg-gray-300 text-white font-black uppercase text-[9px] tracking-widest py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all font-sans cursor-pointer shrink-0"
                       >
                         {retrievingProfileId === item.id ? (
                           <>
