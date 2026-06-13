@@ -10,6 +10,27 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
+      build: {
+        chunkSizeWarningLimit: 1000,
+        rollupOptions: {
+          output: {
+            manualChunks(id) {
+              if (id.includes('node_modules')) {
+                if (id.includes('firebase')) {
+                  return 'vendor-firebase';
+                }
+                if (id.includes('lucide-react')) {
+                  return 'vendor-lucide';
+                }
+                if (id.includes('motion')) {
+                  return 'vendor-motion';
+                }
+                return 'vendor';
+              }
+            }
+          }
+        }
+      },
       plugins: [
         react(),
         VitePWA({
