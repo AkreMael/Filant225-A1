@@ -32,7 +32,8 @@ import {
   Trash2,
   Bell,
   Plus,
-  Minus
+  Minus,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -312,8 +313,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
   const renderTable = (headers: string[], keys: string[], sourceData: any[], collectionName?: string) => {
     const list = filteredData(sourceData);
-    const headersWithStatus = [...headers];
-    const keysWithStatus = [...keys];
+    const headersWithStatus = activeTab === 'connections' ? ['Utilisateur bloqué', ...headers] : [...headers];
+    const keysWithStatus = activeTab === 'connections' ? ['actions_select_blocking', ...keys] : [...keys];
     
     // Add status column if not present
     if (!keysWithStatus.includes('adminReadStatus') && collectionName) {
@@ -344,22 +345,88 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
     return (
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-slate-800">
-        <div className="overflow-x-auto scrollbar-hide">
+        <div className="overflow-x-auto scrollbar-hide border-b border-gray-100 dark:border-slate-800">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
-                {headersWithStatus.map((h, i) => (
-                  <th key={i} className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{h}</th>
-                ))}
+                {headersWithStatus.map((h, i) => {
+                  if (activeTab === 'connections' && h === 'Utilisateur bloqué') {
+                    const allBlocked = list.length > 0 && list.every(item => !!item.enAttenteTraitement);
+                    return (
+                      <th key={i} className="px-6 py-4 text-center select-none min-w-[200px]">
+                        <div className="flex flex-col xl:flex-row items-center justify-center gap-2">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">
+                            Bloqué (En attente)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              try {
+                                const targetState = !allBlocked;
+                                const { doc, writeBatch } = await import('firebase/firestore');
+                                const batch = writeBatch(db);
+                                list.forEach((conn) => {
+                                  batch.update(doc(db, 'Connexions', conn.id), { enAttenteTraitement: targetState });
+                                });
+                                await batch.commit();
+                              } catch (err) {
+                                console.error("Error bulk updating user block status:", err);
+                              }
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-wider transition-all duration-150 active:scale-95 border cursor-pointer ${
+                              allBlocked
+                                ? 'bg-red-50 text-red-650 border-red-200 hover:bg-red-100'
+                                : 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {allBlocked ? "Tout débloquer" : "Tout bloquer"}
+                          </button>
+                        </div>
+                      </th>
+                    );
+                  }
+                  return (
+                    <th key={i} className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{h}</th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-slate-800">
               {list.length > 0 ? list.map((item, i) => (
                 <tr 
-                  key={i} 
-                  className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
+                   key={i} 
+                   className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
                 >
                   {keysWithStatus.map((key, j) => {
+                    if (key === 'actions_select_blocking') {
+                      const isBlocked = !!item.enAttenteTraitement;
+                      return (
+                        <td key={j} className="px-6 py-4 text-center">
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const docRef = doc(db, 'Connexions', item.id);
+                                await updateDoc(docRef, { enAttenteTraitement: !isBlocked });
+                              } catch (err) {
+                                console.error("Error toggling user block status:", err);
+                              }
+                            }}
+                            className={`w-5 h-5 rounded border-2 mx-auto flex items-center justify-center transition-all cursor-pointer ${
+                              isBlocked 
+                                ? 'bg-red-650 border-red-600 text-white' 
+                                : 'bg-white border-gray-300 dark:bg-slate-800 dark:border-slate-700 text-transparent hover:border-red-405'
+                            }`}
+                          >
+                            <Check size={11} strokeWidth={3} className={isBlocked ? 'block' : 'hidden'} />
+                          </button>
+                        </td>
+                      );
+                    }
+
                     if (key === 'actions_mission') {
                       return (
                         <td key={j} className="px-6 py-4 text-center">

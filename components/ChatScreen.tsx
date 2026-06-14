@@ -22,6 +22,7 @@ interface ChatScreenProps {
   isAdmin: boolean;
   onBack: () => void;
   type?: 'Privee';
+  isEnAttenteDeTraitement?: boolean;
 }
 
 const WhatsAppIcon = () => (
@@ -36,7 +37,7 @@ const QUICK_MESSAGES = [
   { label: 'CORRECTION', text: "Bonjour, certaines informations de votre formulaire sont incomplètes. Merci de nous préciser les détails manquants ici même dans cette messagerie." }
 ];
 
-const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmin, onBack, type = 'Privee' }) => {
+const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmin, onBack, type = 'Privee', isEnAttenteDeTraitement = false }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -485,7 +486,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
       </div>
 
       {/* WhatsApp Style Curved Footer Input Bar */}
-      {isAdmin && (
+      {(isAdmin || isEnAttenteDeTraitement) && (
         <div id="chat_footer" className="p-3 bg-[#f0f2f5] dark:bg-[#1f2c34] flex items-end gap-2.5 shrink-0 shadow-inner">
           <div className="flex-1 flex items-center min-h-[44px] bg-white dark:bg-[#2a3942] rounded-3xl px-4 py-2 border border-transparent shadow shadow-neutral-100">
             <textarea
