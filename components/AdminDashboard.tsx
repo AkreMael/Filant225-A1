@@ -351,7 +351,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               <tr className="bg-gray-50/50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800">
                 {headersWithStatus.map((h, i) => {
                   if (activeTab === 'connections' && h === 'Utilisateur bloqué') {
-                    const allBlocked = list.length > 0 && list.every(item => !!item.enAttenteTraitement);
+                    const nonAdminList = list.filter(conn => {
+                      const isConnAdmin = conn.phone === '0705052632' || conn.role === 'Admin 225' || (conn.phone || '').replace(/\D/g, '') === '0705052632';
+                      return !isConnAdmin;
+                    });
+                    const allBlocked = nonAdminList.length > 0 && nonAdminList.every(item => !!item.enAttenteTraitement);
                     return (
                       <th key={i} className="px-6 py-4 text-center select-none min-w-[200px]">
                         <div className="flex flex-col xl:flex-row items-center justify-center gap-2">
@@ -367,7 +371,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                 const targetState = !allBlocked;
                                 const { doc, writeBatch } = await import('firebase/firestore');
                                 const batch = writeBatch(db);
-                                list.forEach((conn) => {
+                                nonAdminList.forEach((conn) => {
                                   batch.update(doc(db, 'Connexions', conn.id), { enAttenteTraitement: targetState });
                                 });
                                 await batch.commit();
@@ -402,27 +406,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                   {keysWithStatus.map((key, j) => {
                     if (key === 'actions_select_blocking') {
                       const isBlocked = !!item.enAttenteTraitement;
+                      const isItemAdmin = item.phone === '0705052632' || item.role === 'Admin 225' || (item.phone || '').replace(/\D/g, '') === '0705052632';
                       return (
                         <td key={j} className="px-6 py-4 text-center">
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                const docRef = doc(db, 'Connexions', item.id);
-                                await updateDoc(docRef, { enAttenteTraitement: !isBlocked });
-                              } catch (err) {
-                                console.error("Error toggling user block status:", err);
-                              }
-                            }}
-                            className={`w-5 h-5 rounded border-2 mx-auto flex items-center justify-center transition-all cursor-pointer ${
-                              isBlocked 
-                                ? 'bg-red-650 border-red-600 text-white' 
-                                : 'bg-white border-gray-300 dark:bg-slate-800 dark:border-slate-700 text-transparent hover:border-red-405'
-                            }`}
-                          >
-                            <Check size={11} strokeWidth={3} className={isBlocked ? 'block' : 'hidden'} />
-                          </button>
+                          {isItemAdmin ? (
+                            <span className="inline-block px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-lg">
+                              Admin
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const docRef = doc(db, 'Connexions', item.id);
+                                  await updateDoc(docRef, { enAttenteTraitement: !isBlocked });
+                                } catch (err) {
+                                  console.error("Error toggling user block status:", err);
+                                }
+                              }}
+                              className={`w-5 h-5 rounded border-2 mx-auto flex items-center justify-center transition-all cursor-pointer ${
+                                isBlocked 
+                                  ? 'bg-red-650 border-red-600 text-white' 
+                                  : 'bg-white border-gray-300 dark:bg-slate-800 dark:border-slate-700 text-transparent hover:border-red-405'
+                              }`}
+                            >
+                              <Check size={11} strokeWidth={3} className={isBlocked ? 'block' : 'hidden'} />
+                            </button>
+                          )}
                         </td>
                       );
                     }
