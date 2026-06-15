@@ -46,6 +46,98 @@ const getCategoryColors = (profileType: 'Travailleur' | 'Propriétaire' | 'Agenc
   }
 };
 
+const CITY_COORDINATES: Record<string, { x: number; y: number; lat: number; lng: number }> = {
+  'abidjan': { x: 318, y: 175, lat: 5.3600, lng: -4.0083 },
+  'cocody': { x: 322, y: 172, lat: 5.3484, lng: -3.9877 },
+  'yopougon': { x: 310, y: 176, lat: 5.3400, lng: -4.0600 },
+  'plateau': { x: 318, y: 174, lat: 5.3200, lng: -4.0200 },
+  'treichville': { x: 319, y: 176, lat: 5.3000, lng: -4.0100 },
+  'marcory': { x: 321, y: 176, lat: 5.2900, lng: -3.9900 },
+  'koumassi': { x: 324, y: 177, lat: 5.2800, lng: -3.9600 },
+  'port-bouët': { x: 326, y: 180, lat: 5.2500, lng: -3.9400 },
+  'adjame': { x: 317, y: 172, lat: 5.3500, lng: -4.0200 },
+  'abobo': { x: 319, y: 167, lat: 5.4200, lng: -4.0200 },
+  'bingerville': { x: 332, y: 173, lat: 5.3500, lng: -3.8900 },
+  'grand-bassam': { x: 342, y: 179, lat: 5.2100, lng: -3.7300 },
+  'bassam': { x: 342, y: 179, lat: 5.2100, lng: -3.7300 },
+  'yamoussoukro': { x: 275, y: 135, lat: 6.8276, lng: -5.2744 },
+  'bouake': { x: 298, y: 105, lat: 7.6939, lng: -5.0311 },
+  'bouaké': { x: 298, y: 105, lat: 7.6939, lng: -5.0311 },
+  'san-pedro': { x: 205, y: 185, lat: 4.7485, lng: -6.6371 },
+  'san pedro': { x: 205, y: 185, lat: 4.7485, lng: -6.6371 },
+  'korhogo': { x: 260, y: 55, lat: 9.4580, lng: -5.6290 },
+  'man': { x: 210, y: 125, lat: 7.4125, lng: -7.5536 },
+  'daloa': { x: 245, y: 138, lat: 6.8773, lng: -6.4502 },
+  'gagnoa': { x: 255, y: 155, lat: 6.1319, lng: -5.9472 },
+  'odienne': { x: 195, y: 58, lat: 9.5051, lng: -7.5643 },
+  'odienné': { x: 195, y: 58, lat: 9.5051, lng: -7.5643 },
+  'ferkessedougou': { x: 282, y: 62, lat: 9.5928, lng: -5.1983 },
+  'ferké': { x: 282, y: 62, lat: 9.5928, lng: -5.1983 },
+  'assinie': { x: 355, y: 181, lat: 5.1200, lng: -3.3000 },
+  'bouna': { x: 335, y: 62, lat: 9.2690, lng: -2.9904 },
+  'bondoukou': { x: 342, y: 102, lat: 8.0333, lng: -2.8000 },
+  'abengourou': { x: 344, y: 140, lat: 6.7297, lng: -3.4964 },
+};
+
+const COCI_CENTER = { x: 285, y: 120, lat: 7.5399, lng: -5.5471 };
+
+const projectLatLng = (lat: number, lng: number): { x: number; y: number } => {
+  const minLat = 4.4;
+  const maxLat = 10.7;
+  const minLng = -8.6;
+  const maxLng = -2.5;
+
+  const xMin = 230;
+  const xMax = 350;
+  const yMin = 190;
+  const yMax = 80;
+
+  const xPercent = (lng - minLng) / (maxLng - minLng);
+  const xPct = Math.max(0, Math.min(1, xPercent));
+  const x = xMin + xPct * (xMax - xMin);
+
+  const yPercent = (lat - minLat) / (maxLat - minLat);
+  const yPct = Math.max(0, Math.min(1, yPercent));
+  const y = yMin - yPct * (yMin - yMax);
+
+  return { x, y };
+};
+
+const calculateHaversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const getStableCoordinatesForCity = (cityName: string): { x: number; y: number; lat: number; lng: number } => {
+  const normalized = cityName.toLowerCase().trim();
+  const keyMap = Object.keys(CITY_COORDINATES).find(k => normalized.includes(k) || k.includes(normalized));
+  if (keyMap) {
+    return CITY_COORDINATES[keyMap];
+  }
+
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i++) {
+    hash = normalized.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const x = 240 + (Math.abs(hash) % 90);
+  const y = 90 + (Math.abs(hash >> 2) % 60);
+
+  const lat = 5.0 + ((Math.abs(hash >> 4) % 300) / 100);
+  const lng = -6.5 + ((Math.abs(hash >> 8) % 300) / 100);
+
+  return { x, y, lat, lng };
+};
+
 export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ onBack, user, onSelectTab, initialQuery }) => {
   const [queryInput, setQueryInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -58,6 +150,66 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   const [retrievingProfileId, setRetrievingProfileId] = useState<string | null>(null);
   const [isSearchingVille, setIsSearchingVille] = useState(false);
   const [searchingCityName, setSearchingCityName] = useState('');
+
+  // User current geolocation state with auto permission and fallbacks
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+    name: string;
+    x: number;
+    y: number;
+    authorized: boolean;
+  } | null>(null);
+
+  // Request browser GPS permission
+  const requestGPSPermission = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const coords = projectLatLng(lat, lng);
+          setUserLocation({
+            lat,
+            lng,
+            name: "Ma position",
+            x: coords.x,
+            y: coords.y,
+            authorized: true,
+          });
+        },
+        (error) => {
+          console.warn("GPS error callback:", error);
+          const abidjanCoords = projectLatLng(5.3600, -4.0083);
+          setUserLocation({
+            lat: 5.3600,
+            lng: -4.0083,
+            name: "Abidjan",
+            x: abidjanCoords.x,
+            y: abidjanCoords.y,
+            authorized: false,
+          });
+        },
+        { enableHighAccuracy: true, timeout: 6000 }
+      );
+    }
+  };
+
+  // Auto request location permission on component mounting
+  useEffect(() => {
+    requestGPSPermission();
+  }, []);
+
+  // Redirect to Google Maps with pre-filled driving route
+  const openGoogleMapsRoute = () => {
+    if (!pinnedProfile) return;
+    const origin = userLocation?.authorized 
+      ? `${userLocation.lat},${userLocation.lng}` 
+      : `${userLocation?.lat || 5.3600},${userLocation?.lng || -4.0083}`;
+    const destination = `${pinnedProfile.city}, Côte d'Ivoire`;
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
+    window.open(mapsUrl, '_blank');
+  };
 
   // Handle simulated profile retrieval duration before pinning it to top of search screen
   const handleRetrieveProfile = (item: InscriptionResult) => {
@@ -1147,285 +1299,389 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       {/* Main Container */}
       <main id="demande-recherche-main" className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
         {/* 3D World Map & Automatic City Search Locator Panel */}
-        <div className="relative overflow-hidden bg-gradient-to-b from-[#f2faf9] via-[#e2f1f0] to-[#cfe7e8] rounded-3xl p-5 shadow-xl border border-[#c6e3e1] h-80 flex flex-col justify-between" id="dynamic-3d-locator-map">
-          <style dangerouslySetInnerHTML={{__html: `
-            @keyframes marker-bounce {
-              0%, 100% { transform: translateY(0); }
-              50% { transform: translateY(-5px); }
-            }
-            @keyframes radar-ripple {
-              0% { r: 1px; opacity: 0.9; stroke-width: 1.5; }
-              100% { r: 40px; opacity: 0; stroke-width: 0.5; }
-            }
-            @keyframes map-sweep {
-              0% { transform: scale(0.98); opacity: 0.95; }
-              50% { transform: scale(1.01); opacity: 1; }
-              100% { transform: scale(0.98); opacity: 0.95; }
-            }
-            @keyframes rotate-globe {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            @keyframes loader-progress {
-              0% { width: 0%; }
-              100% { width: 100%; }
-            }
-          `}} />
+        {(() => {
+          // Compute geographic parameters for rendering
+          const startCoordsInfo = userLocation || { x: 318, y: 175, lat: 5.3600, lng: -4.0083 };
+          const destCoordsInfo = pinnedProfile ? getStableCoordinatesForCity(pinnedProfile.city) : null;
+          const distanceBetweenKm = (pinnedProfile && destCoordsInfo) 
+            ? calculateHaversineDistance(startCoordsInfo.lat, startCoordsInfo.lng, destCoordsInfo.lat, destCoordsInfo.lng)
+            : 0;
+          const formattedDistanceInfo = distanceBetweenKm < 1 
+            ? `${(distanceBetweenKm * 1000).toFixed(0)} m` 
+            : `${distanceBetweenKm.toFixed(1)} km`;
 
-          {/* Rotating Globe Accessory Widget (Top Right) */}
-          <div className="absolute top-4 right-4 w-12 h-12 bg-[#2dadac]/15 rounded-full border border-[#2dadac]/35 flex items-center justify-center overflow-hidden z-10 shadow-inner">
-            <svg 
-              className="w-8 h-8 text-[#2dadac]" 
-              style={{ animation: 'rotate-globe 40s linear infinite' }}
-              viewBox="0 0 100 100" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="1.2"
+          // Control point for curvy quadratic path
+          const curveControlY = destCoordsInfo ? Math.min(startCoordsInfo.y, destCoordsInfo.y) - 45 : 100;
+          const curveMidX = destCoordsInfo ? (startCoordsInfo.x + destCoordsInfo.x) / 2 : 318;
+          const curveMidY = destCoordsInfo ? (startCoordsInfo.y + destCoordsInfo.y) / 2 - 15 : 155;
+
+          return (
+            <div 
+              onClick={pinnedProfile ? openGoogleMapsRoute : undefined}
+              title={pinnedProfile ? "Cliquez sur la carte pour ouvrir l'itinéraire sur Google Maps ↗" : undefined}
+              className={`relative overflow-hidden bg-transparent h-80 flex flex-col justify-between transition-all duration-350 ${
+                pinnedProfile ? 'cursor-pointer active:scale-[0.995]' : ''
+              }`} 
+              id="dynamic-3d-locator-map"
             >
-              <circle cx="50" cy="50" r="45" />
-              <ellipse cx="50" cy="50" rx="45" ry="12" />
-              <ellipse cx="50" cy="50" rx="45" ry="28" />
-              <ellipse cx="50" cy="50" rx="12" ry="45" />
-              <ellipse cx="50" cy="50" rx="28" ry="45" />
-              <line x1="5" y1="50" x2="95" y2="50" />
-              <line x1="50" y1="5" x2="50" y2="95" />
-            </svg>
-          </div>
+              <style dangerouslySetInnerHTML={{__html: `
+                @keyframes marker-bounce {
+                  0%, 100% { transform: translateY(0); }
+                  50% { transform: translateY(-5px); }
+                }
+                @keyframes radar-ripple {
+                  0% { r: 1px; opacity: 0.9; stroke-width: 1.5; }
+                  100% { r: 40px; opacity: 0; stroke-width: 0.5; }
+                }
+                @keyframes map-sweep {
+                  0% { transform: scale(0.98); opacity: 0.95; }
+                  50% { transform: scale(1.01); opacity: 1; }
+                  100% { transform: scale(0.98); opacity: 0.95; }
+                }
+                @keyframes rotate-globe {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+                @keyframes loader-progress {
+                  0% { width: 0%; }
+                  100% { width: 100%; }
+                }
+                @keyframes route-dash {
+                  to {
+                    stroke-dashoffset: -20;
+                  }
+                }
+              `}} />
 
-          {/* Interactive Status Info Banner (Top Left) */}
-          <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-[#2dadac]/15 backdrop-blur-md px-3.5 py-2 rounded-full border border-[#2dadac]/35 text-[10px] font-black uppercase tracking-wider text-[#1d706f]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f25c34] opacity-80"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#f25c34]"></span>
-            </span>
-            <span>
-              {isSearchingVille ? `Localisation de ${searchingCityName}` : 'Recherche Côte d’Ivoire Active'}
-            </span>
-          </div>
-
-          {/* Isometric World Map Grid & Landmasses */}
-          <div className="absolute inset-0 z-0 opacity-90 pointer-events-none flex items-center justify-center translate-y-3">
-            <svg viewBox="0 0 600 300" className="w-full h-full text-[#2dadac] filter drop-shadow-[0_8px_16px_rgba(43,159,158,0.18)]">
-              {/* Latitude & Longitude lines creating 3D horizon */}
-              <g stroke="#b8e2e0" strokeWidth="0.8" fill="none">
-                <path d="M 50,80 Q 300,120 550,80" />
-                <path d="M 50,140 Q 300,180 550,140" />
-                <path d="M 50,200 Q 300,240 550,200" strokeWidth="1.2" stroke="#aad6d4" />
-                <path d="M 50,260 Q 300,300 550,260" />
-                
-                <path d="M 120,40 Q 180,180 120,320" strokeDasharray="2 3" />
-                <path d="M 220,40 Q 280,180 220,320" strokeDasharray="2 3" />
-                <path d="M 320,40 Q 380,180 320,320" strokeWidth="1" stroke="#aad6d4" />
-                <path d="M 420,40 Q 480,180 420,320" strokeDasharray="2 3" />
-                <path d="M 520,40 Q 580,180 520,320" strokeDasharray="2 3" />
-              </g>
-
-              {/* Continents filled with high-contrast teal matching screenshot */}
-              <g fill="#33a1a1" fillOpacity="0.85" stroke="#2a8585" strokeWidth="0.5">
-                {/* North America */}
-                <path d="M 60,110 C 75,85 110,75 140,80 C 170,85 190,70 195,50 C 180,30 140,40 110,45 C 90,48 70,35 60,40 C 45,47 40,65 52,90 Z" />
-                <path d="M 100,105 C 120,112 145,115 160,122 C 175,128 178,142 165,155 C 150,170 142,160 135,148 C 122,142 110,135 100,125 Z" />
-                {/* South America */}
-                <path d="M 165,155 C 185,158 195,170 185,190 C 178,205 188,225 182,245 C 176,265 160,285 152,295 C 146,290 140,265 148,240 C 154,220 150,195 152,180 C 154,168 160,160 165,155 Z" />
-                {/* Greenland */}
-                <path d="M 205,35 C 220,30 238,25 245,35 C 250,42 240,55 230,58 C 215,62 205,50 205,35 Z" />
-                {/* Eurasia & Africa */}
-                <path d="M 285,100 C 310,95 340,90 355,75 C 370,60 390,48 415,52 C 440,55 455,72 470,80 C 490,90 520,85 530,105 C 500,120 480,110 465,118 C 450,125 435,140 405,138 C 385,136 365,145 350,130 C 330,115 310,120 285,100 Z" />
-                <path d="M 285,100 C 305,115 320,130 315,150 C 310,170 325,188 320,205 C 315,222 295,245 285,255 C 275,240 270,220 278,198 C 284,180 275,160 270,145 C 265,130 275,115 285,100 Z" />
-                {/* Australia */}
-                <path d="M 445,185 C 465,180 485,190 495,205 C 490,225 470,235 455,225 C 440,215 435,195 445,185 Z" />
-                <circle cx="340" cy="210" r="2" />
-                <circle cx="218" cy="115" r="3" />
-                <circle cx="490" cy="110" r="3.5" />
-              </g>
-
-              {/* Bouncing red location pins on continents */}
-              <g>
-                {[
-                  { cx: 120, cy: 95 }, // NA
-                  { cx: 175, cy: 200 }, // SA
-                  { cx: 340, cy: 75 }, // Europe
-                  { cx: 485, cy: 215 }, // Australia
-                  { cx: 430, cy: 110 }, // Asia
-                ].map((pt, i) => (
-                  <g key={`static-pin-${i}`} className="animate-[marker-bounce_3s_infinite_ease-in-out]" style={{ animationDelay: `${i * 0.4}s` }}>
-                    {/* Shadow underneath */}
-                    <ellipse cx={pt.cx} cy={pt.cy} rx="2" ry="0.8" fill="black" fillOpacity="0.3" />
-                    {/* Pin vector */}
-                    <path 
-                      d="M 0,-15 A 5,5 0 0,0 -5,-10 C -5,-5 0,2 0,2 C 0,2 5,-5 5,-10 A 5,5 0 0,0 0,-15 Z" 
-                      fill="#f25c34" 
-                      transform={`translate(${pt.cx}, ${pt.cy})`}
-                    />
-                    <circle cx={pt.cx} cy={pt.cy - 10} r="1.5" fill="white" />
-                  </g>
-                ))}
-              </g>
-
-              {/* Dynamic Target Finder / Satellite Lock routing radar sweep lines */}
-              {isSearchingVille && (
-                <g>
-                  {/* Concentric pulsing circles focusing over searched city */}
-                  <circle 
-                    cx={
-                      searchingCityName.toLowerCase().includes('bassam') ? 326 :
-                      searchingCityName.toLowerCase().includes('abidjan') || searchingCityName.toLowerCase().includes('cocody') ? 318 :
-                      searchingCityName.toLowerCase().includes('bouake') ? 322 :
-                      searchingCityName.toLowerCase().includes('yamoussoukro') ? 317 : 318
-                    } 
-                    cy={155} 
-                    r="8" 
+              {/* Action Widget (Top Right): Spin globe OR active redirect indicator */}
+              {pinnedProfile ? (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openGoogleMapsRoute();
+                  }}
+                  className="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 active:scale-95 px-3 py-2 rounded-full border border-orange-400 text-[10px] font-black uppercase tracking-wider text-white shadow-md transition-all font-sans"
+                  title="Ouvrir l'itinéraire Google Maps"
+                >
+                  <Compass className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '6s' }} />
+                  <span>Itinéraire GPS ↗</span>
+                </button>
+              ) : (
+                <div className="absolute top-4 right-4 w-12 h-12 bg-[#2dadac]/15 rounded-full border border-[#2dadac]/35 flex items-center justify-center overflow-hidden z-10 shadow-inner">
+                  <svg 
+                    className="w-8 h-8 text-[#2dadac]" 
+                    style={{ animation: 'rotate-globe 40s linear infinite' }}
+                    viewBox="0 0 100 100" 
                     fill="none" 
-                    stroke="#2dadac" 
-                    strokeWidth="1.8"
+                    stroke="currentColor" 
+                    strokeWidth="1.2"
                   >
-                    <animate attributeName="r" values="3;42" dur="1.2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="1;0" dur="1.2s" repeatCount="indefinite" />
-                  </circle>
-                  <circle 
-                    cx={
-                      searchingCityName.toLowerCase().includes('bassam') ? 326 :
-                      searchingCityName.toLowerCase().includes('abidjan') || searchingCityName.toLowerCase().includes('cocody') ? 318 :
-                      searchingCityName.toLowerCase().includes('bouake') ? 322 :
-                      searchingCityName.toLowerCase().includes('yamoussoukro') ? 317 : 318
-                    } 
-                    cy={155} 
-                    r="12" 
-                    fill="none" 
-                    stroke="#f25c34" 
-                    strokeWidth="2.5"
-                  >
-                    <animate attributeName="r" values="4;65" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0.9;0" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
-                  </circle>
-                </g>
+                    <circle cx="50" cy="50" r="45" />
+                    <ellipse cx="50" cy="50" rx="45" ry="12" />
+                    <ellipse cx="50" cy="50" rx="45" ry="28" />
+                    <ellipse cx="50" cy="50" rx="12" ry="45" />
+                    <ellipse cx="50" cy="50" rx="28" ry="45" />
+                    <line x1="5" y1="50" x2="95" y2="50" />
+                    <line x1="50" y1="5" x2="50" y2="95" />
+                  </svg>
+                </div>
               )}
 
-              {/* Primary Active Côte d'Ivoire Locator node - Blinking and Pulses */}
-              <g className="animate-[marker-bounce_2s_infinite_ease-in-out]">
-                <circle 
-                  cx={318} 
-                  cy={155} 
-                  r="6" 
-                  fill="none" 
-                  stroke="#2dadac" 
-                  strokeWidth="1.2"
-                  className="animate-[radar-ripple_2s_infinite_linear]"
-                />
-                <ellipse cx={318} cy={158} rx="3" ry="1" fill="black" fillOpacity="0.4" />
-                <path 
-                  d="M 0,-18 A 7,7 0 0,0 -7,-11 C -7,-4 0,3 0,3 C 0,3 7,-4 7,-11 A 7,7 0 0,0 0,-18 Z" 
-                  fill="#f25c34" 
-                  transform="translate(318, 155)"
-                />
-                <circle cx={318} cy={144} r="2" fill="white" />
-              </g>
-            </svg>
-          </div>
-
-          {/* Bottom Floating Area */}
-          <div className="relative z-10 w-full mt-auto">
-            {/* 1. Searching/Locating City State (Only show if there is no pinned profile details yet) */}
-            {isSearchingVille && !pinnedProfile && (
-              <div className="bg-slate-900/90 backdrop-blur-md p-4 text-white rounded-2xl border border-slate-700/60 flex flex-col items-center justify-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 text-[#2dadac] animate-spin" />
-                  <span className="text-[10px] uppercase font-black tracking-widest text-[#2dadac] animate-pulse">Recherche automatique de la ville...</span>
-                </div>
-                <p className="text-xs font-bold font-sans text-center">
-                  Ciblage GPS : <span className="text-[#f25c34] font-black">{searchingCityName.toUpperCase()}</span>
-                </p>
-                <div className="w-1/2 bg-slate-800 h-1 rounded-full overflow-hidden relative">
-                  <div className="absolute top-0 left-0 bg-[#f25c34] h-full rounded-full" style={{ animation: 'loader-progress 2.8s linear' }} />
-                </div>
+              {/* Interactive Status Info Banner (Top Left) */}
+              <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-[#2dadac]/15 backdrop-blur-md px-3.5 py-2 rounded-full border border-[#2dadac]/35 text-[10px] font-black uppercase tracking-wider text-[#1d706f]">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f25c34] opacity-80"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#f25c34]"></span>
+                </span>
+                <span>
+                  {isSearchingVille 
+                    ? `Localisation de ${searchingCityName}` 
+                    : pinnedProfile 
+                      ? `${startCoordsInfo.name} ➔ ${pinnedProfile.city} [${formattedDistanceInfo}]`
+                      : 'Recherche Côte d’Ivoire Active'}
+                </span>
               </div>
-            )}
 
-            {/* 2. Pinned Profile details (Constructed EXACTLY like the user screenshot image, showing live geolocating progress if currently matching) */}
-            {pinnedProfile && (
-              <div className={`bg-white rounded-2xl p-4 shadow-xl border transition-all duration-300 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300 ${
-                isSearchingVille ? 'border-orange-200 bg-orange-50/5' : 'border-emerald-100/80 bg-white'
-              }`} id="pinned-selected-profile">
-                <div className="flex items-center gap-3.5 min-w-0">
-                  {/* Glowing Maps locator icon badge on the left */}
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 flex-shrink-0 shadow-inner relative transition-colors duration-300 ${
-                    isSearchingVille 
-                      ? 'bg-[#fdf4f2] border-orange-400' 
-                      : 'bg-[#ebf7f5] border-emerald-400'
-                  }`}>
-                    <span className={`absolute inset-0 rounded-full animate-ping ${
-                      isSearchingVille ? 'bg-orange-400/30 font-bold' : 'bg-emerald-400/20'
-                    }`} style={{ animationDuration: isSearchingVille ? '1s' : '3s' }}></span>
-                    <MapPin className={`h-5 w-5 stroke-[2.5] transition-colors duration-300 ${
-                      isSearchingVille 
-                        ? 'text-orange-500 fill-orange-100' 
-                        : 'text-emerald-500 fill-emerald-100'
-                    }`} />
-                  </div>
-
-                  {/* Information block */}
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5 flex-wrap leading-none">
-                      <span className="text-xs font-black uppercase tracking-tight text-slate-800 truncate">{pinnedProfile.name}</span>
-                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest">{pinnedProfile.profileType}</span>
-                    </div>
+              {/* Isometric World Map Grid & Landmasses */}
+              <div className="absolute inset-0 z-0 opacity-90 pointer-events-none flex items-center justify-center translate-y-3">
+                <svg viewBox="0 0 600 300" className="w-full h-full text-[#2dadac] filter drop-shadow-[0_8px_16px_rgba(43,159,158,0.18)]">
+                  {/* Latitude & Longitude lines creating 3D horizon */}
+                  <g stroke="#b8e2e0" strokeWidth="0.8" fill="none">
+                    <path d="M 50,80 Q 300,120 550,80" />
+                    <path d="M 50,140 Q 300,180 550,140" />
+                    <path d="M 50,200 Q 300,240 550,200" strokeWidth="1.2" stroke="#aad6d4" />
+                    <path d="M 50,260 Q 300,300 550,260" />
                     
-                    <span className="text-[10px] font-black uppercase text-slate-500 block leading-none">{pinnedProfile.city}</span>
-                    
-                    <div className="pt-1 leading-none">
-                      <span className="text-[8px] text-slate-400 font-black uppercase tracking-wider block leading-none">
-                        {isSearchingVille ? 'CIBLAGE SATELLITE :' : 'ACTIVITÉ / TITRE :'}
-                      </span>
-                      <span className="text-[11.5px] text-slate-800 font-extrabold block truncate leading-none mt-0.5">
-                        {pinnedProfile.titleOrActivity}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                    <path d="M 120,40 Q 180,180 120,320" strokeDasharray="2 3" />
+                    <path d="M 220,40 Q 280,180 220,320" strokeDasharray="2 3" />
+                    <path d="M 320,40 Q 380,180 320,320" strokeWidth="1" stroke="#aad6d4" />
+                    <path d="M 420,40 Q 480,180 420,320" strokeDasharray="2 3" />
+                    <path d="M 520,40 Q 580,180 520,320" strokeDasharray="2 3" />
+                  </g>
 
-                {/* Actions: DEMANDE and close buttons OR dynamic geolocating status */}
-                <div className="flex-shrink-0 min-w-[125px] flex items-center justify-end">
-                  {isSearchingVille ? (
-                    <div className="flex flex-col items-end space-y-1 w-full">
-                      <div className="flex items-center gap-1 text-[#f25c34] font-black text-[9px] uppercase tracking-wide animate-pulse">
-                        <Loader2 className="w-3 h-3 text-[#f25c34] animate-spin" />
-                        <span>LOCALISATION...</span>
-                      </div>
-                      <div className="w-24 bg-slate-100 h-1 rounded-full overflow-hidden relative border border-slate-200">
-                        <div className="absolute top-0 left-0 bg-[#f25c34] h-full rounded-full" style={{ animation: 'loader-progress 2.8s linear' }} />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5">
-                      <button
-                        onClick={() => setSelectedItemForForm(pinnedProfile)}
-                        className="bg-[#f06e30] hover:bg-[#e05d1f] active:scale-95 text-white py-3 px-5 rounded-xl font-black uppercase text-[11px] tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5 animate-in zoom-in-95 duration-200"
-                        id="pinned-submit-demande-btn"
+                  {/* Continents filled with high-contrast teal */}
+                  <g fill="#33a1a1" fillOpacity="0.85" stroke="#2a8585" strokeWidth="0.5">
+                    {/* North America */}
+                    <path d="M 60,110 C 75,85 110,75 140,80 C 170,85 190,70 195,50 C 180,30 140,40 110,45 C 90,48 70,35 60,40 C 45,47 40,65 52,90 Z" />
+                    <path d="M 100,105 C 120,112 145,115 160,122 C 175,128 178,142 165,155 C 150,170 142,160 135,148 C 122,142 110,135 100,125 Z" />
+                    {/* South America */}
+                    <path d="M 165,155 C 185,158 195,170 185,190 C 178,205 188,225 182,245 C 176,265 160,285 152,295 C 146,290 140,265 148,240 C 154,220 150,195 152,180 C 154,168 160,160 165,155 Z" />
+                    {/* Greenland */}
+                    <path d="M 205,35 C 220,30 238,25 245,35 C 250,42 240,55 230,58 C 215,62 205,50 205,35 Z" />
+                    {/* Eurasia & Africa */}
+                    <path d="M 285,100 C 310,95 340,90 355,75 C 370,60 390,48 415,52 C 440,55 455,72 470,80 C 490,90 520,85 530,105 C 500,120 480,110 465,118 C 450,125 435,140 405,138 C 385,136 365,145 350,130 C 330,115 310,120 285,100 Z" />
+                    <path d="M 285,100 C 305,115 320,130 315,150 C 310,170 325,188 320,205 C 315,222 295,245 285,255 C 275,240 270,220 278,198 C 284,180 275,160 270,145 C 265,130 275,115 285,100 Z" />
+                    {/* Australia */}
+                    <path d="M 445,185 C 465,180 485,190 495,205 C 490,225 470,235 455,225 C 440,215 435,195 445,185 Z" />
+                    <circle cx="340" cy="210" r="2" />
+                    <circle cx="218" cy="115" r="3" />
+                    <circle cx="490" cy="110" r="3.5" />
+                  </g>
+
+                  {/* Bouncing red location pins on other continents */}
+                  <g>
+                    {[
+                      { cx: 120, cy: 95 }, // NA
+                      { cx: 175, cy: 200 }, // SA
+                      { cx: 340, cy: 75 }, // Europe
+                      { cx: 485, cy: 215 }, // Australia
+                      { cx: 430, cy: 110 }, // Asia
+                    ].map((pt, i) => (
+                      <g key={`static-pin-${i}`} className="animate-[marker-bounce_3s_infinite_ease-in-out]" style={{ animationDelay: `${i * 0.4}s` }}>
+                        <ellipse cx={pt.cx} cy={pt.cy} rx="2" ry="0.8" fill="black" fillOpacity="0.3" />
+                        <path 
+                          d="M 0,-15 A 5,5 0 0,0 -5,-10 C -5,-5 0,2 0,2 C 0,2 5,-5 5,-10 A 5,5 0 0,0 0,-15 Z" 
+                          fill="#f25c34" 
+                          transform={`translate(${pt.cx}, ${pt.cy})`}
+                        />
+                        <circle cx={pt.cx} cy={pt.cy - 10} r="1.5" fill="white" />
+                      </g>
+                    ))}
+                  </g>
+
+                  {/* Dynamic Target Finder / Satellite Lock routing radar sweep lines */}
+                  {isSearchingVille && (
+                    <g>
+                      <circle 
+                        cx={destCoordsInfo ? destCoordsInfo.x : 318} 
+                        cy={destCoordsInfo ? destCoordsInfo.y : 155} 
+                        r="8" 
+                        fill="none" 
+                        stroke="#2dadac" 
+                        strokeWidth="1.8"
                       >
-                        <span>DEMANDE</span>
-                      </button>
-                      <button 
-                        onClick={() => setPinnedProfile(null)}
-                        className="p-1 px-2 text-slate-400 hover:text-slate-600 rounded text-[9px] font-extrabold uppercase transition-colors"
-                        title="Désélectionner"
+                        <animate attributeName="r" values="3;42" dur="1.2s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="1;0" dur="1.2s" repeatCount="indefinite" />
+                      </circle>
+                      <circle 
+                        cx={destCoordsInfo ? destCoordsInfo.x : 318} 
+                        cy={destCoordsInfo ? destCoordsInfo.y : 155} 
+                        r="12" 
+                        fill="none" 
+                        stroke="#f25c34" 
+                        strokeWidth="2.5"
                       >
-                        Masquer
-                      </button>
-                    </div>
+                        <animate attributeName="r" values="4;65" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.9;0" dur="1.8s" begin="0.4s" repeatCount="indefinite" />
+                      </circle>
+                    </g>
                   )}
-                </div>
+
+                  {/* Active routing overlay connection (Only when pinnedProfile is active) */}
+                  {pinnedProfile && destCoordsInfo && (
+                    <g>
+                      {/* 1. Translucent arc underlay shadow */}
+                      <path
+                        d={`M ${startCoordsInfo.x},${startCoordsInfo.y} Q ${curveMidX},${curveControlY} ${destCoordsInfo.x},${destCoordsInfo.y}`}
+                        fill="none"
+                        stroke="#2dadac"
+                        strokeWidth="4"
+                        strokeOpacity="0.3"
+                        strokeLinecap="round"
+                      />
+                      {/* 2. Dotted and animated route line */}
+                      <path
+                        d={`M ${startCoordsInfo.x},${startCoordsInfo.y} Q ${curveMidX},${curveControlY} ${destCoordsInfo.x},${destCoordsInfo.y}`}
+                        fill="none"
+                        stroke="#f25c34"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeDasharray="6,7"
+                        style={{ animation: 'route-dash 1s linear infinite' }}
+                      />
+
+                      {/* 3. Starting point (User Location - Blue Accent) */}
+                      <g>
+                        <circle cx={startCoordsInfo.x} cy={startCoordsInfo.y} r="8" fill="none" stroke="#2563eb" strokeWidth="2" className="animate-ping" style={{ animationDuration: '2s' }} />
+                        <circle cx={startCoordsInfo.x} cy={startCoordsInfo.y} r="4.5" fill="#3b82f6" stroke="#ffffff" strokeWidth="1" />
+                        <text x={startCoordsInfo.x} y={startCoordsInfo.y + 14} textAnchor="middle" fill="#1e3a8a" fontSize="7.5" fontWeight="900" fontFamily="sans-serif" className="bg-white px-1 py-0.5 rounded shadow">
+                          Départ
+                        </text>
+                      </g>
+
+                      {/* 4. Ending point (Prestataire City - Orange/Red Accent) */}
+                      <g className="animate-[marker-bounce_2.5s_infinite_ease-in-out]">
+                        <ellipse cx={destCoordsInfo.x} cy={destCoordsInfo.y + 3} rx="4" ry="1.5" fill="black" fillOpacity="0.3" />
+                        <path 
+                          d="M 0,-16 A 6,6 0 0,0 -6,-10 C -6,-4 0,2 0,2 C 0,2 6,-4 6,-10 A 6,6 0 0,0 0,-16 Z" 
+                          fill="#f25c34" 
+                          transform={`translate(${destCoordsInfo.x}, ${destCoordsInfo.y})`}
+                        />
+                        <circle cx={destCoordsInfo.x} cy={destCoordsInfo.y - 10} r="1.8" fill="white" />
+                        <text x={destCoordsInfo.x} y={destCoordsInfo.y + 13} textAnchor="middle" fill="#7c2d12" fontSize="7.5" fontWeight="900" fontFamily="sans-serif">
+                          {pinnedProfile.city}
+                        </text>
+                      </g>
+
+                      {/* 5. In-map floating distance card */}
+                      <g transform={`translate(${curveMidX}, ${curveControlY + 10})`}>
+                        <rect x="-35" y="-10" width="70" height="17" rx="5" fill="#0f172a" stroke="#f25c34" strokeWidth="1.2" opacity="0.95" />
+                        <text x="0" y="1" textAnchor="middle" fill="#ffffff" fontSize="8" fontWeight="900" fontFamily="sans-serif" letterSpacing="0.2">
+                          {formattedDistanceInfo}
+                        </text>
+                      </g>
+                    </g>
+                  )}
+
+                  {/* Center Côte d'Ivoire Active node (Visible when no profile is selected, or as decorative center) */}
+                  {!pinnedProfile && (
+                    <g className="animate-[marker-bounce_2s_infinite_ease-in-out]">
+                      <circle 
+                        cx={318} 
+                        cy={155} 
+                        r="6" 
+                        fill="none" 
+                        stroke="#2dadac" 
+                        strokeWidth="1.2"
+                        className="animate-[radar-ripple_2s_infinite_linear]"
+                      />
+                      <ellipse cx={318} cy={158} rx="3" ry="1" fill="black" fillOpacity="0.4" />
+                      <path 
+                        d="M 0,-18 A 7,7 0 0,0 -7,-11 C -7,-4 0,3 0,3 C 0,3 7,-4 7,-11 A 7,7 0 0,0 0,-18 Z" 
+                        fill="#f25c34" 
+                        transform="translate(318, 155)"
+                      />
+                      <circle cx={318} cy={144} r="2" fill="white" />
+                    </g>
+                  )}
+                </svg>
               </div>
-            )}
+
+              {/* Bottom Floating Area */}
+              <div className="relative z-10 w-full mt-auto" onClick={(e) => e.stopPropagation() /* Prevent double route clicks when clicking inside footer */}>
+                {/* 1. Searching/Locating City State */}
+                {isSearchingVille && !pinnedProfile && (
+                  <div className="bg-transparent p-2.5 flex flex-col items-center justify-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 text-[#2dadac] animate-spin" />
+                      <span className="text-[10px] uppercase font-black tracking-widest text-[#2dadac] animate-pulse">Recherche automatique de la ville...</span>
+                    </div>
+                    <p className="text-xs font-bold font-sans text-center text-slate-700">
+                      Ciblage GPS : <span className="text-[#f25c34] font-black">{searchingCityName.toUpperCase()}</span>
+                    </p>
+                    <div className="w-1/2 bg-slate-200 h-1 rounded-full overflow-hidden relative">
+                      <div className="absolute top-0 left-0 bg-[#f25c34] h-full rounded-full" style={{ animation: 'loader-progress 2.8s linear' }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Pinned Profile details (Includes distance, start layout, and Google Maps direct links) */}
+                {pinnedProfile && (
+                  <div className="bg-transparent transition-all duration-300 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300 py-3 border-t border-dashed border-[#2dadac]/30 mt-1" id="pinned-selected-profile">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      {/* Glowing Maps locator icon badge on the left - clickable to open Maps */}
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openGoogleMapsRoute();
+                        }}
+                        className={`w-11 h-11 rounded-full flex items-center justify-center border-2 flex-shrink-0 relative transition-colors duration-300 cursor-pointer hover:scale-105 active:scale-95 ${
+                          isSearchingVille 
+                            ? 'bg-orange-500/10 border-orange-400/80' 
+                            : 'bg-emerald-500/10 border-emerald-400/80 hover:bg-emerald-500/15'
+                        }`}
+                        title="Voir trajet sur Google Maps"
+                      >
+                        <span className={`absolute inset-0 rounded-full animate-ping ${
+                          isSearchingVille ? 'bg-orange-400/20' : 'bg-emerald-400/15'
+                        }`} style={{ animationDuration: isSearchingVille ? '1s' : '3s' }}></span>
+                        <MapPin className={`h-4.5 w-4.5 stroke-[2.5] transition-colors duration-300 ${
+                          isSearchingVille 
+                            ? 'text-orange-600' 
+                            : 'text-emerald-600'
+                        }`} />
+                      </div>
+
+                      {/* Information block with clean contrast text */}
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap leading-none">
+                          <span className="text-xs font-black uppercase tracking-tight text-slate-900 truncate">{pinnedProfile.name}</span>
+                          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest">{pinnedProfile.profileType}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-black uppercase text-slate-600 block leading-none">{pinnedProfile.city}</span>
+                          {!isSearchingVille && (
+                            <span className="text-[9px] font-extrabold text-orange-600 bg-orange-600/10 px-1.5 py-0.5 rounded border border-orange-200/40 block leading-none">
+                              {formattedDistanceInfo}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="pt-1 leading-none">
+                          <span className="text-[8px] text-slate-500 font-black uppercase tracking-wider block leading-none">
+                            {isSearchingVille ? 'CIBLAGE SATELLITE :' : 'ACTIVITÉ / TITRE :'}
+                          </span>
+                          <span className="text-[11px] text-slate-950 font-black block truncate leading-none mt-0.5">
+                            {pinnedProfile.titleOrActivity}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions: DEMANDE and close buttons OR dynamic geolocating status */}
+                    <div className="flex-shrink-0 min-w-[125px] flex items-center justify-end">
+                      {isSearchingVille ? (
+                        <div className="flex flex-col items-end space-y-1 w-full">
+                          <div className="flex items-center gap-1 text-[#f25c34] font-black text-[9px] uppercase tracking-wide animate-pulse">
+                            <Loader2 className="w-3 h-3 text-[#f25c34] animate-spin" />
+                            <span>LOCALISATION...</span>
+                          </div>
+                          <div className="w-24 bg-slate-200 h-1 rounded-full overflow-hidden relative border border-slate-300/40">
+                            <div className="absolute top-0 left-0 bg-[#f25c34] h-full rounded-full" style={{ animation: 'loader-progress 2.8s linear' }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5">
+                          <button
+                            onClick={() => setSelectedItemForForm(pinnedProfile)}
+                            className="bg-[#f06e30] hover:bg-[#e05d1f] active:scale-95 text-white py-2.5 px-4.5 rounded-xl font-black uppercase text-[10.5px] tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5 animate-in zoom-in-95 duration-200"
+                            id="pinned-submit-demande-btn"
+                          >
+                            <span>DEMANDE</span>
+                          </button>
+                          <button 
+                            onClick={() => setPinnedProfile(null)}
+                            className="p-1 px-1.5 text-slate-500 hover:text-slate-800 rounded text-[9px] font-black uppercase transition-colors"
+                            title="Désélectionner"
+                          >
+                            Masquer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
             {/* 3. Normal idle status when no profile is active */}
             {!pinnedProfile && !isSearchingVille && (
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-[#c6e3e1] flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-300">
+              <div className="bg-transparent border-t border-dashed border-[#2dadac]/30 mt-1 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 animate-in fade-in duration-300">
                 <div className="space-y-1">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-[#1d706f] flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                     <span>Recherche Automatique de Profils</span>
                   </h4>
-                  <p className="text-[11px] text-[#257371]/80 font-bold leading-relaxed max-w-lg">
+                  <p className="text-[10.5px] text-[#257371]/90 font-bold leading-relaxed max-w-lg">
                     Scanner et simulation de liaison satellite à travers la Côte d'Ivoire. Choisissez un prestataire dans les résultats pour cibler sa localisation et soumettre une demande.
                   </p>
                 </div>
@@ -1433,31 +1689,31 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
             )}
           </div>
         </div>
+      );
+    })()}
 
         {/* Input area */}
-        <div className="bg-white rounded-3xl p-5 shadow-lg border border-slate-100 space-y-4">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Quel métier ou service cherchez-vous ?</label>
-            <div className="relative flex items-center">
-              <input
-                type="text"
-                value={queryInput}
-                onChange={(e) => setQueryInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Ex. Vendeur, Cuisinier, Agence immobilière..."
-                className="w-full pl-5 pr-12 py-4 bg-slate-50 border-2 border-blue-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-sans"
-                disabled={isLoading}
-                id="search-query-input"
-              />
-              <button
-                onClick={handleSearch}
-                className="absolute right-3 p-2 bg-orange-500 hover:bg-orange-600 active:scale-90 text-white rounded-xl transition-all shadow-md"
-                disabled={isLoading || !queryInput.trim()}
-                id="search-submit-btn"
-              >
-                <Search className="h-4 w-4 stroke-[3]" />
-              </button>
-            </div>
+        <div className="space-y-2.5">
+          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Quel métier ou service cherchez-vous ?</label>
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              value={queryInput}
+              onChange={(e) => setQueryInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Ex. Vendeur, Cuisinier, Agence immobilière..."
+              className="w-full pl-5 pr-14 py-4 bg-white border border-slate-200 focus:border-orange-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all font-sans shadow-sm"
+              disabled={isLoading}
+              id="search-query-input"
+            />
+            <button
+              onClick={handleSearch}
+              className="absolute right-3 p-2.5 bg-orange-500 hover:bg-orange-600 active:scale-90 text-white rounded-xl transition-all shadow-md"
+              disabled={isLoading || !queryInput.trim()}
+              id="search-submit-btn"
+            >
+              <Search className="h-4 w-4 stroke-[3]" />
+            </button>
           </div>
         </div>
 
