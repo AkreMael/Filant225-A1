@@ -70,7 +70,27 @@ const LocationFormScreen: React.FC<LocationFormScreenProps> = ({ itemTitle, onBa
             Numéro de téléphone
             <SpeakerIcon text="Quel est votre numéro de téléphone ?" className="text-white" />
           </label>
-          <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleChange} className="w-full p-3 bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-500 rounded-lg focus:ring-orange-500 focus:border-orange-500" placeholder="Ex: 0701020304" required />
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-gray-500 select-none flex items-center gap-1">
+              <span>🇨🇮</span>
+              <span>+225</span>
+            </span>
+            <input 
+              type="tel" 
+              inputMode="tel"
+              pattern="[0-9]*"
+              id="phone" 
+              name="phone" 
+              value={formData.phone} 
+              onChange={(e) => {
+                const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
+                setFormData({ ...formData, phone: clean });
+              }} 
+              className="w-full p-3 pl-20 bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-500 rounded-lg focus:ring-orange-500 focus:border-orange-500 text-sm font-bold placeholder-gray-300" 
+              placeholder="0701020304" 
+              required 
+            />
+          </div>
         </div>
         
         <div>

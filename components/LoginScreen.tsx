@@ -166,18 +166,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Numéro WhatsApp *</label>
               <div className="relative">
                 <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <div className="absolute left-11 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm select-none">
-                    +225
+                <div className="absolute left-11 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm select-none flex items-center gap-1.5">
+                    <span>🇨🇮</span>
+                    <span>+225</span>
                 </div>
                 <input 
                     type="tel" 
-                    placeholder="0102030405" 
+                    inputMode="tel"
+                    pattern="[0-9]*"
+                    placeholder="01 02 03 04 05" 
                     value={phone} 
                     onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                         setPhone(val);
                     }} 
-                    className="w-full pl-[4.5rem] pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
+                    className="w-full pl-24 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all text-sm tracking-wide" 
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <SpeakerIcon text="Entrez votre numéro WhatsApp à 10 chiffres" className="text-orange-500" />

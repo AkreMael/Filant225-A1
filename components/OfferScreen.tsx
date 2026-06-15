@@ -380,12 +380,14 @@ const PublicationModal = ({ isOpen, onClose, onPublish, initialData }: {
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Salaire souhaité</label>
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Salaire souhaité (FCFA)</label>
                             <input 
                                 type="text" 
+                                inputMode="decimal"
+                                pattern="[0-9]*"
                                 value={formData.price}
                                 onChange={(e) => setFormData({...formData, price: e.target.value})}
-                                placeholder="Ex: 65000F"
+                                placeholder="Ex: 65000"
                                 className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-400"
                             />
                         </div>

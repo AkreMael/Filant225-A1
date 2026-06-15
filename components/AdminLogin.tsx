@@ -49,12 +49,18 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onBack }) => {
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Téléphone</label>
             <div className="relative">
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <div className="absolute left-10 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs select-none flex items-center gap-1">
+                <span>🇨🇮</span>
+                <span>+225</span>
+              </div>
               <input 
                 type="password"
+                inputMode="tel"
+                pattern="[0-9]*"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="00"
-                className="w-full bg-gray-100 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-blue-500/50 transition-all outline-none tracking-widest"
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="00 00 00 00"
+                className="w-full bg-gray-100 dark:bg-slate-800 border-none rounded-2xl py-4 pl-26 pr-4 text-sm font-bold focus:ring-2 focus:ring-blue-500/50 transition-all outline-none tracking-widest"
                 required
               />
             </div>
@@ -66,9 +72,11 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onBack }) => {
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
                 type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 maxLength={4}
                 value={pin}
-                onChange={(e) => setPin(e.target.value)}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                 placeholder="••••"
                 className="w-full bg-gray-100 dark:bg-slate-800 border-none rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:ring-2 focus:ring-blue-500/50 transition-all outline-none tracking-widest"
                 required

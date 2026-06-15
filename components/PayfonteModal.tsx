@@ -52,6 +52,8 @@ const PayfonteModal: React.FC<PayfonteModalProps> = ({ response, onClose, onOtpS
             <p className="text-gray-300 text-sm">Entrez le code OTP reçu par SMS pour finaliser le paiement.</p>
             <input 
               type="text" 
+              inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={6}
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}

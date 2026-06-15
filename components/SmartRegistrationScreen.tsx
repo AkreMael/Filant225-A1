@@ -461,6 +461,8 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Quantité disponible *</label>
               <input 
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={formData.quantity}
                 onChange={(e) => {
                     setFormData({...formData, quantity: e.target.value});
@@ -487,12 +489,14 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Prix de location en 1 jour *</label>
               <input 
                 type="text"
+                inputMode="decimal"
+                pattern="[0-9]*"
                 value={formData.rentalPrice}
                 onChange={(e) => {
                     setFormData({...formData, rentalPrice: e.target.value});
                     if (errors.includes('rentalPrice')) setErrors(errors.filter(e => e !== 'rentalPrice'));
                 }}
-                placeholder="Ex: 5000 CFA"
+                placeholder="Ex: 5000"
                 className={getInputClass('rentalPrice')}
               />
             </div>
@@ -541,16 +545,25 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Numéro de l’agence *</label>
-              <input 
-                type="text"
-                value={formData.agencyPhone}
-                onChange={(e) => {
-                    setFormData({...formData, agencyPhone: e.target.value});
-                    if (errors.includes('agencyPhone')) setErrors(errors.filter(e => e !== 'agencyPhone'));
-                }}
-                placeholder="Téléphone de l'agence"
-                className={getInputClass('agencyPhone')}
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-gray-400 select-none flex items-center gap-1">
+                  <span>🇨🇮</span>
+                  <span>+225</span>
+                </span>
+                <input 
+                  type="tel"
+                  inputMode="tel"
+                  pattern="[0-9]*"
+                  value={formData.agencyPhone}
+                  onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData({...formData, agencyPhone: clean});
+                      if (errors.includes('agencyPhone')) setErrors(errors.filter(e => e !== 'agencyPhone'));
+                  }}
+                  placeholder="0701020304"
+                  className={`${getInputClass('agencyPhone')} pl-20 text-sm font-semibold`}
+                />
+              </div>
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Type de biens proposés : *</label>
@@ -627,16 +640,25 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Numéro de l’entreprise *</label>
-              <input 
-                type="text"
-                value={formData.companyPhone}
-                onChange={(e) => {
-                    setFormData({...formData, companyPhone: e.target.value});
-                    if (errors.includes('companyPhone')) setErrors(errors.filter(e => e !== 'companyPhone'));
-                }}
-                placeholder="Téléphone de l'entreprise"
-                className={getInputClass('companyPhone')}
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-gray-400 select-none flex items-center gap-1">
+                  <span>🇨🇮</span>
+                  <span>+225</span>
+                </span>
+                <input 
+                  type="tel"
+                  inputMode="tel"
+                  pattern="[0-9]*"
+                  value={formData.companyPhone}
+                  onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData({...formData, companyPhone: clean});
+                      if (errors.includes('companyPhone')) setErrors(errors.filter(e => e !== 'companyPhone'));
+                  }}
+                  placeholder="0701020304"
+                  className={`${getInputClass('companyPhone')} pl-20 text-sm font-semibold`}
+                />
+              </div>
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Domaine d'activité *</label>
@@ -867,12 +889,18 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
 
                   <div>
                      <label className="text-[10px] font-black text-slate-700 uppercase tracking-[0.12em] ml-1 mb-1.5 block">Numéro personnel (fixé)</label>
-                     <input 
-                       type="text"
-                       value={formData.phone}
-                       readOnly
-                       className="w-full bg-slate-150 border-2 border-slate-300 rounded-2xl py-3 px-4 text-slate-800 font-black text-xs outline-none cursor-not-allowed opacity-90"
-                     />
+                     <div className="relative bg-slate-150 border-2 border-slate-300 rounded-2xl flex items-center opacity-90">
+                       <span className="pl-4 text-xs font-black text-slate-400 select-none flex items-center gap-1.5 flex-shrink-0">
+                         <span>🇨🇮</span>
+                         <span>+225</span>
+                       </span>
+                       <input 
+                         type="text"
+                         value={formData.phone}
+                         readOnly
+                         className="w-full bg-transparent py-3 pl-4 pr-4 text-slate-800 font-black text-xs outline-none cursor-not-allowed"
+                       />
+                     </div>
                   </div>
 
                   <div className="h-[2px] bg-slate-100 my-4"></div>

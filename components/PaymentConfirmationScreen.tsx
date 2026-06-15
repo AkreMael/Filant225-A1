@@ -516,9 +516,14 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             <div>
               <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 ml-1 font-sans">Numéro de paiement Wave</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">🇨🇮 +225</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400 select-none flex items-center gap-1">
+                  <span>🇨🇮</span>
+                  <span>+225</span>
+                </span>
                 <input 
-                  type="text"
+                  type="tel"
+                  inputMode="tel"
+                  pattern="[0-9]*"
                   maxLength={10}
                   value={depositPhone}
                   onChange={(e) => {
@@ -585,9 +590,14 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                   </label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">🇨🇮 +225</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400 select-none flex items-center gap-1">
+                        <span>🇨🇮</span>
+                        <span>+225</span>
+                      </span>
                       <input 
-                        type="text"
+                        type="tel"
+                        inputMode="tel"
+                        pattern="[0-9]*"
                         maxLength={10}
                         value={waveNumber}
                         disabled={!!paymentPath}
@@ -596,7 +606,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                           if (clean.length <= 10) setWaveNumber(clean);
                         }}
                         placeholder="00 00 00 00 00" 
-                        className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl pl-18 pr-3 py-2 text-sm font-black text-slate-900 outline-none placeholder-slate-200 transition-all font-sans"
+                        className="w-full bg-white border-2 border-slate-200 focus:border-blue-500 rounded-2xl pl-20 pr-3 py-2 text-sm font-black text-slate-900 outline-none placeholder-slate-200 transition-all font-sans"
                       />
                     </div>
                     {!paymentPath && (
