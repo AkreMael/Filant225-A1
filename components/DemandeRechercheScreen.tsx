@@ -1585,9 +1585,9 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                   </div>
                 )}
 
-                {/* 2. Pinned Profile details (Includes distance, start layout, and Google Maps direct links) */}
+                {/* 2. Pinned Profile details (Reverted to previous transparent look as requested) */}
                 {pinnedProfile && (
-                  <div className="bg-transparent transition-all duration-300 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300 py-3 border-t border-dashed border-[#2dadac]/30 mt-1" id="pinned-selected-profile">
+                  <div className="bg-transparent transition-all duration-300 flex items-center justify-between gap-4 animate-in slide-in-from-bottom-4 fade-in duration-300 py-3 border-t border-dashed border-[#2dadac]/30 mt-1.5" id="pinned-selected-profile">
                     <div className="flex items-center gap-3.5 min-w-0">
                       {/* Glowing Maps locator icon badge on the left - clickable to open Maps */}
                       <div 
@@ -1598,7 +1598,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                         className={`w-11 h-11 rounded-full flex items-center justify-center border-2 flex-shrink-0 relative transition-colors duration-300 cursor-pointer hover:scale-105 active:scale-95 ${
                           isSearchingVille 
                             ? 'bg-orange-500/10 border-orange-400/80' 
-                            : 'bg-emerald-500/10 border-emerald-400/80 hover:bg-emerald-500/15'
+                            : 'bg-emerald-500/10 border-emerald-400/80 hover:bg-emerald-50/15'
                         }`}
                         title="Voir trajet sur Google Maps"
                       >
@@ -1750,17 +1750,31 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3.5">
-                {results.map((item) => {
-                  const colors = getCategoryColors(item.profileType);
+              <div className="space-y-4 divide-y divide-dashed divide-[#2dadac]/30">
+                {results.map((item, index) => {
                   return (
                     <div
                       key={item.id}
-                      className="bg-white border border-slate-250/70 rounded-[1.25rem] p-3 flex flex-col justify-between h-full relative overflow-hidden group hover:shadow-xl transition-all duration-300"
+                      className={`bg-transparent flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300 relative ${
+                        index > 0 ? 'pt-4' : ''
+                      }`}
                     >
-                      <div>
-                        {/* Image container / Fallback image if none in DB */}
-                        <div className="w-full aspect-[4/5] overflow-hidden rounded-xl bg-slate-50 mb-3 border border-slate-100 relative shrink-0">
+                      {/* Upper right Info icon as shown in mockup */}
+                      <div className="absolute top-2 right-0 flex items-center gap-2">
+                        <svg 
+                          onClick={() => handleRetrieveProfile(item)} 
+                          className="w-5 h-5 text-slate-900 cursor-pointer hover:scale-105 active:scale-95" 
+                          viewBox="0 0 24 24" 
+                          fill="currentColor"
+                          title="Plus d'informations"
+                        >
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                      </div>
+
+                      <div className="flex items-center gap-4 sm:gap-6 min-w-0 flex-1">
+                        {/* Circle profile picture with thick black border */}
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[3px] border-slate-950 overflow-hidden relative shrink-0 shadow-md">
                           <img 
                             src={item.imageLink || "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4affc49d-d0ff-432d-bc34-8d9d3d6f91ae.jpg"} 
                             alt={item.name} 
@@ -1769,51 +1783,46 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                           />
                         </div>
 
-                        {/* Info details */}
-                        <div className="space-y-1">
-                          {/* Profile type/category */}
-                          <p className={`text-[9.5px] font-black uppercase tracking-wider ${colors.textColor}`}>
-                            {item.profileType}
-                          </p>
-
-                          {/* Name */}
-                          <h4 className="font-sans font-extrabold uppercase text-[13px] tracking-tight text-slate-900 leading-tight truncate">
-                            {item.name}
-                          </h4>
-
-                          {/* City */}
-                          <div className="flex items-center gap-1 text-slate-900 mt-1">
-                            <MapPin className="h-3 w-3 text-[#e32a8a] stroke-[2.5]" />
-                            <span className="text-[10px] font-black uppercase tracking-tight">{item.city}</span>
+                        {/* Info block */}
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap font-sans font-black text-xs sm:text-base tracking-wider uppercase leading-none">
+                            {/* Profile Type in Vivid Magenta */}
+                            <span className="text-[#ff00ff]">{item.profileType}</span>
+                            {/* Title/Activity in Bold Orange */}
+                            <span className="text-[#ff4500] font-extrabold">{item.titleOrActivity}</span>
                           </div>
 
-                          {/* Title of profession or activity */}
-                          <div className="mt-1.5 text-left">
-                            <span className="text-[9px] text-slate-450 font-extrabold uppercase tracking-wider block">Activité / Titre</span>
-                            <span className="text-[10px] text-slate-900 font-black uppercase leading-tight block line-clamp-2 h-8 overflow-hidden">
-                              {item.titleOrActivity}
-                            </span>
+                          <div className="text-base sm:text-2xl font-bold text-slate-900 tracking-tight leading-normal">
+                            Nom: <span className="font-extrabold uppercase">{item.name}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            {/* Magenta location pin icon */}
+                            <MapPin className="h-5 w-5 text-[#ff00ff] fill-[#ff00ff]/10 stroke-[2.5]" />
+                            <span className="text-sm sm:text-lg font-bold text-slate-800">{item.city}</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Action button next to result */}
-                      <button
-                        onClick={() => handleRetrieveProfile(item)}
-                        disabled={isLinking || retrievingProfileId !== null}
-                        className="w-full mt-4 bg-[#e32a8a] hover:bg-[#c91f74] disabled:bg-gray-300 text-white font-black uppercase text-[9px] tracking-widest py-2.5 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all font-sans cursor-pointer shrink-0"
-                      >
-                        {retrievingProfileId === item.id ? (
-                          <>
-                            <Loader2 className="h-3 w-3 animate-spin text-white animate-pulse" />
-                            <span>Récupération...</span>
-                          </>
-                        ) : isLinking ? (
-                          <Loader2 className="h-3 w-3 animate-spin text-white" />
-                        ) : (
-                          <span>Demande de service</span>
-                        )}
-                      </button>
+                      {/* Action button "DEMANDE DE SERVICE" in Orange */}
+                      <div className="flex-shrink-0 w-full md:w-auto flex items-center justify-end md:self-end mt-2 md:mt-0">
+                        <button
+                          onClick={() => handleRetrieveProfile(item)}
+                          disabled={isLinking || retrievingProfileId !== null}
+                          className="w-full md:w-auto bg-[#ff4500] hover:bg-[#e03a00] disabled:bg-slate-300 text-white py-3 px-6 rounded-2xl font-black uppercase text-[11px] sm:text-xs tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
+                        >
+                          {retrievingProfileId === item.id ? (
+                            <>
+                              <Loader2 className="h-4 h-4 animate-spin text-white animate-pulse" />
+                              <span>RÉCUPÉRATION...</span>
+                            </>
+                          ) : isLinking ? (
+                            <Loader2 className="h-4 h-4 animate-spin text-white" />
+                          ) : (
+                            <span>DEMANDE DE SERVICE</span>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
