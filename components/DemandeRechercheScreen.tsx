@@ -1503,23 +1503,15 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                       className="bg-white border border-slate-250/70 rounded-[1.25rem] p-3 flex flex-col justify-between h-full relative overflow-hidden group hover:shadow-xl transition-all duration-300"
                     >
                       <div>
-                        {/* Image container / "Masqué" placeholder */}
-                        {item.imageLink ? (
-                          <div className="w-full aspect-[4/5] overflow-hidden rounded-xl bg-slate-50 mb-3 border border-slate-100 relative shrink-0">
-                            <img 
-                              src={item.imageLink} 
-                              alt={item.name} 
-                              className="w-full h-full object-cover animate-fade-in" 
-                              referrerPolicy="no-referrer"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-full aspect-[4/5] rounded-xl bg-[#f1f5f9] flex items-center justify-center border border-slate-100 mb-3 shrink-0 select-none">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
-                              Masqué
-                            </span>
-                          </div>
-                        )}
+                        {/* Image container / Fallback image if none in DB */}
+                        <div className="w-full aspect-[4/5] overflow-hidden rounded-xl bg-slate-50 mb-3 border border-slate-100 relative shrink-0">
+                          <img 
+                            src={item.imageLink || "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4affc49d-d0ff-432d-bc34-8d9d3d6f91ae.jpg"} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover animate-fade-in" 
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
 
                         {/* Info details */}
                         <div className="space-y-1">
