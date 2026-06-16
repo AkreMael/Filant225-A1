@@ -30,6 +30,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import StageFormationHubScreen from './components/StageFormationHubScreen';
 import { DemandeRechercheScreen } from './components/DemandeRechercheScreen';
+import { EvolutionScreen } from './components/EvolutionScreen';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageSquare, Check } from 'lucide-react';
 import { isAdmin } from './utils/authUtils';
@@ -1182,6 +1183,14 @@ const App: React.FC = () => {
       break;
     case Tab.Payment:
       activeScreen = <PaymentScreen onBack={handleBack} />;
+      break;
+    case Tab.Evolution:
+      activeScreen = (
+        <EvolutionScreen 
+          user={currentUser || maelUser} 
+          onClose={() => setActiveTab(Tab.Menu)} 
+        />
+      );
       break;
     case Tab.UserChat:
       activeScreen = (

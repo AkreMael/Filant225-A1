@@ -713,6 +713,9 @@ export const databaseService = {
         });
         console.log("Inscription saved/updated successfully for profile:", sanitizedPhone);
 
+        // Trigger evolution update
+        databaseService.triggerEvolutionUpdate(sanitizedPhone);
+
         // Send automated message on registration completion with 1.2s delay to preserve proper chat sequence
         setTimeout(async () => {
           try {
@@ -1066,6 +1069,13 @@ export const databaseService = {
         });
 
         console.log("Individual scan saved to Firestore and notify admin");
+        
+        // Trigger evolution update for BOTH the scanner client and the scanned worker
+        if (contact.phone) {
+          databaseService.triggerEvolutionUpdate(contact.phone);
+        }
+        databaseService.triggerEvolutionUpdate(user.phone);
+
         return true;
     } catch (e) {
         console.error("Error saving individual scan:", e);
@@ -1513,6 +1523,9 @@ export const databaseService = {
             console.error("Error sending auto message after service request:", msgErr);
           }
         }, 1250);
+
+        // Trigger evolution update
+        databaseService.triggerEvolutionUpdate(userId);
       }
 
       return docRef.id;
@@ -1550,6 +1563,9 @@ export const databaseService = {
             console.error("Error sending auto message after stage request:", msgErr);
           }
         }, 1250);
+
+        // Trigger evolution update
+        databaseService.triggerEvolutionUpdate(userId);
       }
 
       return docRef.id;
@@ -1587,6 +1603,9 @@ export const databaseService = {
             console.error("Error sending auto message after formation request:", msgErr);
           }
         }, 1250);
+
+        // Trigger evolution update
+        databaseService.triggerEvolutionUpdate(userId);
       }
 
       return docRef.id;
@@ -2241,5 +2260,213 @@ export const databaseService = {
     }, (error) => {
       console.error("Error subscribing to all wallet transactions:", error);
     });
+  },
+
+  getUserProfileType: async (phone: string): Promise<'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise' | 'Client'> => {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    try {
+      // 1. Check in Inscriptions first (since we register with profileType there)
+      const inscrRef = doc(db, 'Inscriptions', sanitizedPhone);
+      const inscrSnap = await getDoc(inscrRef);
+      if (inscrSnap.exists()) {
+        const data = inscrSnap.data();
+        if (data.profileType) {
+          if (data.profileType === 'Propriétaire' || data.profileType === 'Equipement') {
+            return 'Propriétaire';
+          }
+          return data.profileType as any;
+        }
+      }
+
+      // 2. Check the specific professional collections
+      const travSnap = await getDoc(doc(db, 'Travailleurs', sanitizedPhone));
+      if (travSnap.exists()) return 'Travailleur';
+
+      const agSnap = await getDoc(doc(db, 'Agences immobilières', sanitizedPhone));
+      if (agSnap.exists()) return 'Agence';
+
+      const eqSnap = await getDoc(doc(db, 'Équipements', sanitizedPhone));
+      if (eqSnap.exists()) return 'Propriétaire';
+
+      const entSnap = await getDoc(doc(db, 'Entreprises', sanitizedPhone));
+      if (entSnap.exists()) return 'Entreprise';
+
+      // 3. Fallback to check user document role
+      const clientSnap = await getDoc(doc(db, 'Clients', sanitizedPhone));
+      if (clientSnap.exists()) {
+        const data = clientSnap.data();
+        if (data.role === 'Travailleur') return 'Travailleur';
+        if (data.role === 'Agence' || data.role === 'Agence immobilière') return 'Agence';
+        if (data.role === 'Propriétaire' || data.role === 'Équipements') return 'Propriétaire';
+        if (data.role === 'Entreprise') return 'Entreprise';
+      }
+    } catch (e) {
+      console.error("Error determining profile type:", e);
+    }
+    return 'Client';
+  },
+
+  getUserEvolution: async (phone: string): Promise<any> => {
+    if (!phone) return null;
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    try {
+      await databaseService.ensureAuth();
+      const profileType = await databaseService.getUserProfileType(sanitizedPhone);
+      
+      let points = 0;
+      let maxPoints = 100;
+      let percentage = 0;
+      let description = '';
+      let badge = 'Standard';
+      let detailsText = '';
+
+      if (profileType === 'Travailleur') {
+        // Query HistoriqueScans where phone == sanitizedPhone (scans received)
+        let scansCount = 0;
+        try {
+          const qScans = query(collection(db, 'HistoriqueScans'), where('phone', '==', sanitizedPhone));
+          const snapScans = await getDocs(qScans);
+          scansCount = snapScans.size;
+        } catch (err) {
+          console.warn("Could not query HistoriqueScans for evolution:", err);
+        }
+
+        // Query Missions where userId == sanitizedPhone
+        let mCount = 0;
+        try {
+          const qMissions = query(collection(db, 'Missions'), where('userId', '==', sanitizedPhone));
+          const snapMissions = await getDocs(qMissions);
+          mCount = snapMissions.size;
+        } catch (err) {
+          console.warn("Could not query Missions for evolution:", err);
+        }
+
+        points = scansCount + mCount;
+        maxPoints = 35; // Target scans/uses
+        percentage = Math.min(100, Math.round((points / maxPoints) * 100));
+        
+        badge = percentage >= 100 ? 'Travailleur Favori ★' : 'Travailleur Actif';
+        description = "Chaque fois que vous êtes sollicité, scanné ou contacté, votre niveau d'évolution augmente.";
+        detailsText = `${scansCount} scan(s) reçu(s) et ${mCount} mission(s) effectuée(s).`;
+      } 
+      else if (profileType === 'Client') {
+        let requestsCount = 0;
+        try {
+          // Query ServiceRequests where userId == sanitizedPhone or phone == sanitizedPhone
+          const qRequests1 = query(collection(db, 'ServiceRequests'), where('userId', '==', sanitizedPhone));
+          const snapReq1 = await getDocs(qRequests1);
+          requestsCount = snapReq1.size;
+        } catch (err) {
+          console.warn("Could not query ServiceRequests for evolution:", err);
+        }
+        
+        try {
+          // Also add stage or formation applications
+          const qStage = query(collection(db, 'Stage'), where('userId', '==', sanitizedPhone));
+          const snapStage = await getDocs(qStage);
+          const qFormation = query(collection(db, 'Formation'), where('userId', '==', sanitizedPhone));
+          const snapFormation = await getDocs(qFormation);
+          
+          requestsCount += snapStage.size + snapFormation.size;
+        } catch (err) {
+          console.warn("Could not query Stage/Formation for evolution:", err);
+        }
+
+        points = requestsCount;
+        maxPoints = 6; // To hit 90% peak (each gives 15%)
+        percentage = Math.min(90, points * 15);
+        
+        badge = percentage >= 90 ? 'Client Privilégié' : 'Client Actif';
+        description = "Chaque demande effectuée (travailleur, équipement, agence) augmente votre progression.";
+        detailsText = `${points} demande(s) enregistrée(s).`;
+      } 
+      else {
+        // Propriétaire / Agence / Entreprise
+        let scansCount = 0;
+        try {
+          const qScans = query(collection(db, 'HistoriqueScans'), where('phone', '==', sanitizedPhone));
+          const snapScans = await getDocs(qScans);
+          scansCount = snapScans.size;
+        } catch (err) {
+          console.warn("Could not query HistoriqueScans for partner evolution:", err);
+        }
+
+        let mCount = 0;
+        try {
+          const qMissions = query(collection(db, 'Missions'), where('userId', '==', sanitizedPhone));
+          const snapMissions = await getDocs(qMissions);
+          mCount = snapMissions.size;
+        } catch (err) {
+          console.warn("Could not query Missions for partner evolution:", err);
+        }
+
+        points = scansCount + mCount;
+        maxPoints = 10;
+        percentage = Math.min(100, points * 10);
+        
+        badge = percentage >= 100 ? 'Partenaire Certifié ★' : 'Partenaire Actif';
+        description = "Votre progression évolue selon l'activité, les interactions et les demandes reçues.";
+        detailsText = `${scansCount} interaction(s) et ${mCount} demande(s) reçue(s).`;
+      }
+
+      const evolutionData = {
+        profileType,
+        points,
+        maxPoints,
+        percentage,
+        description,
+        badge,
+        detailsText,
+        updatedAt: Date.now()
+      };
+
+      // Ensure we write this to evolution_succes inside their user node
+      const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
+      for (const col of collections) {
+        try {
+          const userRef = doc(db, col, sanitizedPhone);
+          const snap = await getDoc(userRef);
+          if (snap.exists()) {
+            await setDoc(userRef, {
+              evolution_succes: evolutionData,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+            break;
+          }
+        } catch (dbErr) {
+          console.error(`Error updating evolution_succes in collection ${col}:`, dbErr);
+        }
+      }
+
+      // Also store in local cache
+      localStorage.setItem(`filant_evolution_${sanitizedPhone}`, JSON.stringify(evolutionData));
+
+      return evolutionData;
+    } catch (e) {
+      console.error("Error in getUserEvolution:", e);
+      // Fallback local calculation
+      const cached = localStorage.getItem(`filant_evolution_${sanitizedPhone}`);
+      if (cached) return JSON.parse(cached);
+      
+      return {
+        profileType: 'Client',
+        points: 0,
+        maxPoints: 100,
+        percentage: 0,
+        description: "Chargement de la progression...",
+        badge: 'Standard',
+        detailsText: "Aucune interaction enregistrée",
+        updatedAt: Date.now()
+      };
+    }
+  },
+
+  triggerEvolutionUpdate: async (phone: string) => {
+    if (!phone) return;
+    try {
+      await databaseService.getUserEvolution(phone);
+    } catch (e) {
+      console.warn("Silent failure on evolution trigger:", e);
+    }
   }
 };

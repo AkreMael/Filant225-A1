@@ -10,7 +10,8 @@ export enum Tab {
   Payment = 'Payment',
   Notifications = 'Notifications',
   UserChat = 'UserChat',
-  MyQRCode = 'MyQRCode'
+  MyQRCode = 'MyQRCode',
+  Evolution = 'Evolution'
 }
 
 export interface User {
