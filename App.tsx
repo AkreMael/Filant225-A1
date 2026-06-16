@@ -133,9 +133,39 @@ const App: React.FC = () => {
   const [globalViewportHeight, setGlobalViewportHeight] = useState<string>('100dvh');
 
   useEffect(() => {
+    let maxHeight = window.innerHeight;
+    let lastWidth = window.innerWidth;
+
     const handleViewportUpdate = () => {
-      const targetHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      setGlobalViewportHeight(`${targetHeight}px`);
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' || 
+        activeElement.tagName === 'SELECT' ||
+        activeElement.getAttribute('contenteditable') === 'true'
+      );
+
+      // Handle screen rotation / size reset
+      if (window.innerWidth !== lastWidth) {
+        maxHeight = window.innerHeight;
+        lastWidth = window.innerWidth;
+      }
+
+      if (window.visualViewport) {
+        const currentHeight = window.visualViewport.height;
+        if (currentHeight > maxHeight) {
+          maxHeight = currentHeight;
+        }
+
+        // If keyboard is likely open (actively typing or visual viewport is significantly squeezed)
+        if (isInputFocused || currentHeight < maxHeight - 140) {
+          setGlobalViewportHeight(`${maxHeight}px`);
+        } else {
+          setGlobalViewportHeight(`${currentHeight}px`);
+        }
+      } else {
+        setGlobalViewportHeight(`${window.innerHeight}px`);
+      }
     };
 
     window.addEventListener('resize', handleViewportUpdate);
@@ -148,7 +178,6 @@ const App: React.FC = () => {
 
     handleViewportUpdate();
 
-    // Trigger update automatically to catch delayed changes and external tab switch
     const interval = setInterval(handleViewportUpdate, 500);
 
     return () => {

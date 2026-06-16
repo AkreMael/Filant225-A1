@@ -53,6 +53,19 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
   const isLoaded = useRef(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const handleViewportResize = () => {
+      if (window.visualViewport) {
+        setIsKeyboardVisible(window.visualViewport.height < window.innerHeight - 150);
+      }
+    };
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    };
+  }, []);
 
   // Persistance des données
   const storageKey = useMemo(() => `form_data_${user.phone || user.id}_${title}_${serviceMode}`, [user.id, user.phone, title, serviceMode]);
@@ -485,31 +498,31 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
           initial={{ y: -50, opacity: 0, scale: 1.1 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          className="relative h-[220px] w-full flex-shrink-0 bg-orange-600 overflow-hidden flex items-center justify-center"
+          className={`relative w-full flex-shrink-0 bg-orange-600 overflow-hidden flex items-center justify-center transition-all duration-300 ${isKeyboardVisible ? 'h-[56px]' : 'h-[220px]'}`}
         >
             {resolvedImage ? (
                 <img 
                   src={resolvedImage} 
                   alt={title} 
-                  className={`absolute inset-0 w-full h-full object-cover ${isBlurredImage ? 'blur-md opacity-40' : ''}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-all duration-350 ${isBlurredImage ? 'blur-md opacity-40' : ''} ${isKeyboardVisible ? 'opacity-10' : ''}`}
                   referrerPolicy="no-referrer"
                 />
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/25"></div>
             {!resolvedImage && <span className="text-white/20 font-black text-8xl relative z-0 mt-4">F</span>}
-            {isBlurredImage && (
+            {isBlurredImage && !isKeyboardVisible && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                     <span className="text-white text-lg font-black uppercase tracking-[0.3em] drop-shadow-lg">MASQUÉ</span>
                 </div>
             )}
             <button 
               onClick={onClose} 
-              className="absolute top-4 left-4 p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20"
+              className={`absolute p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20 transition-all duration-300 ${isKeyboardVisible ? 'top-2.5 left-4' : 'top-4 left-4'}`}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-                <span className="text-white font-black text-xl tracking-tighter uppercase drop-shadow-lg">FILANT°225</span>
+            <div className={`absolute z-20 transition-all duration-300 ${isKeyboardVisible ? 'top-4 left-1/2 -translate-x-1/2' : 'top-4 left-1/2 -translate-x-1/2'}`}>
+                <span className={`text-white font-black tracking-tighter uppercase drop-shadow-lg transition-all duration-300 ${isKeyboardVisible ? 'text-sm' : 'text-xl'}`}>FILANT°225</span>
             </div>
         </motion.div>
 
@@ -517,7 +530,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
           initial={{ y: "100%" }}
           animate={{ y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="flex-1 bg-white rounded-t-[3rem] -mt-12 relative z-10 p-6 flex flex-col items-center"
+          className={`flex-1 bg-white rounded-t-[3rem] relative z-10 p-6 flex flex-col items-center transition-all duration-300 ${isKeyboardVisible ? 'mt-0 rounded-t-none' : '-mt-12'}`}
         >
             <div className="w-16 h-1.5 bg-gray-100 rounded-full mb-6"></div>
             

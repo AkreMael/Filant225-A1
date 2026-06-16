@@ -26,6 +26,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const handleViewportResize = () => {
+      if (window.visualViewport) {
+        setIsKeyboardVisible(window.visualViewport.height < window.innerHeight - 150);
+      }
+    };
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    };
+  }, []);
 
   useEffect(() => {
     const tempName = localStorage.getItem('filant_temp_name');
@@ -96,7 +109,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
 
   return (
     <div className="flex flex-col h-full bg-white font-sans overflow-y-auto">
-      <div className="relative h-[180px] sm:h-[220px] w-full flex-shrink-0 bg-orange-600">
+      <div className={`relative w-full flex-shrink-0 bg-orange-600 transition-all duration-300 flex items-center justify-center overflow-hidden ${isKeyboardVisible ? 'h-0 opacity-0' : 'h-[180px] sm:h-[220px]'}`}>
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
@@ -105,7 +118,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
         </div>
       </div>
 
-      <div className="flex-1 bg-white rounded-t-[3rem] -mt-12 relative z-10 p-6 sm:p-8 flex flex-col items-center">
+      <div className={`flex-1 bg-white rounded-t-[3rem] relative z-10 p-6 sm:p-8 flex flex-col items-center transition-all duration-300 ${isKeyboardVisible ? 'mt-0 rounded-t-none' : '-mt-12'}`}>
         <div className="w-16 h-1.5 bg-gray-100 rounded-full mb-6 sm:mb-8"></div>
         
         <div className="w-full max-w-md space-y-6 sm:space-y-8 pb-12">

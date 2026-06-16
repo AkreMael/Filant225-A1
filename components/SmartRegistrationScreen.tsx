@@ -66,6 +66,19 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
   const [isSaved, setIsSaved] = useState(false);
   const [paymentInitiated, setPaymentInitiated] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const handleViewportResize = () => {
+      if (window.visualViewport) {
+        setIsKeyboardVisible(window.visualViewport.height < window.innerHeight - 150);
+      }
+    };
+    window.visualViewport?.addEventListener('resize', handleViewportResize);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleViewportResize);
+    };
+  }, []);
 
   // Persistence logic
   useEffect(() => {
@@ -711,29 +724,29 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     <div className={`flex flex-col h-full font-sans overflow-y-auto scrollbar-hide transition-colors duration-300 ${isStep2Form ? 'bg-white text-slate-900' : 'bg-[#0f172a] text-white'}`}>
       {/* Header */}
       {!isStep2Form ? (
-        <header className="pt-8 pb-6 px-6 flex flex-col items-center text-center relative shrink-0">
+        <header className={`px-6 flex flex-col items-center text-center relative shrink-0 transition-all duration-300 ${isKeyboardVisible ? 'pt-4 pb-2' : 'pt-8 pb-6'}`}>
           <button 
             type="button"
             onClick={onBack}
-            className="absolute left-6 top-8 p-2 bg-white/10 rounded-xl active:scale-90 transition-all text-white"
+            className={`absolute left-6 p-2 bg-white/10 rounded-xl active:scale-90 transition-all text-white ${isKeyboardVisible ? 'top-4' : 'top-8'}`}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
 
           <div className="flex items-center gap-1 mb-2">
-            <span className="text-orange-500 font-black text-3xl tracking-tighter">FILANT</span>
+            <span className="text-orange-500 font-black text-3xl tracking-tighter transition-all duration-300">FILANT</span>
             <span className="text-white font-bold text-3xl tracking-tighter opacity-90">225</span>
           </div>
-          <h2 className="text-lg font-medium text-white/90">Inscription intelligente</h2>
-          <p className="text-gray-400 text-xs mt-2 max-w-[280px]">
+          <h2 className={`font-medium text-white/90 transition-all duration-300 ${isKeyboardVisible ? 'text-xs' : 'text-lg'}`}>Inscription intelligente</h2>
+          <p className={`text-gray-400 text-xs mt-2 max-w-[280px] transition-all duration-300 overflow-hidden ${isKeyboardVisible ? 'h-0 mt-0 opacity-0' : 'h-auto opacity-100'}`}>
             Nous vous invitons à vous inscrire sur la plateforme afin d’être rapidement mis en relation avec des clients.
           </p>
-          <p className="text-gray-500 text-[10px] mt-1 italic font-light tracking-tight">
+          <p className={`text-gray-500 text-[10px] mt-1 italic font-light tracking-tight transition-all duration-300 overflow-hidden ${isKeyboardVisible ? 'h-0 mt-0 opacity-0' : 'h-auto opacity-100'}`}>
             Frais d’inscription : 310.CFA fin
           </p>
         </header>
       ) : (
-        <header className="pt-6 pb-4 px-6 flex flex-col items-start relative border-b border-slate-100 bg-white shrink-0">
+        <header className={`px-6 flex flex-col items-start relative border-b border-slate-100 bg-white shrink-0 transition-all duration-300 ${isKeyboardVisible ? 'pt-3 pb-3' : 'pt-6 pb-4'}`}>
           <button 
             type="button"
             onClick={() => setStep(1)}
@@ -742,7 +755,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             <ArrowLeft className="w-5 h-5" />
           </button>
           
-          <div className="mt-4 text-left">
+          <div className={`text-left transition-all duration-300 overflow-hidden ${isKeyboardVisible ? 'h-0 mt-0 opacity-0' : 'mt-4 h-auto opacity-100'}`}>
             <h2 className="text-xl font-black text-slate-950 uppercase tracking-tight">INSCRIPTION</h2>
             <p className="text-slate-500 text-xs mt-1">
               Complétez vos coordonnées et spécificités de <span className="text-blue-600 font-bold">{selectedProfile}</span>.
