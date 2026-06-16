@@ -4,6 +4,7 @@ import { databaseService } from '../services/databaseService';
 import { Worker, User as UserType } from '../types';
 import EmbeddedForm from './EmbeddedForm';
 import { User } from 'lucide-react';
+import { getFormImage } from './common/formDefinitions';
 
 // --- ICONS (Matching the provided mockup) ---
 const BackIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>;
@@ -147,8 +148,97 @@ export const getSynchronizedWorkerImage = (name: string) => {
     if (nameLower.includes('hôtesse') || nameLower.includes('hotesse')) return HOTESSE_QUALIF_IMAGE;
     if (nameLower.includes('coiffeur') || nameLower.includes('coiffeuse')) return COIFFURE_QUALIF_IMAGE;
     if (nameLower.includes('couturière') || nameLower.includes('couturier')) return COUTURE_QUALIF_IMAGE;
+
+    // Direct mapping fallback from formDefinitions for equipments etc.
+    const directImage = getFormImage(name);
+    if (directImage) return directImage;
+
     return UNIFORM_WORKER_IMAGE;
 };
+
+// --- VIRTUAL CATEGORIES CONFIG (Reusing categories/titles from Intervention rapide) ---
+const VIRTUAL_CATEGORIES = [
+  {
+    id: 'Dépannage rapide',
+    label: 'Dépannage Rapide',
+    items: [
+      { title: "Plombier rapide", description: "Dépannage plomberie ultra rapide.", formType: "rapid_building_service" as const },
+      { title: "Électricien rapide", description: "Dépannage électricité urgent.", formType: "rapid_building_service" as const },
+      { title: "Serrurier rapide", description: "Ouverture de porte et serrures rapides.", formType: "rapid_building_service" as const },
+      { title: "Vitrier rapide", description: "Changement de vitres et fenêtres.", formType: "rapid_building_service" as const },
+      { title: "Réparation climatiseur rapide", description: "Réparation et recharge climatisation.", formType: "rapid_building_service" as const },
+      { title: "Réparation frigo rapide", description: "Réparation réfrigérateurs et congél.", formType: "rapid_building_service" as const },
+      { title: "Réparation machine à laver rapide", description: "Réparation lave-linge et sèche-linge.", formType: "rapid_building_service" as const },
+      { title: "Dépannage parabole rapide", description: "Installation et réglage parabole.", formType: "rapid_building_service" as const },
+      { title: "Dépannage auto rapide", description: "Mécanique et électrique auto.", formType: "rapid_building_service" as const }
+    ]
+  },
+  {
+    id: 'Services construction',
+    label: 'Services Construction',
+    items: [
+      { title: "Maçon", description: "Maçonnerie générale, chapes et murs.", formType: "rapid_building_service" as const },
+      { title: "Ferrailleur", description: "Travaux de ferraillage solides.", formType: "rapid_building_service" as const },
+      { title: "Coffreur", description: "Coffrages bois ou métalliques.", formType: "rapid_building_service" as const },
+      { title: "Carreleur", description: "Pose de carreaux tous formats.", formType: "rapid_building_service" as const },
+      { title: "Peintre bâtiment", description: "Peinture murs et boiseries.", formType: "rapid_building_service" as const },
+      { title: "Électricien bâtiment", description: "Installation électrique complète.", formType: "rapid_building_service" as const },
+      { title: "Plombier bâtiment", description: "Tuyauterie et réseaux sanitaires.", formType: "rapid_building_service" as const },
+      { title: "Soudeur", description: "Soudure et structures métalliques.", formType: "rapid_building_service" as const },
+      { title: "Charpentier", description: "Charpentes bois et ossatures.", formType: "rapid_building_service" as const },
+      { title: "Menuisier aluminium", description: "Fenêtres, portes et baies vitrées.", formType: "rapid_building_service" as const },
+      { title: "Menuisier bois", description: "Portes et placards en bois.", formType: "rapid_building_service" as const },
+      { title: "Staffeur", description: "Décoration en plâtre et staff.", formType: "rapid_building_service" as const },
+      { title: "Étancheur", description: "Traitement des fuites et infiltration.", formType: "rapid_building_service" as const },
+      { title: "Poseur de portail", description: "Installation de portails.", formType: "rapid_building_service" as const },
+      { title: "Poseur de caméra", description: "Installation vidéosurveillance.", formType: "rapid_building_service" as const },
+      { title: "Climatisation bâtiment", description: "Installation climatisation centrale.", formType: "rapid_building_service" as const },
+      { title: "Technicien forage", description: "Forage de puits d'eau.", formType: "rapid_building_service" as const },
+      { title: "Constructeur maison", description: "Projet de construction de A à Z.", formType: "rapid_building_service" as const },
+      { title: "Finition bâtiment", description: "Enduit, ponçage, finitions fines.", formType: "rapid_building_service" as const }
+    ]
+  },
+  {
+    id: 'Nettoyage & Entretien',
+    label: 'Nettoyage & Entretien',
+    items: [
+      { title: "Technicien de surface", description: "Nettoyage sols et surfaces.", formType: "worker" as const },
+      { title: "Nettoyage maison", description: "Ménage complet de maisons.", formType: "worker" as const },
+      { title: "Nettoyage bureau", description: "Entretien des espaces de travail.", formType: "worker" as const },
+      { title: "Nettoyage chantier", description: "Nettoyage de fin de chantier.", formType: "worker" as const },
+      { title: "Lavage automobile", description: "Lavage auto à domicile.", formType: "worker" as const },
+      { title: "Désinfection", description: "Nettoyage et élimination de germes.", formType: "worker" as const },
+      { title: "Entretien jardin", description: "Tonte pelouse et jardinage.", formType: "worker" as const },
+      { title: "Entretien piscine", description: "Nettoyage et traitement eau de piscine.", formType: "worker" as const }
+    ]
+  },
+  {
+    id: 'Cuisine & Événementiel',
+    label: 'Cuisine & Événementiel',
+    items: [
+      { title: "Cuisinier", description: "Cuisine à domicile ou événement.", formType: "worker" as const },
+      { title: "Serveur", description: "Service traiteur ou restaurant.", formType: "worker" as const },
+      { title: "Décorateur", description: "Décoration salle et événements.", formType: "worker" as const },
+      { title: "DJ", description: "Animation musicale pour fêtes.", formType: "worker" as const },
+      { title: "Sonorisateur", description: "Installation et réglage du son.", formType: "worker" as const },
+      { title: "Organisateur événementiel", description: "Planification et coordination totale.", formType: "worker" as const },
+      { title: "Photographe", description: "Reportage photos professionnel.", formType: "worker" as const },
+      { title: "Vidéaste", description: "Captation et montage vidéo.", formType: "worker" as const }
+    ]
+  },
+  {
+    id: 'Transport & Livraison',
+    label: 'Transport & Livraison',
+    items: [
+      { title: "Chauffeur", description: "Déplacement sécurisé et rapide.", formType: "worker" as const },
+      { title: "Déménageur", description: "Aide pour chargement et emballage.", formType: "worker" as const },
+      { title: "Livreur", description: "Livraison colis et repas express.", formType: "worker" as const },
+      { title: "Transport marchandises", description: "Camionnette pour fret commercial.", formType: "worker" as const },
+      { title: "Transport matériaux", description: "Livraison de ciment, sable, etc.", formType: "worker" as const },
+      { title: "Transport déménagement", description: "Grand camion de déménagement.", formType: "worker" as const }
+    ]
+  }
+];
 
 const workerTallyLinks: Record<string, string> = {
     'Vendeuse / Vendeur': 'https://tally.so/r/obEROM',
@@ -197,7 +287,7 @@ const workerTallyLinks: Record<string, string> = {
 };
 
 interface WorkerCardProps {
-  worker: Worker;
+  worker: Worker & { formType?: 'worker' | 'location' | 'night_service' | 'rapid_building_service' };
   user: UserType;
   onScheduleService: (url?: string, title?: string) => void;
   onOpenForm: (context: { formType: 'worker' | 'location' | 'night_service' | 'rapid_building_service', title: string, imageUrl?: string, description?: string }) => void;
@@ -219,13 +309,13 @@ const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, onScheduleService
   const displayName = worker.name;
 
   const handleExigeClick = () => {
-      const url = workerTallyLinks[worker.name];
+      const url = workerTallyLinks[worker.name] || 'https://tally.so/r/obEROM';
       onScheduleService(url, displayName);
   };
 
   const handleDemandeClick = () => {
     onOpenForm({
-      formType: 'worker',
+      formType: worker.formType || 'worker',
       title: displayName,
       imageUrl: imageSrc,
       description: worker.description
@@ -340,24 +430,47 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
     fetchWorkers();
   }, []);
 
-  const filteredWorkers = allWorkers.filter(w => {
-    const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = w.category === selectedCategory;
-    
-    // Titles to exclude
-    const excludedTitles = [
-      'fabricant de poufs',
-      'entretien climatisation',
-      'caméras de surveillance',
-      'fenêtres et portes vitrées',
-      'menuisier',
-      'garde malade'
-    ];
-    
-    const isExcluded = excludedTitles.some(title => w.name.toLowerCase().includes(title));
-    
-    return matchesSearch && matchesCategory && !isExcluded;
-  });
+  const getRenderedWorkers = () => {
+    if (selectedCategory === 'Disponible') {
+      return allWorkers.filter(w => {
+        const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = w.category === 'Disponible';
+        
+        // Titles to exclude
+        const excludedTitles = [
+          'fabricant de poufs',
+          'entretien climatisation',
+          'caméras de surveillance',
+          'fenêtres et portes vitrées',
+          'menuisier',
+          'garde malade'
+        ];
+        
+        const isExcluded = excludedTitles.some(title => w.name.toLowerCase().includes(title));
+        
+        return matchesSearch && matchesCategory && !isExcluded;
+      });
+    }
+
+    const matchedCat = VIRTUAL_CATEGORIES.find(c => c.id === selectedCategory);
+    if (!matchedCat) return [];
+
+    return matchedCat.items
+      .map((item, index) => ({
+        id: `virtual-${selectedCategory}-${index}`,
+        name: item.title,
+        description: item.description,
+        category: selectedCategory,
+        rating: 4.5,
+        phone: "+2250705052632",
+        isVerified: true,
+        profileImageUrl: '',
+        formType: item.formType
+      }))
+      .filter(w => w.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  };
+
+  const filteredWorkers = getRenderedWorkers();
 
   return (
     <div className="bg-white flex-1 flex flex-col h-full">
@@ -398,28 +511,41 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
                 <p className="text-xs font-bold text-black truncate">Trouvez rapidement le service dont vous avez besoin</p>
             </div>
 
-            <div className="flex items-center gap-2 pb-2">
+            {/* Horizontally scrollable category tabs --- */}
+            <div className="flex items-center gap-2 pb-2 overflow-x-auto scrollbar-hide w-full max-w-full">
+                {/* 1. Disponible category tab */}
                 <button 
                     onClick={() => setSelectedCategory('Disponible')}
-                    className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 relative shadow-lg active:scale-95 ${
+                    className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-black uppercase tracking-tight whitespace-nowrap transition-all flex items-center gap-2 relative shadow-md active:scale-95 ${
                         selectedCategory === 'Disponible' 
                             ? 'bg-green-600 text-white border-2 border-white/20' 
-                            : 'bg-green-500/80 text-white hover:bg-green-600'
+                            : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                     }`}
                 >
                     <span>Disponible</span>
-                    <span className="flex h-3 w-3 relative">
+                    <span className="flex h-2.5 w-2.5 relative">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
                     </span>
                 </button>
 
-                <button 
-                    onClick={onOpenSiteWorkers}
-                    className="px-5 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors flex-shrink-0 bg-orange-500 text-white hover:bg-orange-600 shadow-sm"
-                >
-                    Option site travailleur
-                </button>
+                {/* 2. Other categories from virtual categories */}
+                {VIRTUAL_CATEGORIES.map(cat => {
+                    const isActive = selectedCategory === cat.id;
+                    return (
+                        <button
+                            key={cat.id}
+                            onClick={() => setSelectedCategory(cat.id)}
+                            className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-black uppercase tracking-tight whitespace-nowrap transition-all shadow-md active:scale-95 ${
+                                isActive
+                                    ? 'bg-orange-500 text-white border-2 border-white/10'
+                                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                            }`}
+                        >
+                            {cat.label}
+                        </button>
+                    );
+                })}
             </div>
         </header>
       
