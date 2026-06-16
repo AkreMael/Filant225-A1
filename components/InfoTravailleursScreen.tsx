@@ -1,11 +1,28 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import SpeakerIcon from './common/SpeakerIcon';
 
 interface InfoTravailleursScreenProps {
   onBack: () => void;
 }
 
 const InfoTravailleursScreen: React.FC<InfoTravailleursScreenProps> = ({ onBack }) => {
+  const audioText = `Bienvenue sur FILANT°225, la plateforme qui facilite la mise en relation entre professionnels et clients partout en Côte d'Ivoire.
+
+INSCRIPTION : Pour rejoindre la plateforme, chaque travailleur, agence immobilière ou propriétaire d'équipements à louer doit effectuer une inscription de trois cent dix francs CFA. Cette inscription permet la création du profil et l'accès à la première mise en relation. Après l'inscription, la première mission est offerte sans frais de mise en relation supplémentaires.
+
+CARTE Q R PROFESSIONNELLE : Pour accéder à plusieurs missions et bénéficier de toutes les fonctionnalités de la plateforme, l'utilisateur doit activer sa Carte Q R Professionnelle pour un coût d'activation de sept mille cent francs CFA. Les avantages majeurs de cette carte comprennent l'accès à plusieurs missions, une identification professionnelle sécurisée, une vérification simplifiée par les clients, une meilleure visibilité sur la plateforme et l'accès aux fonctionnalités avancées de FILANT°225.
+
+Frais de mise en relation : La mise à jour de la carte code Q R est de cinq cents francs CFA chaque mois, avec activation automatique pour l'émission.
+
+Sachez que FILANT°225 ne prélève aucun pourcentage sur vos revenus. L'intégralité de vos gains vous appartient. La plateforme facture uniquement des frais de mise en relation permettant de maintenir le service, de renforcer la sécurité et d'assurer le bon fonctionnement du système.
+
+SÉCURITÉ ET VÉRIFICATION : Pour garantir un environnement fiable et sécurisé, une pièce d'identité valide peut être demandée, et certaines informations professionnelles peuvent être vérifiées. Vos données sont protégées et utilisées uniquement dans le cadre du fonctionnement de la plateforme.
+
+POUR LES AGENCES IMMOBILIÈRES ET PROPRIÉTAIRES D'ÉQUIPEMENTS : Les agences immobilières peuvent publier leurs biens et recevoir des demandes directement depuis l'application. De même, les propriétaires d'équipements peuvent proposer leurs matériels à la location et recevoir des demandes de clients intéressés.
+
+Notre objectif est de créer un réseau professionnel fiable, sécurisé et accessible à tous, tout en permettant aux travailleurs, agences et propriétaires d'équipements de développer leurs activités sans commission sur leurs revenus.`;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -30,9 +47,12 @@ const InfoTravailleursScreen: React.FC<InfoTravailleursScreenProps> = ({ onBack 
             Espace Professionnels
           </h1>
         </div>
-        <span className="text-[#FF8200] font-black text-xs uppercase tracking-wider bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
-          FILANT°225
-        </span>
+        <div className="flex items-center gap-1.5">
+          <SpeakerIcon text={audioText} className="text-orange-500 bg-orange-50 hover:bg-orange-100 p-2 border border-orange-100" />
+          <span className="text-[#FF8200] font-black text-xs uppercase tracking-wider bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+            FILANT°225
+          </span>
+        </div>
       </div>
 
       {/* Main Content Area */}

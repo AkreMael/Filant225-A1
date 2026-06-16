@@ -1,11 +1,33 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import SpeakerIcon from './common/SpeakerIcon';
 
 interface InfoClientsScreenProps {
   onBack: () => void;
 }
 
 const InfoClientsScreen: React.FC<InfoClientsScreenProps> = ({ onBack }) => {
+  const audioText = `Des services sécurisés, traçables et accessibles partout en Côte d'Ivoire.
+
+FILANT°225 est une plateforme de mise en relation entre clients, travailleurs qualifiés, agences immobilières et propriétaires d'équipements à louer.
+
+COMMENT UTILISER FILANT°225 ?
+
+Premièrement, Recherchez le service dont vous avez besoin.
+Deuxièmement, Consultez les profils disponibles.
+Troisièmement, Sélectionnez le prestataire correspondant à votre besoin.
+Quatrièmement, Soumettez votre demande directement depuis l'application.
+Cinquièmement, Effectuez les frais de mise en relation lorsque cela est demandé.
+Sixièmement, Recevez les informations nécessaires pour entrer en contact avec le prestataire.
+
+La liste des services disponibles comprend les travailleurs qualifiés, les interventions rapides, les formations et stages, les agences immobilières, les équipements à louer, ainsi que d'autres opportunités et services professionnels.
+
+Concernant les frais de mise en relation : FILANT°225 ne prélève aucun pourcentage sur les revenus des travailleurs ni sur les transactions entre les utilisateurs. Les frais demandés correspondent uniquement aux frais de mise en relation permettant de sécuriser les échanges et le fonctionnement de la plateforme. Un portefeuille intégré est disponible dans l'application afin de faciliter les paiements des frais de mise en relation lorsque cela est nécessaire.
+
+Pour renforcer la sécurité de tous les utilisateurs : Les travailleurs peuvent être amenés à fournir une pièce d'identité valide. Les clients peuvent également être invités à confirmer certaines informations selon le service demandé. Les informations sont utilisées uniquement dans le cadre de la sécurisation des mises en relation.
+
+Notre objectif est de fournir une plateforme fiable, rapide et sécurisée permettant aux utilisateurs de trouver facilement les services dont ils ont besoin partout en Côte d'Ivoire.`;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -30,9 +52,12 @@ const InfoClientsScreen: React.FC<InfoClientsScreenProps> = ({ onBack }) => {
             Espace Clients
           </h1>
         </div>
-        <span className="text-orange-500 font-black text-xs uppercase tracking-wider bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
-          FILANT°225
-        </span>
+        <div className="flex items-center gap-1.5">
+          <SpeakerIcon text={audioText} className="text-orange-500 bg-orange-50 hover:bg-orange-100 p-2 border border-orange-100" />
+          <span className="text-orange-500 font-black text-xs uppercase tracking-wider bg-orange-50 px-3 py-1 rounded-full border border-orange-100">
+            FILANT°225
+          </span>
+        </div>
       </div>
 
       {/* Main Content Area */}
