@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { 
   ChevronRight, 
   Check, 
@@ -474,15 +475,15 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Ville où l'équipement est situé *</label>
-              <input 
-                type="text"
-                value={formData.equipmentCity}
-                onChange={(e) => {
-                    setFormData({...formData, equipmentCity: e.target.value});
+              <CityAutocompleteInput 
+                id="equipmentCity"
+                value={formData.equipmentCity || ''}
+                onChange={(val) => {
+                    setFormData({...formData, equipmentCity: val});
                     if (errors.includes('equipmentCity')) setErrors(errors.filter(e => e !== 'equipmentCity'));
                 }}
                 placeholder="Ville de localisation"
-                className={getInputClass('equipmentCity')}
+                inputClassName={getInputClass('equipmentCity')}
               />
             </div>
             <div>
@@ -532,15 +533,15 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Ville où l'agence est située *</label>
-              <input 
-                type="text"
-                value={formData.agencyCity}
-                onChange={(e) => {
-                    setFormData({...formData, agencyCity: e.target.value});
+              <CityAutocompleteInput 
+                id="agencyCity"
+                value={formData.agencyCity || ''}
+                onChange={(val) => {
+                    setFormData({...formData, agencyCity: val});
                     if (errors.includes('agencyCity')) setErrors(errors.filter(e => e !== 'agencyCity'));
                 }}
                 placeholder="Ville du siège"
-                className={getInputClass('agencyCity')}
+                inputClassName={getInputClass('agencyCity')}
               />
             </div>
             <div>
@@ -627,15 +628,15 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Ville de l’entreprise *</label>
-              <input 
-                type="text"
-                value={formData.companyCity}
-                onChange={(e) => {
-                    setFormData({...formData, companyCity: e.target.value});
+              <CityAutocompleteInput 
+                id="companyCity"
+                value={formData.companyCity || ''}
+                onChange={(val) => {
+                    setFormData({...formData, companyCity: val});
                     if (errors.includes('companyCity')) setErrors(errors.filter(e => e !== 'companyCity'));
                 }}
                 placeholder="Ville du siège"
-                className={getInputClass('companyCity')}
+                inputClassName={getInputClass('companyCity')}
               />
             </div>
             <div>

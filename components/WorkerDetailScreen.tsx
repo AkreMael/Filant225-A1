@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import SpeakerIcon from './common/SpeakerIcon';
+import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { databaseService } from '../services/databaseService';
 
 const BackIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>;
@@ -13,6 +14,7 @@ interface WorkerDetailScreenProps {
 const WorkerDetailScreen: React.FC<WorkerDetailScreenProps> = ({ workerName, onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [phone, setPhone] = useState('');
+  const [city, setCity] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,7 +69,17 @@ const WorkerDetailScreen: React.FC<WorkerDetailScreenProps> = ({ workerName, onB
             Ville
             <SpeakerIcon text="Quelle est votre ville ?" className="text-white" />
           </label>
-          <input type="text" id="city" name="city" className="w-full p-3 bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-500 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Abidjan" required />
+          <div className="w-full bg-white/90 dark:bg-gray-700/90 border border-gray-300 dark:border-gray-500 rounded-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all p-3">
+            <CityAutocompleteInput 
+              id="city" 
+              name="city" 
+              value={city} 
+              onChange={setCity} 
+              placeholder="Ex: Abidjan, Cocody..." 
+              inputClassName="w-full bg-transparent text-gray-900 dark:text-gray-100 font-bold placeholder-gray-400 outline-none text-sm"
+              required 
+            />
+          </div>
         </div>
         
         <div>

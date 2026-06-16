@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Tab } from '../types';
 import { databaseService } from '../services/databaseService';
+import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle, X } from 'lucide-react';
 
 interface InscriptionResult {
@@ -982,15 +983,15 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
                     {travailleurMode === 'Embauche' ? "Où le travailleur doit-il exercer ? *" : "Où le service doit s'exécuter ? *"}
                   </label>
-                  <input
-                    type="text"
+                  <CityAutocompleteInput
+                    id="travailleurCity"
                     value={travailleurCity}
-                    onChange={(e) => {
-                      setTravailleurCity(e.target.value);
-                      if (e.target.value.trim()) setFormErrors('');
+                    onChange={(val) => {
+                      setTravailleurCity(val);
+                      if (val.trim()) setFormErrors('');
                     }}
                     placeholder="Ex: Abidjan, Cocody..."
-                    className="w-full px-5 py-4 bg-slate-50 border-2 border-blue-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-sans"
+                    inputClassName="w-full px-5 py-4 bg-slate-50 border-2 border-blue-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-sans"
                   />
                   {formErrors && <p className="text-red-500 text-xs font-bold uppercase tracking-tight">{formErrors}</p>}
                   <div className="flex gap-3 pt-2">
@@ -1105,15 +1106,15 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               {equipStep === 0 && (
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Ville de location de l'équipement ? *</label>
-                  <input
-                    type="text"
+                  <CityAutocompleteInput
+                    id="equipCity"
                     value={equipCity}
-                    onChange={(e) => {
-                      setEquipCity(e.target.value);
-                      if (e.target.value.trim()) setFormErrors('');
+                    onChange={(val) => {
+                      setEquipCity(val);
+                      if (val.trim()) setFormErrors('');
                     }}
                     placeholder="Ex: Abidjan, Cocody..."
-                    className="w-full px-5 py-4 bg-slate-50 border-2 border-blue-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-sans"
+                    inputClassName="w-full px-5 py-4 bg-slate-50 border-2 border-blue-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-sans"
                   />
                   {formErrors && <p className="text-red-500 text-xs font-bold uppercase tracking-tight">{formErrors}</p>}
                   <button

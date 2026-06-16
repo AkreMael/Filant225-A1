@@ -5,6 +5,7 @@ import { databaseService } from '../services/databaseService';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import SpeakerIcon from './common/SpeakerIcon';
+import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { audioService } from '../services/audioService';
 
 // Define WorkerOffer locally since we're removing googleSheetsService
@@ -371,12 +372,12 @@ const PublicationModal = ({ isOpen, onClose, onPublish, initialData }: {
                         </div>
                         <div>
                             <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Ville</label>
-                            <input 
-                                type="text" 
+                            <CityAutocompleteInput 
+                                id="offer-city"
                                 value={formData.city}
-                                onChange={(e) => setFormData({...formData, city: e.target.value})}
-                                placeholder="Ex: Bassam"
-                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-400"
+                                onChange={(val) => setFormData({...formData, city: val})}
+                                placeholder="Ex: Bassam, Cocody..."
+                                inputClassName="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-orange-400"
                             />
                         </div>
                         <div>

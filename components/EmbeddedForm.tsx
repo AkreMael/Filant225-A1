@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from '../types';
 import SpeakerIcon from './common/SpeakerIcon';
+import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { getQuestionsForType, generateWhatsAppMessage, calculateTotalPrice, Answers, AnswerValue, getFormImage } from './common/formDefinitions';
 import { databaseService } from '../services/databaseService';
 import { audioService } from '../services/audioService';
@@ -536,14 +537,13 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                                 <SpeakerIcon text="Ville de la demande" className="text-orange-500 animate-pulse" />
                             </label>
                             <div className="bg-gray-50 border-2 border-slate-100 focus-within:border-orange-500 rounded-xl flex items-center px-4 py-0.5 transition-all w-full">
-                                <input 
-                                    type="text"
+                                <CityAutocompleteInput 
                                     value={(answers['city'] as string) || ''}
-                                    onChange={(e) => {
-                                        setAnswers(prev => ({ ...prev, city: e.target.value }));
+                                    onChange={(val) => {
+                                        setAnswers(prev => ({ ...prev, city: val }));
                                     }}
                                     placeholder="Saisissez la ville concernée (ex: Abidjan, Cocody)..."
-                                    className="bg-transparent w-full py-3.5 text-sm font-bold text-gray-800 outline-none"
+                                    inputClassName="bg-transparent w-full py-3.5 text-sm font-bold text-gray-800 outline-none"
                                 />
                             </div>
                         </div>
@@ -792,19 +792,28 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                         ) : (
                           <div className="flex gap-2 items-stretch">
                               <div className="flex-1 flex flex-col gap-2">
-                                  <div className="bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all">
-                                      <input 
-                                          ref={inputRef}
-                                          type={currentQuestion.inputType === 'tel' ? 'text' : (currentQuestion.inputType || 'text')} 
-                                          inputMode={currentQuestion.inputType === 'tel' ? 'numeric' : undefined}
+                                  <div className="bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all w-full">
+                                      {(currentQuestion.key === 'city' || currentQuestion.key === 'workLocation' || currentQuestion.key === 'location') ? (
+                                        <CityAutocompleteInput
                                           value={inputValue}
-                                          onChange={handleInputChange}
-                                          onClick={handleInputClick}
-                                          onFocus={handleInputClick}
-                                          onKeyDown={(e) => e.key === 'Enter' && handleNext()}
-                                          className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
+                                          onChange={setInputValue}
                                           placeholder={currentQuestion.placeholder || "..."}
-                                      />
+                                          inputClassName="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
+                                        />
+                                      ) : (
+                                        <input 
+                                            ref={inputRef}
+                                            type={currentQuestion.inputType === 'tel' ? 'text' : (currentQuestion.inputType || 'text')} 
+                                            inputMode={currentQuestion.inputType === 'tel' ? 'numeric' : undefined}
+                                            value={inputValue}
+                                            onChange={handleInputChange}
+                                            onClick={handleInputClick}
+                                            onFocus={handleInputClick}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+                                            className="bg-transparent w-full py-3 text-sm font-bold text-gray-800 outline-none"
+                                            placeholder={currentQuestion.placeholder || "..."}
+                                        />
+                                      )}
                                   </div>
                                   {currentQuestion.hint && (
                                     <p className="text-[10px] text-gray-400 font-bold italic ml-4 animate-in fade-in slide-in-from-top-1 duration-300">

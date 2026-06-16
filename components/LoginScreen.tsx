@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { databaseService } from '../services/databaseService';
 import SpeakerIcon from './common/SpeakerIcon';
+import CityAutocompleteInput from './common/CityAutocompleteInput';
 import Typewriter from './common/Typewriter';
 import { ADMIN_PHONE } from '../utils/authUtils';
 
@@ -148,12 +149,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Votre Ville *</label>
                 <div className="relative">
                   <CityIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Ex: Abidjan" 
+                  <CityAutocompleteInput 
+                    id="login-city"
                     value={city} 
-                    onChange={(e) => setCity(e.target.value)} 
-                    className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
+                    onChange={setCity} 
+                    placeholder="Ex: Abidjan, Cocody..." 
+                    inputClassName="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all text-sm" 
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <SpeakerIcon text="Entrez votre ville" className="text-orange-500" />

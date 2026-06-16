@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import SpeakerIcon from './common/SpeakerIcon';
+import CityAutocompleteInput from './common/CityAutocompleteInput';
 
 const BackIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>;
 
@@ -98,9 +99,16 @@ const LocationFormScreen: React.FC<LocationFormScreenProps> = ({ itemTitle, onBa
             Ville recherchée
             <SpeakerIcon text="Quelle est la ville recherchée ?" className="text-white" />
           </label>
-          <select id="city" name="city" value={formData.city} onChange={handleChange} className="w-full p-3 bg-white/90 dark:bg-gray-700/90 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-500 rounded-lg focus:ring-orange-500 focus:border-orange-500">
-            {cities.map(city => <option key={city} value={city}>{city}</option>)}
-          </select>
+          <div className="w-full bg-white/90 dark:bg-gray-700/90 border border-gray-300 dark:border-gray-500 rounded-lg focus-within:ring-2 focus-within:ring-orange-500 transition-all p-3">
+            <CityAutocompleteInput 
+              id="city" 
+              name="city" 
+              value={formData.city} 
+              onChange={(val) => setFormData({ ...formData, city: val })}
+              placeholder="Ex: Abidjan, Bassam..."
+              inputClassName="w-full bg-transparent text-gray-900 dark:text-gray-100 font-bold placeholder-gray-400 outline-none text-sm"
+            />
+          </div>
         </div>
         
         <div>
