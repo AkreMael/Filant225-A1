@@ -14,6 +14,8 @@ import SplashScreen from './components/SplashScreen';
 import FirstLaunchScreen from './components/FirstLaunchScreen';
 import SmartRegistrationScreen from './components/SmartRegistrationScreen';
 import OfferScreen from './components/OfferScreen';
+import InfoTravailleursScreen from './components/InfoTravailleursScreen';
+import InfoClientsScreen from './components/InfoClientsScreen';
 import GlobalRippleEffect from './components/common/GlobalRippleEffect';
 import NotificationsScreen from './components/NotificationsScreen';
 import EmergencyFormScreen from './components/EmergencyFormScreen';
@@ -124,7 +126,7 @@ const GlobalModeLoading = ({ message }: { message: string }) => (
 interface NavigationPoint {
   activeTab: Tab;
   menuView: string;
-  offerSubView: 'main' | 'shop';
+  offerSubView: 'main' | 'shop' | 'info_travailleurs' | 'info_clients';
 }
 
 const App: React.FC = () => {
@@ -201,7 +203,7 @@ const App: React.FC = () => {
   const [adminForceAppView, setAdminForceAppView] = useState(false);
   const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>('hub');
   const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Privee' } | null>(null);
-  const [offerSubView, setOfferSubView] = useState<'main' | 'shop'>('main');
+  const [offerSubView, setOfferSubView] = useState<'main' | 'shop' | 'info_travailleurs' | 'info_clients'>('main');
   
   const [navHistory, setNavHistory] = useState<NavigationPoint[]>([]);
 
@@ -1115,6 +1117,10 @@ const App: React.FC = () => {
                 onBack={handleBack} 
                 onOpenForm={(context) => setInteractiveModalContext(context)}
             />;
+        } else if (offerSubView === 'info_travailleurs') {
+            activeScreen = <InfoTravailleursScreen onBack={handleBack} />;
+        } else if (offerSubView === 'info_clients') {
+            activeScreen = <InfoClientsScreen onBack={handleBack} />;
         } else {
             activeScreen = <OfferScreen 
                 onNavigateToMenu={handleNavigateFromOffer} 
@@ -1126,6 +1132,12 @@ const App: React.FC = () => {
                 onOpenCategory={(category) => {
                     setShopCategory(category);
                     navigateTo({ offerSubView: 'shop' });
+                }}
+                onOpenInfoTravailleurs={() => {
+                    navigateTo({ offerSubView: 'info_travailleurs' });
+                }}
+                onOpenInfoClients={() => {
+                    navigateTo({ offerSubView: 'info_clients' });
                 }}
                 onSelectItem={(item, type, img, isBlurred, desc, price) => setInteractiveModalContext({ 
                   formType: type, 

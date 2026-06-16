@@ -578,9 +578,20 @@ interface OfferScreenProps {
     price?: string
   ) => void;
   user: any;
+  onOpenInfoTravailleurs?: () => void;
+  onOpenInfoClients?: () => void;
 }
 
-const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTab, onOpenIntervention, onOpenCategory, onSelectItem, user }) => {
+const OfferScreen: React.FC<OfferScreenProps> = ({ 
+  onNavigateToMenu, 
+  setActiveTab, 
+  onOpenIntervention, 
+  onOpenCategory, 
+  onSelectItem, 
+  user,
+  onOpenInfoTravailleurs,
+  onOpenInfoClients
+}) => {
   const mainRef = useRef<HTMLElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -872,12 +883,65 @@ const OfferScreen: React.FC<OfferScreenProps> = ({ onNavigateToMenu, setActiveTa
             </div>
         )}
           
-          {/* Interaction Rapide */}
-          <InfoBox 
-            title="Intervention rapide"
-            description="Intervention rapide par des professionnels qualifiés for tous vos besoins de dépannage. Nos experts sont disponibles for résoudre vos problèmes efficacement et rapidement."
-            onLinkClick={onOpenIntervention}
-          />
+          {/* Bloc 1 : Informations Travailleurs */}
+          <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden mx-4 mb-8 border border-gray-100 flex flex-col">
+              <div className="w-full h-56 overflow-hidden bg-gray-50">
+                  <img 
+                      src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/43431356-ccd9-4855-a4a0-46fe3e599176.jpg" 
+                      alt="Informations Travailleurs" 
+                      className="w-full h-full object-cover select-none transition-transform duration-700 hover:scale-105"
+                      referrerPolicy="no-referrer"
+                  />
+              </div>
+              <div className="p-8 flex flex-col flex-1">
+                  <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">
+                      Informations Travailleurs
+                  </h2>
+                  <p className="text-gray-550 text-[13px] font-medium leading-relaxed mb-6">
+                      Rejoignez notre réseau national de confiance en Côte d'Ivoire. Retrouvez d'importants guides, vos opportunités de carrière, les chartes de travail et les modalités de partenariat avec FILANT°225.
+                  </p>
+                  <button 
+                      onClick={onOpenInfoTravailleurs}
+                      className="px-6 py-4 bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-black uppercase text-[11px] tracking-widest rounded-2xl shadow-md transition-all self-start cursor-pointer flex items-center gap-2"
+                      id="btn-voir-plus-travailleurs"
+                  >
+                      Voir plus
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                  </button>
+              </div>
+          </div>
+
+          {/* Bloc 2 : Informations Clients */}
+          <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden mx-4 mb-8 border border-gray-100 flex flex-col">
+              <div className="w-full h-56 overflow-hidden bg-gray-50">
+                  <img 
+                      src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/d6277a00-1ce3-4fb7-b027-457eee0cca21.png" 
+                      alt="Informations Clients" 
+                      className="w-full h-full object-cover select-none transition-transform duration-700 hover:scale-105"
+                      referrerPolicy="no-referrer"
+                  />
+              </div>
+              <div className="p-8 flex flex-col flex-1">
+                  <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-2">
+                      Informations Clients
+                  </h2>
+                  <p className="text-gray-550 text-[13px] font-medium leading-relaxed mb-6">
+                      Bénéficiez de prestations transparentes, traçables et entièrement sécurisées. Prenez connaissance de notre charte qualité, de vos garanties de sécurité et de notre assistance rapide.
+                  </p>
+                  <button 
+                      onClick={onOpenInfoClients}
+                      className="px-6 py-4 bg-slate-900 hover:bg-slate-800 active:scale-[0.97] text-white font-black uppercase text-[11px] tracking-widest rounded-2xl shadow-md transition-all self-start cursor-pointer flex items-center gap-2"
+                      id="btn-voir-plus-clients"
+                  >
+                      Voir plus
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                  </button>
+              </div>
+          </div>
 
           <ProfessionalRegistrationStatus 
             user={user} 
