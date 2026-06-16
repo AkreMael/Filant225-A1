@@ -402,16 +402,15 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Zone de déplacement *</label>
-              <input 
+              <CityAutocompleteInput 
                 id="movementZone"
-                type="text"
                 value={formData.movementZone}
-                onChange={(e) => {
-                    setFormData({...formData, movementZone: e.target.value});
+                onChange={(val) => {
+                    setFormData({...formData, movementZone: val});
                     if (errors.includes('movementZone')) setErrors(errors.filter(e => e !== 'movementZone'));
                 }}
                 placeholder="Ex: Toute la ville, Cocody uniquement..."
-                className={getInputClass('movementZone')}
+                inputClassName={getInputClass('movementZone')}
               />
             </div>
             <div>
@@ -597,15 +596,15 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Zone d’activité *</label>
-              <input 
-                type="text"
+              <CityAutocompleteInput 
+                id="agencyZone"
                 value={formData.agencyZone}
-                onChange={(e) => {
-                    setFormData({...formData, agencyZone: e.target.value});
+                onChange={(val) => {
+                    setFormData({...formData, agencyZone: val});
                     if (errors.includes('agencyZone')) setErrors(errors.filter(e => e !== 'agencyZone'));
                 }}
                 placeholder="Ex: Abidjan, Côte Ouest..."
-                className={getInputClass('agencyZone')}
+                inputClassName={getInputClass('agencyZone')}
               />
             </div>
           </div>

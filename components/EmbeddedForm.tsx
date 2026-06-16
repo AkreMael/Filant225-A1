@@ -793,7 +793,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                           <div className="flex gap-2 items-stretch">
                               <div className="flex-1 flex flex-col gap-2">
                                   <div className="bg-gray-50 rounded-2xl flex items-center px-4 border-2 border-slate-100 focus-within:border-orange-500 transition-all w-full">
-                                      {(currentQuestion.key === 'city' || currentQuestion.key === 'workLocation' || currentQuestion.key === 'location') ? (
+                                      {(currentQuestion.key === 'city' || currentQuestion.key === 'workLocation' || currentQuestion.key === 'location' || currentQuestion.key === 'serviceCity' || currentQuestion.key === 'commune') ? (
                                         <CityAutocompleteInput
                                           value={inputValue}
                                           onChange={setInputValue}

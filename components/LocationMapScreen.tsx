@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import CityAutocompleteInput from './common/CityAutocompleteInput';
 
 // --- ICONS ---
 // Fix: All icon components now accept className prop
@@ -118,17 +119,17 @@ const LocationMapScreen: React.FC<LocationMapScreenProps> = ({ onBack }) => {
                 </div>
                 <div className="flex gap-2">
                     <div className="relative flex-1">
-                        <input 
-                          type="text" 
+                        <CityAutocompleteInput 
+                          id="destination" 
                           value={inputValue}
-                          onChange={(e) => setInputValue(e.target.value)}
-                          placeholder="Coordonnées, Lien ou Adresse..."
-                          className="w-full bg-black border-2 border-slate-700 rounded-2xl p-4 text-sm text-white focus:border-indigo-500 outline-none transition-all font-bold placeholder-white/5 shadow-inner"
+                          onChange={setInputValue}
+                          placeholder="Coordonnées, Lien, Ville ou Adresse..."
+                          inputClassName="w-full bg-black border-2 border-slate-700 rounded-2xl p-4 pr-12 text-sm text-white focus:border-indigo-500 outline-none transition-all font-bold placeholder-white/5 shadow-inner"
                         />
                         {inputValue && (
                             <button 
                               onClick={() => { setInputValue(''); setMapUrl(''); }}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white z-10"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>

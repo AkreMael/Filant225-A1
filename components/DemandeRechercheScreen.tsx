@@ -881,15 +881,15 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Zone ou lieu recherché <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
+                <CityAutocompleteInput
+                  id="agenceZone"
                   value={agenceZone}
-                  onChange={(e) => {
-                    setAgenceZone(e.target.value);
-                    if (e.target.value.trim()) setFormErrors('');
+                  onChange={(val) => {
+                    setAgenceZone(val);
+                    if (val.trim()) setFormErrors('');
                   }}
                   placeholder="Ex: Cocody Angré, Riviera..."
-                  className="w-full px-5 py-4 bg-slate-50 border-2 border-blue-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-sans"
+                  inputClassName="w-full px-5 py-4 bg-slate-50 border-2 border-blue-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-sans"
                 />
               </div>
 
