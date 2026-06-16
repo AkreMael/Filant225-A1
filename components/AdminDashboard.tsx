@@ -866,7 +866,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
 
 
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-slate-950 font-sans">
+    <div className="flex flex-col h-full bg-[#f8fafc] dark:bg-slate-950 font-sans admin-selectable">
+      <style>{`
+        .admin-selectable, .admin-selectable * {
+          user-select: text !important;
+          -webkit-user-select: text !important;
+          -moz-user-select: text !important;
+          -ms-user-select: text !important;
+        }
+        .admin-selectable .select-none, .admin-selectable .select-none * {
+          user-select: none !important;
+          -webkit-user-select: none !important;
+        }
+      `}</style>
       {/* Top Header */}
       <div className="bg-white dark:bg-slate-900 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-[100] border-b border-gray-100 dark:border-slate-800">
         <div className="flex items-center gap-4">
