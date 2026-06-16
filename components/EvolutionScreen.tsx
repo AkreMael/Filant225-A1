@@ -49,7 +49,24 @@ export const EvolutionScreen: React.FC<EvolutionScreenProps> = ({ user, onClose 
   };
 
   useEffect(() => {
-    fetchEvolutionData();
+    if (!user?.phone) return;
+    setLoading(true);
+    setErrorMessage(null);
+
+    const unsubscribe = databaseService.subscribeToUserEvolution(user.phone, (data) => {
+      if (data) {
+        setEvolution(data);
+        setErrorMessage(null);
+      } else {
+        setErrorMessage("Impossible de récupérer vos données d'évolution pour le moment.");
+      }
+      setLoading(false);
+      setRefreshing(false);
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [user?.phone]);
 
   const handleRefresh = () => {

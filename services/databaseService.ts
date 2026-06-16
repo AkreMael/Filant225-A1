@@ -2314,7 +2314,7 @@ export const databaseService = {
       const profileType = await databaseService.getUserProfileType(sanitizedPhone);
       
       let points = 0;
-      let maxPoints = 100;
+      let maxPoints = 35; // Standard 35 counts to reach 100%
       let percentage = 0;
       let description = '';
       let badge = 'Standard';
@@ -2342,7 +2342,7 @@ export const databaseService = {
         }
 
         points = scansCount + mCount;
-        maxPoints = 35; // Target scans/uses
+        maxPoints = 35; // Target 35 scans or missions
         percentage = Math.min(100, Math.round((points / maxPoints) * 100));
         
         badge = percentage >= 100 ? 'Travailleur Favori ★' : 'Travailleur Actif';
@@ -2372,13 +2372,23 @@ export const databaseService = {
           console.warn("Could not query Stage/Formation for evolution:", err);
         }
 
-        points = requestsCount;
-        maxPoints = 6; // To hit 90% peak (each gives 15%)
-        percentage = Math.min(90, points * 15);
+        // Also count scans performed by the client
+        let scansPerfCount = 0;
+        try {
+          const qScansTx = query(collection(db, 'HistoriqueScans'), where('scannerPhone', '==', sanitizedPhone));
+          const snapScansTx = await getDocs(qScansTx);
+          scansPerfCount = snapScansTx.size;
+        } catch (err) {
+          console.warn("Could not query scans performed for client evolution:", err);
+        }
+
+        points = requestsCount + scansPerfCount;
+        maxPoints = 35; // Client hits 100% at 35 requests/actions
+        percentage = Math.min(100, Math.round((points / maxPoints) * 100));
         
-        badge = percentage >= 90 ? 'Client Privilégié' : 'Client Actif';
-        description = "Chaque demande effectuée (travailleur, équipement, agence) augmente votre progression.";
-        detailsText = `${points} demande(s) enregistrée(s).`;
+        badge = percentage >= 100 ? 'Client Privilégié ★' : 'Client Actif';
+        description = "Chaque demande de service ou scan effectué augmente votre progression d'activité.";
+        detailsText = `${requestsCount} demande(s) et ${scansPerfCount} scan(s) effectué(s).`;
       } 
       else {
         // Propriétaire / Agence / Entreprise
@@ -2401,12 +2411,17 @@ export const databaseService = {
         }
 
         points = scansCount + mCount;
-        maxPoints = 10;
-        percentage = Math.min(100, points * 10);
+        maxPoints = 35; // All partners standard to 35 steps
+        percentage = Math.min(100, Math.round((points / maxPoints) * 100));
         
-        badge = percentage >= 100 ? 'Partenaire Certifié ★' : 'Partenaire Actif';
-        description = "Votre progression évolue selon l'activité, les interactions et les demandes reçues.";
-        detailsText = `${scansCount} interaction(s) et ${mCount} demande(s) reçue(s).`;
+        let labelName = 'Partenaire';
+        if (profileType === 'Agence') labelName = 'Agence Immobilière';
+        else if (profileType === 'Propriétaire') labelName = 'Propriétaire Équipements';
+        else if (profileType === 'Entreprise') labelName = 'Entreprise Partenaire';
+
+        badge = percentage >= 100 ? `${labelName} Certifié ★` : `${labelName} Actif`;
+        description = "Votre progression évolue selon l'activité, les scans reçus de vos QR Codes et vos demandes.";
+        detailsText = `${scansCount} scan(s) reçu(s) et ${mCount} demande(s)/mission(s) effectuée(s).`;
       }
 
       const evolutionData = {
@@ -2420,22 +2435,47 @@ export const databaseService = {
         updatedAt: Date.now()
       };
 
-      // Ensure we write this to evolution_succes inside their user node
+      // 1. Enregistrement dans les collections correspondantes de profil utilisateur
       const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
       for (const col of collections) {
         try {
           const userRef = doc(db, col, sanitizedPhone);
           const snap = await getDoc(userRef);
           if (snap.exists()) {
-            await setDoc(userRef, {
+            const updateObj: Record<string, any> = {
               evolution_succes: evolutionData,
               updatedAt: serverTimestamp()
-            }, { merge: true });
+            };
+            if (percentage >= 100) {
+              updateObj.status_evolution = 'Favori';
+              updateObj.isFavorite = true;
+              updateObj.status = 'validé';
+            }
+            await setDoc(userRef, updateObj, { merge: true });
             break;
           }
         } catch (dbErr) {
           console.error(`Error updating evolution_succes in collection ${col}:`, dbErr);
         }
+      }
+
+      // 2. Enregistrement direct également dans Inscriptions pour la synchronisation visuelle de l'admin
+      try {
+        const inscrRef = doc(db, 'Inscriptions', sanitizedPhone);
+        const inscrSnap = await getDoc(inscrRef);
+        if (inscrSnap.exists()) {
+          const updateObj: Record<string, any> = {
+            evolution_succes: evolutionData,
+            updatedAt: serverTimestamp()
+          };
+          if (percentage >= 100) {
+            updateObj.status = 'validé';
+            updateObj.isFavorite = true;
+          }
+          await setDoc(inscrRef, updateObj, { merge: true });
+        }
+      } catch (inscrErr) {
+        console.error("Error updating Inscriptions with evolution:", inscrErr);
       }
 
       // Also store in local cache
@@ -2451,7 +2491,7 @@ export const databaseService = {
       return {
         profileType: 'Client',
         points: 0,
-        maxPoints: 100,
+        maxPoints: 35,
         percentage: 0,
         description: "Chargement de la progression...",
         badge: 'Standard',
@@ -2468,5 +2508,73 @@ export const databaseService = {
     } catch (e) {
       console.warn("Silent failure on evolution trigger:", e);
     }
+  },
+
+  subscribeToUserEvolution: (phone: string, callback: (evolution: any) => void) => {
+    if (!phone) return () => {};
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    let isUnsubscribed = false;
+    let unsubscribeUserDoc: (() => void) | null = null;
+
+    // Load initial cached or calculated data instantly
+    databaseService.getUserEvolution(sanitizedPhone).then((initialData) => {
+      if (!isUnsubscribed && initialData) {
+        callback(initialData);
+      }
+    });
+
+    // Real-time Firestore profile status listener
+    const setupListener = async () => {
+      try {
+        const profileType = await databaseService.getUserProfileType(sanitizedPhone);
+        if (isUnsubscribed) return;
+
+        let targetCol = 'Clients';
+        if (profileType === 'Travailleur') targetCol = 'Travailleurs';
+        else if (profileType === 'Agence') targetCol = 'Agences immobilières';
+        else if (profileType === 'Propriétaire') targetCol = 'Équipements';
+        else if (profileType === 'Entreprise') targetCol = 'Entreprises';
+
+        const userRef = doc(db, targetCol, sanitizedPhone);
+        unsubscribeUserDoc = onSnapshot(userRef, (snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data && data.evolution_succes) {
+              callback(data.evolution_succes);
+            }
+          }
+        }, (err) => {
+          console.error("Error in user doc snapshot:", err);
+        });
+      } catch (err) {
+        console.warn("Could not setup main evolution user snap listener:", err);
+      }
+    };
+
+    setupListener();
+
+    // Multi-source reactive triggers for real-time recalculation
+    const qScansRx = query(collection(db, 'HistoriqueScans'), where('phone', '==', sanitizedPhone));
+    const unsubscribeScansRx = onSnapshot(qScansRx, () => {
+      databaseService.triggerEvolutionUpdate(sanitizedPhone);
+    }, (err) => console.log("Silent scans rx err", err));
+
+    const qScansTx = query(collection(db, 'HistoriqueScans'), where('scannerPhone', '==', sanitizedPhone));
+    const unsubscribeScansTx = onSnapshot(qScansTx, () => {
+      databaseService.triggerEvolutionUpdate(sanitizedPhone);
+    }, (err) => console.log("Silent scans tx err", err));
+
+    const qReqs = query(collection(db, 'ServiceRequests'), where('userId', '==', sanitizedPhone));
+    const unsubscribeReqs = onSnapshot(qReqs, () => {
+      databaseService.triggerEvolutionUpdate(sanitizedPhone);
+    }, (err) => console.log("Silent reqs err", err));
+
+    return () => {
+      isUnsubscribed = true;
+      if (unsubscribeUserDoc) unsubscribeUserDoc();
+      if (unsubscribeScansRx) unsubscribeScansRx();
+      if (unsubscribeScansTx) unsubscribeScansTx();
+      if (unsubscribeReqs) unsubscribeReqs();
+    };
   }
 };

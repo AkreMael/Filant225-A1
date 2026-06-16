@@ -2185,6 +2185,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     </div>
                  </div>
 
+                 {/* Real-time progression stats for the administrator */}
+                 {selectedItemForDetails.evolution_succes && (
+                   <div className="space-y-4">
+                     <h4 className="text-[10px] font-black text-[#008000] uppercase tracking-[0.2em] mb-4">Évolution & Progression de l'Adhérent</h4>
+                     <div className="p-6 bg-green-50/40 dark:bg-green-950/20 rounded-[2rem] border border-green-200/40 dark:border-green-800/20">
+                       <div className="flex justify-between items-center mb-4">
+                         <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Statut / Badge de Fidelité :</span>
+                         <span className="text-[11px] font-black text-white bg-[#008000] px-3 py-1.5 rounded-xl uppercase shadow-S">
+                           {selectedItemForDetails.evolution_succes.badge || 'Membre'}
+                         </span>
+                       </div>
+                       <div className="flex justify-between items-end mb-2">
+                         <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Taux de Progression :</span>
+                         <span className="text-sm font-black text-[#008000]">
+                           {selectedItemForDetails.evolution_succes.percentage || 0}%
+                         </span>
+                       </div>
+                       
+                       {/* Mini progress bar */}
+                       <div className="w-full h-3 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden border border-gray-300/20 dark:border-slate-700/20">
+                         <div 
+                           className="h-full bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.3)] transition-all duration-300" 
+                           style={{ width: `${selectedItemForDetails.evolution_succes.percentage || 0}%` }}
+                         />
+                       </div>
+
+                       <div className="flex justify-between mt-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                         <span>Activités : {selectedItemForDetails.evolution_succes.detailsText}</span>
+                         <span>{selectedItemForDetails.evolution_succes.points} / {selectedItemForDetails.evolution_succes.maxPoints} pts</span>
+                       </div>
+                     </div>
+                   </div>
+                 )}
+
                  {/* Message/Description for Missions/Requests */}
                  {(selectedItemForDetails.message || selectedItemForDetails.description) && (
                    <div className="space-y-4">
