@@ -845,6 +845,59 @@ export const databaseService = {
     }
   },
 
+  saveOnlineAnnouncementPending: async (phone: string, adData: any) => {
+    try {
+      await databaseService.ensureAuth();
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const docRef = doc(db, 'Inscriptions', sanitizedPhone);
+      
+      const existingSnap = await getDoc(docRef);
+      let previousData: any = {};
+      if (existingSnap.exists()) {
+        previousData = existingSnap.data() || {};
+      }
+      
+      const updatedData = {
+        ...previousData,
+        ...adData,
+        isOnline: false,         // Keep offline until admin validates
+        onlinePending: true,      // Mark as pending
+        onlineRefused: false,     // Reset refused flag
+        updatedAt: serverTimestamp()
+      };
+
+      await setDoc(docRef, updatedData, { merge: true });
+      
+      const profileType = adData.profileType || previousData.profileType || 'Travailleur';
+      let targetCollection = '';
+      if (profileType === 'Travailleur') targetCollection = 'Travailleurs';
+      else if (profileType === 'Propriétaire' || profileType === 'Equipement') targetCollection = 'Équipements';
+      else if (profileType === 'Agence' || profileType === 'Agence immobilière') targetCollection = 'Agences immobilières';
+      else if (profileType === 'Entreprise') targetCollection = 'Entreprises';
+
+      if (targetCollection) {
+        try {
+          const profRef = doc(db, targetCollection, sanitizedPhone);
+          await setDoc(profRef, {
+            ...adData,
+            isOnline: false,
+            onlinePending: true,
+            onlineRefused: false,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (dbErr) {
+          console.warn(`Could not sync pending state to professional table:`, dbErr);
+        }
+      }
+
+      databaseService.triggerEvolutionUpdate(sanitizedPhone);
+      return true;
+    } catch (e) {
+      console.error("Error saving pending online ad:", e);
+      return false;
+    }
+  },
+
   saveOnlineAnnouncement: async (phone: string, adData: any) => {
     try {
       await databaseService.ensureAuth();
@@ -1475,13 +1528,55 @@ export const databaseService = {
                 expiryDate: expiryDate.toISOString(),
                 updatedAt: serverTimestamp()
              });
+          } else if (payment.paymentType === 'Mise en ligne' || payment.title?.includes('Mise en ligne')) {
+            const isOneMonth = payment.title?.toLowerCase().includes('mois') || payment.title?.toLowerCase().includes('350') || payment.amount === '350';
+            const durationMs = isOneMonth ? 30 * 24 * 3600 * 1000 : 7 * 24 * 3600 * 1000;
+            const onlineStart = Date.now();
+            const onlineEnd = onlineStart + durationMs;
+
+            const docRef = doc(db, 'Inscriptions', userId);
+            const userInscr = await getDoc(docRef);
+            let profileType = 'Travailleur';
+            if (userInscr.exists()) {
+              profileType = userInscr.data()?.profileType || 'Travailleur';
+            }
+
+            const updatedFields = {
+              isOnline: true,
+              onlinePending: false,
+              onlineApproved: true,
+              onlineRefused: false,
+              onlineStart,
+              onlineEnd,
+              updatedAt: serverTimestamp()
+            };
+
+            await setDoc(docRef, updatedFields, { merge: true });
+
+            let targetCollection = '';
+            if (profileType === 'Travailleur') targetCollection = 'Travailleurs';
+            else if (profileType === 'Propriétaire' || profileType === 'Equipement') targetCollection = 'Équipements';
+            else if (profileType === 'Agence' || profileType === 'Agence immobilière') targetCollection = 'Agences immobilières';
+            else if (profileType === 'Entreprise') targetCollection = 'Entreprises';
+
+            if (targetCollection) {
+              const profRef = doc(db, targetCollection, userId);
+              await setDoc(profRef, updatedFields, { merge: true });
+            }
+
+            databaseService.triggerEvolutionUpdate(userId);
           }
         }
 
         // Send automatic message to user
         if (userId) {
+          const isMiseEnLigne = payment.paymentType === 'Mise en ligne' || payment.title?.includes('Mise en ligne');
+          const successMsg = isMiseEnLigne 
+            ? `✅ Félicitations ! Votre demande de mise en ligne d'annonce a été validée avec succès par l'administrateur. Votre annonce est désormais visible pour tous les utilisateurs.`
+            : `✅ Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) a été validé avec succès par l'administrateur. L'étape suivante est maintenant débloquée.`;
+
           const msg = {
-            text: `✅ Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) a été validé avec succès par l'administrateur. L'étape suivante est maintenant débloquée.`,
+            text: successMsg,
             sender: 'admin',
             timestamp: new Date().toISOString(),
             isRead: false,
@@ -1536,11 +1631,46 @@ export const databaseService = {
         }
       }
 
+      const isMiseEnLigne = payment.paymentType === 'Mise en ligne' || payment.title?.includes('Mise en ligne');
+      if (userId && isMiseEnLigne) {
+        const docRef = doc(db, 'Inscriptions', userId);
+        const userInscr = await getDoc(docRef);
+        let profileType = 'Travailleur';
+        if (userInscr.exists()) {
+          profileType = userInscr.data()?.profileType || 'Travailleur';
+        }
+
+        const updatedFields = {
+          isOnline: false,
+          onlinePending: false,
+          onlineRefused: true,
+          onlineApproved: false,
+          updatedAt: serverTimestamp()
+        };
+
+        await setDoc(docRef, updatedFields, { merge: true });
+
+        let targetCollection = '';
+        if (profileType === 'Travailleur') targetCollection = 'Travailleurs';
+        else if (profileType === 'Propriétaire' || profileType === 'Equipement') targetCollection = 'Équipements';
+        else if (profileType === 'Agence' || profileType === 'Agence immobilière') targetCollection = 'Agences immobilières';
+        else if (profileType === 'Entreprise') targetCollection = 'Entreprises';
+
+        if (targetCollection) {
+          const profRef = doc(db, targetCollection, userId);
+          await setDoc(profRef, updatedFields, { merge: true });
+        }
+
+        databaseService.triggerEvolutionUpdate(userId);
+      }
+
       if (userId) {
         let msgText = `Votre paiement de ${payment.amount} FCFA (${payment.title || payment.paymentType}) est en cours de traitement. Veuillez patienter jusqu’à la validation finale. Vous recevrez un message une fois la transaction confirmée. En cas de validation, votre paiement sera pris en compte et nous pourrons vous contacter si nécessaire.`;
         
         if (isDeposit) {
           msgText = `❌ Votre demande de dépôt de ${parseFloat(payment.amount).toLocaleString('fr-FR')} FCFA sur votre compte principal n'a pas été validée par l'administrateur. Aucun crédit n'a été ajouté à votre portefeuille.`;
+        } else if (isMiseEnLigne) {
+          msgText = `❌ Votre demande de mise en ligne d'annonce a été refusée par l'administrateur ou le paiement n'a pas pu être validé. L'annonce restera hors ligne.`;
         }
 
         const msg = {

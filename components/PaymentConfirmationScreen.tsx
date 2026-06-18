@@ -340,6 +340,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
       }
 
       // 3. Write validated payment log into RTDB / Admin overview
+      const isMiseEnLigne = paymentType === 'Mise en ligne';
       const path = await databaseService.savePaymentToRTDB({
         userId: user.phone.replace(/\D/g, ''),
         userName: user.name,
@@ -351,14 +352,16 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         paymentType: paymentType,
         waveNumber: 'FILANT°225 PORTEFEUILLE',
         timestamp: Date.now(),
-        status: 'Paiement validé' // Approved instantly!
+        status: isMiseEnLigne ? 'En attente' : 'Paiement validé'
       });
 
       if (path) {
         setPaymentPath(path);
         try {
           const autoMsg = {
-            text: `✅ Votre paiement de ${currentAmount} FCFA (${title || paymentType}) a été validé avec succès. L'étape suivante est maintenant débloquée.`,
+            text: isMiseEnLigne 
+              ? `🔑 Votre paiement de ${currentAmount} FCFA pour la mise en ligne d'annonce a été enregistré de votre portefeuille. Votre demande est maintenant en cours d'analyse par l'administrateur.`
+              : `✅ Votre paiement de ${currentAmount} FCFA (${title || paymentType}) a été validé avec succès. L'étape suivante est maintenant débloquée.`,
             sender: 'admin',
             timestamp: new Date().toISOString(),
             isRead: false,
@@ -392,7 +395,11 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 
       setIsSuccess(true);
       setIsProcessing(false);
-      if (onSuccess) setTimeout(onSuccess, 1500);
+      if (isMiseEnLigne) {
+        if (onSuccess) setTimeout(onSuccess, 1500);
+      } else {
+        if (onSuccess) setTimeout(onSuccess, 1500);
+      }
 
     } catch (e) {
       console.error(e);

@@ -601,6 +601,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   };
 
   const handleOpenOnlineForm = () => {
+    if (currentUserAd?.onlinePending === true) {
+      alert("Votre demande de mise en ligne est actuellement en attente de validation par l'administrateur. Vous ne pouvez pas la modifier pour le moment.");
+      return;
+    }
+
     const profileType = currentUserAd?.profileType || (user?.role === 'Agence immobilière' ? 'Agence' : user?.role) || 'Travailleur';
     const cleanProfileType = (profileType === 'Clients' || profileType === 'Client') ? 'Travailleur' : profileType;
     setFormProfileType(cleanProfileType);
@@ -658,7 +663,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     setFormImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  const handleOnlineFormSubmit = (e: React.FormEvent) => {
+  const handleOnlineFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formProfileType === 'Travailleur') {
@@ -688,22 +693,6 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       return;
     }
 
-    setIsPaying(true);
-    setPaymentStep('method');
-  };
-
-  const handleSimulatedPaymentSuccess = async () => {
-    setPaymentStep('processing');
-    
-    // Smooth countdown delay representing real validation
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    setPaymentStep('success');
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // Construct duration parameters
-    const durationMs = formDuration === '1_week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
-    const onlineStart = Date.now();
-    const onlineEnd = onlineStart + durationMs;
     const onlinePrice = formDuration === '1_week' ? 200 : 350;
 
     const adData: any = {
@@ -711,9 +700,9 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       city: formCity,
       skillsDescription: formDesc,
       onlineImages: formImages,
-      isOnline: true,
-      onlineStart,
-      onlineEnd,
+      isOnline: false,            // Resets/remains offline until validated by admin
+      onlinePending: true,        // Awaiting admin validation
+      onlineRefused: false,       // Clear any old refusals
       onlineDuration: formDuration,
       onlinePrice,
       timestamp: Date.now()
@@ -741,15 +730,29 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     }
 
     try {
-      const success = await databaseService.saveOnlineAnnouncement(user.phone || '', adData);
+      const success = await databaseService.saveOnlineAnnouncementPending(user.phone || '', adData);
       if (!success) {
         alert("Erreur de connexion avec Firestore. Veuillez réessayer.");
+        return;
       }
+
+      setIsOnlineFormOpen(false);
+
+      // Trigger the standard system payment confirmation view
+      window.dispatchEvent(new CustomEvent('trigger-payment-view', {
+        detail: {
+          title: `Mise en ligne d'annonce (${formDuration === '1_week' ? '1 Semaine' : '1 Mois'})`,
+          amount: onlinePrice.toString(),
+          paymentType: "Mise en ligne",
+          waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${onlinePrice}`,
+          onSuccess: () => {
+            alert("Paiement effectué ! Votre demande de mise en ligne est en statut 'En attente de validation' par l'administrateur.");
+          }
+        }
+      }));
     } catch (err) {
       console.error("Save online announcement execution fault:", err);
-    } finally {
-      setIsPaying(false);
-      setIsOnlineFormOpen(false);
+      alert("Une erreur s'est produite lors de l'initialisation du paiement.");
     }
   };
 
@@ -1975,12 +1978,19 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
             <button
               onClick={handleOpenOnlineForm}
               className={`py-4 px-6 rounded-2xl font-black uppercase text-xs tracking-wider transition-all duration-200 shadow-md flex items-center justify-center gap-2 shrink-0 active:scale-95 ${
-                currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd
-                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
+                currentUserAd?.onlinePending === true
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white animate-pulse'
+                  : currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-red-600 hover:bg-red-700 text-white'
               }`}
             >
-              {currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd ? (
+              {currentUserAd?.onlinePending === true ? (
+                <>
+                  <span className="w-2.5 h-2.5 bg-white rounded-full shrink-0 animate-ping" />
+                  <span>🟡 En attente de validation</span>
+                </>
+              ) : currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd ? (
                 <>
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping shrink-0" />
                   <span>🟢 En ligne (Modifier)</span>
@@ -1990,6 +2000,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                   <span className="w-2.5 h-2.5 bg-white rounded-full shrink-0 animate-pulse" />
                   <span>🔴 Remettre en ligne</span>
                 </>
+              ) : currentUserAd?.onlineRefused === true ? (
+                <>
+                  <span className="w-2.5 h-2.5 bg-white rounded-full shrink-0" />
+                  <span>🔴 Refusé / Recommencer</span>
+                </>
               ) : (
                 <>
                   <span className="w-2.5 h-2.5 bg-white rounded-full shrink-0" />
@@ -1998,6 +2013,21 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               )}
             </button>
           </div>
+
+          {/* Pending or Refused status announcements */}
+          {currentUserAd?.onlinePending === true && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-800 font-bold text-xs space-y-1 mt-3 animate-in fade-in duration-300">
+              <p className="font-extrabold uppercase tracking-wide">⏳ Demande en attente d'approbation</p>
+              <p className="text-amber-700/90 font-medium">Votre paiement a été reçu et votre demande de mise en ligne de votre annonce est en cours d'analyse et de validation par l'administrateur. Merci de patienter.</p>
+            </div>
+          )}
+
+          {currentUserAd?.onlineRefused === true && (
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-rose-800 font-bold text-xs space-y-1 mt-3 animate-in fade-in duration-300">
+              <p className="font-extrabold uppercase tracking-wide">⚠️ Validation refusée ou paiement rejeté</p>
+              <p className="text-rose-700/90 font-medium">Votre demande de publication en ligne a été refusée par l'administrateur ou la transaction n'est pas confirmée. Vous pouvez recliquer sur le bouton ci-dessus pour soumettre à nouveau une demande claire.</p>
+            </div>
+          )}
         </div>
 
         {/* Loading Spinner Area */}
@@ -2203,7 +2233,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                   Mise en ligne d'annonce
                 </span>
                 <h3 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight font-sans">
-                  {isPaying ? "🔒 FILANT PAIEMENT" : "Détails de votre annonce"}
+                  Détails de votre annonce
                 </h3>
               </div>
               <button 
@@ -2217,140 +2247,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
             {/* Modal Body & Content */}
             <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-              {isPaying ? (
-                /* Payment Simulation Screen */
-                <div className="space-y-6 animate-in fade-in duration-200" id="payment-simulation-container">
-                  {paymentStep === 'method' && (
-                    <div className="space-y-5">
-                      <div className="text-center space-y-2">
-                        <span className="text-4xl">💰</span>
-                        <h4 className="text-base font-black text-slate-900 uppercase tracking-wide">
-                          Choisissez votre moyen de paiement
-                        </h4>
-                        <p className="text-xs text-slate-500 font-bold max-w-md mx-auto">
-                          Frais de mise en ligne d'annonce : <span className="text-orange-500 font-black">{formDuration === '1_week' ? '200 FCFA pour 1 Semaine' : '350 FCFA pour 1 Mois'}</span>
-                        </p>
-                      </div>
-
-                      {/* Payment operator grid */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('wave')}
-                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 ${
-                            paymentMethod === 'wave'
-                              ? 'border-blue-500 bg-blue-50/50'
-                              : 'border-slate-100 hover:border-slate-200 bg-white'
-                          }`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center text-white font-black text-lg">W</div>
-                          <span className="text-xs font-black uppercase text-slate-800">WAVE</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('orange')}
-                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 ${
-                            paymentMethod === 'orange'
-                              ? 'border-orange-500 bg-orange-50/50'
-                              : 'border-slate-100 hover:border-slate-200 bg-white'
-                          }`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-black text-lg">O</div>
-                          <span className="text-xs font-black uppercase text-slate-800">ORANGE</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('mtn')}
-                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 ${
-                            paymentMethod === 'mtn'
-                              ? 'border-yellow-500 bg-yellow-50/50'
-                              : 'border-slate-100 hover:border-slate-200 bg-white'
-                          }`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center font-black text-lg">M</div>
-                          <span className="text-xs font-black uppercase text-slate-800">MTN</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setPaymentMethod('moov')}
-                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 ${
-                            paymentMethod === 'moov'
-                              ? 'border-emerald-500 bg-emerald-50/50'
-                              : 'border-slate-100 hover:border-slate-200 bg-white'
-                          }`}
-                        >
-                          <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-black text-lg">Mo</div>
-                          <span className="text-xs font-black uppercase text-slate-800">MOOV</span>
-                        </button>
-                      </div>
-
-                      {/* Phone Input */}
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Numéro de téléphone de paiement</label>
-                        <input
-                          type="tel"
-                          value={phoneNumberForPayment}
-                          onChange={(e) => setPhoneNumberForPayment(e.target.value)}
-                          placeholder="0708091011"
-                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 focus:border-orange-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all font-sans"
-                        />
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex gap-4 pt-4">
-                        <button
-                          type="button"
-                          onClick={() => setIsPaying(false)}
-                          className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black uppercase text-xs tracking-wider rounded-2xl transition-all active:scale-95"
-                        >
-                          Retour au formulaire
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleSimulatedPaymentSuccess}
-                          className="flex-1 py-4 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-md"
-                        >
-                          Valider et Payer
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentStep === 'processing' && (
-                    <div className="py-12 flex flex-col items-center text-center space-y-5 animate-in fade-in">
-                      <div className="relative">
-                        <div className="w-20 h-20 border-4 border-orange-500/10 rounded-full"></div>
-                        <div className="absolute inset-0 w-20 h-20 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-lg font-black uppercase tracking-wider text-slate-900">Validation en cours...</h4>
-                        <p className="text-xs text-slate-500 font-bold max-w-sm leading-relaxed">
-                          Veuillez composer le code USSD sur votre téléphone ou accepter l'invite de confirmation de paiement poussée sur votre écran mobile.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentStep === 'success' && (
-                    <div className="py-12 flex flex-col items-center text-center space-y-5 animate-in zoom-in-95 duration-200">
-                      <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 border-[3px] border-emerald-500 animate-bounce">
-                        <Check className="h-10 w-10 stroke-[3]" />
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-lg font-black uppercase tracking-wider text-emerald-600">Paiement Validé avec Succès !</h4>
-                        <p className="text-xs text-slate-400 font-bold leading-relaxed">
-                          Votre annonce est désormais en ligne et active ! Merci de faire confiance à FILANT°225.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* Form Inputs Screen */
-                <form onSubmit={handleOnlineFormSubmit} className="space-y-6" id="online-form-details">
+              {/* Form Inputs Screen */}
+              <form onSubmit={handleOnlineFormSubmit} className="space-y-6" id="online-form-details">
                   {/* Prefilled Profile Type selector */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Type de profil</label>
@@ -2675,7 +2573,6 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     </button>
                   </div>
                 </form>
-              )}
             </div>
           </div>
         </div>
