@@ -830,6 +830,94 @@ export const databaseService = {
     }
   },
 
+  getUserInscription: async (phone: string) => {
+    try {
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const docRef = doc(db, 'Inscriptions', sanitizedPhone);
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        return { id: snap.id, ...snap.data() };
+      }
+      return null;
+    } catch (e) {
+      console.error("Error fetching user inscription:", e);
+      return null;
+    }
+  },
+
+  saveOnlineAnnouncement: async (phone: string, adData: any) => {
+    try {
+      await databaseService.ensureAuth();
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const docRef = doc(db, 'Inscriptions', sanitizedPhone);
+      
+      // We read the existing document to generate history of publication
+      const existingSnap = await getDoc(docRef);
+      let history = [];
+      let previousData: any = {};
+      if (existingSnap.exists()) {
+        const data = existingSnap.data() || {};
+        previousData = data;
+        history = data.onlineHistory || [];
+      }
+      
+      // Add current subscription details to history
+      const currentConfig = {
+        startDate: adData.onlineStart,
+        endDate: adData.onlineEnd,
+        duration: adData.onlineDuration,
+        price: adData.onlinePrice,
+        timestamp: Date.now()
+      };
+      
+      // Avoid duplicate history entries for exact same start and end timestamps
+      if (!history.some((h: any) => h.startDate === adData.onlineStart && h.endDate === adData.onlineEnd)) {
+        history.push(currentConfig);
+      }
+
+      // Prepare combined update
+      const updatedData = {
+        ...previousData,
+        ...adData,
+        onlineHistory: history,
+        isActive: true, // ensure visible in search
+        updatedAt: serverTimestamp()
+      };
+
+      await setDoc(docRef, updatedData, { merge: true });
+      
+      // Also update in respective professional table (Travailleurs, Équipements, Agences immobilières, Entreprises) to keep db sync'd
+      const profileType = adData.profileType || previousData.profileType || 'Travailleur';
+      let targetCollection = '';
+      if (profileType === 'Travailleur') targetCollection = 'Travailleurs';
+      else if (profileType === 'Propriétaire' || profileType === 'Equipement') targetCollection = 'Équipements';
+      else if (profileType === 'Agence' || profileType === 'Agence immobilière') targetCollection = 'Agences immobilières';
+      else if (profileType === 'Entreprise') targetCollection = 'Entreprises';
+
+      if (targetCollection) {
+        try {
+          const profRef = doc(db, targetCollection, sanitizedPhone);
+          await setDoc(profRef, {
+            ...adData,
+            onlineHistory: history,
+            isActive: true,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (dbErr) {
+          console.warn(`Could not sync profile type ${profileType} in professional table:`, dbErr);
+        }
+      }
+
+      // Trigger evolution update
+      databaseService.triggerEvolutionUpdate(sanitizedPhone);
+      
+      return true;
+    } catch (e) {
+      console.error("Error saving online announcement:", e);
+      return false;
+    }
+  },
+
   getWorkers: async (): Promise<Worker[]> => {
     if (workersCache) return workersCache;
     try {

@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { User, Tab } from '../types';
 import { databaseService } from '../services/databaseService';
 import CityAutocompleteInput from './common/CityAutocompleteInput';
-import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle, X } from 'lucide-react';
+import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle, X, ChevronLeft, ChevronRight, Camera, Trash2, Check, RefreshCw } from 'lucide-react';
+import { doc, onSnapshot, collection, query, orderBy, getDocs, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 interface InscriptionResult {
   id: string;
@@ -145,6 +147,46 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   const [results, setResults] = useState<InscriptionResult[] | null>(null);
   const [inscriptionsFromDB, setInscriptionsFromDB] = useState<any[]>([]);
   const [isLinking, setIsLinking] = useState(false);
+
+  // Real-time current user ad states & lightbox states
+  const [currentUserAd, setCurrentUserAd] = useState<any | null>(null);
+  const [isOnlineFormOpen, setIsOnlineFormOpen] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+  // Online Form inputs & steps
+  const [formProfileType, setFormProfileType] = useState<'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise'>('Travailleur');
+  const [formName, setFormName] = useState('');
+  const [formCity, setFormCity] = useState('');
+  const [formDesc, setFormDesc] = useState('');
+  
+  // Worker specialized fields
+  const [formJob, setFormJob] = useState('');
+  const [formSalary, setFormSalary] = useState('');
+  const [formSalaryPeriod, setFormSalaryPeriod] = useState<'Par semaine' | 'Par mois'>('Par mois');
+
+  // Real estate Agence specialized fields
+  const [formAgencyName, setFormAgencyName] = useState('');
+  const [formPropertyTypes, setFormPropertyTypes] = useState<string[]>([]); // Checked categories list
+
+  // Equipment Owner specialized fields
+  const [formOwnerName, setFormOwnerName] = useState('');
+  const [formEquipCount, setFormEquipCount] = useState<number>(1);
+  const [formEquipCategory, setFormEquipCategory] = useState('');
+
+  // Enterprise specialized fields
+  const [formCompanyName, setFormCompanyName] = useState('');
+  const [formCompanyDomain, setFormCompanyDomain] = useState('');
+  const [formCompanyServices, setFormCompanyServices] = useState('');
+
+  // Duration selection & images Base64 array
+  const [formDuration, setFormDuration] = useState<'1_week' | '1_month'>('1_week');
+  const [formImages, setFormImages] = useState<string[]>([]); // Previews of Base64 attachments (up to 2 maximum)
+
+  // Interactive Payment simulation states
+  const [isPaying, setIsPaying] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<'method' | 'processing' | 'success'>('method');
+  const [paymentMethod, setPaymentMethod] = useState<'wave' | 'orange' | 'mtn' | 'moov'>('wave');
+  const [phoneNumberForPayment, setPhoneNumberForPayment] = useState('');
 
   // New states for top profile display & retrieval animation
   const [pinnedProfile, setPinnedProfile] = useState<InscriptionResult | null>(null);
@@ -343,84 +385,45 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   // Parse current user safe ID
   const chatUserId = ((user.phone || '').replace(/\D/g, '') || user.userId || user.id || 'anonymous_user');
 
-  // Pre-fetch real Inscriptions from Firestore
+  // 1. Listen to all Inscriptions in real-time
   useEffect(() => {
-    const fetchDBInscriptions = async () => {
-      try {
-        const data = await databaseService.getInscriptions();
-        if (data && Array.isArray(data)) {
-          setInscriptionsFromDB(data);
-        }
-      } catch (e) {
-        console.error("Error fetching live inscriptions:", e);
-      }
-    };
-    fetchDBInscriptions();
+    const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      setInscriptionsFromDB(data);
+    }, (err) => {
+      console.error("Error setting up live Inscriptions listener:", err);
+    });
+    return () => unsubscribe();
   }, []);
 
-  // Run automatic search if initialQuery prop is set
+  // 2. Listen to current user's specific registration in real-time
   useEffect(() => {
-    if (initialQuery && inscriptionsFromDB.length > 0) {
+    if (!user?.phone) return;
+    const sanitizedPhone = user.phone.replace(/\D/g, '');
+    const docRef = doc(db, 'Inscriptions', sanitizedPhone);
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        const ad = snap.data();
+        setCurrentUserAd(ad);
+      }
+    }, (err) => {
+      console.warn("Silent current user ad subscribe fail:", err);
+    });
+    return () => unsubscribe();
+  }, [user?.phone]);
+
+  // Set initial query on mount
+  useEffect(() => {
+    if (initialQuery) {
       setQueryInput(initialQuery);
-      
-      const normalizedTerm = initialQuery.toLowerCase();
-      const matches: InscriptionResult[] = inscriptionsFromDB
-        .filter((item: any) => {
-          if (item.isActive === false) return false;
-          
-          const textToSearch = [
-            item.name,
-            item.city,
-            item.profileType,
-            item.job,
-            item.equipmentType,
-            item.equipmentCategory,
-            item.agencyName,
-            item.propertyTypes,
-            item.companyName,
-            item.companyDomain,
-            item.companyServices,
-            item.equipmentDescription,
-            item.skillsDescription
-          ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-
-          return textToSearch.includes(normalizedTerm);
-        })
-        .map((item: any) => {
-          let titleOrActivity = '';
-          if (item.profileType === 'Travailleur') {
-            titleOrActivity = item.job || 'Travailleur Qualifié';
-          } else if (item.profileType === 'Propriétaire') {
-            titleOrActivity = `${item.equipmentType || item.equipmentCategory || 'Équipement'}`;
-          } else if (item.profileType === 'Agence' || item.profileType === 'Agence immobilière') {
-            titleOrActivity = item.agencyName || 'Agence Immobilière';
-            if (item.propertyTypes) {
-              titleOrActivity += ` (${item.propertyTypes})`;
-            }
-          } else if (item.profileType === 'Entreprise') {
-            titleOrActivity = item.companyName || 'Entreprise';
-            if (item.companyDomain) {
-              titleOrActivity += ` (${item.companyDomain})`;
-            }
-          }
-
-          return {
-            id: item.id || Math.random().toString(),
-            name: item.name || item.agencyName || item.companyName || 'Prestataire',
-            city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
-            profileType: (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur',
-            titleOrActivity,
-            description: item.skillsDescription || item.equipmentDescription || item.companyServices || '',
-            imageLink: item.imageLink || ''
-          };
-        });
-
-      setResults(matches);
     }
-  }, [initialQuery, inscriptionsFromDB]);
+  }, [initialQuery]);
+
+  // Run automatic search or reactive update on db change or query change
+  useEffect(() => {
+    executeDatabaseSearch(queryInput.trim());
+  }, [inscriptionsFromDB, queryInput]);
 
   const handleSearch = () => {
     const term = queryInput.trim();
@@ -437,7 +440,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   };
 
   const executeDatabaseSearch = (term: string) => {
-    const normalizedTerm = term.toLowerCase();
+    const normalizedTerm = term.toLowerCase().trim();
 
     // Search exclusively in Firestore Inscriptions
     const matches: InscriptionResult[] = inscriptionsFromDB
@@ -445,27 +448,40 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         // Exclude disabled inscriptions
         if (item.isActive === false) return false;
 
-        // Collect all text from fields that are relevant for search
-        const textToSearch = [
-          item.name,
-          item.city,
-          item.profileType,
-          item.job,
-          item.equipmentType,
-          item.equipmentCategory,
-          item.agencyName,
-          item.propertyTypes,
-          item.companyName,
-          item.companyDomain,
-          item.companyServices,
-          item.equipmentDescription,
-          item.skillsDescription
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
+        // Check online and expiration
+        const isOnline = item.isOnline !== false;
+        const onlineEnd = item.onlineEnd;
+        const isExpired = onlineEnd ? Date.now() > onlineEnd : false;
 
-        return textToSearch.includes(normalizedTerm);
+        if (!isOnline || isExpired) return false;
+
+        // If a term is provided, filter based on fields
+        if (normalizedTerm) {
+          const textToSearch = [
+            item.name,
+            item.city,
+            item.profileType,
+            item.job,
+            item.equipmentType,
+            item.equipmentCategory,
+            item.agencyName,
+            item.propertyTypes,
+            item.companyName,
+            item.companyDomain,
+            item.companyServices,
+            item.equipmentDescription,
+            item.skillsDescription,
+            item.description
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+          return textToSearch.includes(normalizedTerm);
+        }
+
+        // If search term is empty, let's keep all active items
+        return true;
       })
       .map((item: any) => {
         // Map individual profileType properties into a clean structured display title
@@ -476,14 +492,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           titleOrActivity = `${item.equipmentType || item.equipmentCategory || 'Équipement'}`;
         } else if (item.profileType === 'Agence' || item.profileType === 'Agence immobilière') {
           titleOrActivity = item.agencyName || 'Agence Immobilière';
-          if (item.propertyTypes) {
-            titleOrActivity += ` (${item.propertyTypes})`;
-          }
         } else if (item.profileType === 'Entreprise') {
           titleOrActivity = item.companyName || 'Entreprise';
-          if (item.companyDomain) {
-            titleOrActivity += ` (${item.companyDomain})`;
-          }
         }
 
         return {
@@ -492,12 +502,168 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
           profileType: (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur',
           titleOrActivity,
-          description: item.skillsDescription || item.equipmentDescription || item.companyServices || '',
-          imageLink: item.imageLink || ''
+          description: item.skillsDescription || item.equipmentDescription || item.companyServices || item.description || '',
+          imageLink: item.imageLink || '',
+          // Include new custom fields for cards
+          images: item.onlineImages || [],
+          desiredSalary: item.desiredSalary || '',
+          salaryPeriod: item.salaryPeriod || '',
+          propertyTypes: item.propertyTypes || '',
+          equipmentsAvailable: item.equipmentsAvailable || '',
+          equipmentCategory: item.equipmentCategory || '',
+          companyDomain: item.companyDomain || '',
+          companyServices: item.companyServices || ''
         };
       });
 
     setResults(matches);
+  };
+
+  const handleOpenOnlineForm = () => {
+    const profileType = currentUserAd?.profileType || (user?.role === 'Agence immobilière' ? 'Agence' : user?.role) || 'Travailleur';
+    const cleanProfileType = (profileType === 'Clients' || profileType === 'Client') ? 'Travailleur' : profileType;
+    setFormProfileType(cleanProfileType);
+    
+    setFormName(currentUserAd?.name || user?.name || '');
+    setFormCity(currentUserAd?.city || user?.city || '');
+    setFormDesc(currentUserAd?.skillsDescription || currentUserAd?.description || '');
+
+    setFormJob(currentUserAd?.job || '');
+    setFormSalary(currentUserAd?.desiredSalary || '');
+    setFormSalaryPeriod(currentUserAd?.salaryPeriod || 'Par mois');
+
+    setFormAgencyName(currentUserAd?.agencyName || currentUserAd?.name || user?.name || '');
+    setFormPropertyTypes(currentUserAd?.propertyTypes || []);
+
+    setFormOwnerName(currentUserAd?.ownerName || currentUserAd?.name || user?.name || '');
+    setFormEquipCount(currentUserAd?.equipmentsAvailable || 1);
+    setFormEquipCategory(currentUserAd?.equipmentCategory || '');
+
+    setFormCompanyName(currentUserAd?.companyName || currentUserAd?.name || user?.name || '');
+    setFormCompanyDomain(currentUserAd?.companyDomain || '');
+    setFormCompanyServices(currentUserAd?.companyServices || '');
+
+    setFormImages(currentUserAd?.onlineImages || []);
+
+    setIsPaying(false);
+    setPaymentStep('method');
+    setPhoneNumberForPayment((user?.phone || '').replace(/\D/g, ''));
+
+    setIsOnlineFormOpen(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    const count = files.length;
+    if (count + formImages.length > 2) {
+      alert("Vous pouvez sélectionner un maximum de 2 images.");
+      return;
+    }
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setFormImages(prev => [...prev, reader.result as string].slice(0, 2));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeFormImage = (indexToRemove: number) => {
+    setFormImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleOnlineFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formProfileType === 'Travailleur') {
+      if (!formName.trim() || !formCity.trim() || !formJob.trim() || !formDesc.trim() || !formSalary.trim()) {
+        alert("Veuillez remplir tous les champs obligatoires (*) pour votre profil de Travailleur.");
+        return;
+      }
+    } else if (formProfileType === 'Agence') {
+      if (!formAgencyName.trim() || !formCity.trim() || !formDesc.trim()) {
+        alert("Veuillez remplir tous les champs obligatoires (*) pour votre agence.");
+        return;
+      }
+    } else if (formProfileType === 'Propriétaire') {
+      if (!formOwnerName.trim() || !formCity.trim() || !formDesc.trim() || !formEquipCategory.trim()) {
+        alert("Veuillez remplir tous les champs obligatoires (*) pour vos équipements.");
+        return;
+      }
+    } else if (formProfileType === 'Entreprise') {
+      if (!formCompanyName.trim() || !formCity.trim() || !formCompanyDomain.trim() || !formDesc.trim()) {
+        alert("Veuillez remplir tous les champs obligatoires (*) pour l'entreprise.");
+        return;
+      }
+    }
+
+    setIsPaying(true);
+    setPaymentStep('method');
+  };
+
+  const handleSimulatedPaymentSuccess = async () => {
+    setPaymentStep('processing');
+    
+    // Smooth countdown delay representing real validation
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    setPaymentStep('success');
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    
+    // Construct duration parameters
+    const durationMs = formDuration === '1_week' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+    const onlineStart = Date.now();
+    const onlineEnd = onlineStart + durationMs;
+    const onlinePrice = formDuration === '1_week' ? 200 : 350;
+
+    const adData: any = {
+      profileType: formProfileType,
+      city: formCity,
+      skillsDescription: formDesc,
+      onlineImages: formImages,
+      isOnline: true,
+      onlineStart,
+      onlineEnd,
+      onlineDuration: formDuration,
+      onlinePrice,
+      timestamp: Date.now()
+    };
+
+    if (formProfileType === 'Travailleur') {
+      adData.name = formName;
+      adData.job = formJob;
+      adData.desiredSalary = formSalary;
+      adData.salaryPeriod = formSalaryPeriod;
+    } else if (formProfileType === 'Agence') {
+      adData.name = formAgencyName;
+      adData.agencyName = formAgencyName;
+      adData.propertyTypes = formPropertyTypes;
+    } else if (formProfileType === 'Propriétaire') {
+      adData.name = formOwnerName;
+      adData.ownerName = formOwnerName;
+      adData.equipmentsAvailable = formEquipCount;
+      adData.equipmentCategory = formEquipCategory;
+    } else if (formProfileType === 'Entreprise') {
+      adData.name = formCompanyName;
+      adData.companyName = formCompanyName;
+      adData.companyDomain = formCompanyDomain;
+      adData.companyServices = formCompanyServices;
+    }
+
+    try {
+      const success = await databaseService.saveOnlineAnnouncement(user.phone || '', adData);
+      if (!success) {
+        alert("Erreur de connexion avec Firestore. Veuillez réessayer.");
+      }
+    } catch (err) {
+      console.error("Save online announcement execution fault:", err);
+    } finally {
+      setIsPaying(false);
+      setIsOnlineFormOpen(false);
+    }
   };
 
   const handleSuccessSubmission = async (
@@ -1696,24 +1862,55 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         {/* Input area */}
         <div className="space-y-2.5">
           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Quel métier ou service cherchez-vous ?</label>
-          <div className="relative flex items-center">
-            <input
-              type="text"
-              value={queryInput}
-              onChange={(e) => setQueryInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Ex. Vendeur, Cuisinier, Agence immobilière..."
-              className="w-full pl-5 pr-14 py-4 bg-white border border-slate-200 focus:border-orange-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all font-sans shadow-sm"
-              disabled={isLoading}
-              id="search-query-input"
-            />
+          <div className="flex flex-col sm:flex-row items-stretch gap-3">
+            <div className="relative flex-1 flex items-center">
+              <input
+                type="text"
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Ex. Vendeur, Cuisinier, Agence immobilière..."
+                className="w-full pl-5 pr-14 py-4 bg-white border border-slate-200 focus:border-orange-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all font-sans shadow-sm"
+                disabled={isLoading}
+                id="search-query-input"
+              />
+              <button
+                onClick={handleSearch}
+                className="absolute right-3 p-2.5 bg-orange-500 hover:bg-orange-600 active:scale-90 text-white rounded-xl transition-all shadow-md"
+                disabled={isLoading || !queryInput.trim()}
+                id="search-submit-btn"
+              >
+                <Search className="h-4 w-4 stroke-[3]" />
+              </button>
+            </div>
+
+            {/* The brand-new "Se mettre en ligne" / "Remettre en ligne" controls button */}
             <button
-              onClick={handleSearch}
-              className="absolute right-3 p-2.5 bg-orange-500 hover:bg-orange-600 active:scale-90 text-white rounded-xl transition-all shadow-md"
-              disabled={isLoading || !queryInput.trim()}
-              id="search-submit-btn"
+              onClick={handleOpenOnlineForm}
+              className={`py-4 px-6 rounded-2xl font-black uppercase text-xs tracking-wider transition-all duration-200 shadow-md flex items-center justify-center gap-2 shrink-0 active:scale-95 ${
+                currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : currentUserAd?.onlineEnd && Date.now() > currentUserAd.onlineEnd
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
+                    : 'bg-[#2dadac] hover:bg-[#256361] text-white'
+              }`}
             >
-              <Search className="h-4 w-4 stroke-[3]" />
+              {currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd ? (
+                <>
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+                  <span>🟢 En ligne (Modifier)</span>
+                </>
+              ) : currentUserAd?.onlineEnd && Date.now() > currentUserAd.onlineEnd ? (
+                <>
+                  <span className="w-2 h-2 bg-white rounded-full shrink-0" />
+                  <span>🔴 Remettre en ligne</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 bg-white rounded-full shrink-0" />
+                  <span>🟢 Se mettre en ligne</span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -1751,74 +1948,169 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                 </p>
               </div>
             ) : (
-              <div className="space-y-4 divide-y divide-dashed divide-[#2dadac]/30">
-                {results.map((item, index) => {
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+                {results.map((item) => {
+                  const cardImages = item.images && item.images.length > 0
+                    ? item.images
+                    : [item.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"];
+
                   return (
                     <div
                       key={item.id}
-                      className={`bg-transparent flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in duration-300 relative ${
-                        index > 0 ? 'pt-4' : ''
-                      }`}
+                      className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full"
+                      id={`display-card-${item.id}`}
                     >
-                      {/* Upper right Info icon as shown in mockup */}
-                      <div className="absolute top-2 right-0 flex items-center gap-2">
-                        <svg 
-                          onClick={() => handleRetrieveProfile(item)} 
-                          className="w-5 h-5 text-slate-900 cursor-pointer hover:scale-105 active:scale-95" 
-                          viewBox="0 0 24 24" 
-                          fill="currentColor"
-                          title="Plus d'informations"
+                      {/* Swipe horizontal image gallery */}
+                      <div className="relative w-full h-52 bg-slate-50 overflow-hidden shrink-0 group">
+                        <div 
+                          id={`gallery-${item.id}`}
+                          className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth"
                         >
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-                        </svg>
-                      </div>
-
-                      <div className="flex items-center gap-4 sm:gap-6 min-w-0 flex-1">
-                        {/* Circle profile picture with thick black border */}
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-[3px] border-slate-950 overflow-hidden relative shrink-0 shadow-md">
-                          <img 
-                            src={item.imageLink || "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4affc49d-d0ff-432d-bc34-8d9d3d6f91ae.jpg"} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover animate-fade-in" 
-                            referrerPolicy="no-referrer"
-                          />
+                          {cardImages.map((imgUrl: string, idx: number) => (
+                            <div key={idx} className="w-full h-full shrink-0 snap-center relative">
+                              <img 
+                                src={imgUrl} 
+                                alt={`${item.name} - ${idx}`} 
+                                className="w-full h-full object-cover cursor-zoom-in"
+                                onClick={() => setZoomedImage(imgUrl)}
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                          ))}
                         </div>
 
-                        {/* Info block */}
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap font-sans font-black text-xs sm:text-base tracking-wider uppercase leading-none">
-                            {/* Profile Type in Vivid Magenta */}
-                            <span className="text-[#ff00ff]">{item.profileType}</span>
-                            {/* Title/Activity in Bold Orange */}
-                            <span className="text-[#ff4500] font-extrabold">{item.titleOrActivity}</span>
+                        {cardImages.length > 1 && (
+                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 bg-black/50 px-2.5 py-1 rounded-full border border-white/10">
+                            {cardImages.map((_, idx) => (
+                              <span key={idx} className="w-1.5 h-1.5 rounded-full bg-white/75" />
+                            ))}
                           </div>
+                        )}
 
-                          <div className="text-base sm:text-2xl font-bold text-slate-900 tracking-tight leading-normal">
-                            Nom: <span className="font-extrabold uppercase">{item.name}</span>
-                          </div>
+                        {cardImages.length > 1 && (
+                          <>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const el = document.getElementById(`gallery-${item.id}`);
+                                if (el) el.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
+                              }}
+                              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-slate-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md active:scale-95"
+                            >
+                              <ChevronLeft className="h-4 w-4 stroke-[3]" />
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const el = document.getElementById(`gallery-${item.id}`);
+                                if (el) el.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
+                              }}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-slate-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md active:scale-95"
+                            >
+                              <ChevronRight className="h-4 w-4 stroke-[3]" />
+                            </button>
+                          </>
+                        )}
 
-                          <div className="flex items-center gap-1.5">
-                            {/* Magenta location pin icon */}
-                            <MapPin className="h-5 w-5 text-[#ff00ff] fill-[#ff00ff]/10 stroke-[2.5]" />
-                            <span className="text-sm sm:text-lg font-bold text-slate-800">{item.city}</span>
-                          </div>
-                        </div>
+                        <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">
+                          {item.profileType}
+                        </span>
                       </div>
 
-                      {/* Action button "DEMANDE DE SERVICE" in Orange */}
-                      <div className="flex-shrink-0 w-full md:w-auto flex items-center justify-end md:self-end mt-2 md:mt-0">
+                      {/* Info & Text Content */}
+                      <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start gap-2.5">
+                            <div className="min-w-0">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-[#2dadac] block mb-0.5 truncate">
+                                {item.titleOrActivity}
+                              </span>
+                              <h3 className="text-base font-black text-slate-900 tracking-tight leading-tight uppercase truncate">
+                                {item.name}
+                              </h3>
+                            </div>
+                            
+                            <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-full shrink-0">
+                              <MapPin className="h-3.5 w-3.5 text-[#ff00ff] fill-[#ff00ff]/10" />
+                              <span className="text-[10px] font-black uppercase tracking-tight text-slate-700">{item.city}</span>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-3">
+                            {item.description || "Aucune description fournie par le prestataire."}
+                          </p>
+                        </div>
+
+                        {/* Complementary data */}
+                        <div className="py-2.5 px-3 bg-slate-50 rounded-2xl border border-slate-100/50 flex flex-col gap-1 text-[10px] text-slate-600 font-bold shrink-0">
+                          <span className="font-extrabold text-[#2dadac] uppercase tracking-wider text-[9px] mb-1">
+                            Informations complémentaires :
+                          </span>
+
+                          {item.profileType === 'Travailleur' && (
+                            <div className="flex justify-between items-center font-bold">
+                              <span>Salaire souhaité :</span>
+                              <span className="font-black text-slate-900 uppercase text-right max-w-[150px] truncate items-center">
+                                {item.desiredSalary ? `${item.desiredSalary} FCFA / ${item.salaryPeriod === 'Par semaine' ? 'Semaine' : 'Mois'}` : 'Non spécifié'}
+                              </span>
+                            </div>
+                          )}
+
+                          {item.profileType === 'Agence' && (
+                            <div className="flex justify-between items-start font-bold">
+                              <span>Biens proposés :</span>
+                              <span className="font-black text-slate-900 text-right max-w-[150px] truncate uppercase">
+                                {item.propertyTypes ? (Array.isArray(item.propertyTypes) ? item.propertyTypes.join(', ') : item.propertyTypes) : 'Tous types'}
+                              </span>
+                            </div>
+                          )}
+
+                          {item.profileType === 'Propriétaire' && (
+                            <div className="space-y-0.5">
+                              <div className="flex justify-between items-center font-bold">
+                                <span>Matériels d'équipements :</span>
+                                <span className="font-black text-slate-900 uppercase">
+                                  {item.equipmentCategory || 'Général'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center font-bold">
+                                <span>Disponibles :</span>
+                                <span className="font-black text-slate-900 uppercase">
+                                  {item.equipmentsAvailable || '1'} unité(s)
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {item.profileType === 'Entreprise' && (
+                            <div className="space-y-0.5">
+                              <div className="flex justify-between items-center font-bold">
+                                <span>Domaine principal :</span>
+                                <span className="font-black text-slate-900 uppercase truncate max-w-[160px]">
+                                  {item.companyDomain || 'Général'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-start font-bold">
+                                <span>Services :</span>
+                                <span className="font-black text-slate-900 text-right uppercase truncate max-w-[150px]">
+                                  {item.companyServices || 'Inconnu'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom action button */}
                         <button
                           onClick={() => handleRetrieveProfile(item)}
                           disabled={isLinking || retrievingProfileId !== null}
-                          className="w-full md:w-auto bg-[#ff4500] hover:bg-[#e03a00] disabled:bg-slate-300 text-white py-3 px-6 rounded-2xl font-black uppercase text-[11px] sm:text-xs tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
+                          className="w-full bg-[#ff4500] hover:bg-[#e03a00] disabled:bg-slate-300 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
                         >
                           {retrievingProfileId === item.id ? (
                             <>
-                              <Loader2 className="h-4 h-4 animate-spin text-white animate-pulse" />
+                              <Loader2 className="h-4 w-4 animate-spin text-white" />
                               <span>RÉCUPÉRATION...</span>
                             </>
-                          ) : isLinking ? (
-                            <Loader2 className="h-4 h-4 animate-spin text-white" />
                           ) : (
                             <span>DEMANDE DE SERVICE</span>
                           )}
