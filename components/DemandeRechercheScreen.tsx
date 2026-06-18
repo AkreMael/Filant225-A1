@@ -16,6 +16,87 @@ interface InscriptionResult {
   imageLink?: string;
 }
 
+const CardImageCarousel = ({ images, onImageClick }: { images: string[], onImageClick: (url: string) => void }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % images.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [images.length]);
+
+  return (
+    <div className="relative w-full h-full group overflow-hidden">
+      {/* Slides view wrapper */}
+      <div className="w-full h-full relative">
+        {images.map((imgUrl, idx) => (
+          <div
+            key={idx}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              idx === activeIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+            }`}
+          >
+            <img
+              src={imgUrl}
+              alt={`slide-${idx}`}
+              className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-500"
+              onClick={() => onImageClick(imgUrl)}
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Navigation dots */}
+      {images.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-20 bg-black/40 backdrop-blur-[2px] px-2 py-1 rounded-full border border-white/10">
+          {images.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveIndex(idx);
+              }}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                idx === activeIndex ? 'bg-orange-500 scale-125' : 'bg-white/60 hover:bg-white'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Manual swipe control overlays (chevrons left/right) */}
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
+            }}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/35 hover:bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20 active:scale-95 shadow-sm"
+          >
+            <ChevronLeft className="h-4 w-4 stroke-[2.5]" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveIndex((prev) => (prev + 1) % images.length);
+            }}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/35 hover:bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20 active:scale-95 shadow-sm"
+          >
+            <ChevronRight className="h-4 w-4 stroke-[2.5]" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
+
 interface DemandeRechercheScreenProps {
   onBack: () => void;
   user: User;
@@ -449,7 +530,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         if (item.isActive === false) return false;
 
         // Check online and expiration
-        const isOnline = item.isOnline !== false;
+        const isOnline = item.isOnline === true;
         const onlineEnd = item.onlineEnd;
         const isExpired = onlineEnd ? Date.now() > onlineEnd : false;
 
@@ -557,16 +638,16 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     if (!files) return;
     
     const count = files.length;
-    if (count + formImages.length > 2) {
-      alert("Vous pouvez sélectionner un maximum de 2 images.");
+    if (count + formImages.length > 4) {
+      alert("Vous pouvez sélectionner un maximum de 4 images.");
       return;
     }
 
-    Array.from(files).forEach(file => {
+    (Array.from(files) as File[]).forEach((file: File) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         if (typeof reader.result === 'string') {
-          setFormImages(prev => [...prev, reader.result as string].slice(0, 2));
+          setFormImages(prev => [...prev, reader.result as string].slice(0, 4));
         }
       };
       reader.readAsDataURL(file);
@@ -579,6 +660,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
   const handleOnlineFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (formProfileType === 'Travailleur') {
       if (!formName.trim() || !formCity.trim() || !formJob.trim() || !formDesc.trim() || !formSalary.trim()) {
         alert("Veuillez remplir tous les champs obligatoires (*) pour votre profil de Travailleur.");
@@ -599,6 +681,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         alert("Veuillez remplir tous les champs obligatoires (*) pour l'entreprise.");
         return;
       }
+    }
+
+    if (formProfileType !== 'Travailleur' && formImages.length < 2) {
+      alert("Vous devez sélectionner au moins 2 images pour une annonce professionnelle.");
+      return;
     }
 
     setIsPaying(true);
@@ -1890,25 +1977,23 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               className={`py-4 px-6 rounded-2xl font-black uppercase text-xs tracking-wider transition-all duration-200 shadow-md flex items-center justify-center gap-2 shrink-0 active:scale-95 ${
                 currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd
                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  : currentUserAd?.onlineEnd && Date.now() > currentUserAd.onlineEnd
-                    ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
-                    : 'bg-[#2dadac] hover:bg-[#256361] text-white'
+                  : 'bg-red-600 hover:bg-red-700 text-white'
               }`}
             >
               {currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd ? (
                 <>
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping shrink-0" />
                   <span>🟢 En ligne (Modifier)</span>
                 </>
               ) : currentUserAd?.onlineEnd && Date.now() > currentUserAd.onlineEnd ? (
                 <>
-                  <span className="w-2 h-2 bg-white rounded-full shrink-0" />
+                  <span className="w-2.5 h-2.5 bg-white rounded-full shrink-0 animate-pulse" />
                   <span>🔴 Remettre en ligne</span>
                 </>
               ) : (
                 <>
-                  <span className="w-2 h-2 bg-white rounded-full shrink-0" />
-                  <span>🟢 Se mettre en ligne</span>
+                  <span className="w-2.5 h-2.5 bg-white rounded-full shrink-0" />
+                  <span>🔴 Hors ligne - Se mettre en ligne</span>
                 </>
               )}
             </button>
@@ -1960,59 +2045,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                       className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full"
                       id={`display-card-${item.id}`}
                     >
-                      {/* Swipe horizontal image gallery */}
+                      {/* Swipe & Auto-fade horizontal image gallery */}
                       <div className="relative w-full h-52 bg-slate-50 overflow-hidden shrink-0 group">
-                        <div 
-                          id={`gallery-${item.id}`}
-                          className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scrollbar-none scroll-smooth"
-                        >
-                          {cardImages.map((imgUrl: string, idx: number) => (
-                            <div key={idx} className="w-full h-full shrink-0 snap-center relative">
-                              <img 
-                                src={imgUrl} 
-                                alt={`${item.name} - ${idx}`} 
-                                className="w-full h-full object-cover cursor-zoom-in"
-                                onClick={() => setZoomedImage(imgUrl)}
-                                referrerPolicy="no-referrer"
-                              />
-                            </div>
-                          ))}
-                        </div>
+                        <CardImageCarousel images={cardImages} onImageClick={(url) => setZoomedImage(url)} />
 
-                        {cardImages.length > 1 && (
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 bg-black/50 px-2.5 py-1 rounded-full border border-white/10">
-                            {cardImages.map((_, idx) => (
-                              <span key={idx} className="w-1.5 h-1.5 rounded-full bg-white/75" />
-                            ))}
-                          </div>
-                        )}
-
-                        {cardImages.length > 1 && (
-                          <>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const el = document.getElementById(`gallery-${item.id}`);
-                                if (el) el.scrollBy({ left: -el.clientWidth, behavior: 'smooth' });
-                              }}
-                              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-slate-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md active:scale-95"
-                            >
-                              <ChevronLeft className="h-4 w-4 stroke-[3]" />
-                            </button>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const el = document.getElementById(`gallery-${item.id}`);
-                                if (el) el.scrollBy({ left: el.clientWidth, behavior: 'smooth' });
-                              }}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-slate-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md active:scale-95"
-                            >
-                              <ChevronRight className="h-4 w-4 stroke-[3]" />
-                            </button>
-                          </>
-                        )}
-
-                        <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm">
+                        <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm z-20">
                           {item.profileType}
                         </span>
                       </div>
@@ -2124,6 +2161,525 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           </div>
         )}
       </main>
+
+      {/* LIGHTBOX FOR ZOOMED IMAGE */}
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 backdrop-blur-md transition-all duration-300 animate-in fade-in"
+          onClick={() => setZoomedImage(null)}
+          id="image-lightbox-overlay"
+        >
+          <button 
+            onClick={() => setZoomedImage(null)}
+            className="absolute top-6 right-6 p-4 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 active:scale-95"
+            id="image-lightbox-close"
+          >
+            <X className="h-6 w-6 stroke-[2.5]" />
+          </button>
+          <img 
+            src={zoomedImage} 
+            alt="Zoom produit" 
+            className="max-w-full max-h-[85vh] rounded-3xl object-contain shadow-2xl border-2 border-white/10 animate-in zoom-in-95 duration-200" 
+            onClick={(e) => e.stopPropagation()}
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
+
+      {/* ONLINE FORM MODAL */}
+      {isOnlineFormOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[90] flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+          id="online-form-overlay"
+        >
+          <div 
+            className="bg-white w-full max-w-2xl rounded-[2.5rem] border border-slate-100 shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200"
+            id="online-form-modal"
+          >
+            {/* Modal Header */}
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+              <div className="space-y-1.5">
+                <span className="bg-[#2dadac]/10 text-[#2dadac] text-[9px] font-black uppercase px-3 py-1 rounded-full tracking-widest">
+                  Mise en ligne d'annonce
+                </span>
+                <h3 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight font-sans">
+                  {isPaying ? "🔒 FILANT PAIEMENT" : "Détails de votre annonce"}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsOnlineFormOpen(false)}
+                className="p-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-full transition-all duration-200 active:scale-95 shadow-sm"
+                id="online-form-close-btn"
+              >
+                <X className="h-5 w-5 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Modal Body & Content */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+              {isPaying ? (
+                /* Payment Simulation Screen */
+                <div className="space-y-6 animate-in fade-in duration-200" id="payment-simulation-container">
+                  {paymentStep === 'method' && (
+                    <div className="space-y-5">
+                      <div className="text-center space-y-2">
+                        <span className="text-4xl">💰</span>
+                        <h4 className="text-base font-black text-slate-900 uppercase tracking-wide">
+                          Choisissez votre moyen de paiement
+                        </h4>
+                        <p className="text-xs text-slate-500 font-bold max-w-md mx-auto">
+                          Frais de mise en ligne d'annonce : <span className="text-orange-500 font-black">{formDuration === '1_week' ? '200 FCFA pour 1 Semaine' : '350 FCFA pour 1 Mois'}</span>
+                        </p>
+                      </div>
+
+                      {/* Payment operator grid */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('wave')}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 ${
+                            paymentMethod === 'wave'
+                              ? 'border-blue-500 bg-blue-50/50'
+                              : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center text-white font-black text-lg">W</div>
+                          <span className="text-xs font-black uppercase text-slate-800">WAVE</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('orange')}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 ${
+                            paymentMethod === 'orange'
+                              ? 'border-orange-500 bg-orange-50/50'
+                              : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-black text-lg">O</div>
+                          <span className="text-xs font-black uppercase text-slate-800">ORANGE</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('mtn')}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 ${
+                            paymentMethod === 'mtn'
+                              ? 'border-yellow-500 bg-yellow-50/50'
+                              : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center font-black text-lg">M</div>
+                          <span className="text-xs font-black uppercase text-slate-800">MTN</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setPaymentMethod('moov')}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1.5 active:scale-95 ${
+                            paymentMethod === 'moov'
+                              ? 'border-emerald-500 bg-emerald-50/50'
+                              : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                        >
+                          <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-black text-lg">Mo</div>
+                          <span className="text-xs font-black uppercase text-slate-800">MOOV</span>
+                        </button>
+                      </div>
+
+                      {/* Phone Input */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Numéro de téléphone de paiement</label>
+                        <input
+                          type="tel"
+                          value={phoneNumberForPayment}
+                          onChange={(e) => setPhoneNumberForPayment(e.target.value)}
+                          placeholder="0708091011"
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 focus:border-orange-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all font-sans"
+                        />
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex gap-4 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setIsPaying(false)}
+                          className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black uppercase text-xs tracking-wider rounded-2xl transition-all active:scale-95"
+                        >
+                          Retour au formulaire
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSimulatedPaymentSuccess}
+                          className="flex-1 py-4 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-md"
+                        >
+                          Valider et Payer
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentStep === 'processing' && (
+                    <div className="py-12 flex flex-col items-center text-center space-y-5 animate-in fade-in">
+                      <div className="relative">
+                        <div className="w-20 h-20 border-4 border-orange-500/10 rounded-full"></div>
+                        <div className="absolute inset-0 w-20 h-20 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-lg font-black uppercase tracking-wider text-slate-900">Validation en cours...</h4>
+                        <p className="text-xs text-slate-500 font-bold max-w-sm leading-relaxed">
+                          Veuillez composer le code USSD sur votre téléphone ou accepter l'invite de confirmation de paiement poussée sur votre écran mobile.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentStep === 'success' && (
+                    <div className="py-12 flex flex-col items-center text-center space-y-5 animate-in zoom-in-95 duration-200">
+                      <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 border-[3px] border-emerald-500 animate-bounce">
+                        <Check className="h-10 w-10 stroke-[3]" />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-lg font-black uppercase tracking-wider text-emerald-600">Paiement Validé avec Succès !</h4>
+                        <p className="text-xs text-slate-400 font-bold leading-relaxed">
+                          Votre annonce est désormais en ligne et active ! Merci de faire confiance à FILANT°225.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Form Inputs Screen */
+                <form onSubmit={handleOnlineFormSubmit} className="space-y-6" id="online-form-details">
+                  {/* Prefilled Profile Type selector */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Type de profil</label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {(['Travailleur', 'Propriétaire', 'Agence', 'Entreprise'] as const).map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setFormProfileType(type)}
+                          className={`py-3 px-2 text-center rounded-xl font-bold uppercase text-[10px] tracking-wider transition-all border active:scale-95 ${
+                            formProfileType === type
+                              ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                              : 'border-slate-100 hover:border-slate-200 text-slate-600 bg-slate-50/50'
+                          }`}
+                        >
+                          {type === 'Propriétaire' ? 'Équipements' : type === 'Agence' ? 'Immobilier' : type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* General inputs (Prefilled, but editable) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Dynamic Name Input Label */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                        {formProfileType === 'Travailleur'
+                          ? 'Nom complet *'
+                          : formProfileType === 'Agence'
+                            ? "Nom de l'agence *"
+                            : formProfileType === 'Propriétaire'
+                              ? "Nom du propriétaire d'équipements *"
+                              : "Nom de l'entreprise *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          formProfileType === 'Travailleur'
+                            ? formName
+                            : formProfileType === 'Agence'
+                              ? formAgencyName
+                              : formProfileType === 'Propriétaire'
+                                ? formOwnerName
+                                : formCompanyName
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (formProfileType === 'Travailleur') setFormName(val);
+                          else if (formProfileType === 'Agence') setFormAgencyName(val);
+                          else if (formProfileType === 'Propriétaire') setFormOwnerName(val);
+                          else if (formProfileType === 'Entreprise') setFormCompanyName(val);
+                        }}
+                        placeholder="Ex. Cabinet Mael, Kouadio Jean..."
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                        required
+                      />
+                    </div>
+
+                    {/* Zone d'activité (Ville) */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Ville ou zone d'activité *</label>
+                      <CityAutocompleteInput
+                        id="formCity"
+                        value={formCity}
+                        onChange={(val) => setFormCity(val)}
+                        placeholder="Ex. Abidjan, Cocody, Bouaké..."
+                        inputClassName="w-full px-5 py-4 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Specialized Inputs block according to profile */}
+                  {formProfileType === 'Travailleur' && (
+                    <div className="p-5 bg-indigo-50/30 rounded-3xl border border-indigo-100/50 space-y-4 animate-in fade-in duration-200">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Spécialité / Métier *</label>
+                        <input
+                          type="text"
+                          value={formJob}
+                          onChange={(e) => setFormJob(e.target.value)}
+                          placeholder="Ex. Électricien, Menuisier, Cuisinier..."
+                          className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Salaire souhaité (FCFA) *</label>
+                          <input
+                            type="text"
+                            value={formSalary}
+                            onChange={(e) => setFormSalary(e.target.value.replace(/\D/g, ''))}
+                            placeholder="Ex. 150000"
+                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Période de salaire *</label>
+                          <select
+                            value={formSalaryPeriod}
+                            onChange={(e: any) => setFormSalaryPeriod(e.target.value)}
+                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold focus:outline-none transition-all font-sans appearance-none cursor-pointer"
+                          >
+                            <option value="Par mois">Par mois</option>
+                            <option value="Par semaine">Par semaine</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formProfileType === 'Agence' && (
+                    <div className="p-5 bg-indigo-50/30 rounded-3xl border border-indigo-100/50 space-y-4 animate-in fade-in duration-200">
+                      <div className="space-y-2.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 ml-1">Catégories de biens immobiliers proposés</label>
+                        <div className="flex flex-wrap gap-2">
+                          {["Terrain", "Appartement", "Résidence", "Bureau", "Commerce", "Véhicule", "Autre"].map((cat) => {
+                            const isSelected = formPropertyTypes.includes(cat);
+                            return (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setFormPropertyTypes(prev => prev.filter(c => c !== cat));
+                                  } else {
+                                    setFormPropertyTypes(prev => [...prev, cat]);
+                                  }
+                                }}
+                                className={`py-2 px-4 rounded-full text-xs font-bold transition-all border active:scale-95 ${
+                                  isSelected
+                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                }`}
+                              >
+                                {cat}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formProfileType === 'Propriétaire' && (
+                    <div className="p-5 bg-indigo-50/30 rounded-3xl border border-indigo-100/50 space-y-4 animate-in fade-in duration-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#ff4500] ml-1">Nom / Catégories d'équipements *</label>
+                          <input
+                            type="text"
+                            value={formEquipCategory}
+                            onChange={(e) => setFormEquipCategory(e.target.value)}
+                            placeholder="Ex. Mini-pelle, Camion Citerne..."
+                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#ff4500] ml-1">Nombre d'équipements disponibles *</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={formEquipCount}
+                            onChange={(e) => setFormEquipCount(parseInt(e.target.value) || 1)}
+                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold focus:outline-none transition-all font-sans"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formProfileType === 'Entreprise' && (
+                    <div className="p-5 bg-indigo-50/30 rounded-3xl border border-indigo-100/50 space-y-4 animate-in fade-in duration-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 ml-1">Domaine d'activités *</label>
+                          <input
+                            type="text"
+                            value={formCompanyDomain}
+                            onChange={(e) => setFormCompanyDomain(e.target.value)}
+                            placeholder="Ex. Travaux Publics, Informatique, BTP..."
+                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 ml-1">Détails des services (Optionnel)</label>
+                          <input
+                            type="text"
+                            value={formCompanyServices}
+                            onChange={(e) => setFormCompanyServices(e.target.value)}
+                            placeholder="Ex. Rénovation d'intérieur, Peinture..."
+                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description field */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Description de vos services / compétences *</label>
+                    <textarea
+                      value={formDesc}
+                      onChange={(e) => setFormDesc(e.target.value)}
+                      placeholder="Décrivez précisément ce que vous proposez pour attirer vos clients..."
+                      className="w-full px-5 py-4 min-h-[100px] bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans resize-none"
+                      required
+                    />
+                  </div>
+
+                  {/* Duration selector */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Durée de mise en ligne souhaitée</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setFormDuration('1_week')}
+                        className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col justify-between active:scale-95 ${
+                          formDuration === '1_week'
+                            ? 'border-orange-500 bg-orange-50/10'
+                            : 'border-slate-100 hover:border-slate-200 bg-white'
+                        }`}
+                      >
+                        <span className="text-xs font-black uppercase text-slate-800">1 SEMAINE</span>
+                        <span className="text-sm font-black text-orange-600">200 FCFA</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFormDuration('1_month')}
+                        className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col justify-between active:scale-95 ${
+                          formDuration === '1_month'
+                            ? 'border-orange-500 bg-orange-50/10'
+                            : 'border-slate-100 hover:border-slate-200 bg-white'
+                        }`}
+                      >
+                        <span className="text-xs font-black uppercase text-slate-800">1 MOIS</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-black text-orange-600">350 FCFA</span>
+                          <span className="bg-orange-100 text-orange-700 text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase">-50% économie</span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Attachment Images Section */}
+                  <div className="space-y-3 p-5 bg-slate-50/60 rounded-3xl border border-slate-100">
+                    <div className="flex justify-between items-center">
+                      <div className="space-y-0.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">Galerie photo de l'annonce</label>
+                        <span className="text-[8px] text-slate-400 font-bold block">
+                          Sélectionnez de 1 à 4 images de votre téléphone. (Converties en base64 pour affichage immédiat)
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full block shrink-0 select-none uppercase">
+                        {formImages.length} SUR 4
+                      </span>
+                    </div>
+
+                    {/* Previews Grid */}
+                    {formImages.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {formImages.map((b64, idx) => (
+                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200/50 bg-slate-100 group animate-in zoom-in-95">
+                            <img src={b64} alt={`Upload ${idx}`} className="w-full h-full object-cover animate-fade-in" />
+                            <button
+                              type="button"
+                              onClick={() => removeFormImage(idx)}
+                              className="absolute top-1.5 right-1.5 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full transition-all duration-150 active:scale-90 shadow-md"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload trigger button */}
+                    {formImages.length < 4 && (
+                      <label className="w-full flex flex-col items-center justify-center p-5 bg-white border border-dashed border-slate-300 rounded-2xl hover:border-orange-500 transition-all cursor-pointer select-none group active:scale-[0.99] shadow-sm">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        <Camera className="h-6 w-6 text-slate-400 group-hover:text-orange-500 transition-colors duration-150 mb-1" />
+                        <span className="text-[10px] font-black uppercase text-slate-600 group-hover:text-orange-600">Ajouter des photos</span>
+                      </label>
+                    )}
+
+                    {/* Pro profile helper banner */}
+                    {formProfileType !== 'Travailleur' && (
+                      <div className="flex items-center gap-2 text-[9px] text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-100 font-bold animate-in fade-in duration-200">
+                        <AlertCircle className="h-4 w-4 stroke-[2.5] text-amber-600 shrink-0 animate-pulse" />
+                        <span>⚠️ Les annonces de types professionnels (Agences, Équipements, Entreprises) requièrent un minimum de 2 images.</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Submission and close buttons */}
+                  <div className="flex gap-4 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsOnlineFormOpen(false)}
+                      className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black uppercase text-xs tracking-wider rounded-2xl transition-all active:scale-95 border border-slate-200"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-4 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-md"
+                    >
+                      Aller au paiement
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
