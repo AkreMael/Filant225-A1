@@ -4,9 +4,10 @@ import { databaseService } from '../services/databaseService';
 import { imageService } from '../services/imageService';
 import { LeafletMap } from './LeafletMap';
 import CityAutocompleteInput from './common/CityAutocompleteInput';
-import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle, X, ChevronLeft, ChevronRight, Camera, Trash2, Check, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle, X, ChevronLeft, ChevronRight, Camera, Trash2, Check, RefreshCw, Heart, Share2 } from 'lucide-react';
 import { doc, onSnapshot, collection, query, orderBy, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface InscriptionResult {
   id: string;
@@ -231,8 +232,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   const [inscriptionsFromDB, setInscriptionsFromDB] = useState<any[]>([]);
   const [isLinking, setIsLinking] = useState(false);
 
-  // Real-time current user ad states & lightbox states
+  // Real-time current user ad states, detail view states & lightbox states
   const [currentUserAd, setCurrentUserAd] = useState<any | null>(null);
+  const [selectedAdDetail, setSelectedAdDetail] = useState<any | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
+  const [isSaved, setIsSaved] = useState<boolean>(false);
   const [qrData, setQrData] = useState<any | null>(null);
   const [showQRBlockedModal, setShowQRBlockedModal] = useState(false);
   const [isOnlineFormOpen, setIsOnlineFormOpen] = useState(false);
@@ -1976,12 +1980,24 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                   return (
                     <div
                       key={item.id}
-                      className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full"
+                      className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 flex flex-col h-full cursor-pointer"
                       id={`display-card-${item.id}`}
+                      onClick={() => {
+                        setSelectedAdDetail(item);
+                        setActiveImageIndex(0);
+                        setIsSaved(false);
+                      }}
                     >
                       {/* Swipe & Auto-fade horizontal image gallery */}
                       <div className="relative w-full h-52 bg-slate-50 overflow-hidden shrink-0 group">
-                        <CardImageCarousel images={cardImages} onImageClick={(url) => setZoomedImage(url)} />
+                        <CardImageCarousel
+                          images={cardImages}
+                          onImageClick={() => {
+                            setSelectedAdDetail(item);
+                            setActiveImageIndex(0);
+                            setIsSaved(false);
+                          }}
+                        />
 
                         <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm z-20">
                           {item.profileType}
@@ -1989,7 +2005,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                       </div>
 
                       {/* Info & Text Content */}
-                      <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div className="p-5 flex-1 flex flex-col justify-between space-y-4 text-left">
                         <div className="space-y-3">
                           <div className="flex justify-between items-start gap-2.5">
                             <div className="min-w-0">
@@ -2073,7 +2089,10 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
                         {/* Bottom action button */}
                         <button
-                          onClick={() => handleRetrieveProfile(item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRetrieveProfile(item);
+                          }}
                           disabled={isLinking || retrievingProfileId !== null}
                           className="w-full bg-[#ff4500] hover:bg-[#e03a00] disabled:bg-slate-300 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
                         >
@@ -2539,6 +2558,271 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           </div>
         </div>
       )}
+
+      {/* Dynamic announcement detailed overlay */}
+      <AnimatePresence>
+        {selectedAdDetail && (
+          <motion.div
+            initial={{ opacity: 0, y: '100%' }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[5000] bg-white flex flex-col overflow-hidden select-none"
+          >
+            {/* Top Bar Floating Buttons */}
+            <div className="absolute top-4 left-4 z-[5010]">
+              <button 
+                type="button"
+                onClick={() => setSelectedAdDetail(null)}
+                className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 active:scale-90 transition-all cursor-pointer border border-white/10"
+                title="Retour"
+              >
+                <ChevronLeft className="w-6 h-6 stroke-[3.5] text-white -ml-0.5" />
+              </button>
+            </div>
+
+            <div className="absolute top-4 right-4 z-[5010] flex items-center gap-2">
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsSaved(prev => !prev);
+                }}
+                className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition-all cursor-pointer border border-white/10"
+              >
+                <Heart className={`w-5 h-5 ${isSaved ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+              </button>
+              
+              <button 
+                type="button"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: selectedAdDetail.name,
+                      text: selectedAdDetail.description || "",
+                      url: window.location.href,
+                    }).catch(console.error);
+                  } else {
+                    try {
+                      navigator.clipboard.writeText(window.location.href);
+                    } catch (e) {
+                      alert("Lien de l'annonce : " + window.location.href);
+                    }
+                  }
+                }}
+                className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition-all cursor-pointer border border-white/10"
+              >
+                <Share2 className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Scrollable Area (Images + Detailed Info) */}
+            <div className="flex-1 overflow-y-auto scroll-smooth">
+              {(() => {
+                const detailImages = selectedAdDetail.onlineImages && selectedAdDetail.onlineImages.length > 0
+                  ? selectedAdDetail.onlineImages
+                  : (selectedAdDetail.images && selectedAdDetail.images.length > 0 ? selectedAdDetail.images : [selectedAdDetail.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"]);
+                  
+                return (
+                  <>
+                    <div className="relative w-full h-[45vh] sm:h-[50vh] bg-slate-100 overflow-hidden shrink-0">
+                      <div className="w-full h-full relative">
+                        {detailImages.map((imgUrl: string, idx: number) => (
+                          <div
+                            key={idx}
+                            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                              idx === activeImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                            }`}
+                          >
+                            <img
+                              src={imgUrl}
+                              alt={`product-${idx}`}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Center Chevron Controllers */}
+                      {detailImages.length > 1 && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveImageIndex((prev) => (prev - 1 + detailImages.length) % detailImages.length);
+                            }}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
+                          >
+                            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveImageIndex((prev) => (prev + 1) % detailImages.length);
+                            }}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
+                          >
+                            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                          </button>
+                        </>
+                      )}
+
+                      {/* Bottom visual dots / counter */}
+                      <div className="absolute bottom-5 left-5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-black z-20 tracking-wider">
+                        {activeImageIndex + 1} / {detailImages.length}
+                      </div>
+                      
+                      {detailImages.length > 1 && (
+                        <div className="absolute bottom-5 right-5 flex gap-1 z-20 bg-black/40 backdrop-blur-[2px] px-2 py-1 rounded-full border border-white/10 text-white font-black">
+                          {detailImages.map((_: any, idx: number) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setActiveImageIndex(idx)}
+                              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                idx === activeImageIndex ? 'bg-orange-500 scale-125' : 'bg-white/60 hover:bg-white'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Body Information */}
+                    <div className="bg-white rounded-t-[2.5rem] -mt-6 relative z-30 p-6 md:p-8 space-y-6 pb-32 text-left">
+                      <div className="space-y-1.5">
+                        <span className="bg-[#ff4500]/10 text-[#ff4500] text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
+                          {selectedAdDetail.profileType}
+                        </span>
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight uppercase pt-2">
+                          {selectedAdDetail.name}
+                        </h2>
+                        <p className="text-xs font-black text-[#2dadac] uppercase tracking-wider">
+                          {selectedAdDetail.titleOrActivity || (selectedAdDetail.profileType === 'Travailleur' ? selectedAdDetail.job : (selectedAdDetail.profileType === 'Propriétaire' ? selectedAdDetail.equipmentCategory : (selectedAdDetail.profileType === 'Agence' ? 'IMMOBILIER' : 'ENTREPRISE')))}
+                        </p>
+                      </div>
+
+                      {/* Location Display */}
+                      <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3">
+                        <div className="w-8 h-8 bg-[#ff00ff]/10 text-[#ff00ff] rounded-full flex items-center justify-center shrink-0">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Localisation du prestataire</p>
+                          <p className="text-xs font-black text-slate-800 uppercase truncate">{selectedAdDetail.city}, CÔTE D'IVOIRE</p>
+                        </div>
+                      </div>
+
+                      {/* Description block */}
+                      <div className="space-y-2">
+                        <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Description des services</h3>
+                        <p className="text-xs text-slate-600 font-semibold leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100/50 whitespace-pre-line">
+                          {selectedAdDetail.description || "Aucune description de service n'a été spécifiée."}
+                        </p>
+                      </div>
+
+                      {/* Complementary data */}
+                      <div className="space-y-2">
+                        <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Informations complémentaires</h3>
+                        <div className="divide-y divide-slate-100 bg-slate-50 border border-slate-100/80 rounded-2xl overflow-hidden text-xs">
+                          {selectedAdDetail.profileType === 'Travailleur' && (
+                            <>
+                              <div className="flex justify-between items-center py-3 px-4">
+                                <span className="text-slate-500 font-bold">Salaire souhaité</span>
+                                <span className="font-extrabold text-slate-900 uppercase">
+                                  {selectedAdDetail.desiredSalary ? `${selectedAdDetail.desiredSalary} FCFA / ${selectedAdDetail.salaryPeriod === 'Par semaine' ? 'Semaine' : 'Mois'}` : 'Non spécifié'}
+                                </span>
+                              </div>
+                              {selectedAdDetail.job && (
+                                <div className="flex justify-between items-center py-3 px-4">
+                                  <span className="text-slate-500 font-bold">Métier</span>
+                                  <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.job}</span>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {selectedAdDetail.profileType === 'Agence' && (
+                            <>
+                              <div className="flex justify-between items-center py-3 px-4">
+                                <span className="text-slate-500 font-bold">Biens proposés</span>
+                                <span className="font-extrabold text-slate-900 uppercase">
+                                  {selectedAdDetail.propertyTypes ? (Array.isArray(selectedAdDetail.propertyTypes) ? selectedAdDetail.propertyTypes.join(', ') : selectedAdDetail.propertyTypes) : 'Tous types'}
+                                </span>
+                              </div>
+                              {selectedAdDetail.agencyName && (
+                                <div className="flex justify-between items-center py-3 px-4">
+                                  <span className="text-slate-500 font-bold">Nom de l'agence</span>
+                                  <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyName}</span>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {selectedAdDetail.profileType === 'Propriétaire' && (
+                            <>
+                              <div className="flex justify-between items-center py-3 px-4">
+                                <span className="text-slate-500 font-bold">Catégorie d'équipement</span>
+                                <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.equipmentCategory || 'Général'}</span>
+                              </div>
+                              <div className="flex justify-between items-center py-3 px-4">
+                                <span className="text-slate-500 font-bold">Unités disponibles</span>
+                                <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.equipmentsAvailable || '1'}</span>
+                              </div>
+                            </>
+                          )}
+
+                          {selectedAdDetail.profileType === 'Entreprise' && (
+                            <>
+                              <div className="flex justify-between items-center py-3 px-4">
+                                <span className="text-slate-500 font-bold">Domaine d'activité</span>
+                                <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyDomain || 'Général'}</span>
+                              </div>
+                              <div className="flex justify-between items-center py-3 px-4">
+                                <span className="text-slate-500 font-bold">Services auxiliaires</span>
+                                <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyServices || 'Inconnu'}</span>
+                              </div>
+                            </>
+                          )}
+
+                          <div className="flex justify-between items-center py-3 px-4">
+                            <span className="text-slate-500 font-bold">Statut du prestataire</span>
+                            <span className="text-emerald-500 font-black uppercase flex items-center gap-1.5 text-[10px]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                              DISPONIBLE EN LIGNE
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Fixed/Sticky Bottom Floating Action Bar */}
+            <div className="shrink-0 p-4 bg-white/95 border-t border-slate-100 backdrop-blur-md z-[5020] flex justify-center w-full pb-safe">
+              <button
+                type="button"
+                onClick={() => {
+                  setPinnedProfile(selectedAdDetail);
+                  setSelectedItemForForm(selectedAdDetail);
+                  setSelectedAdDetail(null);
+                }}
+                className="w-full py-4 bg-[#ff4500] hover:bg-[#e03a00] active:scale-[0.98] text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <svg className="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                </svg>
+                DEMANDE DE SERVICE
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
