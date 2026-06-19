@@ -913,6 +913,106 @@ export const databaseService = {
     }
   },
 
+  activateOnlineAnnouncementDirectly: async (phone: string, durationType: string, amount: number) => {
+    try {
+      await databaseService.ensureAuth();
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const docRef = doc(db, 'Inscriptions', sanitizedPhone);
+      const userInscr = await getDoc(docRef);
+      let profileType = 'Travailleur';
+      if (userInscr.exists()) {
+        profileType = userInscr.data()?.profileType || 'Travailleur';
+      }
+
+      const isOneMonth = durationType === '1_month' || amount === 350;
+      const durationMs = isOneMonth ? 30 * 24 * 3600 * 1000 : 7 * 24 * 3600 * 1000;
+      const onlineStart = Date.now();
+      const onlineEnd = onlineStart + durationMs;
+
+      const updatedFields = {
+        isOnline: true,
+        onlinePending: false,
+        onlineApproved: true,
+        onlineRefused: false,
+        onlineStart,
+        onlineEnd,
+        updatedAt: serverTimestamp()
+      };
+
+      await setDoc(docRef, updatedFields, { merge: true });
+
+      let targetCollection = '';
+      if (profileType === 'Travailleur') targetCollection = 'Travailleurs';
+      else if (profileType === 'Propriétaire' || profileType === 'Equipement') targetCollection = 'Équipements';
+      else if (profileType === 'Agence' || profileType === 'Agence immobilière') targetCollection = 'Agences immobilières';
+      else if (profileType === 'Entreprise') targetCollection = 'Entreprises';
+
+      if (targetCollection) {
+        const profRef = doc(db, targetCollection, sanitizedPhone);
+        await setDoc(profRef, updatedFields, { merge: true });
+      }
+
+      databaseService.triggerEvolutionUpdate(sanitizedPhone);
+      return true;
+    } catch (e) {
+      console.error("Error activating online announcement directly:", e);
+      return false;
+    }
+  },
+
+  saveOnlineAnnouncementActiveModifications: async (phone: string, adData: any) => {
+    try {
+      await databaseService.ensureAuth();
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const docRef = doc(db, 'Inscriptions', sanitizedPhone);
+      
+      const existingSnap = await getDoc(docRef);
+      let previousData: any = {};
+      if (existingSnap.exists()) {
+        previousData = existingSnap.data() || {};
+      }
+      
+      const updatedData = {
+        ...previousData,
+        ...adData,
+        isOnline: true,
+        onlinePending: false,
+        onlineRefused: false,
+        updatedAt: serverTimestamp()
+      };
+
+      await setDoc(docRef, updatedData, { merge: true });
+      
+      const profileType = adData.profileType || previousData.profileType || 'Travailleur';
+      let targetCollection = '';
+      if (profileType === 'Travailleur') targetCollection = 'Travailleurs';
+      else if (profileType === 'Propriétaire' || profileType === 'Equipement') targetCollection = 'Équipements';
+      else if (profileType === 'Agence' || profileType === 'Agence immobilière') targetCollection = 'Agences immobilières';
+      else if (profileType === 'Entreprise') targetCollection = 'Entreprises';
+
+      if (targetCollection) {
+        try {
+          const profRef = doc(db, targetCollection, sanitizedPhone);
+          await setDoc(profRef, {
+            ...adData,
+            isOnline: true,
+            onlinePending: false,
+            onlineRefused: false,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } catch (dbErr) {
+          console.warn(`Could not sync updated state to professional table:`, dbErr);
+        }
+      }
+
+      databaseService.triggerEvolutionUpdate(sanitizedPhone);
+      return true;
+    } catch (e) {
+      console.error("Error saving active modifications:", e);
+      return false;
+    }
+  },
+
   saveOnlineAnnouncement: async (phone: string, adData: any) => {
     try {
       await databaseService.ensureAuth();

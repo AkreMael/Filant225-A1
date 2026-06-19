@@ -766,19 +766,13 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       return;
     }
 
-    const onlinePrice = formDuration === '1_week' ? 200 : 350;
+    const isCurrentlyActive = currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd;
 
     const adData: any = {
       profileType: formProfileType,
       city: formCity,
       skillsDescription: formDesc,
       onlineImages: uploadedUrls,
-      isOnline: false,            // Resets/remains offline until validated by admin
-      onlinePending: true,        // Awaiting admin validation
-      onlineRefused: false,       // Clear any old refusals
-      onlineDuration: formDuration,
-      onlinePrice,
-      timestamp: Date.now()
     };
 
     if (formProfileType === 'Travailleur') {
@@ -803,6 +797,27 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     }
 
     try {
+      if (isCurrentlyActive) {
+        const success = await databaseService.saveOnlineAnnouncementActiveModifications(user?.phone || '', adData);
+        setIsUploadingImages(false);
+        if (!success) {
+          alert("Erreur de connexion avec Firestore. Veuillez réessayer.");
+          return;
+        }
+        setIsOnlineFormOpen(false);
+        alert("Votre annonce a été modifiée et enregistrée directement avec succès sans frais supplémentaires !");
+        return;
+      }
+
+      // Default logic for new submission (Offline -> Pending standard, or Instant Wallet Debit)
+      const onlinePrice = formDuration === '1_week' ? 200 : 350;
+      adData.isOnline = false;
+      adData.onlinePending = true;
+      adData.onlineRefused = false;
+      adData.onlineDuration = formDuration;
+      adData.onlinePrice = onlinePrice;
+      adData.timestamp = Date.now();
+
       const success = await databaseService.saveOnlineAnnouncementPending(user?.phone || '', adData);
       setIsUploadingImages(false);
       if (!success) {
@@ -819,15 +834,19 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           amount: onlinePrice.toString(),
           paymentType: "Mise en ligne",
           waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${onlinePrice}`,
-          onSuccess: () => {
-            alert("Paiement effectué ! Votre demande de mise en ligne est en statut 'En attente de validation' par l'administrateur.");
+          onSuccess: (isAutoValidated?: boolean) => {
+            if (isAutoValidated) {
+              alert("Félicitations ! Votre paiement a été débité avec succès depuis votre portefeuille. Votre annonce est EN LIGNE immédiatement !");
+            } else {
+              alert("Paiement effectué ! Votre demande de mise en ligne est en statut 'En attente de validation' par l'administrateur.");
+            }
           }
         }
       }));
     } catch (err) {
       setIsUploadingImages(false);
       console.error("Save online announcement execution fault:", err);
-      alert("Une erreur s'est produite lors de l'initialisation du paiement.");
+      alert("Une erreur s'est produite lors de l'enregistrement de l'annonce.");
     }
   };
 
@@ -1857,7 +1876,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               ) : currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd ? (
                 <>
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping shrink-0" />
-                  <span>🟢 En ligne (Modifier)</span>
+                  <span>🟢 En ligne - Modifier</span>
                 </>
               ) : currentUserAd?.onlineEnd && Date.now() > currentUserAd.onlineEnd ? (
                 <>
@@ -2330,39 +2349,41 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                   </div>
 
                   {/* Duration selector */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Durée de mise en ligne souhaitée</label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <button
-                        type="button"
-                        onClick={() => setFormDuration('1_week')}
-                        className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col justify-between active:scale-95 ${
-                          formDuration === '1_week'
-                            ? 'border-orange-500 bg-orange-50/10'
-                            : 'border-slate-100 hover:border-slate-200 bg-white'
-                        }`}
-                      >
-                        <span className="text-xs font-black uppercase text-slate-800">1 SEMAINE</span>
-                        <span className="text-sm font-black text-orange-600">200 FCFA</span>
-                      </button>
+                  {!(currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd) && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Durée de mise en ligne souhaitée</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <button
+                          type="button"
+                          onClick={() => setFormDuration('1_week')}
+                          className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col justify-between active:scale-95 ${
+                            formDuration === '1_week'
+                              ? 'border-orange-500 bg-orange-50/10'
+                              : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                        >
+                          <span className="text-xs font-black uppercase text-slate-800">1 SEMAINE</span>
+                          <span className="text-sm font-black text-orange-600">200 FCFA</span>
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => setFormDuration('1_month')}
-                        className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col justify-between active:scale-95 ${
-                          formDuration === '1_month'
-                            ? 'border-orange-500 bg-orange-50/10'
-                            : 'border-slate-100 hover:border-slate-200 bg-white'
-                        }`}
-                      >
-                        <span className="text-xs font-black uppercase text-slate-800">1 MOIS</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-black text-orange-600">350 FCFA</span>
-                          <span className="bg-orange-100 text-orange-700 text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase">-50% économie</span>
-                        </div>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormDuration('1_month')}
+                          className={`p-4 rounded-2xl border-2 transition-all text-left flex flex-col justify-between active:scale-95 ${
+                            formDuration === '1_month'
+                              ? 'border-orange-500 bg-orange-50/10'
+                              : 'border-slate-100 hover:border-slate-200 bg-white'
+                          }`}
+                        >
+                          <span className="text-xs font-black uppercase text-slate-800">1 MOIS</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-black text-orange-600">350 FCFA</span>
+                            <span className="bg-orange-100 text-orange-700 text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase">-50% économie</span>
+                          </div>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Attachment Images Section */}
                   <div className="space-y-3 p-5 bg-slate-50/60 rounded-3xl border border-slate-100">
@@ -2441,7 +2462,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                           <span>Envoi des images...</span>
                         </>
                       ) : (
-                        <span>Aller au paiement</span>
+                        <span>
+                          {currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd
+                            ? "Enregistrer"
+                            : "Aller au paiement"}
+                        </span>
                       )}
                     </button>
                   </div>

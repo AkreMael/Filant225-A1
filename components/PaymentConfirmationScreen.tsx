@@ -341,6 +341,16 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 
       // 3. Write validated payment log into RTDB / Admin overview
       const isMiseEnLigne = paymentType === 'Mise en ligne';
+      if (isMiseEnLigne) {
+        try {
+          const durationType = (title?.toLowerCase().includes('mois') || title?.toLowerCase().includes('350') || currentAmount === '350') ? '1_month' : '1_week';
+          const numAmt = parseFloat(currentAmount) || 0;
+          await databaseService.activateOnlineAnnouncementDirectly(user.phone, durationType, numAmt);
+        } catch (activeErr) {
+          console.error("Error activating online announcement on wallet deduct:", activeErr);
+        }
+      }
+
       const path = await databaseService.savePaymentToRTDB({
         userId: user.phone.replace(/\D/g, ''),
         userName: user.name,
@@ -352,7 +362,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         paymentType: paymentType,
         waveNumber: 'FILANT°225 PORTEFEUILLE',
         timestamp: Date.now(),
-        status: isMiseEnLigne ? 'En attente' : 'Paiement validé'
+        status: 'Paiement validé'
       });
 
       if (path) {
@@ -360,7 +370,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         try {
           const autoMsg = {
             text: isMiseEnLigne 
-              ? `🔑 Votre paiement de ${currentAmount} FCFA pour la mise en ligne d'annonce a été enregistré de votre portefeuille. Votre demande est maintenant en cours d'analyse par l'administrateur.`
+              ? `✅ Votre paiement de ${currentAmount} FCFA pour la mise en ligne d'annonce a été débité et validé automatiquement par votre portefeuille. Votre annonce est désormais active et immédiatement en ligne !`
               : `✅ Votre paiement de ${currentAmount} FCFA (${title || paymentType}) a été validé avec succès. L'étape suivante est maintenant débloquée.`,
             sender: 'admin',
             timestamp: new Date().toISOString(),
@@ -396,7 +406,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
       setIsSuccess(true);
       setIsProcessing(false);
       if (isMiseEnLigne) {
-        if (onSuccess) setTimeout(onSuccess, 1500);
+        if (onSuccess) setTimeout(() => (onSuccess as any)(true), 1500);
       } else {
         if (onSuccess) setTimeout(onSuccess, 1500);
       }
