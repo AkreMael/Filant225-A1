@@ -74,7 +74,48 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.set("trust proxy", 1);
-  app.use(express.json());
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Create public/uploads directory if it doesn't exist
+  const uploadsDir = path.join(__dirname, "public", "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use("/uploads", express.static(uploadsDir));
+
+  app.post("/api/upload-base64", async (req, res) => {
+    try {
+      const { base64, filename } = req.body;
+      if (!base64) {
+        return res.status(400).json({ error: "No base64 image data provided" });
+      }
+
+      // Check for base64 prefix and extract clean base64 data
+      const matches = base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      let dataBuffer: Buffer;
+      let extension = "jpg";
+
+      if (matches && matches.length === 3) {
+        extension = matches[1].split("/")[1] || "jpg";
+        dataBuffer = Buffer.from(matches[2], 'base64');
+      } else {
+        dataBuffer = Buffer.from(base64, 'base64');
+      }
+
+      const uniqName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.${extension}`;
+      const savePath = path.join(uploadsDir, uniqName);
+
+      fs.writeFileSync(savePath, dataBuffer);
+      console.log(`Saved temporary local image upload: /uploads/${uniqName}`);
+
+      res.json({ url: `/uploads/${uniqName}` });
+    } catch (err: any) {
+      console.error("Error saving base64 uploaded image on server:", err);
+      res.status(500).json({ error: "Failed to upload image to server", details: err.message });
+    }
+  });
+
   app.use(cookieParser());
   app.use(session({
     secret: "filant-secret-key",

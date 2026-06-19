@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Tab } from '../types';
 import { databaseService } from '../services/databaseService';
+import { imageService } from '../services/imageService';
 import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle, X, ChevronLeft, ChevronRight, Camera, Trash2, Check, RefreshCw } from 'lucide-react';
 import { doc, onSnapshot, collection, query, orderBy, getDocs, getDoc } from 'firebase/firestore';
@@ -234,6 +235,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   const [qrData, setQrData] = useState<any | null>(null);
   const [showQRBlockedModal, setShowQRBlockedModal] = useState(false);
   const [isOnlineFormOpen, setIsOnlineFormOpen] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   // Online Form inputs & steps
@@ -683,7 +685,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     setIsOnlineFormOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     
@@ -693,15 +695,22 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       return;
     }
 
-    (Array.from(files) as File[]).forEach((file: File) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setFormImages(prev => [...prev, reader.result as string].slice(0, 4));
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    const compressedImages: string[] = [];
+    for (const file of Array.from(files) as File[]) {
+      try {
+        const compressed = await imageService.compressImage(file, 800, 0.75);
+        compressedImages.push(compressed);
+      } catch (err) {
+        console.error("Compression error for file:", file.name, err);
+        const fallback = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        compressedImages.push(fallback);
+      }
+    }
+    setFormImages(prev => [...prev, ...compressedImages].slice(0, 4));
   };
 
   const removeFormImage = (indexToRemove: number) => {
@@ -738,13 +747,26 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       return;
     }
 
+    setIsUploadingImages(true);
+    let uploadedUrls: string[] = [];
+    try {
+      uploadedUrls = await Promise.all(
+        formImages.map(img => databaseService.uploadImageOrFallback(user?.phone || '', img))
+      );
+    } catch (uploadErr) {
+      console.error("Failed to upload/convert images to URLs:", uploadErr);
+      alert("Erreur lors de la conversion et de la préparation de vos images. Veuillez réessayer.");
+      setIsUploadingImages(false);
+      return;
+    }
+
     const onlinePrice = formDuration === '1_week' ? 200 : 350;
 
     const adData: any = {
       profileType: formProfileType,
       city: formCity,
       skillsDescription: formDesc,
-      onlineImages: formImages,
+      onlineImages: uploadedUrls,
       isOnline: false,            // Resets/remains offline until validated by admin
       onlinePending: true,        // Awaiting admin validation
       onlineRefused: false,       // Clear any old refusals
@@ -775,7 +797,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     }
 
     try {
-      const success = await databaseService.saveOnlineAnnouncementPending(user.phone || '', adData);
+      const success = await databaseService.saveOnlineAnnouncementPending(user?.phone || '', adData);
+      setIsUploadingImages(false);
       if (!success) {
         alert("Erreur de connexion avec Firestore. Veuillez réessayer.");
         return;
@@ -796,6 +819,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         }
       }));
     } catch (err) {
+      setIsUploadingImages(false);
       console.error("Save online announcement execution fault:", err);
       alert("Une erreur s'est produite lors de l'initialisation du paiement.");
     }
@@ -2605,16 +2629,25 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                   <div className="flex gap-4 pt-2">
                     <button
                       type="button"
+                      disabled={isUploadingImages}
                       onClick={() => setIsOnlineFormOpen(false)}
-                      className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 font-black uppercase text-xs tracking-wider rounded-2xl transition-all active:scale-95 border border-slate-200"
+                      className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-800 font-black uppercase text-xs tracking-wider rounded-2xl transition-all active:scale-95 border border-slate-200"
                     >
                       Annuler
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-4 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-md"
+                      disabled={isUploadingImages}
+                      className="flex-1 py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-400 active:scale-95 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-md flex items-center justify-center gap-2"
                     >
-                      Aller au paiement
+                      {isUploadingImages ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Envoi des images...</span>
+                        </>
+                      ) : (
+                        <span>Aller au paiement</span>
+                      )}
                     </button>
                   </div>
                 </form>

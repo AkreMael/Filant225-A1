@@ -2059,6 +2059,58 @@ export const databaseService = {
     }
   },
 
+  uploadImageOrFallback: async (phone: string, base64: string): Promise<string> => {
+    try {
+      if (!base64) return '';
+      if (base64.startsWith('http://') || base64.startsWith('https://') || base64.startsWith('/uploads')) {
+        return base64;
+      }
+
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const uniqName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.jpg`;
+      const storagePath = `Announcements/${sanitizedPhone}/${uniqName}`;
+
+      try {
+        const downloadUrl = await databaseService.uploadFile(base64, storagePath);
+        if (downloadUrl) {
+          console.log("Image successfully uploaded to Firebase Storage:", downloadUrl);
+          return downloadUrl;
+        }
+      } catch (storageError) {
+        console.warn("Firebase Storage upload failed, falling back to local server upload:", storageError);
+      }
+
+      try {
+        const response = await fetch("/api/upload-base64", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            base64: base64,
+            filename: uniqName
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.url) {
+            console.log("Image successfully uploaded to local server:", result.url);
+            return result.url;
+          }
+        }
+        throw new Error("Local server upload response not OK");
+      } catch (serverError) {
+        console.error("Local server upload fallback failed:", serverError);
+      }
+
+      return base64;
+    } catch (err) {
+      console.error("Error in uploadImageOrFallback:", err);
+      return base64;
+    }
+  },
+
   onTypingStatusChange: (type: 'Assistant' | 'Privee', userId: string, sender: 'user' | 'admin', callback: (isTyping: boolean) => void) => {
     try {
       const typingRef = rtdbRef(rtdb, `TypingStatus/${type}/${userId}/${sender}`);
