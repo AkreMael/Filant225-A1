@@ -543,6 +543,27 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     }
   }, [initialQuery]);
 
+  // Hook to handle external auto pinnings (e.g. from Site page)
+  useEffect(() => {
+    const handleAutoPinEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const profileData = customEvent.detail?.profile;
+      if (profileData) {
+        console.log("Auto-pinning profile requested:", profileData.name);
+        // We match by id to make sure we pass the fully populated database object to handleRetrieveProfile
+        const exactDBMatch = inscriptionsFromDB.find(x => x.id === profileData.id);
+        if (exactDBMatch) {
+          handleRetrieveProfile(exactDBMatch);
+        } else {
+          handleRetrieveProfile(profileData);
+        }
+      }
+    };
+    
+    window.addEventListener('auto-pin-profile', handleAutoPinEvent);
+    return () => window.removeEventListener('auto-pin-profile', handleAutoPinEvent);
+  }, [inscriptionsFromDB]);
+
   // Run automatic search or reactive update on db change or query change
   useEffect(() => {
     executeDatabaseSearch(queryInput.trim());

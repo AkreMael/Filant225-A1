@@ -7,6 +7,7 @@ import { db } from '../firebase';
 import SpeakerIcon from './common/SpeakerIcon';
 import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { audioService } from '../services/audioService';
+import { MapPin, X, ChevronLeft, ChevronRight, Share2, Heart } from 'lucide-react';
 
 // Define WorkerOffer locally since we're removing googleSheetsService
 export interface WorkerOffer {
@@ -608,6 +609,34 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
   const [showSmartRegistration, setShowSmartRegistration] = useState(false);
   const [isProfessionalEnrolled, setIsProfessionalEnrolled] = useState(false);
 
+  // States for online ads integration
+  const [inscriptions, setInscriptions] = useState<any[]>([]);
+  const [selectedAdDetail, setSelectedAdDetail] = useState<any | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Live listener to all Inscriptions for real-time online ads syncing
+  useEffect(() => {
+    const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+      setInscriptions(data);
+    }, (err) => {
+      console.error("Error setting up live Inscriptions listener for OfferScreen:", err);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const onlineAds = useMemo(() => {
+    return inscriptions.filter((item) => {
+      if (item.isActive === false) return false;
+      const isOnline = item.isOnline === true;
+      const onlineEnd = item.onlineEnd;
+      const isExpired = onlineEnd ? Date.now() > onlineEnd : false;
+      return isOnline && !isExpired;
+    });
+  }, [inscriptions]);
+
   useEffect(() => {
     setIsLoadingOffers(false);
   }, []);
@@ -824,6 +853,80 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
             </button>
+
+            {/* --- SECTION ANNONCES EN LIGNE (Horizontal Slider) --- */}
+            {onlineAds.length > 0 && (
+              <div className="w-full flex flex-col items-center mb-10 mt-2">
+                <div className="w-full max-w-xs text-left mb-3 flex flex-col justify-start ml-1 self-center">
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 bg-[#ff4500] rounded-full animate-pulse"></span>
+                    Annonces en ligne
+                  </h3>
+                  <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mt-0.5">Offres actives en temps réel</p>
+                </div>
+                
+                <div className="w-full overflow-hidden">
+                  <div className="flex gap-4 overflow-x-auto py-2 px-6 scrollbar-hide snap-x snap-mandatory scroll-smooth pb-4">
+                    {onlineAds.map((item) => {
+                      const cardImages = item.onlineImages && item.onlineImages.length > 0
+                        ? item.onlineImages
+                        : (item.images && item.images.length > 0 ? item.images : [item.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"]);
+
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => {
+                            setSelectedAdDetail(item);
+                            setActiveImageIndex(0);
+                            setIsSaved(false);
+                          }}
+                          className="snap-start shrink-0 w-[240px] bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-[340px] cursor-pointer text-left relative"
+                        >
+                          {/* Thumbnail layout with profileType */}
+                          <div className="relative w-full h-36 bg-slate-50 overflow-hidden shrink-0">
+                            <img 
+                              src={cardImages[0]} 
+                              alt={item.name} 
+                              className="w-full h-full object-cover" 
+                              referrerPolicy="no-referrer"
+                            />
+                            <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[7px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                              {item.profileType}
+                            </span>
+                          </div>
+
+                          {/* Description & info content */}
+                          <div className="p-4 flex-1 flex flex-col justify-between">
+                            <div className="space-y-1">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-[#2dadac] block truncate">
+                                {item.titleOrActivity || (item.profileType === 'Travailleur' ? item.job : (item.profileType === 'Propriétaire' ? item.equipmentCategory : (item.profileType === 'Agence' ? 'IMMOBILIER' : 'ENTREPRISE')))}
+                              </span>
+                              <h4 className="text-sm font-black text-slate-900 tracking-tight uppercase truncate">
+                                {item.name}
+                              </h4>
+                              
+                              <div className="flex items-center gap-1 mt-1 text-slate-500">
+                                <MapPin className="h-3 w-3 text-[#ff00ff]" />
+                                <span className="text-[9px] font-black uppercase tracking-tight text-slate-600 truncate">{item.city}</span>
+                              </div>
+
+                              <p className="text-[11px] text-gray-500 font-medium leading-relaxed line-clamp-2 mt-1.5 h-8">
+                                {item.description || item.skillsDescription || "Aucune description fournie par le prestataire."}
+                              </p>
+                            </div>
+
+                            {/* Action label resembling see details button */}
+                            <div className="w-full mt-3 bg-slate-50 text-slate-705 font-black text-[9px] uppercase tracking-widest text-center py-2.5 rounded-xl border border-slate-100/60 hover:bg-slate-100 transition-colors">
+                              VOIR L'ANNONCE
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Functional Search Bar */}
             <div className="w-full max-w-xs relative">
@@ -1024,6 +1127,274 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                             onBack={() => setShowSmartRegistration(false)}
                         />
                     </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Dynamic announcement detailed overlay */}
+              <AnimatePresence>
+                {selectedAdDetail && (
+                  <motion.div
+                    initial={{ opacity: 0, y: '100%' }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: '100%' }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className="fixed inset-0 z-[5000] bg-white flex flex-col overflow-y-auto scrollbar-hide select-none"
+                  >
+                    {/* Top Bar Floating Buttons */}
+                    <div className="absolute top-4 left-4 z-[5010]">
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedAdDetail(null)}
+                        className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 active:scale-90 transition-all cursor-pointer border border-white/10"
+                        title="Retour"
+                      >
+                        <svg className="w-5 h-5 stroke-current -ml-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={3.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="absolute top-4 right-4 z-[5010] flex items-center gap-2">
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setIsSaved(prev => !prev);
+                          audioService.speak(isSaved ? "Retiré des favoris" : "Annonce ajoutée aux favoris");
+                        }}
+                        className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition-all cursor-pointer border border-white/10"
+                      >
+                        <Heart className={`w-5 h-5 ${isSaved ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+                      </button>
+                      
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          if (navigator.share) {
+                            navigator.share({
+                              title: selectedAdDetail.name,
+                              text: selectedAdDetail.description || selectedAdDetail.skillsDescription || "",
+                              url: window.location.href,
+                            }).catch(console.error);
+                          } else {
+                            try {
+                              navigator.clipboard.writeText(window.location.href);
+                              audioService.speak("Lien copié dans le presse-papier");
+                            } catch (e) {
+                              alert("Lien de l'annonce : " + window.location.href);
+                            }
+                          }
+                        }}
+                        className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition-all cursor-pointer border border-white/10"
+                      >
+                        <Share2 className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+
+                    {/* Image View Area */}
+                    {(() => {
+                      const detailImages = selectedAdDetail.onlineImages && selectedAdDetail.onlineImages.length > 0
+                        ? selectedAdDetail.onlineImages
+                        : (selectedAdDetail.images && selectedAdDetail.images.length > 0 ? selectedAdDetail.images : [selectedAdDetail.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"]);
+                        
+                      return (
+                        <>
+                          <div className="relative w-full h-[45vh] sm:h-[50vh] bg-slate-100 overflow-hidden shrink-0">
+                            <div className="w-full h-full relative">
+                              {detailImages.map((imgUrl: string, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                                    idx === activeImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                                  }`}
+                                >
+                                  <img
+                                    src={imgUrl}
+                                    alt={`product-${idx}`}
+                                    className="w-full h-full object-cover"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Center Chevron Controllers */}
+                            {detailImages.length > 1 && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveImageIndex((prev) => (prev - 1 + detailImages.length) % detailImages.length);
+                                  }}
+                                  className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
+                                >
+                                  <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveImageIndex((prev) => (prev + 1) % detailImages.length);
+                                  }}
+                                  className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
+                                >
+                                  <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                                </button>
+                              </>
+                            )}
+
+                            {/* Bottom visual dots / counter */}
+                            <div className="absolute bottom-5 left-5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-black z-20 tracking-wider">
+                              {activeImageIndex + 1} / {detailImages.length}
+                            </div>
+                            
+                            {detailImages.length > 1 && (
+                              <div className="absolute bottom-5 right-5 flex gap-1 z-20 bg-black/40 backdrop-blur-[2px] px-2 py-1 rounded-full border border-white/10 text-white font-black">
+                                {detailImages.map((_: any, idx: number) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setActiveImageIndex(idx)}
+                                    className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                      idx === activeImageIndex ? 'bg-orange-500 scale-125' : 'bg-white/60 hover:bg-white'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Body Information */}
+                          <div className="flex-1 bg-white rounded-t-[2.5rem] -mt-6 relative z-30 p-6 md:p-8 space-y-6 pb-2c pb-32 text-left">
+                            <div className="space-y-1.5">
+                              <span className="bg-[#ff4500]/10 text-[#ff4500] text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
+                                {selectedAdDetail.profileType}
+                              </span>
+                              <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight uppercase pt-2">
+                                {selectedAdDetail.name}
+                              </h2>
+                              <p className="text-xs font-black text-[#2dadac] uppercase tracking-wider">
+                                {selectedAdDetail.titleOrActivity || (selectedAdDetail.profileType === 'Travailleur' ? selectedAdDetail.job : (selectedAdDetail.profileType === 'Propriétaire' ? selectedAdDetail.equipmentCategory : (selectedAdDetail.profileType === 'Agence' ? 'IMMOBILIER' : 'ENTREPRISE')))}
+                              </p>
+                            </div>
+
+                            {/* Location Display */}
+                            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-3">
+                              <div className="w-8 h-8 bg-[#ff00ff]/10 text-[#ff00ff] rounded-full flex items-center justify-center shrink-0">
+                                <MapPin className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Localisation de l'offre</p>
+                                <p className="text-xs font-black text-slate-800 uppercase truncate">{selectedAdDetail.city}, CÔTE D'IVOIRE</p>
+                              </div>
+                            </div>
+
+                            {/* Description block */}
+                            <div className="space-y-2">
+                              <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Description de l'offre</h3>
+                              <p className="text-xs text-slate-600 font-semibold leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100/50 whitespace-pre-line">
+                                {selectedAdDetail.description || selectedAdDetail.skillsDescription || "Aucune description de service n'a été spécifiée."}
+                              </p>
+                            </div>
+
+                            {/* Complementary data */}
+                            <div className="space-y-2">
+                              <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Informations complémentaires</h3>
+                              <div className="divide-y divide-slate-100 bg-slate-50 border border-slate-100/80 rounded-2xl overflow-hidden text-xs">
+                                {selectedAdDetail.profileType === 'Travailleur' && (
+                                  <>
+                                    <div className="flex justify-between items-center py-3 px-4">
+                                      <span className="text-slate-500 font-bold">Salaire souhaité</span>
+                                      <span className="font-extrabold text-slate-900 uppercase">
+                                        {selectedAdDetail.desiredSalary ? `${selectedAdDetail.desiredSalary} FCFA / ${selectedAdDetail.salaryPeriod === 'Par semaine' ? 'Semaine' : 'Mois'}` : 'Non spécifié'}
+                                      </span>
+                                    </div>
+                                    {selectedAdDetail.job && (
+                                      <div className="flex justify-between items-center py-3 px-4">
+                                        <span className="text-slate-500 font-bold">Métier</span>
+                                        <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.job}</span>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+
+                                {selectedAdDetail.profileType === 'Agence' && (
+                                  <>
+                                    <div className="flex justify-between items-center py-3 px-4">
+                                      <span className="text-slate-500 font-bold">Biens proposés</span>
+                                      <span className="font-extrabold text-slate-900 uppercase">
+                                        {selectedAdDetail.propertyTypes ? (Array.isArray(selectedAdDetail.propertyTypes) ? selectedAdDetail.propertyTypes.join(', ') : selectedAdDetail.propertyTypes) : 'Tous types'}
+                                      </span>
+                                    </div>
+                                    {selectedAdDetail.agencyName && (
+                                      <div className="flex justify-between items-center py-3 px-4">
+                                        <span className="text-slate-500 font-bold">Nom de l'agence</span>
+                                        <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyName}</span>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+
+                                {selectedAdDetail.profileType === 'Propriétaire' && (
+                                  <>
+                                    <div className="flex justify-between items-center py-3 px-4">
+                                      <span className="text-slate-500 font-bold">Catégorie d'équipement</span>
+                                      <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.equipmentCategory || 'Général'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-3 px-4">
+                                      <span className="text-slate-500 font-bold">Unités disponibles</span>
+                                      <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.equipmentsAvailable || '1'}</span>
+                                    </div>
+                                  </>
+                                )}
+
+                                {selectedAdDetail.profileType === 'Entreprise' && (
+                                  <>
+                                    <div className="flex justify-between items-center py-3 px-4">
+                                      <span className="text-slate-500 font-bold">Domaine d'activité</span>
+                                      <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyDomain || 'Général'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-3 px-4">
+                                      <span className="text-slate-500 font-bold">Auxiliaires services</span>
+                                      <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyServices || 'Inconnu'}</span>
+                                    </div>
+                                  </>
+                                )}
+
+                                <div className="flex justify-between items-center py-3 px-4">
+                                  <span className="text-slate-500 font-bold">Statut de l'annonce</span>
+                                  <span className="text-emerald-500 font-black uppercase flex items-center gap-1.5 text-[10px]">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    ACTIVE EN LIGNE
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Sticky bottom floating button wrapper */}
+                          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 border-t border-slate-100 backdrop-blur-md z-[5020] flex justify-center">
+                            <div className="w-full max-w-sm">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  window.dispatchEvent(new CustomEvent('go-to-demande-recherche', { detail: { targetProfile: selectedAdDetail } }));
+                                  setSelectedAdDetail(null);
+                                }}
+                                className="w-full py-4.5 bg-[#ff4500] hover:bg-[#e03a00] active:scale-[0.98] text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                              >
+                                <svg className="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                </svg>
+                                DEMANDE DE SERVICE
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>

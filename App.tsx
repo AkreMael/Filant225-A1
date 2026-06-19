@@ -265,6 +265,25 @@ const App: React.FC = () => {
     }
   }, [activeTab, menuView, offerSubView]);
 
+  // Listen to cross-tab navigation custom events to switch views and target ads on map
+  useEffect(() => {
+    const handleGoToDemande = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const targetProfile = customEvent.detail?.targetProfile || null;
+      
+      navigateTo({ activeTab: Tab.Menu, menuView: 'demande_recherche' });
+      
+      if (targetProfile) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('auto-pin-profile', { detail: { profile: targetProfile } }));
+        }, 300);
+      }
+    };
+    
+    window.addEventListener('go-to-demande-recherche', handleGoToDemande);
+    return () => window.removeEventListener('go-to-demande-recherche', handleGoToDemande);
+  }, [navigateTo]);
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showScannerGlobal, setShowScannerGlobal] = useState(false);
   const [paymentConfirmationContext, setPaymentConfirmationContext] = useState<PaymentConfirmationContext | null>(null);
