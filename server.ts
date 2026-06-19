@@ -295,13 +295,104 @@ async function startServer() {
         const col = collections[index];
         snapshot.docs.forEach(docSnap => {
           const data = docSnap.data();
-          // Map different schemas to a common Worker interface
-          // Ensure name and description are always present and clear
-          const name = data.fullName || data.agencyName || data.ownerName || data.companyName || data.name || "Professionnel";
-          const description = data.jobTitle || data.description || data.services?.join(", ") || data.equipmentType || "Professionnel qualifié";
           
+          let name = "Professionnel";
+          let description = "";
+
+          // We map the card's main title ('name') to the trade/profession (métier)
+          // and keep 'description' as the details of the service.
+          if (col === "Travailleurs") {
+            name = data.job || data.jobTitle || data.service || "Professionnel";
+            description = data.description || `Disponible pour : ${name}`;
+          } else if (col === "Agences immobilières") {
+            name = data.agencyName || "Agence immobilière";
+            description = data.description || data.services?.join(", ") || "Services d'agence immobilière";
+          } else if (col === "Équipements") {
+            name = data.equipmentType || "Location d'équipements";
+            description = data.description || "Location d'équipements et accessoires";
+          } else if (col === "Entreprises") {
+            name = data.companyName || "Entreprise";
+            description = data.description || "Opportunité professionnelle";
+          }
+
+          // Fetch highly polished fallback descriptions if standard description is empty or generic
+          const nameLower = name.toLowerCase().trim();
+          let fallbackDesc = "";
+          
+          if (nameLower.includes('vendeuse') || nameLower.includes('vendeur')) {
+            fallbackDesc = "Assure la vente, l’accueil des clients et la gestion d’une boutique.";
+          } else if (nameLower.includes('cuisinier') || nameLower.includes('cuisinière') || nameLower.includes('cuisine')) {
+            fallbackDesc = "Prépare les repas pour restaurant, foyer, entreprise ou événements.";
+          } else if (nameLower.includes('serveur') || nameLower.includes('serveuse')) {
+            fallbackDesc = "Accueille les clients, sert les plats et s’occupe des commandes.";
+          } else if (nameLower.includes('coiffeur homme')) {
+            fallbackDesc = "Coupes et coiffures masculines, entretien barbe.";
+          } else if (nameLower.includes('coiffeuse femme') || nameLower.includes('coiffeuse') || nameLower.includes('coiffeur femme')) {
+            fallbackDesc = "Tresses, tissages, tressages africains et soins capillaires féminins.";
+          } else if (nameLower.includes('hôtesse d’accueil') || nameLower.includes('hotesse d’accueil')) {
+            fallbackDesc = "Accueille les visiteurs, gère les informations et la réception.";
+          } else if (nameLower.includes('chauffeur')) {
+            fallbackDesc = "(Taxi, VTC, Entreprise) Conduit les clients ou le personnel d’un lieu à un autre.";
+          } else if (nameLower.includes('agent d’entretien')) {
+            fallbackDesc = "Nettoyeur professionnel de bureaux et locaux.";
+          } else if (nameLower.includes('femme de ménage') || nameLower.includes('entretien')) {
+            fallbackDesc = "Entretien ménager rigoureux et soins à domicile.";
+          } else if (nameLower.includes('caissier') || nameLower.includes('caissière')) {
+            fallbackDesc = "Gère les paiements, la caisse et l’accueil dans les commerces.";
+          } else if (nameLower.includes('réceptionniste')) {
+            fallbackDesc = "Accueille les clients dans hôtels, entreprises ou agences.";
+          } else if (nameLower.includes('baby-sitter') || nameLower.includes('nounou')) {
+            fallbackDesc = "Garde les enfants de façon ponctuelle ou régulière.";
+          } else if (nameLower.includes('jardinier')) {
+            fallbackDesc = "Entretient les jardins, pelouses, fleurs et espaces verts.";
+          } else if (nameLower.includes('couturier') || nameLower.includes('couturière')) {
+            fallbackDesc = "Coupe, confectionne et retouche des vêtements.";
+          } else if (nameLower.includes('esthéticienne')) {
+            fallbackDesc = "Fait les soins du visage, manucure, pédicure, beauté.";
+          } else if (nameLower.includes('magasinier')) {
+            fallbackDesc = "Gère les stocks, rangement et réception des marchandises.";
+          } else if (nameLower.includes('manutentionnaire')) {
+            fallbackDesc = "Charge, décharge et organise les marchandises.";
+          } else if (nameLower.includes('agent de sécurité') || nameLower.includes('sécurité') || nameLower.includes('vigile')) {
+            fallbackDesc = "Assure la sécurité et la surveillance d’un commerce, bâtiment ou d’une résidence.";
+          } else if (nameLower.includes('laveur de vitres')) {
+            fallbackDesc = "Nettoyage professionnel de vitres et surfaces vitrées.";
+          } else if (nameLower.includes('climatisation') || nameLower.includes('climatiseur')) {
+            fallbackDesc = "Entretien, nettoyage et recharge de climatiseurs.";
+          } else if (nameLower.includes('caméra') || nameLower.includes('camera')) {
+            fallbackDesc = "Installation et configuration de systèmes de vidéosurveillance.";
+          } else if (nameLower.includes('pouf') || nameLower.includes('poufs')) {
+            fallbackDesc = "Création et réparation de poufs et coussins.";
+          } else if (nameLower.includes('fenêtre') || nameLower.includes('fenetre') || nameLower.includes('vitrée')) {
+            fallbackDesc = "Pose de menuiserie aluminium et vitrerie.";
+          } else if (nameLower.includes('menuisier')) {
+            fallbackDesc = "Travaux de menuiserie bois et réparation de meubles.";
+          } else if (nameLower.includes('aide à domicile')) {
+            fallbackDesc = "Services d’aide à domicile et aide de vie quotidienne.";
+          } else if (nameLower.includes('garde malade')) {
+            fallbackDesc = "Garde malade de jour comme de nuit pour personnes dépendantes.";
+          } else if (nameLower.includes('manucure')) {
+            fallbackDesc = "Soin et mise en beauté des mains et des pieds à domicile.";
+          } else if (nameLower.includes('massage')) {
+            fallbackDesc = "Soins esthétiques du corps, massages de bien-être.";
+          } else if (nameLower.includes('maquilleuse') || nameLower.includes('maquillage')) {
+            fallbackDesc = "Maquillage professionnel pour mariages, soirées et événements.";
+          } else if (nameLower.includes('pâtissier') || nameLower.includes('patissier') || nameLower.includes('pâtissière')) {
+            fallbackDesc = "Création et préparation de pâtisseries artisanales pour événements et au quotidien.";
+          } else if (nameLower.includes('plombier')) {
+            fallbackDesc = "Dépannage plomberie ultra rapide et tuyauterie.";
+          } else if (nameLower.includes('électricien') || nameLower.includes('electricien')) {
+            fallbackDesc = "Dépannage électricité urgent et installation complète.";
+          } else if (nameLower.includes('maçon') || nameLower.includes('macon')) {
+            fallbackDesc = "Maçonnerie générale, chapes, dalles et construction de murs.";
+          }
+
+          if (fallbackDesc && (!description || description.includes('Disponible pour') || description === 'Professionnel qualifié')) {
+            description = fallbackDesc;
+          }
+
           allDocs.push({
-            id: docSnap.id,
+            id: `${col}-${docSnap.id}`,
             name: name,
             profileImageUrl: data.profileImageUrl || "",
             phone: data.phone || "",
