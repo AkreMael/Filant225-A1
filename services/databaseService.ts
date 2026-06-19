@@ -2537,6 +2537,34 @@ export const databaseService = {
     });
   },
 
+  saveSignalement: async (phone: string, reportedProfile: any, reason: string) => {
+    try {
+      const sanitizedPhone = phone.replace(/\D/g, '');
+      const msg = {
+        text: `⚠️ SIGNALEMENT : Le profil de "${reportedProfile.name}" (${reportedProfile.phone}) a été signalé. Raison : ${reason}`,
+        sender: 'system',
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        adminReadStatus: 'LU'
+      };
+      await databaseService.saveTypedChatMessage('Privee', sanitizedPhone, msg);
+      
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      await addDoc(collection(db, 'Signalements'), {
+        reporterPhone: sanitizedPhone,
+        reportedPhone: reportedProfile.phone || '',
+        reportedName: reportedProfile.name || '',
+        reportedType: reportedProfile.profileType || 'Non spécifié',
+        reason,
+        timestamp: serverTimestamp()
+      });
+      return true;
+    } catch (e) {
+      console.error("Error saving signalement:", e);
+      return false;
+    }
+  },
+
   getCardData: (phone: string, role: string) => {
     // Card logic removed, returning null
     return null;

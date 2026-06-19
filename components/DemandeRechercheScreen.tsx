@@ -436,6 +436,10 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
   // New subpath states for "Demande de service" form
   const [selectedItemForForm, setSelectedItemForForm] = useState<InscriptionResult | null>(null);
+  const [showActionOptions, setShowActionOptions] = useState<InscriptionResult | null>(null);
+  const [showReportModal, setShowReportModal] = useState<InscriptionResult | null>(null);
+  const [reportReason, setReportReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   // Agence fields
   const [agenceTypeBien, setAgenceTypeBien] = useState<'Appartement' | 'Terrain' | 'Bureau' | 'Local commercial'>('Appartement');
@@ -1817,13 +1821,13 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5">
+                        <div className="flex flex-col items-end gap-1.5 w-full">
                           <button
-                            onClick={() => setSelectedItemForForm(pinnedProfile)}
-                            className="bg-[#f06e30] hover:bg-[#e05d1f] active:scale-95 text-white py-2.5 px-4.5 rounded-xl font-black uppercase text-[10.5px] tracking-widest transition-all shadow-md flex items-center justify-center gap-1.5 animate-in zoom-in-95 duration-200 cursor-pointer"
+                            onClick={() => setShowActionOptions(pinnedProfile)}
+                            className="bg-[#f06e30] hover:bg-[#e05d1f] active:scale-95 text-white py-2 px-3 rounded-xl font-black uppercase text-[10px] tracking-normal transition-all shadow-md flex items-center justify-center gap-1.5 animate-in zoom-in-95 duration-200 cursor-pointer w-full text-center"
                             id="pinned-submit-demande-btn"
                           >
-                            <span>DEMANDE</span>
+                            <span>Cliquez ici pour soumettre votre demande</span>
                           </button>
                           <button 
                             onClick={() => setPinnedProfile(null)}
@@ -2823,6 +2827,167 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Modern Popups/Modals for Actions and Reports */}
+      {showActionOptions && (
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4">
+          {/* Backdrop with elegant blur */}
+          <div 
+            onClick={() => setShowActionOptions(null)}
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+          />
+          {/* Card Modal */}
+          <div className="relative bg-white dark:bg-slate-950 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200/50 dark:border-slate-800 animate-in zoom-in-95 ease-out duration-250 text-left">
+            <div className="space-y-4">
+              <div className="mx-auto w-12 h-12 bg-orange-50 dark:bg-orange-950 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="space-y-1.5 text-center">
+                <h3 className="font-sans font-black text-sm uppercase text-slate-900 dark:text-white tracking-tight leading-snug">{showActionOptions.name}</h3>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{showActionOptions.profileType} • {showActionOptions.city}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Choisissez l'action que vous souhaitez effectuer :</p>
+              </div>
+
+              {/* Options Stack */}
+              <div className="space-y-2.5 pt-2">
+                <button
+                  onClick={() => {
+                    setSelectedItemForForm(showActionOptions);
+                    setShowActionOptions(null);
+                  }}
+                  className="w-full bg-orange-600 hover:bg-orange-700 active:scale-98 text-white py-3.5 px-4 rounded-2xl font-black uppercase text-[11px] tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
+                >
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Soumettre une demande de service
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowReportModal(showActionOptions);
+                    setShowActionOptions(null);
+                  }}
+                  className="w-full bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/30 dark:hover:bg-red-950/50 py-3.5 px-4 rounded-2xl font-black uppercase text-[11px] tracking-wider border border-red-200/50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Signaler ce profil / cette annonce
+                </button>
+
+                <button
+                  onClick={() => setShowActionOptions(null)}
+                  className="w-full py-2 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer border-none bg-transparent"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReportModal && (
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4">
+          <div 
+            onClick={() => {
+              if (!isSubmittingReport) setShowReportModal(null);
+            }}
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+          />
+          <div className="relative bg-white dark:bg-slate-950 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200/50 dark:border-slate-800 animate-in zoom-in-95 ease-out duration-250 text-left">
+            <div className="space-y-4">
+              <div className="mx-auto w-12 h-12 bg-red-50 dark:bg-red-950/40 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="space-y-1.5 text-center">
+                <h3 className="font-sans font-black text-sm uppercase text-slate-900 dark:text-white tracking-tight">Signaler un abus</h3>
+                <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">{showReportModal.name}</p>
+                <p className="text-xs text-slate-500 font-medium">Pourquoi souhaitez-vous signaler ce prestataire / cette annonce ?</p>
+              </div>
+
+              {/* Reasons list */}
+              <div className="space-y-2 text-left pt-2">
+                {[
+                  "Faux profil / tentative d'arnaque",
+                  "Prestataire introuvable ou injoignable",
+                  "Comportement abusif / inapproprié",
+                  "Tarif ou service mensonger",
+                  "Autre problème"
+                ].map((reason) => (
+                  <button
+                    key={reason}
+                    onClick={() => setReportReason(reason)}
+                    type="button"
+                    className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-left border transition-all flex items-center justify-between cursor-pointer ${
+                      reportReason === reason
+                        ? 'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900'
+                        : 'bg-slate-50 text-slate-700 border-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800 hover:bg-slate-100/60'
+                    }`}
+                  >
+                    <span>{reason}</span>
+                    {reportReason === reason && (
+                      <span className="w-2 h-2 rounded-full bg-red-600"></span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-2 pt-2">
+                <button
+                  disabled={!reportReason || isSubmittingReport}
+                  onClick={async () => {
+                    if (!reportReason) return;
+                    setIsSubmittingReport(true);
+                    try {
+                      const success = await databaseService.saveSignalement(
+                        user?.phone || 'Anonyme',
+                        showReportModal,
+                        reportReason
+                      );
+                      if (success) {
+                        alert(`Signalement enregistré d'office ! Merci pour votre collaboration. Nos administrateurs vont examiner le profil de ${showReportModal.name} dans les plus brefs délais.`);
+                      } else {
+                        alert("Erreur lors de l'enregistrement de votre signalement. Veuillez réessayer.");
+                      }
+                    } catch (err) {
+                      console.error(err);
+                    } finally {
+                      setIsSubmittingReport(false);
+                      setReportReason('');
+                      setShowReportModal(null);
+                    }
+                  }}
+                  className={`w-full py-3.5 px-4 rounded-2xl font-black uppercase text-[11px] tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 text-white border-none ${
+                    !reportReason || isSubmittingReport
+                      ? 'bg-slate-300 dark:bg-slate-800 cursor-not-allowed opacity-50'
+                      : 'bg-red-600 hover:bg-red-700 active:scale-98 cursor-pointer'
+                  }`}
+                >
+                  {isSubmittingReport ? 'Envoi...' : 'Soumettre le signalement'}
+                </button>
+
+                <button
+                  disabled={isSubmittingReport}
+                  onClick={() => {
+                    setReportReason('');
+                    setShowReportModal(null);
+                  }}
+                  className="w-full py-2 px-4 text-slate-500 font-bold uppercase text-[10px] tracking-wider hover:text-slate-850 dark:hover:text-white transition-all cursor-pointer border-none bg-transparent"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
