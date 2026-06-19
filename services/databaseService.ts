@@ -89,6 +89,21 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 5000): Promise<
     ]);
 };
 
+const convertFileOrBlobToBase64 = (fileOrBlob: File | Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        if (typeof window === 'undefined') {
+            reject(new Error('FileReader is only available in the browser'));
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            resolve(reader.result as string);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(fileOrBlob);
+    });
+};
+
 // --- User Management ---
 const getUsers = (): User[] => {
     try {
@@ -1021,16 +1036,65 @@ export const databaseService = {
   },
 
   uploadFile: async (file: File | Blob | string, path: string): Promise<string> => {
+    console.log(`[Upload Debug] uploadFile started for path: ${path}`);
     try {
-      const fileRef = storageRef(storage, path);
-      if (typeof file === 'string') {
-        await uploadString(fileRef, file, 'data_url');
-      } else {
-        await uploadBytes(fileRef, file);
+      // 1. First attempt: Upload to Firebase Storage with a strict 3500ms timeout
+      try {
+        const fileRef = storageRef(storage, path);
+        if (typeof file === 'string') {
+          console.log(`[Upload Debug] Input is string (length: ${file.length}). Uploading to Firebase Storage...`);
+          await withTimeout(uploadString(fileRef, file, 'data_url'), 3500);
+        } else {
+          console.log(`[Upload Debug] Input is File/Blob. Uploading to Firebase Storage...`);
+          await withTimeout(uploadBytes(fileRef, file), 3500);
+        }
+        
+        const downloadUrl = await withTimeout(getDownloadURL(fileRef), 2000);
+        console.log(`[Upload Debug] Firebase Storage success! URL: ${downloadUrl}`);
+        return downloadUrl;
+      } catch (storageError: any) {
+        console.warn(`[Upload Debug] Firebase Storage failed/timed out, falling back to local server upload:`, storageError?.message || storageError);
       }
-      return await getDownloadURL(fileRef);
-    } catch (e) {
-      console.error(`Error uploading file to ${path}:`, e);
+
+      // 2. Fallback attempt: Upload to local server /api/upload-base64
+      let base64String = '';
+      if (typeof file === 'string') {
+        base64String = file;
+      } else {
+        base64String = await convertFileOrBlobToBase64(file);
+      }
+
+      // Extract raw filename
+      const filename = path.split('/').pop() || `${Date.now()}_upload.jpg`;
+      console.log(`[Upload Debug] Dispatching fallback to local server. Target filename: ${filename}`);
+
+      const response = await fetch("/api/upload-base64", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          base64: base64String,
+          filename: filename
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.url) {
+          console.log(`[Upload Debug] Local fallback upload success! URL: ${result.url}`);
+          return result.url;
+        }
+      }
+      throw new Error(`Local server API responded with status ${response.status}`);
+    } catch (e: any) {
+      console.error(`[Upload Debug] Both Firebase Storage and local fallback upload failed completely for path: ${path}`, e);
+      
+      // If input was already a base64 string, return it rather than completely failing
+      if (typeof file === 'string') {
+        console.warn(`[Upload Debug] Returning raw string as desperate last resort fallback.`);
+        return file;
+      }
       throw e;
     }
   },
@@ -2066,47 +2130,14 @@ export const databaseService = {
         return base64;
       }
 
-      const sanitizedPhone = phone.replace(/\D/g, '');
+      const sanitizedPhone = phone.replace(/\D/g, '') || 'anonymous';
       const uniqName = `${Date.now()}_${Math.random().toString(36).substring(2, 10)}.jpg`;
       const storagePath = `Announcements/${sanitizedPhone}/${uniqName}`;
 
-      try {
-        const downloadUrl = await databaseService.uploadFile(base64, storagePath);
-        if (downloadUrl) {
-          console.log("Image successfully uploaded to Firebase Storage:", downloadUrl);
-          return downloadUrl;
-        }
-      } catch (storageError) {
-        console.warn("Firebase Storage upload failed, falling back to local server upload:", storageError);
-      }
-
-      try {
-        const response = await fetch("/api/upload-base64", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            base64: base64,
-            filename: uniqName
-          }),
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          if (result.url) {
-            console.log("Image successfully uploaded to local server:", result.url);
-            return result.url;
-          }
-        }
-        throw new Error("Local server upload response not OK");
-      } catch (serverError) {
-        console.error("Local server upload fallback failed:", serverError);
-      }
-
-      return base64;
+      console.log(`[Upload Debug] uploadImageOrFallback calling uploadFile for target: ${storagePath}`);
+      return await databaseService.uploadFile(base64, storagePath);
     } catch (err) {
-      console.error("Error in uploadImageOrFallback:", err);
+      console.error("Error in uploadImageOrFallback wrapper:", err);
       return base64;
     }
   },

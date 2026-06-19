@@ -720,6 +720,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   const handleOnlineFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user || !user.phone) {
+      alert("Erreur de session: Impossible de soumettre le formulaire car votre numéro de téléphone n'est pas détecté. Veuillez vous reconnecter.");
+      return;
+    }
+    
     if (formProfileType === 'Travailleur') {
       if (!formName.trim() || !formCity.trim() || !formJob.trim() || !formDesc.trim() || !formSalary.trim()) {
         alert("Veuillez remplir tous les champs obligatoires (*) pour votre profil de Travailleur.");
