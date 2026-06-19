@@ -1660,6 +1660,156 @@ export const databaseService = {
               adminReadStatus: 'LU'
             };
             await databaseService.saveTypedChatMessage('Privee', userPhone, msg);
+
+            // 4. Automatic system check and target payment execution
+            if (payment.targetPaymentType) {
+              const targetAmountNum = parseFloat(payment.targetAmount || '0') || 0;
+              if (targetAmountNum > 0) {
+                // Deduct from the wallet automatically
+                await setDoc(walletRef, {
+                  balance: increment(-targetAmountNum),
+                  updatedAt: serverTimestamp()
+                }, { merge: true });
+
+                // Record transaction in wallet history
+                const refCode = `REF-AUTO-${Date.now().toString(36).toUpperCase()}`;
+                await addDoc(collection(db, 'WalletTransactions'), {
+                  phone: userPhone,
+                  userName: payment.userName || 'Utilisateur',
+                  userCity: payment.city || 'Non spécifiée',
+                  type: 'PAYMENT',
+                  amount: -targetAmountNum,
+                  paymentNumber: 'FILANT°225 PORTEFEUILLE (AUTO)',
+                  description: `Paiement automatique - ${payment.targetTitle || payment.targetPaymentType}`,
+                  status: 'SUCCESS',
+                  timestamp: Date.now(),
+                  refCode,
+                  dateStr: new Date().toLocaleString('fr-FR')
+                });
+
+                // Write virtual successful payment log into RTDB/Admin overview
+                await databaseService.savePaymentToRTDB({
+                  userId: userPhone,
+                  userName: payment.userName || 'Utilisateur',
+                  phone: payment.phone || userPhone,
+                  city: payment.city || 'Non spécifiée',
+                  amount: payment.targetAmount || targetAmountNum.toString(),
+                  title: payment.targetTitle || `Notification automatique - ${payment.targetPaymentType}`,
+                  serviceType: payment.targetTitle || payment.targetPaymentType,
+                  paymentType: payment.targetPaymentType,
+                  waveNumber: 'FILANT°225 PORTEFEUILLE (AUTO)',
+                  timestamp: Date.now(),
+                  status: 'Paiement validé'
+                });
+
+                // Process specific activation / status logic based on target type
+                if (payment.targetPaymentType === 'Inscription' || targetAmountNum === 310) {
+                  await databaseService.updateQRCodeActivation(userPhone, {
+                    status: "En attente paiement activation (7 100 FCFA)",
+                    fraisDossierPayes: true,
+                    updatedAt: serverTimestamp()
+                  });
+                } else if (payment.targetPaymentType === 'Activation' || targetAmountNum === 7100) {
+                  const expiryDate = new Date();
+                  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                  await databaseService.updateQRCodeActivation(userPhone, {
+                    status: "Code QR Actif",
+                    isVerified: true,
+                    expiryDate: expiryDate.toISOString(),
+                    activationDate: new Date().toISOString(),
+                    updatedAt: serverTimestamp()
+                  });
+                } else if (payment.targetPaymentType === 'Renouvellement' || targetAmountNum === 500) {
+                  const expiryDate = new Date();
+                  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                  await databaseService.updateQRCodeActivation(userPhone, {
+                    status: "Code QR Actif",
+                    expiryDate: expiryDate.toISOString(),
+                    updatedAt: serverTimestamp()
+                  });
+                } else if (payment.targetPaymentType === 'Mise en ligne') {
+                  const isOneMonth = payment.targetTitle?.toLowerCase().includes('mois') || payment.targetTitle?.toLowerCase().includes('350') || targetAmountNum === 350;
+                  const durationMs = isOneMonth ? 30 * 24 * 3600 * 1000 : 7 * 24 * 3600 * 1000;
+                  const onlineStart = Date.now();
+                  const onlineEnd = onlineStart + durationMs;
+
+                  const docRef = doc(db, 'Inscriptions', userPhone);
+                  const userInscr = await getDoc(docRef);
+                  let profileType = 'Travailleur';
+                  if (userInscr.exists()) {
+                    profileType = userInscr.data()?.profileType || 'Travailleur';
+                  }
+
+                  const updatedFields = {
+                    isOnline: true,
+                    onlinePending: false,
+                    onlineApproved: true,
+                    onlineRefused: false,
+                    onlineStart,
+                    onlineEnd,
+                    updatedAt: serverTimestamp()
+                  };
+
+                  await setDoc(docRef, updatedFields, { merge: true });
+
+                  let targetCollection = '';
+                  if (profileType === 'Travailleur') targetCollection = 'Travailleurs';
+                  else if (profileType === 'Propriétaire' || profileType === 'Equipement') targetCollection = 'Équipements';
+                  else if (profileType === 'Agence' || profileType === 'Agence immobilière') targetCollection = 'Agences immobilières';
+                  else if (profileType === 'Entreprise') targetCollection = 'Entreprises';
+
+                  if (targetCollection) {
+                    const profRef = doc(db, targetCollection, userPhone);
+                    await setDoc(profRef, updatedFields, { merge: true });
+                  }
+
+                  databaseService.triggerEvolutionUpdate(userPhone);
+                }
+
+                // If form data or favorites should copy
+                if (payment.targetFormData) {
+                  try {
+                    await databaseService.saveFavorite(userPhone, {
+                      title: payment.targetFormData.formTitle,
+                      date: new Date().toISOString(),
+                      formType: payment.targetFormData.formType,
+                      answers: payment.targetFormData.data,
+                      userInfo: {
+                        phone: payment.phone || userPhone,
+                        name: payment.userName || 'Utilisateur',
+                        city: payment.city || 'Non spécifiée'
+                      },
+                      totalPrice: targetAmountNum
+                    });
+                    
+                    await databaseService.saveFormSubmission({
+                      userPhone: userPhone,
+                      formType: payment.targetFormData.formType,
+                      formTitle: payment.targetFormData.formTitle,
+                      data: payment.targetFormData.data,
+                      whatsappMessage: payment.targetFormData.whatsappMessage
+                    });
+                  } catch (formErr) {
+                    console.error("Error saving automatic form submission:", formErr);
+                  }
+                }
+
+                // Send unified final confirmation message
+                const isMiseEnLigne = payment.targetPaymentType === 'Mise en ligne';
+                const autoSuccessMsg = isMiseEnLigne 
+                  ? `✅ Félicitations ! Votre demande de mise en ligne d'annonce a été validée d'office. Suite à la validation de votre dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA par l'administrateur, votre portefeuille a été crédité, le prélèvement automatique de l'inscription (${targetAmountNum} FCFA) a été effectué et votre annonce est désormais visible pour tous les utilisateurs.`
+                  : `✅ Félicitations ! Suite à la validation de votre dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA par l'administrateur, votre portefeuille a été crédité, le paiement automatique pour le service "${payment.targetTitle || payment.targetPaymentType}" (${targetAmountNum} FCFA) a été prélevé et activé automatiquement !`;
+
+                const autoMsg = {
+                  text: autoSuccessMsg,
+                  sender: 'admin',
+                  timestamp: new Date().toISOString(),
+                  isRead: false,
+                  adminReadStatus: 'LU'
+                };
+                await databaseService.saveTypedChatMessage('Privee', userPhone, autoMsg);
+              }
+            }
           }
         }
       } else {

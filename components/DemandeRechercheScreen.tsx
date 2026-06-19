@@ -1925,8 +1925,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           {/* Pending or Refused status announcements */}
           {currentUserAd?.onlinePending === true && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-800 font-bold text-xs space-y-1 mt-3 animate-in fade-in duration-300">
-              <p className="font-extrabold uppercase tracking-wide">⏳ Demande en attente d'approbation</p>
-              <p className="text-amber-700/90 font-medium">Votre paiement a été reçu et votre demande de mise en ligne de votre annonce est en cours d'analyse et de validation par l'administrateur. Merci de patienter.</p>
+              <p className="font-extrabold uppercase tracking-wide">⏳ En attente de validation</p>
+              <p className="text-amber-700/90 font-medium">Votre demande d'inscription et de mise en ligne est en attente de validation par l'administrateur. Votre preuve de dépôt/paiement est en cours de vérification. L'annonce sera publiée automatiquement dès validation. Merci de patienter.</p>
             </div>
           )}
 

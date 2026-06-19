@@ -456,7 +456,11 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           paymentType: "Dépôt",
           waveNumber: depositPhone,
           timestamp: Date.now(),
-          status: 'En attente'
+          status: 'En attente',
+          targetPaymentType: paymentType || null,
+          targetAmount: currentAmount || null,
+          targetTitle: title || null,
+          targetFormData: formData || null
         });
 
         if (path) {
