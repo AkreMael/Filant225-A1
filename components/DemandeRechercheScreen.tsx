@@ -231,6 +231,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
   // Real-time current user ad states & lightbox states
   const [currentUserAd, setCurrentUserAd] = useState<any | null>(null);
+  const [qrData, setQrData] = useState<any | null>(null);
+  const [showQRBlockedModal, setShowQRBlockedModal] = useState(false);
   const [isOnlineFormOpen, setIsOnlineFormOpen] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
@@ -494,6 +496,43 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     return () => unsubscribe();
   }, [user?.phone]);
 
+  // 3. Listen to current user's QR activation status in real-time
+  useEffect(() => {
+    if (!user?.phone) return;
+    const sanitizedPhone = user.phone.replace(/\D/g, '');
+    const docRef = doc(db, 'QRCodeActivations', sanitizedPhone);
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        setQrData(snap.data());
+      } else {
+        setQrData(null);
+      }
+    }, (err) => {
+      console.warn("Silent current user QR activation subscribe fail:", err);
+    });
+    return () => unsubscribe();
+  }, [user?.phone]);
+
+  const getQRActivationStep = () => {
+    if (!qrData) return 1;
+    if (qrData.requiresRegistration) return 1;
+    if (qrData.fraisDossierPayes === true) {
+      const status = qrData.status || '';
+      const isActive = status === "Code QR Actif";
+      if (status.includes("7 100") || status.includes("activation")) return 3;
+      if (isActive) return 4;
+      if (status.includes("500")) return 5;
+      return 3;
+    }
+    const s = qrData.status || '';
+    if (s.includes("310")) return 2;
+    if (s.includes("7 100")) return 3;
+    const isActive = s === "Code QR Actif";
+    if (isActive) return 4;
+    if (s.includes("500")) return 5;
+    return 1;
+  };
+
   // Set initial query on mount
   useEffect(() => {
     if (initialQuery) {
@@ -601,6 +640,12 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   };
 
   const handleOpenOnlineForm = () => {
+    const currentStep = getQRActivationStep();
+    if (currentStep < 3) {
+      setShowQRBlockedModal(true);
+      return;
+    }
+
     if (currentUserAd?.onlinePending === true) {
       alert("Votre demande de mise en ligne est actuellement en attente de validation par l'administrateur. Vous ne pouvez pas la modifier pour le moment.");
       return;
@@ -2573,6 +2618,49 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     </button>
                   </div>
                 </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showQRBlockedModal && (
+        <div 
+          className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
+          id="qr-blocked-modal"
+        >
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 md:p-8 space-y-6 shadow-2xl border border-slate-100 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-500 border border-amber-200">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight font-sans">
+                Activation requise
+              </h3>
+              <p className="text-sm font-bold text-slate-600 leading-relaxed font-sans mt-1">
+                Veuillez terminer l'activation de votre code QR avant de continuer.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setShowQRBlockedModal(false);
+                  onSelectTab(Tab.MyQRCode);
+                }}
+                className="w-full py-4 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black uppercase text-xs tracking-wider rounded-2xl transition-all shadow-md flex items-center justify-center gap-2 animate-pulse"
+                id="qr-redirect-btn"
+              >
+                <span>Ma carte QR</span>
+              </button>
+              
+              <button
+                onClick={() => setShowQRBlockedModal(false)}
+                className="w-full py-3 hover:bg-slate-50 text-slate-500 font-extrabold text-xs uppercase tracking-wider rounded-2xl transition-all"
+                id="qr-close-btn"
+              >
+                Fermer
+              </button>
             </div>
           </div>
         </div>
