@@ -108,6 +108,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [isNonValidated, setIsNonValidated] = useState(false);
   const [paymentPath, setPaymentPath] = useState<string | null>(null);
+  const [hasAutoPaid, setHasAutoPaid] = useState(false);
   
   const storageKey = `filant_wave_number_${user?.phone || 'default'}`;
   const [waveNumber, setWaveNumber] = useState(() => {
@@ -170,6 +171,23 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         if (data.status === 'Paiement validé' || data.status === 'Dépôt validé') {
           setPendingDepositStatus('SUCCESS');
           setShowDepositOverlay(false);
+          
+          // AUTO-FINALIZE SYSTEM:
+          // Since the server-side database validation automatically credits the wallet,
+          // deducts the required fee, and activates the profile/postings automatically,
+          // we transition the UI immediately to SUCCESS to avoid requiring double validations.
+          setIsSuccess(true);
+          setIsProcessing(false);
+          setIsNonValidated(false);
+          if (onSuccess) {
+            setTimeout(() => {
+              if (paymentType === 'Mise en ligne') {
+                (onSuccess as any)(true);
+              } else {
+                onSuccess();
+              }
+            }, 1850);
+          }
         } else if (data.status === 'Paiement non validé' || data.status === 'Dépôt non validé') {
           if (data.status === 'Dépôt non validé') {
             setPendingDepositStatus('FAILED');
@@ -178,7 +196,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
       }
     });
     return () => off(statusRef);
-  }, [pendingDepositPath]);
+  }, [pendingDepositPath, onSuccess, paymentType]);
 
   // Standard RTDB subscriber for payments (can be kept for backward comp or sync triggers if needed)
   useEffect(() => {
@@ -417,6 +435,22 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
       alert("Une erreur s'est produite lors du paiement.");
     }
   };
+
+  // AUTOMATIC CHECK AND PAYMENT EXECUTION (Case 1 & Case 2 reload):
+  // When the wallet balance is sufficient, we automatically trigger the payment.
+  useEffect(() => {
+    if (loadingWallet) return;
+    if (paymentType === 'Dépôt') return;
+    if (isProcessing || isSuccess || hasAutoPaid) return;
+
+    const needed = parseFloat(currentAmount);
+    if (isNaN(needed) || needed <= 0) return;
+
+    if (wallet.balance >= needed) {
+      setHasAutoPaid(true);
+      handlePay();
+    }
+  }, [loadingWallet, wallet.balance, currentAmount, paymentType, isProcessing, isSuccess, hasAutoPaid]);
 
   const handleManualValueChange = (val: string) => {
       setCurrentAmount(val);
@@ -871,7 +905,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               </div>
               <button 
                 onClick={handlePay}
-                disabled={isProcessing || isSuccess || !isValidated || isInsufficient || loadingWallet || !!paymentPath || pendingDepositStatus === 'PENDING'}
+                disabled={isProcessing || isSuccess || !isValidated || loadingWallet || !!paymentPath || pendingDepositStatus === 'PENDING'}
                 className={`flex-1 font-black py-3 px-4 rounded-xl shadow-lg transform active:scale-95 transition-all text-base uppercase tracking-wider min-h-[58px] flex items-center justify-center cursor-pointer font-sans ${
                     isSuccess
                         ? 'bg-green-500 text-white shadow-green-200'
@@ -879,8 +913,10 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                             ? 'bg-gray-100 cursor-default shadow-none' 
                             : (paymentPath || pendingDepositStatus === 'PENDING')
                                 ? 'bg-orange-100 text-orange-500 border-2 border-orange-200 cursor-default shadow-none animate-pulse'
-                                : (isValidated && !isInsufficient && !loadingWallet) 
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'
+                                : (isValidated && !loadingWallet) 
+                                    ? isInsufficient
+                                        ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'
                                     : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                 }`}
               >
@@ -898,7 +934,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     </div>
                 ) : (paymentPath || pendingDepositStatus === 'PENDING') ? (
                     <span className="text-orange-500 text-xs font-black text-center leading-tight">EN ATTENTE ADMIN</span>
-                ) : paymentType === 'Dépôt' ? 'Confirmer le dépôt' : 'Payer avec le Portefeuille'}
+                ) : paymentType === 'Dépôt' ? 'Confirmer le dépôt' : isInsufficient ? 'Faire un Dépôt' : 'Payer avec le Portefeuille'}
               </button>
           </div>
       </main>
