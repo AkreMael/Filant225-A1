@@ -267,6 +267,13 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   const [formCompanyName, setFormCompanyName] = useState('');
   const [formCompanyDomain, setFormCompanyDomain] = useState('');
   const [formCompanyServices, setFormCompanyServices] = useState('');
+  const [formCompanyOwner, setFormCompanyOwner] = useState('');
+  const [formCompanyPoste, setFormCompanyPoste] = useState('');
+  const [formCompanyWorkersCount, setFormCompanyWorkersCount] = useState('');
+  const [formCompanyContractType, setFormCompanyContractType] = useState('');
+  const [formCompanySalary, setFormCompanySalary] = useState('');
+  const [formCompanyHours, setFormCompanyHours] = useState('');
+  const [formCompanySkills, setFormCompanySkills] = useState('');
 
   // Duration selection & images Base64 array
   const [formDuration, setFormDuration] = useState<'1_week' | '1_month'>('1_week');
@@ -705,6 +712,13 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     setFormCompanyName(currentUserAd?.companyName || currentUserAd?.name || user?.name || '');
     setFormCompanyDomain(currentUserAd?.companyDomain || '');
     setFormCompanyServices(currentUserAd?.companyServices || '');
+    setFormCompanyOwner(currentUserAd?.companyOwner || '');
+    setFormCompanyPoste(currentUserAd?.companyPoste || currentUserAd?.companyDomain || '');
+    setFormCompanyWorkersCount(currentUserAd?.companyWorkersCount || '');
+    setFormCompanyContractType(currentUserAd?.companyContractType || '');
+    setFormCompanySalary(currentUserAd?.companySalary || currentUserAd?.proposedSalary || '');
+    setFormCompanyHours(currentUserAd?.companyHours || '');
+    setFormCompanySkills(currentUserAd?.companySkills || currentUserAd?.companyServices || currentUserAd?.skillsDescription || '');
 
     setFormImages(currentUserAd?.onlineImages || []);
 
@@ -771,7 +785,17 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         return;
       }
     } else if (formProfileType === 'Entreprise') {
-      if (!formCompanyName.trim() || !formCity.trim() || !formCompanyDomain.trim() || !formDesc.trim()) {
+      if (
+        !formCompanyName.trim() || 
+        !formCity.trim() || 
+        !formCompanyOwner.trim() || 
+        !formCompanyPoste.trim() || 
+        !formCompanyWorkersCount.toString().trim() || 
+        !formCompanyContractType.trim() || 
+        !formCompanySalary.trim() || 
+        !formCompanyHours.trim() || 
+        !formCompanySkills.trim()
+      ) {
         alert("Veuillez remplir tous les champs obligatoires (*) pour l'entreprise.");
         return;
       }
@@ -800,7 +824,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     const adData: any = {
       profileType: formProfileType,
       city: formCity,
-      skillsDescription: formDesc,
+      skillsDescription: formProfileType === 'Entreprise' ? formCompanySkills : formDesc,
       onlineImages: uploadedUrls,
     };
 
@@ -821,8 +845,15 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     } else if (formProfileType === 'Entreprise') {
       adData.name = formCompanyName;
       adData.companyName = formCompanyName;
-      adData.companyDomain = formCompanyDomain;
-      adData.companyServices = formCompanyServices;
+      adData.companyOwner = formCompanyOwner;
+      adData.companyPoste = formCompanyPoste;
+      adData.companyWorkersCount = formCompanyWorkersCount;
+      adData.companyContractType = formCompanyContractType;
+      adData.companySalary = formCompanySalary;
+      adData.companyHours = formCompanyHours;
+      adData.companySkills = formCompanySkills;
+      adData.companyDomain = formCompanyPoste;
+      adData.companyServices = `${formCompanyWorkersCount} poste(s) • ${formCompanyContractType}`;
     }
 
     try {
@@ -2353,44 +2384,114 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
                   {formProfileType === 'Entreprise' && (
                     <div className="p-5 bg-indigo-50/30 rounded-3xl border border-indigo-100/50 space-y-4 animate-in fade-in duration-200">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Nom du responsable ou propriétaire *</label>
+                        <input
+                          type="text"
+                          value={formCompanyOwner}
+                          onChange={(e) => setFormCompanyOwner(e.target.value)}
+                          placeholder="Ex. Kouadio Jean"
+                          className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                          required
+                        />
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 ml-1">Domaine d'activités *</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Poste recherché *</label>
                           <input
                             type="text"
-                            value={formCompanyDomain}
-                            onChange={(e) => setFormCompanyDomain(e.target.value)}
-                            placeholder="Ex. Travaux Publics, Informatique, BTP..."
+                            value={formCompanyPoste}
+                            onChange={(e) => setFormCompanyPoste(e.target.value)}
+                            placeholder="Ex. Serveur, Cuisinier, Chauffeur..."
                             className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
                             required
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-indigo-700 ml-1">Détails des services (Optionnel)</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Nombre de travailleurs recherchés *</label>
                           <input
-                            type="text"
-                            value={formCompanyServices}
-                            onChange={(e) => setFormCompanyServices(e.target.value)}
-                            placeholder="Ex. Rénovation d'intérieur, Peinture..."
+                            type="number"
+                            min="1"
+                            value={formCompanyWorkersCount}
+                            onChange={(e) => setFormCompanyWorkersCount(e.target.value)}
+                            placeholder="Ex. 3"
                             className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                            required
                           />
                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Type de contrat *</label>
+                          <select
+                            value={formCompanyContractType}
+                            onChange={(e) => setFormCompanyContractType(e.target.value)}
+                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold focus:outline-none transition-all font-sans cursor-pointer"
+                            required
+                          >
+                            <option value="">Sélectionner un contrat</option>
+                            <option value="Temps plein">Temps plein</option>
+                            <option value="Temps partiel">Temps partiel</option>
+                            <option value="Temporaire">Temporaire</option>
+                            <option value="Stage">Stage</option>
+                            <option value="Autre">Autre</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Salaire proposé *</label>
+                          <input
+                            type="text"
+                            value={formCompanySalary}
+                            onChange={(e) => setFormCompanySalary(e.target.value)}
+                            placeholder="Ex. 150000 FCFA"
+                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Horaires de travail *</label>
+                        <input
+                          type="text"
+                          value={formCompanyHours}
+                          onChange={(e) => setFormCompanyHours(e.target.value)}
+                          placeholder="Ex. 8H00 - 17H00, Lun au Ven"
+                          className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Compétences recherchées *</label>
+                        <textarea
+                          value={formCompanySkills}
+                          onChange={(e) => setFormCompanySkills(e.target.value)}
+                          placeholder="Précisez les compétences et qualités recherchées..."
+                          className="w-full px-5 py-4 min-h-[90px] bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans resize-none"
+                          required
+                        />
                       </div>
                     </div>
                   )}
 
                   {/* Description field */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Description de vos services / compétences *</label>
-                    <textarea
-                      value={formDesc}
-                      onChange={(e) => setFormDesc(e.target.value)}
-                      placeholder="Décrivez précisément ce que vous proposez pour attirer vos clients..."
-                      className="w-full px-5 py-4 min-h-[100px] bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans resize-none"
-                      required
-                    />
-                  </div>
+                  {formProfileType !== 'Entreprise' && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Description de vos services / compétences *</label>
+                      <textarea
+                        value={formDesc}
+                        onChange={(e) => setFormDesc(e.target.value)}
+                        placeholder="Décrivez précisément ce que vous proposez pour attirer vos clients..."
+                        className="w-full px-5 py-4 min-h-[100px] bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans resize-none"
+                        required
+                      />
+                    </div>
+                  )}
 
                   {/* Duration selector */}
                   {!(currentUserAd?.isOnline === true && currentUserAd?.onlineEnd && Date.now() <= currentUserAd.onlineEnd) && (
@@ -2780,14 +2881,46 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
                           {selectedAdDetail.profileType === 'Entreprise' && (
                             <>
+                              {selectedAdDetail.companyOwner && (
+                                <div className="flex justify-between items-center py-3 px-4">
+                                  <span className="text-slate-500 font-bold">Responsable</span>
+                                  <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyOwner}</span>
+                                </div>
+                              )}
                               <div className="flex justify-between items-center py-3 px-4">
-                                <span className="text-slate-500 font-bold">Domaine d'activité</span>
-                                <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyDomain || 'Général'}</span>
+                                <span className="text-slate-500 font-bold">Poste recherché</span>
+                                <span className="font-extrabold text-[#2dadac] uppercase">{selectedAdDetail.companyPoste || selectedAdDetail.companyDomain || 'Général'}</span>
                               </div>
+                              {selectedAdDetail.companyWorkersCount && (
+                                <div className="flex justify-between items-center py-3 px-4">
+                                  <span className="text-slate-500 font-bold">Nombre de postes</span>
+                                  <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyWorkersCount}</span>
+                                </div>
+                              )}
+                              {selectedAdDetail.companyContractType && (
+                                <div className="flex justify-between items-center py-3 px-4">
+                                  <span className="text-slate-500 font-bold">Type de contrat</span>
+                                  <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyContractType}</span>
+                                </div>
+                              )}
                               <div className="flex justify-between items-center py-3 px-4">
-                                <span className="text-slate-500 font-bold">Services auxiliaires</span>
-                                <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyServices || 'Inconnu'}</span>
+                                <span className="text-slate-500 font-bold">Salaire proposé</span>
+                                <span className="font-extrabold text-orange-600 uppercase">{selectedAdDetail.companySalary || selectedAdDetail.proposedSalary || 'Non spécifié'}</span>
                               </div>
+                              {selectedAdDetail.companyHours && (
+                                <div className="flex justify-between items-center py-3 px-4">
+                                  <span className="text-slate-500 font-bold">Horaires</span>
+                                  <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyHours}</span>
+                                </div>
+                              )}
+                              {(selectedAdDetail.companySkills || selectedAdDetail.companyServices || selectedAdDetail.skillsDescription) && (
+                                <div className="py-3 px-4 flex flex-col items-start gap-1">
+                                  <span className="text-slate-500 font-bold">Compétences recherchées</span>
+                                  <p className="font-bold text-slate-800 uppercase text-xs whitespace-pre-wrap mt-1 text-left">
+                                    {selectedAdDetail.companySkills || selectedAdDetail.companyServices || selectedAdDetail.skillsDescription}
+                                  </p>
+                                </div>
+                              )}
                             </>
                           )}
 

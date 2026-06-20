@@ -2292,9 +2292,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                'Nom Entreprise': selectedItemForDetails.companyName || oldD.companyName,
                                'Ville Entreprise': selectedItemForDetails.companyCity || oldD.companyCity,
                                'Téléphone Entreprise': selectedItemForDetails.companyPhone || oldD.companyPhone,
-                               'Domaine': selectedItemForDetails.companyDomain || oldD.companyDomain,
-                               'Services': selectedItemForDetails.companyServices || oldD.companyServices,
-                               'Salaire proposé': selectedItemForDetails.proposedSalary || oldD.proposedSalary
+                               'Responsable': selectedItemForDetails.companyOwner || oldD.companyOwner,
+                               'Poste recherché': selectedItemForDetails.companyPoste || selectedItemForDetails.companyDomain || oldD.companyPoste || oldD.companyDomain,
+                               'Nombre de travailleurs': selectedItemForDetails.companyWorkersCount || oldD.companyWorkersCount,
+                               'Type de contrat': selectedItemForDetails.companyContractType || oldD.companyContractType,
+                               'Salaire proposé': selectedItemForDetails.companySalary || selectedItemForDetails.proposedSalary || oldD.companySalary || oldD.proposedSalary,
+                               'Horaires': selectedItemForDetails.companyHours || oldD.companyHours,
+                               'Compétences recherchées': selectedItemForDetails.companySkills || selectedItemForDetails.companyServices || selectedItemForDetails.skillsDescription || oldD.companySkills || oldD.companyServices || oldD.skillsDescription
                              };
                            } else {
                              detailsObj = oldD;

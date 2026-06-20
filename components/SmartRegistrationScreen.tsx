@@ -60,6 +60,13 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
     companyDomain: '',
     companyServices: '',
     proposedSalary: '',
+    companyOwner: '',
+    companyPoste: '',
+    companyWorkersCount: '',
+    companyContractType: '',
+    companySalary: '',
+    companyHours: '',
+    companySkills: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -189,9 +196,13 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
       if (!formData.companyName) newErrors.push('companyName');
       if (!formData.companyCity) newErrors.push('companyCity');
       if (!formData.companyPhone) newErrors.push('companyPhone');
-      if (!formData.companyDomain) newErrors.push('companyDomain');
-      if (!formData.companyServices) newErrors.push('companyServices');
-      if (!formData.proposedSalary) newErrors.push('proposedSalary');
+      if (!formData.companyOwner) newErrors.push('companyOwner');
+      if (!formData.companyPoste) newErrors.push('companyPoste');
+      if (!formData.companyWorkersCount) newErrors.push('companyWorkersCount');
+      if (!formData.companyContractType) newErrors.push('companyContractType');
+      if (!formData.companySalary) newErrors.push('companySalary');
+      if (!formData.companyHours) newErrors.push('companyHours');
+      if (!formData.companySkills) newErrors.push('companySkills');
     }
 
     setErrors(newErrors);
@@ -256,9 +267,16 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               companyName: formData.companyName,
               companyCity: formData.companyCity,
               companyPhone: formData.companyPhone,
-              companyDomain: formData.companyDomain,
-              companyServices: formData.companyServices,
-              proposedSalary: formData.proposedSalary
+              companyOwner: formData.companyOwner,
+              companyPoste: formData.companyPoste,
+              companyWorkersCount: formData.companyWorkersCount,
+              companyContractType: formData.companyContractType,
+              companySalary: formData.companySalary,
+              companyHours: formData.companyHours,
+              companySkills: formData.companySkills,
+              companyDomain: formData.companyPoste,
+              companyServices: formData.companySkills,
+              proposedSalary: formData.companySalary
           })
         };
 
@@ -639,6 +657,19 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               />
             </div>
             <div>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Nom du responsable ou propriétaire *</label>
+              <input 
+                type="text"
+                value={formData.companyOwner}
+                onChange={(e) => {
+                    setFormData({...formData, companyOwner: e.target.value});
+                    if (errors.includes('companyOwner')) setErrors(errors.filter(e => e !== 'companyOwner'));
+                }}
+                placeholder="Ex: Mael Kouadio"
+                className={getInputClass('companyOwner')}
+              />
+            </div>
+            <div>
               <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Ville de l’entreprise *</label>
               <CityAutocompleteInput 
                 id="companyCity"
@@ -674,41 +705,86 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
               </div>
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Domaine d'activité *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Poste recherché *</label>
               <input 
                 type="text"
-                value={formData.companyDomain}
+                value={formData.companyPoste}
                 onChange={(e) => {
-                    setFormData({...formData, companyDomain: e.target.value});
-                    if (errors.includes('companyDomain')) setErrors(errors.filter(e => e !== 'companyDomain'));
+                    setFormData({...formData, companyPoste: e.target.value});
+                    if (errors.includes('companyPoste')) setErrors(errors.filter(e => e !== 'companyPoste'));
                 }}
-                placeholder="Ex: Bâtiment, Transport..."
-                className={getInputClass('companyDomain')}
+                placeholder="Ex: Serveur, Cuisinier, Livreur..."
+                className={getInputClass('companyPoste')}
               />
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Services proposés *</label>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Nombre de travailleurs recherchés *</label>
+              <input 
+                type="number"
+                min="1"
+                value={formData.companyWorkersCount}
+                onChange={(e) => {
+                    setFormData({...formData, companyWorkersCount: e.target.value});
+                    if (errors.includes('companyWorkersCount')) setErrors(errors.filter(e => e !== 'companyWorkersCount'));
+                }}
+                placeholder="Ex: 5"
+                className={getInputClass('companyWorkersCount')}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Type de contrat *</label>
+              <select
+                value={formData.companyContractType}
+                onChange={(e) => {
+                    setFormData({...formData, companyContractType: e.target.value});
+                    if (errors.includes('companyContractType')) setErrors(errors.filter(e => e !== 'companyContractType'));
+                }}
+                className={getInputClass('companyContractType')}
+              >
+                <option value="">Sélectionner un contrat</option>
+                <option value="Temps plein">Temps plein</option>
+                <option value="Temps partiel">Temps partiel</option>
+                <option value="Temporaire">Temporaire</option>
+                <option value="Stage">Stage</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Salaire proposé *</label>
+              <input 
+                type="text"
+                value={formData.companySalary}
+                onChange={(e) => {
+                    setFormData({...formData, companySalary: e.target.value});
+                    if (errors.includes('companySalary')) setErrors(errors.filter(e => e !== 'companySalary'));
+                }}
+                placeholder="Ex: 150 000 FCFA / mois"
+                className={getInputClass('companySalary')}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Horaires de travail *</label>
+              <input 
+                type="text"
+                value={formData.companyHours}
+                onChange={(e) => {
+                    setFormData({...formData, companyHours: e.target.value});
+                    if (errors.includes('companyHours')) setErrors(errors.filter(e => e !== 'companyHours'));
+                }}
+                placeholder="Ex: 8H00 - 17H00, Lun au Ven"
+                className={getInputClass('companyHours')}
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Compétences recherchées *</label>
               <textarea 
-                value={formData.companyServices}
+                value={formData.companySkills}
                 onChange={(e) => {
-                    setFormData({...formData, companyServices: e.target.value});
-                    if (errors.includes('companyServices')) setErrors(errors.filter(e => e !== 'companyServices'));
+                    setFormData({...formData, companySkills: e.target.value});
+                    if (errors.includes('companySkills')) setErrors(errors.filter(e => e !== 'companySkills'));
                 }}
-                placeholder="Décrivez vos services"
-                className={`${getInputClass('companyServices')} min-h-[80px]`}
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em] ml-1 mb-1.5 block">Salaire proposé par mois ou semaine *</label>
-              <input 
-                type="text"
-                value={formData.proposedSalary}
-                onChange={(e) => {
-                    setFormData({...formData, proposedSalary: e.target.value});
-                    if (errors.includes('proposedSalary')) setErrors(errors.filter(e => e !== 'proposedSalary'));
-                }}
-                placeholder="Ex: 150 000 CFA / mois"
-                className={getInputClass('proposedSalary')}
+                placeholder="Ex: Ponctualité, rigueur, expérience en vente..."
+                className={`${getInputClass('companySkills')} min-h-[90px]`}
               />
             </div>
           </div>
