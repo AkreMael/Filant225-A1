@@ -1480,12 +1480,6 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                                           <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyCity}</span>
                                         </div>
                                       )}
-                                      {(selectedAdDetail.agencyPhone || selectedAdDetail.phone) && (
-                                        <div className="flex justify-between items-center py-3 px-4">
-                                          <span className="text-slate-500 font-bold">Téléphone de l'agence</span>
-                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyPhone || selectedAdDetail.phone}</span>
-                                        </div>
-                                      )}
                                       {selectedAdDetail.agencyZone && (
                                         <div className="flex justify-between items-center py-3 px-4">
                                           <span className="text-slate-500 font-bold">Zone couverte</span>
@@ -1550,12 +1544,6 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                                         <div className="flex justify-between items-center py-3 px-4">
                                           <span className="text-slate-500 font-bold">Ville de l'entreprise</span>
                                           <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyCity}</span>
-                                        </div>
-                                      )}
-                                      {(selectedAdDetail.companyPhone || selectedAdDetail.phone) && (
-                                        <div className="flex justify-between items-center py-3 px-4">
-                                          <span className="text-slate-500 font-bold">Téléphone</span>
-                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyPhone || selectedAdDetail.phone}</span>
                                         </div>
                                       )}
                                       {(selectedAdDetail.companyPoste || selectedAdDetail.companyDomain) && (

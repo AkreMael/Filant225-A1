@@ -17,6 +17,7 @@ interface InscriptionResult {
   titleOrActivity: string;
   description?: string;
   imageLink?: string;
+  [key: string]: any;
 }
 
 const CardImageCarousel = ({ images, onImageClick }: { images: string[], onImageClick: (url: string) => void }) => {
@@ -656,6 +657,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         }
 
         return {
+          ...item,
           id: item.id || Math.random().toString(),
           name: item.name || item.agencyName || item.companyName || 'Prestataire',
           city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
@@ -664,7 +666,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           description: item.skillsDescription || item.equipmentDescription || item.companyServices || item.description || '',
           imageLink: item.imageLink || '',
           // Include new custom fields for cards
-          images: item.onlineImages || [],
+          images: item.onlineImages || item.images || [],
           desiredSalary: item.desiredSalary || '',
           salaryPeriod: item.salaryPeriod || '',
           propertyTypes: item.propertyTypes || '',
@@ -2824,7 +2826,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                       <div className="space-y-2">
                         <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Description des services</h3>
                         <p className="text-xs text-slate-600 font-semibold leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100/50 whitespace-pre-line">
-                          {selectedAdDetail.description || selectedAdDetail.skillsDescription || selectedAdDetail.equipmentDescription || selectedAdDetail.companySkills || "Aucune description de service n'a été spécifiée."}
+                          {selectedAdDetail.description || selectedAdDetail.skillsDescription || selectedAdDetail.equipmentDescription || selectedAdDetail.companySkills || selectedAdDetail.companyServices || "Aucune description de service n'a été spécifiée."}
                         </p>
                       </div>
 
@@ -2879,12 +2881,6 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                                 <div className="flex justify-between items-center py-3 px-4">
                                   <span className="text-slate-500 font-bold">Ville de l'agence</span>
                                   <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyCity}</span>
-                                </div>
-                              )}
-                              {(selectedAdDetail.agencyPhone || selectedAdDetail.phone) && (
-                                <div className="flex justify-between items-center py-3 px-4">
-                                  <span className="text-slate-500 font-bold">Téléphone de l'agence</span>
-                                  <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyPhone || selectedAdDetail.phone}</span>
                                 </div>
                               )}
                               {selectedAdDetail.agencyZone && (
@@ -2951,12 +2947,6 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                                 <div className="flex justify-between items-center py-3 px-4">
                                   <span className="text-slate-500 font-bold">Ville de l'entreprise</span>
                                   <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyCity}</span>
-                                </div>
-                              )}
-                              {(selectedAdDetail.companyPhone || selectedAdDetail.phone) && (
-                                <div className="flex justify-between items-center py-3 px-4">
-                                  <span className="text-slate-500 font-bold">Téléphone</span>
-                                  <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyPhone || selectedAdDetail.phone}</span>
                                 </div>
                               )}
                               {(selectedAdDetail.companyPoste || selectedAdDetail.companyDomain) && (
