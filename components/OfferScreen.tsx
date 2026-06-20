@@ -1423,7 +1423,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                               <div className="space-y-2">
                                 <h3 className="text-[10px] font-black uppercase text-slate-900 tracking-widest">Description de l'offre</h3>
                                 <p className="text-xs text-slate-600 font-semibold leading-relaxed bg-slate-50 p-5 rounded-2xl border border-slate-100/50 whitespace-pre-line">
-                                  {selectedAdDetail.description || selectedAdDetail.skillsDescription || "Aucune description de service n'a été spécifiée."}
+                                  {selectedAdDetail.description || selectedAdDetail.skillsDescription || selectedAdDetail.equipmentDescription || selectedAdDetail.companySkills || "Aucune description n'a été spécifiée."}
                                 </p>
                               </div>
 
@@ -1433,60 +1433,160 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                                 <div className="divide-y divide-slate-100 bg-slate-50 border border-slate-100/80 rounded-2xl overflow-hidden text-xs">
                                   {selectedAdDetail.profileType === 'Travailleur' && (
                                     <>
-                                      <div className="flex justify-between items-center py-3 px-4">
-                                        <span className="text-slate-500 font-bold">Salaire souhaité</span>
-                                        <span className="font-extrabold text-slate-900 uppercase">
-                                          {selectedAdDetail.desiredSalary ? `${selectedAdDetail.desiredSalary} FCFA / ${selectedAdDetail.salaryPeriod === 'Par semaine' ? 'Semaine' : 'Mois'}` : 'Non spécifié'}
-                                        </span>
-                                      </div>
                                       {selectedAdDetail.job && (
                                         <div className="flex justify-between items-center py-3 px-4">
                                           <span className="text-slate-500 font-bold">Métier</span>
                                           <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.job}</span>
                                         </div>
                                       )}
+                                      {selectedAdDetail.learnedFrom && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Apprentissage / Formation</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.learnedFrom}</span>
+                                        </div>
+                                      )}
+                                      {selectedAdDetail.availability && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Disponibilité</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.availability}</span>
+                                        </div>
+                                      )}
+                                      {selectedAdDetail.movementZone && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Zone d'intervention</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.movementZone}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between items-center py-3 px-4">
+                                        <span className="text-slate-500 font-bold">Salaire souhaité</span>
+                                        <span className="font-extrabold text-slate-900 uppercase">
+                                          {selectedAdDetail.desiredSalary ? `${selectedAdDetail.desiredSalary} FCFA / ${selectedAdDetail.salaryPeriod === 'Par semaine' ? 'Semaine' : 'Mois'}` : (selectedAdDetail.proposedSalary || 'Non spécifié')}
+                                        </span>
+                                      </div>
                                     </>
                                   )}
 
-                                  {selectedAdDetail.profileType === 'Agence' && (
+                                  {(selectedAdDetail.profileType === 'Agence' || selectedAdDetail.profileType === 'Agence immobilière') && (
                                     <>
-                                      <div className="flex justify-between items-center py-3 px-4">
-                                        <span className="text-slate-500 font-bold">Biens proposés</span>
-                                        <span className="font-extrabold text-slate-900 uppercase">
-                                          {selectedAdDetail.propertyTypes ? (Array.isArray(selectedAdDetail.propertyTypes) ? selectedAdDetail.propertyTypes.join(', ') : selectedAdDetail.propertyTypes) : 'Tous types'}
-                                        </span>
-                                      </div>
                                       {selectedAdDetail.agencyName && (
                                         <div className="flex justify-between items-center py-3 px-4">
                                           <span className="text-slate-500 font-bold">Nom de l'agence</span>
                                           <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyName}</span>
                                         </div>
                                       )}
+                                      {selectedAdDetail.agencyCity && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Ville de l'agence</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyCity}</span>
+                                        </div>
+                                      )}
+                                      {(selectedAdDetail.agencyPhone || selectedAdDetail.phone) && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Téléphone de l'agence</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyPhone || selectedAdDetail.phone}</span>
+                                        </div>
+                                      )}
+                                      {selectedAdDetail.agencyZone && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Zone couverte</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.agencyZone}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between items-center py-3 px-4">
+                                        <span className="text-slate-500 font-bold">Biens proposés</span>
+                                        <span className="font-extrabold text-slate-900 uppercase">
+                                          {selectedAdDetail.propertyTypes ? (Array.isArray(selectedAdDetail.propertyTypes) ? selectedAdDetail.propertyTypes.join(', ') : selectedAdDetail.propertyTypes) : 'Tous types'}
+                                        </span>
+                                      </div>
                                     </>
                                   )}
 
                                   {selectedAdDetail.profileType === 'Propriétaire' && (
                                     <>
+                                      {selectedAdDetail.equipmentType && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Type de matériel</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.equipmentType}</span>
+                                        </div>
+                                      )}
                                       <div className="flex justify-between items-center py-3 px-4">
                                         <span className="text-slate-500 font-bold">Catégorie d'équipement</span>
                                         <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.equipmentCategory || 'Général'}</span>
                                       </div>
+                                      {selectedAdDetail.equipmentCity && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Ville de l'équipement</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.equipmentCity}</span>
+                                        </div>
+                                      )}
                                       <div className="flex justify-between items-center py-3 px-4">
                                         <span className="text-slate-500 font-bold">Unités disponibles</span>
-                                        <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.equipmentsAvailable || '1'}</span>
+                                        <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.quantity || selectedAdDetail.equipmentsAvailable || '1'}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center py-3 px-4">
+                                        <span className="text-slate-500 font-bold">Prix de location</span>
+                                        <span className="font-extrabold text-[#ff4500] uppercase">
+                                          {selectedAdDetail.rentalPrice ? `${selectedAdDetail.rentalPrice} FCFA / Jour` : 'Non spécifié'}
+                                        </span>
                                       </div>
                                     </>
                                   )}
 
                                   {selectedAdDetail.profileType === 'Entreprise' && (
                                     <>
+                                      {selectedAdDetail.companyName && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Nom Entreprise</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyName}</span>
+                                        </div>
+                                      )}
+                                      {selectedAdDetail.companyOwner && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Responsable</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyOwner}</span>
+                                        </div>
+                                      )}
+                                      {selectedAdDetail.companyCity && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Ville de l'entreprise</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyCity}</span>
+                                        </div>
+                                      )}
+                                      {(selectedAdDetail.companyPhone || selectedAdDetail.phone) && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Téléphone</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyPhone || selectedAdDetail.phone}</span>
+                                        </div>
+                                      )}
+                                      {(selectedAdDetail.companyPoste || selectedAdDetail.companyDomain) && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Poste recherché</span>
+                                          <span className="font-extrabold text-[#2dadac] uppercase">{selectedAdDetail.companyPoste || selectedAdDetail.companyDomain}</span>
+                                        </div>
+                                      )}
+                                      {selectedAdDetail.companyWorkersCount && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Nombre de postes</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyWorkersCount}</span>
+                                        </div>
+                                      )}
+                                      {selectedAdDetail.companyContractType && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Type de contrat</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyContractType}</span>
+                                        </div>
+                                      )}
+                                      {selectedAdDetail.companyHours && (
+                                        <div className="flex justify-between items-center py-3 px-4">
+                                          <span className="text-slate-500 font-bold">Horaires</span>
+                                          <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyHours}</span>
+                                        </div>
+                                      )}
                                       <div className="flex justify-between items-center py-3 px-4">
-                                        <span className="text-slate-500 font-bold">Domaine d'activité</span>
-                                        <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyDomain || 'Général'}</span>
-                                      </div>
-                                      <div className="flex justify-between items-center py-3 px-4">
-                                        <span className="text-slate-500 font-bold">Auxiliaires services</span>
-                                        <span className="font-extrabold text-slate-900 uppercase">{selectedAdDetail.companyServices || 'Inconnu'}</span>
+                                        <span className="text-slate-500 font-bold">Salaire proposé</span>
+                                        <span className="font-extrabold text-orange-600 uppercase">
+                                          {selectedAdDetail.companySalary || selectedAdDetail.proposedSalary || 'Non spécifié'}
+                                        </span>
                                       </div>
                                     </>
                                   )}
