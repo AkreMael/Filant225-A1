@@ -903,7 +903,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                               referrerPolicy="no-referrer"
                             />
                             <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[7px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
-                              {item.profileType}
+                              {item.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : item.profileType}
                             </span>
                           </div>
 
@@ -1215,7 +1215,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                                 referrerPolicy="no-referrer"
                               />
                               <span className="absolute top-4 left-4 bg-[#ff4500] text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
-                                {item.profileType}
+                                {item.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : item.profileType}
                               </span>
                             </div>
 
@@ -1398,7 +1398,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                             <div className="bg-white rounded-t-[2.5rem] -mt-6 relative z-30 p-6 md:p-8 space-y-6 pb-32 text-left">
                               <div className="space-y-1.5">
                                 <span className="bg-[#ff4500]/10 text-[#ff4500] text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
-                                  {selectedAdDetail.profileType}
+                                  {selectedAdDetail.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : selectedAdDetail.profileType}
                                 </span>
                                 <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight uppercase pt-2">
                                   {selectedAdDetail.name}

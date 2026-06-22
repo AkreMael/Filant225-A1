@@ -294,7 +294,7 @@ const App: React.FC = () => {
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('filant_darkMode');
-    return savedMode ? JSON.parse(savedMode) : false;
+    return savedMode ? JSON.parse(savedMode) : true;
   });
 
   const [unreadChatCount, setUnreadChatCount] = useState(0);

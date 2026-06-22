@@ -1250,7 +1250,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                   selectedItemForForm.profileType === 'Agence' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
                   'bg-orange-50 text-orange-700 border border-orange-100'
                 }`}>
-                  {selectedItemForForm.profileType}
+                  {selectedItemForForm.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : selectedItemForForm.profileType}
                 </span>
               </div>
 
@@ -1818,7 +1818,9 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                       <div className="min-w-0 space-y-0.5">
                         <div className="flex items-center gap-1.5 flex-wrap leading-none">
                           <span className="text-xs font-black uppercase tracking-tight text-slate-900 truncate">{pinnedProfile.name}</span>
-                          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest">{pinnedProfile.profileType}</span>
+                          <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-widest">
+                            {pinnedProfile.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : pinnedProfile.profileType}
+                          </span>
                         </div>
                         
                         <div className="flex items-center gap-1.5">
@@ -2037,7 +2039,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                         />
 
                         <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm z-20">
-                          {item.profileType}
+                          {item.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : item.profileType}
                         </span>
                       </div>
 
@@ -2801,7 +2803,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     <div className="bg-white rounded-t-[2.5rem] -mt-6 relative z-30 p-6 md:p-8 space-y-6 pb-32 text-left">
                       <div className="space-y-1.5">
                         <span className="bg-[#ff4500]/10 text-[#ff4500] text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
-                          {selectedAdDetail.profileType}
+                          {selectedAdDetail.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : selectedAdDetail.profileType}
                         </span>
                         <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight uppercase pt-2">
                           {selectedAdDetail.name}
