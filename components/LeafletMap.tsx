@@ -249,7 +249,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800">
+    <div className="relative w-full h-full bg-slate-900 overflow-hidden">
       
       {/* Loading & Errors HUD overlays */}
       {!mapLoaded && !loadError && (

@@ -1740,7 +1740,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               {/* Live Interactive Geographic Navigation Map Container */}
               <div 
                 id="dynamic-3d-locator-map"
-                className="relative overflow-hidden w-full h-[380px]"
+                className="relative overflow-hidden -mx-5 -mt-6 w-[calc(100%+2.5rem)] h-[380px]"
               >
                 <LeafletMap 
                   userLat={startCoordsInfo.lat}
