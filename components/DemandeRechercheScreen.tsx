@@ -1729,7 +1729,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           const curveMidY = destCoordsInfo ? (startCoordsInfo.y + destCoordsInfo.y) / 2 - 15 : 155;
 
           return (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 -mx-5 -mt-6">
               <style dangerouslySetInnerHTML={{__html: `
                 @keyframes loader-progress {
                   0% { width: 0%; }
@@ -1769,8 +1769,9 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                 )}
               </div>
 
-              {/* Informative Dashboard HUD sheet below Map */}
-              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-3xl shadow-sm relative z-10 w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="px-5">
+                {/* Informative Dashboard HUD sheet below Map */}
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-3xl shadow-sm relative z-10 w-full" onClick={(e) => e.stopPropagation()}>
                 {/* 1. Searching/Locating City State */}
                 {isSearchingVille && !pinnedProfile && (
                   <div className="bg-transparent p-1 flex flex-col items-center justify-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -1889,6 +1890,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     </div>
                   </div>
                 )}
+                </div>
               </div>
             </div>
           );
