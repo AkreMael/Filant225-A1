@@ -215,7 +215,7 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#050B14] animate-in fade-in duration-500">
+    <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-500">
       <header className="p-5 flex items-center bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
         <button onClick={onBack} className="p-2.5 bg-gray-50 rounded-full active:scale-90 transition-transform">
            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>

@@ -86,7 +86,7 @@ const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#050B14] animate-in fade-in duration-500">
+    <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-500">
       <header className="p-4 flex items-center justify-between bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
         <button onClick={onBack} className="p-2.5 bg-white dark:bg-slate-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-slate-600 transition-all active:scale-95 flex-shrink-0 border border-gray-200 dark:border-slate-600">
             <BackIcon className="h-6 w-6 text-gray-800 dark:text-white" />
@@ -102,15 +102,15 @@ const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
       <main className="flex-1 flex flex-col p-6 overflow-y-auto">
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-70 py-20">
-            <div className="w-24 h-24 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
+          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40 py-20">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
                 <BellIcon />
             </div>
-            <h3 className="text-lg font-black uppercase tracking-tight text-slate-300 mb-2">Aucun message</h3>
-            <p className="text-xs font-bold max-w-[205px] leading-relaxed uppercase tracking-tighter text-slate-450 text-slate-400">
+            <h3 className="text-lg font-black uppercase tracking-tight text-slate-400 mb-2">Aucun message</h3>
+            <p className="text-xs font-bold max-w-[200px] leading-relaxed uppercase tracking-tighter">
                 Vous n'avez pas encore reçu de notifications de la part de FILANT°225.
             </p>
           </div>

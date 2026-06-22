@@ -273,7 +273,7 @@ const LocationScreen: React.FC<LocationScreenProps> = ({ onBack, user, onPropose
   );
 
   return (
-    <div className="bg-[#050B14] flex-1 flex flex-col h-full">
+    <div className="bg-gray-50 flex-1 flex flex-col h-full">
       <header className="bg-white pt-2 pb-2 px-4 sticky top-0 z-20 border-b border-gray-100 shadow-sm">
         <div className="flex flex-row items-center gap-3 mb-3">
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -343,7 +343,7 @@ const LocationScreen: React.FC<LocationScreenProps> = ({ onBack, user, onPropose
           ))}
           {filteredItems.length === 0 && (
              <div className="text-center mt-10">
-                <p className="text-slate-300 font-bold mb-2">Aucun élément trouvé.</p>
+                <p className="text-gray-500 mb-2">Aucun élément trouvé.</p>
             </div>
           )}
         </div>

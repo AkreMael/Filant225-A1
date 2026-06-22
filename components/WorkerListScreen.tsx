@@ -473,7 +473,7 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
   const filteredWorkers = getRenderedWorkers();
 
   return (
-    <div className="bg-[#050B14] flex-1 flex flex-col h-full">
+    <div className="bg-white flex-1 flex flex-col h-full">
         <header className="bg-white pt-2 pb-2 px-4 sticky top-0 z-20 border-b border-gray-100 shadow-sm">
             <div className="flex flex-row items-center gap-3 mb-3">
                 <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -549,7 +549,7 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
             </div>
         </header>
       
-      <main className="flex-1 bg-[#050B14] p-4 overflow-y-auto pb-24">
+      <main className="flex-1 bg-gray-100 p-4 overflow-y-auto pb-24">
         {loading ? (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-orange-500"></div>
@@ -569,8 +569,8 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
                 ))}
                 {filteredWorkers.length === 0 && (
                     <div className="text-center mt-10">
-                        <p className="text-slate-300 font-bold mb-2">Aucun professionnel trouvé pour cette catégorie.</p>
-                        <p className="text-xs text-slate-400">Essayez une autre catégorie ou modifiez votre recherche.</p>
+                        <p className="text-gray-500 mb-2">Aucun professionnel trouvé pour cette catégorie.</p>
+                        <p className="text-xs text-gray-400">Essayez une autre catégorie ou modifiez votre recherche.</p>
                     </div>
                 )}
             </div>

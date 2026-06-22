@@ -15,6 +15,8 @@ interface ProfileScreenProps {
   onShowPopup: (msg: string, type: 'alert' | 'confirm', onConfirm?: (close: () => void) => void) => void; 
   deferredPrompt: any;
   onInstallPWA: () => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: (value: boolean) => void;
 }
 
 // --- CONSTANTS ---
@@ -115,7 +117,7 @@ const ContactListView: React.FC<{ contacts: SavedContact[], onDelete: (id: strin
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#050B14]">
+        <div className="flex flex-col h-full bg-[#F3F3F3]">
             <div className="p-4 bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
                 <div className="relative">
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -187,7 +189,7 @@ const ContactListView: React.FC<{ contacts: SavedContact[], onDelete: (id: strin
 };
 
 // --- PROFILE SCREEN COMPONENT ---
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, setActiveTab, onShowPopup, deferredPrompt, onInstallPWA }) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, setActiveTab, onShowPopup, deferredPrompt, onInstallPWA, isDarkMode, onToggleDarkMode }) => {
   if (!user) return null;
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -371,7 +373,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     };
 
     const renderMainView = () => (
-    <div className="flex flex-col h-full bg-[#050B14]">
+    <div className="flex flex-col h-full bg-[#F3F3F3]">
         <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100">
             <button onClick={handleBack} className="p-2 -ml-2 text-gray-800 hover:bg-gray-100 rounded-full transition-colors active:scale-90">
                 <BackIcon />
@@ -499,6 +501,33 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                     subtitle="Version Web Installable" 
                     onClick={handleInstallPWA} 
                 />
+                <div className="h-px bg-gray-50 mx-4"></div>
+                <ProfileRow 
+                    icon={
+                        isDarkMode ? (
+                          <svg className="w-10 h-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-10 h-10 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                          </svg>
+                        )
+                    } 
+                    title="Thème sombre" 
+                    subtitle={isDarkMode ? "Désactiver pour le mode clair" : "Activer pour le mode sombre"} 
+                    onClick={() => onToggleDarkMode(!isDarkMode)} 
+                    rightElement={
+                        <button 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onToggleDarkMode(!isDarkMode); }}
+                            className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 outline-none flex items-center ${isDarkMode ? 'bg-orange-500 justify-end' : 'bg-gray-300 justify-start'}`}
+                            id="theme-switch-btn"
+                        >
+                            <span className="w-4 h-4 rounded-full bg-white shadow-md block transition-all shrink-0" />
+                        </button>
+                    }
+                />
             </div>
             <div className="px-4 pt-6">
                 <button onClick={handleLogoutClick} className="w-full py-4 text-red-600 font-black uppercase tracking-widest text-[10px] bg-white rounded-2xl shadow-sm border border-red-50 transition-all active:scale-[0.98] active:bg-red-50 flex items-center justify-center gap-2"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>Déconnexion</button>
@@ -558,7 +587,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   };
 
   const renderIdModal = () => (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-[#050B14] animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 z-[200] flex flex-col bg-[#F3F3F3] animate-in slide-in-from-bottom duration-300">
       <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100">
         <button onClick={() => setShowIdModal(false)} className="p-2 -ml-2 text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
           <BackIcon />
@@ -728,7 +757,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   );
 
   const renderHistoryView = () => (
-    <div className="bg-[#050B14] h-full flex flex-col animate-in slide-in-from-right duration-300">
+    <div className="bg-[#F3F3F3] h-full flex flex-col animate-in slide-in-from-right duration-300">
       <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10 w-full">
         <button onClick={() => setView('main')} className="p-2 -ml-2 hover:bg-gray-100 rounded-full active:scale-95 transition-transform flex items-center justify-center">
           <BackIcon className="w-6 h-6 text-black"/>
@@ -812,11 +841,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   return (
     <div className="absolute inset-0 z-[100] flex justify-end" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div ref={overlayRef} className="absolute inset-0 bg-black/40 transition-opacity duration-300 opacity-0" onClick={handleClose}></div>
-        <div ref={panelRef} className="relative z-10 w-full max-w-[320px] bg-[#050B14] flex flex-col transition-transform duration-300 translate-x-full overflow-hidden">
+        <div ref={panelRef} className="relative z-10 w-full max-w-[320px] bg-[#F3F3F3] flex flex-col transition-transform duration-300 translate-x-full overflow-hidden">
             <main className="flex-1 overflow-y-auto scrollbar-hide">
                 {view === 'main' && renderMainView()}
                 {view === 'contacts' && (
-                    <div className="bg-[#050B14] h-full flex flex-col">
+                    <div className="bg-[#F3F3F3] h-full flex flex-col">
                         <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100"><button onClick={() => setView('main')} className="p-2 -ml-2 active:scale-90 transition-transform"><BackIcon className="w-7 h-7 text-black"/></button><h1 className="flex-1 text-center font-black uppercase text-base tracking-tight mr-10">Assistance QR</h1><button onClick={handleClearContacts} className="p-2 text-red-500"><TrashIcon className="w-5 h-5"/></button></header>
                         <ContactListView contacts={contacts} onDelete={handleDeleteContact} />
                     </div>
