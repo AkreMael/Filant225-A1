@@ -1146,7 +1146,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const bgClass = isClient ? 'bg-[#050B14]' : 'bg-orange-500';
-  const textClass = isClient ? 'text-slate-900' : 'text-white';
+  const textClass = isClient ? 'text-slate-100' : 'text-white';
 
   if (showNoOffer) {
     return (
@@ -1188,12 +1188,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                          <div className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-lg border border-orange-500/10 p-0.5 overflow-hidden">
                              <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                          </div>
-                         <h2 className="text-xl font-black text-[#1e293b] uppercase tracking-tighter">FILANT°225</h2>
+                         <h2 className="text-xl font-black text-slate-100 uppercase tracking-tighter">FILANT°225</h2>
                     </div>
                 </div>
 
                 <div className="flex items-center space-x-1.5">
-                    <div className={`px-3 py-1 border-2 border-slate-200 rounded-lg text-sm font-bold ${isClient ? 'text-slate-900 border-slate-200' : 'text-white border-white'} font-mono tracking-wider select-none bg-white/5 shadow-sm`}>
+                    <div className={`px-3 py-1 border-2 border-slate-700/60 rounded-lg text-sm font-bold ${isClient ? 'text-slate-200 border-slate-700/60' : 'text-white border-white'} font-mono tracking-wider select-none bg-white/5 shadow-sm`}>
                         {formattedDate}
                     </div>
                     {isAdmin(user) ? (
@@ -1237,7 +1237,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <div>
                 <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Session active</p>
                 <p className="text-lg font-bold capitalize">
-                    {user.name} <span className="text-xs font-normal bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full ml-1">Client</span>
+                    {user.name} <span className="text-xs font-normal bg-white/10 text-slate-200 px-2 py-0.5 rounded-full ml-1">Client</span>
                 </p>
                 <p className="text-sm font-medium">{user.city} <span className="text-green-400 font-bold animate-pulse ml-2">• EN LIGNE</span></p>
             </div>
@@ -1246,7 +1246,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-black rounded-full shadow-lg transform group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-white">
                         <TikTokIcon />
                     </div>
-                    <span className="text-[8px] font-black uppercase text-slate-600">TikTok</span>
+                    <span className="text-[8px] font-black uppercase text-slate-300">TikTok</span>
                 </a>
 
                 <button 
@@ -1258,7 +1258,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     }`}>
                         <ChatBubbleIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                     </div>
-                    <span className="text-[8px] font-black uppercase text-slate-600">Messages</span>
+                    <span className="text-[8px] font-black uppercase text-slate-300">Messages</span>
                     {unreadChatCount > 0 && (
                         <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full border-2 border-white flex items-center justify-center px-1 bg-red-600 shadow-xl z-20">
                             <span className="text-[9px] font-black text-white leading-none">{unreadChatCount}</span>
@@ -1273,7 +1273,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 rounded-full shadow-lg transform group-hover:scale-110 transition-transform flex items-center justify-center">
                         <AssistantIcon />
                     </div>
-                    <span className="text-[8px] font-black uppercase text-slate-600">Assistant QR</span>
+                    <span className="text-[8px] font-black uppercase text-slate-300">Assistant QR</span>
                 </button>
 
                 <button 
@@ -1283,13 +1283,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-600 rounded-full shadow-lg transform group-hover:scale-110 transition-transform border border-red-400 animate-pulse flex items-center justify-center">
                         <EmergencyIcon />
                     </div>
-                    <span className="text-[8px] font-black uppercase text-slate-600">Urgence</span>
+                    <span className="text-[8px] font-black uppercase text-slate-300">Urgence</span>
                 </button>
             </div>
             </div>
 
             <div className="px-4 mt-6">
-                <div className={`h-px bg-gradient-to-r from-transparent ${isClient ? 'via-slate-200' : 'via-white/30'} to-transparent`}></div>
+                <div className={`h-px bg-gradient-to-r from-transparent ${isClient ? 'via-slate-700/60' : 'via-white/30'} to-transparent`}></div>
             </div>
         </header>
 

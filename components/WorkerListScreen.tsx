@@ -569,8 +569,8 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
                 ))}
                 {filteredWorkers.length === 0 && (
                     <div className="text-center mt-10">
-                        <p className="text-gray-500 mb-2">Aucun professionnel trouvé pour cette catégorie.</p>
-                        <p className="text-xs text-gray-400">Essayez une autre catégorie ou modifiez votre recherche.</p>
+                        <p className="text-slate-300 font-bold mb-2">Aucun professionnel trouvé pour cette catégorie.</p>
+                        <p className="text-xs text-slate-400">Essayez une autre catégorie ou modifiez votre recherche.</p>
                     </div>
                 )}
             </div>

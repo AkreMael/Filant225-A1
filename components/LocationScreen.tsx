@@ -343,7 +343,7 @@ const LocationScreen: React.FC<LocationScreenProps> = ({ onBack, user, onPropose
           ))}
           {filteredItems.length === 0 && (
              <div className="text-center mt-10">
-                <p className="text-gray-500 mb-2">Aucun élément trouvé.</p>
+                <p className="text-slate-300 font-bold mb-2">Aucun élément trouvé.</p>
             </div>
           )}
         </div>
