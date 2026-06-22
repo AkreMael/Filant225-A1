@@ -115,7 +115,7 @@ const ContactListView: React.FC<{ contacts: SavedContact[], onDelete: (id: strin
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#F3F3F3]">
+        <div className="flex flex-col h-full bg-[#050B14]">
             <div className="p-4 bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
                 <div className="relative">
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -371,7 +371,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     };
 
     const renderMainView = () => (
-    <div className="flex flex-col h-full bg-[#F3F3F3]">
+    <div className="flex flex-col h-full bg-[#050B14]">
         <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100">
             <button onClick={handleBack} className="p-2 -ml-2 text-gray-800 hover:bg-gray-100 rounded-full transition-colors active:scale-90">
                 <BackIcon />
@@ -558,7 +558,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   };
 
   const renderIdModal = () => (
-    <div className="fixed inset-0 z-[200] flex flex-col bg-[#F3F3F3] animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 z-[200] flex flex-col bg-[#050B14] animate-in slide-in-from-bottom duration-300">
       <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100">
         <button onClick={() => setShowIdModal(false)} className="p-2 -ml-2 text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
           <BackIcon />
@@ -728,7 +728,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   );
 
   const renderHistoryView = () => (
-    <div className="bg-[#F3F3F3] h-full flex flex-col animate-in slide-in-from-right duration-300">
+    <div className="bg-[#050B14] h-full flex flex-col animate-in slide-in-from-right duration-300">
       <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10 w-full">
         <button onClick={() => setView('main')} className="p-2 -ml-2 hover:bg-gray-100 rounded-full active:scale-95 transition-transform flex items-center justify-center">
           <BackIcon className="w-6 h-6 text-black"/>
@@ -812,11 +812,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
   return (
     <div className="absolute inset-0 z-[100] flex justify-end" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         <div ref={overlayRef} className="absolute inset-0 bg-black/40 transition-opacity duration-300 opacity-0" onClick={handleClose}></div>
-        <div ref={panelRef} className="relative z-10 w-full max-w-[320px] bg-[#F3F3F3] flex flex-col transition-transform duration-300 translate-x-full overflow-hidden">
+        <div ref={panelRef} className="relative z-10 w-full max-w-[320px] bg-[#050B14] flex flex-col transition-transform duration-300 translate-x-full overflow-hidden">
             <main className="flex-1 overflow-y-auto scrollbar-hide">
                 {view === 'main' && renderMainView()}
                 {view === 'contacts' && (
-                    <div className="bg-[#F3F3F3] h-full flex flex-col">
+                    <div className="bg-[#050B14] h-full flex flex-col">
                         <header className="p-4 flex items-center bg-white shadow-sm border-b border-gray-100"><button onClick={() => setView('main')} className="p-2 -ml-2 active:scale-90 transition-transform"><BackIcon className="w-7 h-7 text-black"/></button><h1 className="flex-1 text-center font-black uppercase text-base tracking-tight mr-10">Assistance QR</h1><button onClick={handleClearContacts} className="p-2 text-red-500"><TrashIcon className="w-5 h-5"/></button></header>
                         <ContactListView contacts={contacts} onDelete={handleDeleteContact} />
                     </div>

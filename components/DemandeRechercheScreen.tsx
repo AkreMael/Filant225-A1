@@ -1193,7 +1193,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
   if (selectedItemForForm) {
     return (
-      <div className="relative flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-300 font-sans" id="demande-recherche-form-view">
+      <div className="relative flex flex-col h-full bg-[#050B14] animate-in fade-in duration-300 font-sans" id="demande-recherche-form-view">
         {/* Loading overlay for the 2 seconds information saving */}
         {isSubmittingWithDelay && (
           <div className="absolute inset-0 z-[1100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-6 animate-in fade-in duration-300">
@@ -1696,7 +1696,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-300 font-sans" id="demande-recherche-screen">
+    <div className="flex flex-col h-full bg-[#050B14] animate-in fade-in duration-300 font-sans" id="demande-recherche-screen">
       {/* Header */}
       <header className="p-4 flex items-center gap-4 bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
         <button 

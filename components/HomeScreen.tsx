@@ -1145,7 +1145,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     handleMainServiceClick(item.type === 'worker' ? 'worker_list' : 'location_hub');
   };
 
-  const bgClass = isClient ? 'bg-white' : 'bg-orange-500';
+  const bgClass = isClient ? 'bg-[#050B14]' : 'bg-orange-500';
   const textClass = isClient ? 'text-slate-900' : 'text-white';
 
   if (showNoOffer) {

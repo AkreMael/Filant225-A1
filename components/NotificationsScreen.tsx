@@ -86,7 +86,7 @@ const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-500">
+    <div className="flex flex-col h-full bg-[#050B14] animate-in fade-in duration-500">
       <header className="p-4 flex items-center justify-between bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
         <button onClick={onBack} className="p-2.5 bg-white dark:bg-slate-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-slate-600 transition-all active:scale-95 flex-shrink-0 border border-gray-200 dark:border-slate-600">
             <BackIcon className="h-6 w-6 text-gray-800 dark:text-white" />
