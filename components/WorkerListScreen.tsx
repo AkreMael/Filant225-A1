@@ -458,10 +458,21 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
 
   const getRenderedWorkers = () => {
     if (selectedCategory === 'Disponible') {
-      const filteredDynamics = dynamicDisponibles.filter(w => 
-        w.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        w.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const filteredDynamics = dynamicDisponibles.filter(w => {
+        const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              w.description.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const n = w.name.toLowerCase();
+        const isExcluded = n.includes('disque jockey') ||
+                           n.includes('installation audiovisuelle') ||
+                           n.includes('ingénieur audio visuel') ||
+                           n.includes('ingénieur audiovisuel') ||
+                           n.includes('location d\'équipement') ||
+                           n.includes('location d’équipement') ||
+                           n.includes('location equipement');
+        
+        return matchesSearch && !isExcluded;
+      });
 
       const filteredStatics = allWorkers.filter(w => {
         const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -474,7 +485,15 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
           'caméras de surveillance',
           'fenêtres et portes vitrées',
           'menuisier',
-          'garde malade'
+          'garde malade',
+          'disque jockeys',
+          'disque jockey',
+          'installation audiovisuelle',
+          'ingénieur audio visuel',
+          'ingénieur audiovisuel',
+          'location d\'équipement',
+          'location d’équipement',
+          'location equipement'
         ];
         
         const isExcluded = excludedTitles.some(title => w.name.toLowerCase().includes(title));
