@@ -5,6 +5,8 @@ import { Worker, User as UserType } from '../types';
 import EmbeddedForm from './EmbeddedForm';
 import { User } from 'lucide-react';
 import { getFormImage } from './common/formDefinitions';
+import { db } from '../firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 // --- ICONS (Matching the provided mockup) ---
 const BackIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>;
@@ -303,7 +305,7 @@ const VerifiedBadge = () => (
 
 const WorkerCard: React.FC<WorkerCardProps> = ({ worker, user, onScheduleService, onOpenForm }) => {
   const isDisponible = worker.category === 'Disponible';
-  const imageSrc = getSynchronizedWorkerImage(worker.name);
+  const imageSrc = worker.profileImageUrl || getSynchronizedWorkerImage(worker.name);
   
   // Use the full name as provided in the data
   const displayName = worker.name;
@@ -405,10 +407,34 @@ interface WorkerListScreenProps {
 
 const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onScheduleService, onOpenSiteWorkers, onOpenForm }) => {
   const [allWorkers, setAllWorkers] = useState<Worker[]>([]);
+  const [dynamicDisponibles, setDynamicDisponibles] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Disponible');
+
+  useEffect(() => {
+    const q = query(collection(db, 'Disponible'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: `disponible-dynamic-${doc.id}`,
+          name: data.titre,
+          description: data.description,
+          profileImageUrl: data.image,
+          category: 'Disponible',
+          rating: 4.8,
+          phone: "+2250705052632",
+          isVerified: true
+        } as Worker;
+      });
+      setDynamicDisponibles(list);
+    }, (err) => {
+      console.error("Error loading dynamic disponibles:", err);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const fetchWorkers = async () => {
@@ -432,7 +458,12 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
 
   const getRenderedWorkers = () => {
     if (selectedCategory === 'Disponible') {
-      return allWorkers.filter(w => {
+      const filteredDynamics = dynamicDisponibles.filter(w => 
+        w.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        w.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const filteredStatics = allWorkers.filter(w => {
         const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = w.category === 'Disponible';
         
@@ -450,6 +481,8 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
         
         return matchesSearch && matchesCategory && !isExcluded;
       });
+
+      return [...filteredDynamics, ...filteredStatics];
     }
 
     const matchedCat = VIRTUAL_CATEGORIES.find(c => c.id === selectedCategory);

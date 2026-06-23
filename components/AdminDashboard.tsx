@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { db, rtdb } from '../firebase';
-import { collection, onSnapshot, query, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, addDoc, serverTimestamp, updateDoc, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { ref as rtdbRef, onValue } from 'firebase/database';
 import { User } from '../types';
 import { databaseService } from '../services/databaseService';
+import { imageService } from '../services/imageService';
 import { 
   Users, 
   Briefcase, 
@@ -59,7 +60,8 @@ type AdminTab =
   | 'agencies'
   | 'companies'
   | 'wallets'
-  | 'notifications';
+  | 'notifications'
+  | 'disponible';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat, onSwitchToApp }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -76,6 +78,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   // Photo link states for registrations
   const [localImageLink, setLocalImageLink] = useState('');
   const [isSavingImageLink, setIsSavingImageLink] = useState(false);
+
+  // Dynamic Disponible states
+  const [disponibleTitre, setDisponibleTitre] = useState('');
+  const [disponibleDesc, setDisponibleDesc] = useState('');
+  const [disponibleFile, setDisponibleFile] = useState<File | null>(null);
+  const [disponiblePreviewUrl, setDisponiblePreviewUrl] = useState('');
+  const [isSavingDisponible, setIsSavingDisponible] = useState(false);
+  const [disponibleSuccessMsg, setDisponibleSuccessMsg] = useState('');
+  const [disponibleErrorMsg, setDisponibleErrorMsg] = useState('');
 
   // FILANT°225 Admin wallet states
   const [wallets, setWallets] = useState<any[]>([]);
@@ -116,7 +127,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     payments: [],
     requests: [],
     missions: [],
-    allUsers: [] // Unified user profile store
+    allUsers: [], // Unified user profile store
+    disponible: []
   });
 
   useEffect(() => {
@@ -192,6 +204,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setWalletTransactions(txList);
     });
 
+    const unsubDisponible = onSnapshot(query(collection(db, 'Disponible'), orderBy('createdAt', 'desc')), (snap) => {
+      setData(prev => ({ ...prev, disponible: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+    });
+
     setLoading(false);
 
     return () => {
@@ -205,6 +221,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       unsubQRCodes();
       unsubWallets();
       unsubWalletTxs();
+      unsubDisponible();
     };
   }, []);
 
@@ -309,6 +326,212 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     } catch (error) {
       console.error("Error invalidating payment:", error);
     }
+  };
+
+  const handleSaveDisponible = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!disponibleTitre.trim()) {
+      setDisponibleErrorMsg('Veuillez saisir un titre.');
+      return;
+    }
+    if (!disponibleDesc.trim()) {
+      setDisponibleErrorMsg('Veuillez saisir une description.');
+      return;
+    }
+    if (!disponibleFile) {
+      setDisponibleErrorMsg('Veuillez sélectionner une image depuis votre appareil.');
+      return;
+    }
+
+    setIsSavingDisponible(true);
+    setDisponibleErrorMsg('');
+    setDisponibleSuccessMsg('');
+
+    try {
+      // 1. Compress image
+      const compressedBase64 = await imageService.compressImage(disponibleFile, 800, 0.75);
+      
+      // 2. Upload to Firebase Storage
+      const storagePath = `Disponible/${Date.now()}_disponible.jpg`;
+      const downloadUrl = await databaseService.uploadFile(compressedBase64, storagePath);
+      
+      if (!downloadUrl) {
+        throw new Error("Le téléchargement de l'image a échoué.");
+      }
+
+      // 3. Save to Firestore
+      await addDoc(collection(db, 'Disponible'), {
+        titre: disponibleTitre.trim(),
+        image: downloadUrl,
+        description: disponibleDesc.trim(),
+        createdAt: new Date().toISOString()
+      });
+
+      // 4. Reset & success feedback
+      setDisponibleTitre('');
+      setDisponibleDesc('');
+      setDisponibleFile(null);
+      setDisponiblePreviewUrl('');
+      setDisponibleSuccessMsg('Enregistré avec succès dans la collection Disponible !');
+      setTimeout(() => setDisponibleSuccessMsg(''), 5000);
+    } catch (err: any) {
+      console.error(err);
+      setDisponibleErrorMsg(err.message || 'Une erreur est survenue lors de la sauvegarde.');
+    } finally {
+      setIsSavingDisponible(false);
+    }
+  };
+
+  const handleDeleteDisponible = async (id: string) => {
+    if (!window.confirm('Voulez-vous vraiment supprimer ce professionnel disponible ?')) return;
+    try {
+      await deleteDoc(doc(db, 'Disponible', id));
+    } catch (err) {
+      console.error(err);
+      alert('Erreur lors de la suppression.');
+    }
+  };
+
+  const renderDisponibleTab = () => {
+    const list = data.disponible || [];
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-slate-950 dark:text-white">
+        {/* Left column: Add/New Form */}
+        <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-slate-800 h-fit">
+          <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 flex items-center gap-2">
+            <Plus size={18} className="text-orange-500" />
+            Nouveau Professionnel
+          </h2>
+          
+          <form onSubmit={handleSaveDisponible} className="space-y-4">
+            <div>
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre / Métier</label>
+              <input
+                type="text"
+                value={disponibleTitre}
+                onChange={(e) => setDisponibleTitre(e.target.value)}
+                placeholder="Ex. Menuisier, Vendeuse, Coiffeuse..."
+                className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-850 rounded-2xl px-4 py-3 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
+              <textarea
+                value={disponibleDesc}
+                onChange={(e) => setDisponibleDesc(e.target.value)}
+                placeholder="Description du service ou présentation du profil qualifié..."
+                rows={3}
+                className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-850 rounded-2xl px-4 py-3 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Image du Métier</label>
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-2xl p-4 bg-gray-50 dark:bg-slate-950 relative overflow-hidden group">
+                {disponiblePreviewUrl ? (
+                  <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-inner">
+                    <img src={disponiblePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDisponibleFile(null);
+                        setDisponiblePreviewUrl('');
+                      }}
+                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 active:scale-95 transition-all shadow-md z-10"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer w-full flex flex-col items-center py-4">
+                    <Briefcase size={28} className="text-gray-400 mb-1.5 group-hover:text-orange-500 transition-colors" />
+                    <span className="text-xs font-bold text-gray-500">Choisir une image...</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5">PNG, JPG, JPEG</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setDisponibleFile(file);
+                          setDisponiblePreviewUrl(URL.createObjectURL(file));
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {disponibleSuccessMsg && (
+              <div className="p-3 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-xl text-xs font-bold border border-green-200 dark:border-green-905/30">
+                {disponibleSuccessMsg}
+              </div>
+            )}
+
+            {disponibleErrorMsg && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-905/30">
+                {disponibleErrorMsg}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSavingDisponible}
+              className="w-full bg-orange-500 text-white rounded-2xl py-3.5 text-xs font-black uppercase tracking-wider shadow-lg hover:bg-orange-600 active:scale-95 transition-all disabled:opacity-55 flex items-center justify-center gap-2"
+            >
+              {isSavingDisponible ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/35 border-t-white"></div>
+                  <span>Téléchargement...</span>
+                </>
+              ) : (
+                'Enregistrer'
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Right column: List of Added Professional Items */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-slate-800">
+          <h2 className="text-md font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 flex items-center justify-between">
+            <span>Professionnels disponibles ajoutés ({list.length})</span>
+          </h2>
+          
+          {list.length === 0 ? (
+            <div className="text-center py-24 flex flex-col items-center justify-center">
+              <Briefcase size={40} className="text-gray-300 mb-2" />
+              <p className="text-xs font-bold text-gray-400">Aucun travailleur disponible dynamique.</p>
+              <p className="text-[10px] text-gray-450 mt-0.5">Enregistrez de nouvelles entrées à gauche.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2 scrollbar-thin">
+              {list.map((item) => (
+                <div key={item.id} className="relative group bg-gray-50 dark:bg-slate-950 rounded-2xl p-4 flex gap-3 border border-gray-100 dark:border-slate-850 shadow-inner">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-gray-100 dark:border-slate-800 flex-shrink-0 relative">
+                    <img src={item.image} alt={item.titre} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 flex flex-col min-w-0 pr-8">
+                    <h4 className="font-extrabold text-slate-900 dark:text-white text-xs truncate uppercase tracking-tight">{item.titre}</h4>
+                    <p className="text-gray-500 text-[10px] leading-tight mt-1 line-clamp-2 h-7 font-medium">{item.description}</p>
+                    <span className="text-[8px] text-gray-400 font-extrabold mt-1 uppercase tracking-tighter">Ajouté le {new Date(item.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteDisponible(item.id)}
+                    className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/25 rounded-md transition-all active:scale-95"
+                    title="Supprimer"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const renderTable = (headers: string[], keys: string[], sourceData: any[], collectionName?: string) => {
@@ -689,6 +912,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     { id: 'equipments', label: 'Équipements', icon: Factory },
     { id: 'agencies', label: 'Agences Immobilières', icon: Home },
     { id: 'companies', label: 'Entreprises', icon: Building2 },
+    { id: 'disponible', label: 'Disponible', icon: Check },
   ];
 
   const openDetails = (item: any, collectionName: string) => {
@@ -2076,6 +2300,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                   </div>
                 </div>
               )}
+
+              {activeTab === 'disponible' && renderDisponibleTab()}
             </>
           )}
         </main>

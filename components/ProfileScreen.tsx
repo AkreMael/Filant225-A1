@@ -81,9 +81,9 @@ const ProfileRow: React.FC<{
     isDark?: boolean,
     rightElement?: React.ReactNode
 }> = ({ icon, title, subtitle, onClick, isDark, rightElement }) => (
-    <button 
+    <div 
         onClick={onClick}
-        className={`w-full flex items-center p-4 transition-colors active:bg-gray-100 ${isDark ? 'bg-[#212121] text-white rounded-2xl mb-4 shadow-md' : 'bg-white'}`}
+        className={`w-full flex items-center p-4 transition-colors select-none ${onClick ? 'cursor-pointer active:bg-gray-100' : ''} ${isDark ? 'bg-[#212121] text-white rounded-2xl mb-4 shadow-md' : 'bg-white'}`}
     >
         <div className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg mr-4 ${isDark ? 'bg-transparent text-yellow-400' : 'text-gray-700'}`}>
             {icon}
@@ -95,7 +95,7 @@ const ProfileRow: React.FC<{
         <div className="flex-shrink-0 ml-2">
             {rightElement || <ChevronRight className={isDark ? "text-red-500" : "text-gray-300"} />}
         </div>
-    </button>
+    </div>
 );
 
 const ContactListView: React.FC<{ contacts: SavedContact[], onDelete: (id: string) => void }> = ({ contacts, onDelete }) => {

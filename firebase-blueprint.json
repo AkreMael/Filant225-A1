@@ -336,6 +336,18 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "userName", "phone", "city", "category", "domain", "title", "answers", "adminReadStatus", "timestamp"]
+    },
+    "Disponible": {
+      "title": "Disponible",
+      "description": "Nouveau professionnel de la section Disponible.",
+      "type": "object",
+      "properties": {
+        "titre": { "type": "string", "description": "Titre du métier disponible" },
+        "image": { "type": "string", "description": "Lien de la photo de présentation" },
+        "description": { "type": "string", "description": "Description de l'activité/service" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Date de création de l'enregistrement" }
+      },
+      "required": ["titre", "image", "description", "createdAt"]
     }
   },
   "firestore": {
@@ -410,6 +422,10 @@
     "/Formation/{id}": {
       "schema": "FormationApplication",
       "description": "Inscriptions aux formations professionnelles."
+    },
+    "/Disponible/{id}": {
+      "schema": "Disponible",
+      "description": "Collection des nouveaux éléments de la section Disponible."
     }
   }
 }
