@@ -34,7 +34,8 @@ import {
   Bell,
   Plus,
   Minus,
-  Check
+  Check,
+  Pencil
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -87,6 +88,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [isSavingDisponible, setIsSavingDisponible] = useState(false);
   const [disponibleSuccessMsg, setDisponibleSuccessMsg] = useState('');
   const [disponibleErrorMsg, setDisponibleErrorMsg] = useState('');
+  const [editingDisponibleId, setEditingDisponibleId] = useState<string | null>(null);
+  const [disponibleCategory, setDisponibleCategory] = useState<'travailleur' | 'equipement' | 'appartement'>('travailleur');
 
   // FILANT°225 Admin wallet states
   const [wallets, setWallets] = useState<any[]>([]);
@@ -128,7 +131,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     requests: [],
     missions: [],
     allUsers: [], // Unified user profile store
-    disponible: []
+    disponible: [],
+    equipements_dispo: [],
+    appartements_dispo: []
   });
 
   useEffect(() => {
@@ -208,6 +213,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setData(prev => ({ ...prev, disponible: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
+    const unsubEquipementsDispo = onSnapshot(query(collection(db, 'Equipements'), orderBy('createdAt', 'desc')), (snap) => {
+      setData(prev => ({ ...prev, equipements_dispo: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+    });
+
+    const unsubAppartementsDispo = onSnapshot(query(collection(db, 'Appartements'), orderBy('createdAt', 'desc')), (snap) => {
+      setData(prev => ({ ...prev, appartements_dispo: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
+    });
+
     setLoading(false);
 
     return () => {
@@ -222,6 +235,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       unsubWallets();
       unsubWalletTxs();
       unsubDisponible();
+      unsubEquipementsDispo();
+      unsubAppartementsDispo();
     };
   }, []);
 
@@ -328,6 +343,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     }
   };
 
+  const getCollectionName = (cat: 'travailleur' | 'equipement' | 'appartement') => {
+    if (cat === 'equipement') return 'Equipements';
+    if (cat === 'appartement') return 'Appartements';
+    return 'Disponible';
+  };
+
   const handleSaveDisponible = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!disponibleTitre.trim()) {
@@ -338,7 +359,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setDisponibleErrorMsg('Veuillez saisir une description.');
       return;
     }
-    if (!disponibleFile) {
+    if (!editingDisponibleId && !disponibleFile) {
       setDisponibleErrorMsg('Veuillez sélectionner une image depuis votre appareil.');
       return;
     }
@@ -347,32 +368,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     setDisponibleErrorMsg('');
     setDisponibleSuccessMsg('');
 
+    const targetCol = getCollectionName(disponibleCategory);
+
     try {
-      // 1. Compress image
-      const compressedBase64 = await imageService.compressImage(disponibleFile, 800, 0.75);
-      
-      // 2. Upload to Firebase Storage
-      const storagePath = `Disponible/${Date.now()}_disponible.jpg`;
-      const downloadUrl = await databaseService.uploadFile(compressedBase64, storagePath);
-      
-      if (!downloadUrl) {
-        throw new Error("Le téléchargement de l'image a échoué.");
+      let downloadUrl = '';
+
+      if (disponibleFile) {
+        // 1. Compress image
+        const compressedBase64 = await imageService.compressImage(disponibleFile, 800, 0.75);
+        
+        // 2. Upload to Firebase Storage
+        const storagePath = `${targetCol}/${Date.now()}_disponible.jpg`;
+        downloadUrl = await databaseService.uploadFile(compressedBase64, storagePath);
+        
+        if (!downloadUrl) {
+          throw new Error("Le téléchargement de l'image a échoué.");
+        }
+      } else if (editingDisponibleId) {
+        // In edit mode, if no new file is selected, keep the existing image url
+        downloadUrl = disponiblePreviewUrl;
       }
 
-      // 3. Save to Firestore
-      await addDoc(collection(db, 'Disponible'), {
-        titre: disponibleTitre.trim(),
-        image: downloadUrl,
-        description: disponibleDesc.trim(),
-        createdAt: new Date().toISOString()
-      });
+      if (editingDisponibleId) {
+        // 3. Update in Firestore
+        await updateDoc(doc(db, targetCol, editingDisponibleId), {
+          titre: disponibleTitre.trim(),
+          image: downloadUrl,
+          description: disponibleDesc.trim()
+        });
+        setDisponibleSuccessMsg('Modifié avec succès !');
+      } else {
+        // 3. Save new to Firestore
+        await addDoc(collection(db, targetCol), {
+          titre: disponibleTitre.trim(),
+          image: downloadUrl,
+          description: disponibleDesc.trim(),
+          createdAt: new Date().toISOString()
+        });
+        setDisponibleSuccessMsg('Enregistré avec succès !');
+      }
 
       // 4. Reset & success feedback
       setDisponibleTitre('');
       setDisponibleDesc('');
       setDisponibleFile(null);
       setDisponiblePreviewUrl('');
-      setDisponibleSuccessMsg('Enregistré avec succès dans la collection Disponible !');
+      setEditingDisponibleId(null);
       setTimeout(() => setDisponibleSuccessMsg(''), 5000);
     } catch (err: any) {
       console.error(err);
@@ -382,153 +423,322 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     }
   };
 
-  const handleDeleteDisponible = async (id: string) => {
-    if (!window.confirm('Voulez-vous vraiment supprimer ce professionnel disponible ?')) return;
-    try {
-      await deleteDoc(doc(db, 'Disponible', id));
-    } catch (err) {
-      console.error(err);
-      alert('Erreur lors de la suppression.');
-    }
+  const handleDeleteDisponible = (id: string, cat: 'travailleur' | 'equipement' | 'appartement') => {
+    const targetCol = getCollectionName(cat);
+    setItemToDelete({
+      id,
+      collectionName: targetCol
+    });
   };
 
   const renderDisponibleTab = () => {
-    const list = data.disponible || [];
+    const list = disponibleCategory === 'equipement' 
+      ? (data.equipements_dispo || []) 
+      : disponibleCategory === 'appartement'
+        ? (data.appartements_dispo || [])
+        : (data.disponible || []);
+
+    const getNewFormTitle = () => {
+      if (disponibleCategory === 'equipement') return "Nouvel Équipement";
+      if (disponibleCategory === 'appartement') return "Nouvel Appartement";
+      return "Nouveau Professionnel";
+    };
+
+    const getEditFormTitle = () => {
+      if (disponibleCategory === 'equipement') return "Modifier l'Équipement";
+      if (disponibleCategory === 'appartement') return "Modifier l'Appartement";
+      return "Modifier le Professionnel";
+    };
+
+    const getTitreLabel = () => {
+      if (disponibleCategory === 'equipement') return "Titre de l'équipement";
+      if (disponibleCategory === 'appartement') return "Titre de l'appartement";
+      return "Titre / Métier";
+    };
+
+    const getTitrePlaceholder = () => {
+      if (disponibleCategory === 'equipement') return "Ex. Groupe électrogène, Bâche...";
+      if (disponibleCategory === 'appartement') return "Ex. Studio américain, Villa 4 pièces...";
+      return "Ex. Menuisier, Vendeuse, Coiffeuse...";
+    };
+
+    const getDescPlaceholder = () => {
+      if (disponibleCategory === 'equipement') return "Description de l'équipement, prix, conditions...";
+      if (disponibleCategory === 'appartement') return "Description de l'appartement, localisation, prix...";
+      return "Description du service ou présentation du profil qualifié...";
+    };
+
+    const getImageLabel = () => {
+      if (disponibleCategory === 'equipement') return "Image de l'équipement";
+      if (disponibleCategory === 'appartement') return "Image de l'appartement";
+      return "Image du Métier";
+    };
+
+    const getListHeader = () => {
+      if (disponibleCategory === 'equipement') return `Équipements à louer ajoutés (${list.length})`;
+      if (disponibleCategory === 'appartement') return `Appartements à louer ajoutés (${list.length})`;
+      return `Professionnels disponibles ajoutés (${list.length})`;
+    };
+
+    const getEmptyText = () => {
+      if (disponibleCategory === 'equipement') return "Aucun équipement disponible dynamique.";
+      if (disponibleCategory === 'appartement') return "Aucun appartement disponible dynamique.";
+      return "Aucun travailleur disponible dynamique.";
+    };
+
+    const getEmptyIcon = () => {
+      if (disponibleCategory === 'equipement') return <Factory size={40} className="text-gray-300 mb-2" />;
+      if (disponibleCategory === 'appartement') return <Home size={40} className="text-gray-300 mb-2" />;
+      return <Briefcase size={40} className="text-gray-300 mb-2" />;
+    };
+
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-slate-950 dark:text-white">
-        {/* Left column: Add/New Form */}
-        <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-slate-800 h-fit">
-          <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 flex items-center gap-2">
-            <Plus size={18} className="text-orange-500" />
-            Nouveau Professionnel
-          </h2>
-          
-          <form onSubmit={handleSaveDisponible} className="space-y-4">
-            <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre / Métier</label>
-              <input
-                type="text"
-                value={disponibleTitre}
-                onChange={(e) => setDisponibleTitre(e.target.value)}
-                placeholder="Ex. Menuisier, Vendeuse, Coiffeuse..."
-                className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-850 rounded-2xl px-4 py-3 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
-              <textarea
-                value={disponibleDesc}
-                onChange={(e) => setDisponibleDesc(e.target.value)}
-                placeholder="Description du service ou présentation du profil qualifié..."
-                rows={3}
-                className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-850 rounded-2xl px-4 py-3 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Image du Métier</label>
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-2xl p-4 bg-gray-50 dark:bg-slate-950 relative overflow-hidden group">
-                {disponiblePreviewUrl ? (
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-inner">
-                    <img src={disponiblePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDisponibleFile(null);
-                        setDisponiblePreviewUrl('');
-                      }}
-                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 active:scale-95 transition-all shadow-md z-10"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="cursor-pointer w-full flex flex-col items-center py-4">
-                    <Briefcase size={28} className="text-gray-400 mb-1.5 group-hover:text-orange-500 transition-colors" />
-                    <span className="text-xs font-bold text-gray-500">Choisir une image...</span>
-                    <span className="text-[10px] text-gray-400 mt-0.5">PNG, JPG, JPEG</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setDisponibleFile(file);
-                          setDisponiblePreviewUrl(URL.createObjectURL(file));
-                        }
-                      }}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
-
-            {disponibleSuccessMsg && (
-              <div className="p-3 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-xl text-xs font-bold border border-green-200 dark:border-green-905/30">
-                {disponibleSuccessMsg}
-              </div>
-            )}
-
-            {disponibleErrorMsg && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-905/30">
-                {disponibleErrorMsg}
-              </div>
-            )}
-
+      <div className="space-y-6">
+        {/* Category Selector */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-md border border-gray-100 dark:border-slate-800 flex flex-wrap gap-2 items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Gestion des Ajouts Dynamiques</h3>
+            <p className="text-[10px] text-gray-500 font-bold mt-0.5">Choisissez la catégorie de contenu à ajouter ou modifier</p>
+          </div>
+          <div className="flex gap-1 bg-gray-50 dark:bg-slate-950 p-1 rounded-xl border border-gray-200 dark:border-slate-850">
             <button
-              type="submit"
-              disabled={isSavingDisponible}
-              className="w-full bg-orange-500 text-white rounded-2xl py-3.5 text-xs font-black uppercase tracking-wider shadow-lg hover:bg-orange-600 active:scale-95 transition-all disabled:opacity-55 flex items-center justify-center gap-2"
+              type="button"
+              disabled={!!editingDisponibleId}
+              onClick={() => {
+                setDisponibleCategory('travailleur');
+                setDisponibleTitre('');
+                setDisponibleDesc('');
+                setDisponibleFile(null);
+                setDisponiblePreviewUrl('');
+                setDisponibleErrorMsg('');
+                setDisponibleSuccessMsg('');
+              }}
+              className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+                disponibleCategory === 'travailleur'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'text-gray-500 hover:text-slate-900 dark:hover:text-white'
+              } disabled:opacity-50`}
             >
-              {isSavingDisponible ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/35 border-t-white"></div>
-                  <span>Téléchargement...</span>
-                </>
-              ) : (
-                'Enregistrer'
-              )}
+              Travailleur qualifié
             </button>
-          </form>
+            <button
+              type="button"
+              disabled={!!editingDisponibleId}
+              onClick={() => {
+                setDisponibleCategory('equipement');
+                setDisponibleTitre('');
+                setDisponibleDesc('');
+                setDisponibleFile(null);
+                setDisponiblePreviewUrl('');
+                setDisponibleErrorMsg('');
+                setDisponibleSuccessMsg('');
+              }}
+              className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+                disponibleCategory === 'equipement'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'text-gray-500 hover:text-slate-900 dark:hover:text-white'
+              } disabled:opacity-50`}
+            >
+              Équipement à louer
+            </button>
+            <button
+              type="button"
+              disabled={!!editingDisponibleId}
+              onClick={() => {
+                setDisponibleCategory('appartement');
+                setDisponibleTitre('');
+                setDisponibleDesc('');
+                setDisponibleFile(null);
+                setDisponiblePreviewUrl('');
+                setDisponibleErrorMsg('');
+                setDisponibleSuccessMsg('');
+              }}
+              className={`px-4 py-2 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all ${
+                disponibleCategory === 'appartement'
+                  ? 'bg-orange-500 text-white shadow-md'
+                  : 'text-gray-500 hover:text-slate-900 dark:hover:text-white'
+              } disabled:opacity-50`}
+            >
+              Appartement à louer
+            </button>
+          </div>
         </div>
 
-        {/* Right column: List of Added Professional Items */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-slate-800">
-          <h2 className="text-md font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 flex items-center justify-between">
-            <span>Professionnels disponibles ajoutés ({list.length})</span>
-          </h2>
-          
-          {list.length === 0 ? (
-            <div className="text-center py-24 flex flex-col items-center justify-center">
-              <Briefcase size={40} className="text-gray-300 mb-2" />
-              <p className="text-xs font-bold text-gray-400">Aucun travailleur disponible dynamique.</p>
-              <p className="text-[10px] text-gray-450 mt-0.5">Enregistrez de nouvelles entrées à gauche.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2 scrollbar-thin">
-              {list.map((item) => (
-                <div key={item.id} className="relative group bg-gray-50 dark:bg-slate-950 rounded-2xl p-4 flex gap-3 border border-gray-100 dark:border-slate-850 shadow-inner">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-gray-100 dark:border-slate-800 flex-shrink-0 relative">
-                    <img src={item.image} alt={item.titre} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1 flex flex-col min-w-0 pr-8">
-                    <h4 className="font-extrabold text-slate-900 dark:text-white text-xs truncate uppercase tracking-tight">{item.titre}</h4>
-                    <p className="text-gray-500 text-[10px] leading-tight mt-1 line-clamp-2 h-7 font-medium">{item.description}</p>
-                    <span className="text-[8px] text-gray-400 font-extrabold mt-1 uppercase tracking-tighter">Ajouté le {new Date(item.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteDisponible(item.id)}
-                    className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/25 rounded-md transition-all active:scale-95"
-                    title="Supprimer"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-slate-950 dark:text-white">
+          {/* Left column: Add/New Form */}
+          <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-slate-800 h-fit">
+            {editingDisponibleId ? (
+              <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <Pencil size={18} className="text-orange-500" />
+                  {getEditFormTitle()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingDisponibleId(null);
+                    setDisponibleTitre('');
+                    setDisponibleDesc('');
+                    setDisponibleFile(null);
+                    setDisponiblePreviewUrl('');
+                    setDisponibleErrorMsg('');
+                  }}
+                  className="text-[10px] font-extrabold text-red-500 hover:underline px-2.5 py-1 bg-red-50 dark:bg-red-950/20 rounded-lg uppercase tracking-wider"
+                >
+                  Annuler
+                </button>
+              </h2>
+            ) : (
+              <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 flex items-center gap-2">
+                <Plus size={18} className="text-orange-500" />
+                {getNewFormTitle()}
+              </h2>
+            )}
+            
+            <form onSubmit={handleSaveDisponible} className="space-y-4">
+              <div>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{getTitreLabel()}</label>
+                <input
+                  type="text"
+                  value={disponibleTitre}
+                  onChange={(e) => setDisponibleTitre(e.target.value)}
+                  placeholder={getTitrePlaceholder()}
+                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-850 rounded-2xl px-4 py-3 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
+                <textarea
+                  value={disponibleDesc}
+                  onChange={(e) => setDisponibleDesc(e.target.value)}
+                  placeholder={getDescPlaceholder()}
+                  rows={3}
+                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-850 rounded-2xl px-4 py-3 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{getImageLabel()}</label>
+                <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-2xl p-4 bg-gray-50 dark:bg-slate-950 relative overflow-hidden group">
+                  {disponiblePreviewUrl ? (
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-inner">
+                      <img src={disponiblePreviewUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDisponibleFile(null);
+                          setDisponiblePreviewUrl('');
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 active:scale-95 transition-all shadow-md z-10"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer w-full flex flex-col items-center py-4">
+                      <Briefcase size={28} className="text-gray-400 mb-1.5 group-hover:text-orange-500 transition-colors" />
+                      <span className="text-xs font-bold text-gray-500">Choisir une image...</span>
+                      <span className="text-[10px] text-gray-400 mt-0.5">PNG, JPG, JPEG</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setDisponibleFile(file);
+                            setDisponiblePreviewUrl(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+
+              {disponibleSuccessMsg && (
+                <div className="p-3 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-xl text-xs font-bold border border-green-200 dark:border-green-905/30">
+                  {disponibleSuccessMsg}
+                </div>
+              )}
+
+              {disponibleErrorMsg && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-905/30">
+                  {disponibleErrorMsg}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSavingDisponible}
+                className="w-full bg-orange-500 text-white rounded-2xl py-3.5 text-xs font-black uppercase tracking-wider shadow-lg hover:bg-orange-600 active:scale-95 transition-all disabled:opacity-55 flex items-center justify-center gap-2"
+              >
+                {isSavingDisponible ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/35 border-t-white"></div>
+                    <span>{editingDisponibleId ? 'Modification...' : 'Téléchargement...'}</span>
+                  </>
+                ) : (
+                  editingDisponibleId ? 'Modifier' : 'Enregistrer'
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Right column: List of Added Items */}
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-gray-100 dark:border-slate-800">
+            <h2 className="text-md font-black text-slate-900 dark:text-white uppercase tracking-tight mb-4 flex items-center justify-between">
+              <span>{getListHeader()}</span>
+            </h2>
+            
+            {list.length === 0 ? (
+              <div className="text-center py-24 flex flex-col items-center justify-center">
+                {getEmptyIcon()}
+                <p className="text-xs font-bold text-gray-400">{getEmptyText()}</p>
+                <p className="text-[10px] text-gray-450 mt-0.5">Enregistrez de nouvelles entrées à gauche.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[65vh] overflow-y-auto pr-2 scrollbar-thin">
+                {list.map((item) => (
+                  <div key={item.id} className="relative group bg-gray-50 dark:bg-slate-950 rounded-2xl p-4 flex gap-3 border border-gray-100 dark:border-slate-850 shadow-inner">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-gray-100 dark:border-slate-800 flex-shrink-0 relative">
+                      <img src={item.image} alt={item.titre} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 flex flex-col min-w-0 pr-14">
+                      <h4 className="font-extrabold text-slate-900 dark:text-white text-xs truncate uppercase tracking-tight">{item.titre}</h4>
+                      <p className="text-gray-500 text-[10px] leading-tight mt-1 line-clamp-2 h-7 font-medium">{item.description}</p>
+                      <span className="text-[8px] text-gray-400 font-extrabold mt-1 uppercase tracking-tighter">Ajouté le {new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setEditingDisponibleId(item.id);
+                          setDisponibleTitre(item.titre);
+                          setDisponibleDesc(item.description);
+                          setDisponiblePreviewUrl(item.image);
+                          setDisponibleFile(null);
+                          setDisponibleErrorMsg('');
+                          setDisponibleSuccessMsg('');
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/25 rounded-md transition-all active:scale-95"
+                        title="Modifier"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDisponible(item.id, disponibleCategory)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/25 rounded-md transition-all active:scale-95"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );

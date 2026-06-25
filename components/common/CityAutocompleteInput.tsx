@@ -147,8 +147,6 @@ const CityAutocompleteInput: React.FC<CityAutocompleteInputProps> = ({
     onChange(city);
     setShowSuggestions(false);
     setActiveIndex(-1);
-    // Focus back on the input
-    inputRef.current?.focus();
   };
 
   return (

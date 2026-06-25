@@ -128,6 +128,13 @@ interface NavigationPoint {
   activeTab: Tab;
   menuView: string;
   offerSubView: 'main' | 'shop' | 'info_travailleurs' | 'info_clients';
+  isProfileOpen: boolean;
+  showScannerGlobal: boolean;
+  showSmartRegistration: boolean;
+  showFullRegistration: boolean;
+  adminChatContext: any;
+  interactiveModalContext: any;
+  paymentConfirmationContext: any;
 }
 
 const App: React.FC = () => {
@@ -222,20 +229,156 @@ const App: React.FC = () => {
   const [isAuthChecking, setIsAuthChecking] = useState(() => !databaseService.getActiveUser());
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
-  const [showSmartRegistration, setShowSmartRegistration] = useState(false);
   const [hasCompletedFirstLaunch, setHasCompletedFirstLaunch] = useState(() => {
       return localStorage.getItem('filant_has_selected_profile') === 'true';
   });
 
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.Menu);
-  const [showFullRegistration, setShowFullRegistration] = useState(false);
+  // RAW states (do not push to history when set directly during popping/restoring)
+  const [showSmartRegistrationRaw, setShowSmartRegistrationRaw] = useState(false);
+  const [activeTabRaw, setActiveTabRaw] = useState<Tab>(Tab.Menu);
+  const [showFullRegistrationRaw, setShowFullRegistrationRaw] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminForceAppView, setAdminForceAppView] = useState(false);
-  const [menuView, setMenuView] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>('hub');
-  const [adminChatContext, setAdminChatContext] = useState<{ userId: string, userName: string, type: 'Privee' } | null>(null);
-  const [offerSubView, setOfferSubView] = useState<'main' | 'shop' | 'info_travailleurs' | 'info_clients'>('main');
-  
+  const [menuViewRaw, setMenuViewRaw] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>('hub');
+  const [adminChatContextRaw, setAdminChatContextRaw] = useState<{ userId: string, userName: string, type: 'Privee' } | null>(null);
+  const [offerSubViewRaw, setOfferSubViewRaw] = useState<'main' | 'shop' | 'info_travailleurs' | 'info_clients'>('main');
+  const [isProfileOpenRaw, setIsProfileOpenRaw] = useState(false);
+  const [showScannerGlobalRaw, setShowScannerGlobalRaw] = useState(false);
+  const [paymentConfirmationContextRaw, setPaymentConfirmationContextRaw] = useState<PaymentConfirmationContext | null>(null);
+  const [interactiveModalContextRaw, setInteractiveModalContextRaw] = useState<InteractiveModalContext | null>(null);
+
   const [navHistory, setNavHistory] = useState<NavigationPoint[]>([]);
+
+  // Exposed getter values (always represent current raw state)
+  const activeTab = activeTabRaw;
+  const menuView = menuViewRaw;
+  const offerSubView = offerSubViewRaw;
+  const isProfileOpen = isProfileOpenRaw;
+  const showScannerGlobal = showScannerGlobalRaw;
+  const showSmartRegistration = showSmartRegistrationRaw;
+  const showFullRegistration = showFullRegistrationRaw;
+  const adminChatContext = adminChatContextRaw;
+  const paymentConfirmationContext = paymentConfirmationContextRaw;
+  const interactiveModalContext = interactiveModalContextRaw;
+
+  // Ref to always hold latest values for synchronous reading inside wrapped setters
+  const stateRef = useRef({
+    activeTab,
+    menuView,
+    offerSubView,
+    isProfileOpen,
+    showScannerGlobal,
+    showSmartRegistration,
+    showFullRegistration,
+    adminChatContext,
+    interactiveModalContext,
+    paymentConfirmationContext
+  });
+
+  stateRef.current = {
+    activeTab,
+    menuView,
+    offerSubView,
+    isProfileOpen,
+    showScannerGlobal,
+    showSmartRegistration,
+    showFullRegistration,
+    adminChatContext,
+    interactiveModalContext,
+    paymentConfirmationContext
+  };
+
+  // Helper function to push the atomic snapshot to history
+  const pushStateToHistory = useCallback(() => {
+    const currentState: NavigationPoint = { ...stateRef.current };
+    setNavHistory(prev => [...prev, currentState]);
+    try {
+      window.history.pushState(null, '');
+    } catch (e) {
+      console.warn("pushState failed:", e);
+    }
+  }, []);
+
+  // Wrapped state setters that intercept and push to history on forward transitions
+  const setActiveTab = useCallback((val: Tab | ((prev: Tab) => Tab)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.activeTab) : val;
+    if (nextVal !== stateRef.current.activeTab) {
+      pushStateToHistory();
+      setActiveTabRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setMenuView = useCallback((val: any | ((prev: any) => any)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.menuView) : val;
+    if (nextVal !== stateRef.current.menuView) {
+      pushStateToHistory();
+      setMenuViewRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setOfferSubView = useCallback((val: any | ((prev: any) => any)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.offerSubView) : val;
+    if (nextVal !== stateRef.current.offerSubView) {
+      pushStateToHistory();
+      setOfferSubViewRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setIsProfileOpen = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.isProfileOpen) : val;
+    if (nextVal !== stateRef.current.isProfileOpen) {
+      pushStateToHistory();
+      setIsProfileOpenRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setShowScannerGlobal = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.showScannerGlobal) : val;
+    if (nextVal !== stateRef.current.showScannerGlobal) {
+      pushStateToHistory();
+      setShowScannerGlobalRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setShowSmartRegistration = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.showSmartRegistration) : val;
+    if (nextVal !== stateRef.current.showSmartRegistration) {
+      pushStateToHistory();
+      setShowSmartRegistrationRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setShowFullRegistration = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.showFullRegistration) : val;
+    if (nextVal !== stateRef.current.showFullRegistration) {
+      pushStateToHistory();
+      setShowFullRegistrationRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setAdminChatContext = useCallback((val: any | ((prev: any) => any)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.adminChatContext) : val;
+    if (nextVal !== stateRef.current.adminChatContext) {
+      pushStateToHistory();
+      setAdminChatContextRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setInteractiveModalContext = useCallback((val: any | ((prev: any) => any)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.interactiveModalContext) : val;
+    if (nextVal !== stateRef.current.interactiveModalContext) {
+      pushStateToHistory();
+      setInteractiveModalContextRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
+
+  const setPaymentConfirmationContext = useCallback((val: any | ((prev: any) => any)) => {
+    const nextVal = typeof val === 'function' ? val(stateRef.current.paymentConfirmationContext) : val;
+    if (nextVal !== stateRef.current.paymentConfirmationContext) {
+      pushStateToHistory();
+      setPaymentConfirmationContextRaw(nextVal);
+    }
+  }, [pushStateToHistory]);
 
   // --- INITIAL CHECK ---
   useEffect(() => {
@@ -250,20 +393,40 @@ const App: React.FC = () => {
   }, []);
 
   const navigateTo = useCallback((updates: Partial<NavigationPoint>) => {
-    const currentState: NavigationPoint = { activeTab, menuView, offerSubView };
+    const currentState: NavigationPoint = { ...stateRef.current };
     
     const willChange = 
-      (updates.activeTab !== undefined && updates.activeTab !== activeTab) ||
-      (updates.menuView !== undefined && updates.menuView !== menuView) ||
-      (updates.offerSubView !== undefined && updates.offerSubView !== offerSubView);
+      (updates.activeTab !== undefined && updates.activeTab !== currentState.activeTab) ||
+      (updates.menuView !== undefined && updates.menuView !== currentState.menuView) ||
+      (updates.offerSubView !== undefined && updates.offerSubView !== currentState.offerSubView) ||
+      (updates.isProfileOpen !== undefined && updates.isProfileOpen !== currentState.isProfileOpen) ||
+      (updates.showScannerGlobal !== undefined && updates.showScannerGlobal !== currentState.showScannerGlobal) ||
+      (updates.showSmartRegistration !== undefined && updates.showSmartRegistration !== currentState.showSmartRegistration) ||
+      (updates.showFullRegistration !== undefined && updates.showFullRegistration !== currentState.showFullRegistration) ||
+      (updates.adminChatContext !== undefined && updates.adminChatContext !== currentState.adminChatContext) ||
+      (updates.interactiveModalContext !== undefined && updates.interactiveModalContext !== currentState.interactiveModalContext) ||
+      (updates.paymentConfirmationContext !== undefined && updates.paymentConfirmationContext !== currentState.paymentConfirmationContext);
 
     if (willChange) {
       setNavHistory(prev => [...prev, currentState]);
-      if (updates.activeTab !== undefined) setActiveTab(updates.activeTab);
-      if (updates.menuView !== undefined) setMenuView(updates.menuView as any);
-      if (updates.offerSubView !== undefined) setOfferSubView(updates.offerSubView);
+      try {
+        window.history.pushState(null, '');
+      } catch (e) {
+        console.warn("pushState failed:", e);
+      }
+
+      if (updates.activeTab !== undefined) setActiveTabRaw(updates.activeTab);
+      if (updates.menuView !== undefined) setMenuViewRaw(updates.menuView as any);
+      if (updates.offerSubView !== undefined) setOfferSubViewRaw(updates.offerSubView);
+      if (updates.isProfileOpen !== undefined) setIsProfileOpenRaw(updates.isProfileOpen);
+      if (updates.showScannerGlobal !== undefined) setShowScannerGlobalRaw(updates.showScannerGlobal);
+      if (updates.showSmartRegistration !== undefined) setShowSmartRegistrationRaw(updates.showSmartRegistration);
+      if (updates.showFullRegistration !== undefined) setShowFullRegistrationRaw(updates.showFullRegistration);
+      if (updates.adminChatContext !== undefined) setAdminChatContextRaw(updates.adminChatContext);
+      if (updates.interactiveModalContext !== undefined) setInteractiveModalContextRaw(updates.interactiveModalContext);
+      if (updates.paymentConfirmationContext !== undefined) setPaymentConfirmationContextRaw(updates.paymentConfirmationContext);
     }
-  }, [activeTab, menuView, offerSubView]);
+  }, []);
 
   // Listen to cross-tab navigation custom events to switch views and target ads on map
   useEffect(() => {
@@ -284,10 +447,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('go-to-demande-recherche', handleGoToDemande);
   }, [navigateTo]);
 
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [showScannerGlobal, setShowScannerGlobal] = useState(false);
-  const [paymentConfirmationContext, setPaymentConfirmationContext] = useState<PaymentConfirmationContext | null>(null);
-  
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionMessage, setTransitionMessage] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -535,7 +694,6 @@ const App: React.FC = () => {
 
   const [locationInitialTab, setLocationInitialTab] = useState<'appartement' | 'equipement'>('appartement');
   const [demandeRechercheInitialQuery, setDemandeRechercheInitialQuery] = useState<string>('');
-  const [interactiveModalContext, setInteractiveModalContext] = useState<InteractiveModalContext | null>(null);
   const [shopCategory, setShopCategory] = useState<'intervention' | 'immobilier' | 'equipement' | 'travailleurs'>('intervention');
 
   const [showRestrictedToast, setShowRestrictedToast] = useState(false);
@@ -668,59 +826,45 @@ const App: React.FC = () => {
 
   const backHandlerRef = useRef<(() => boolean) | null>(null);
 
-  const handleBack = useCallback(() => {
+  const handleBack = useCallback((isFromPopState = false) => {
     // 1. Check if a registered custom back handler intercepts
     if (backHandlerRef.current && backHandlerRef.current()) {
+      if (isFromPopState) {
+        // Negate the pop state because we intercepted: push a dummy entry back
+        try {
+          window.history.pushState(null, '');
+        } catch (e) {}
+      }
       return;
     }
 
-    // 2. Clear overlays or popups (if any)
-    if (interactiveModalContext) {
-      setInteractiveModalContext(null);
-      return;
-    }
-
-    if (paymentConfirmationContext) {
-      setPaymentConfirmationContext(null);
-      return;
-    }
-
-    if (showSmartRegistration) {
-      setShowSmartRegistration(false);
-      return;
-    }
-
-    if (showFullRegistration) {
-      setShowFullRegistration(false);
-      return;
-    }
-
-    if (adminChatContext) {
-      setAdminChatContext(null);
-      return;
-    }
-
-    if (isProfileOpen) {
-      setIsProfileOpen(false);
-      return;
-    }
-
-    if (showScannerGlobal) {
-      setShowScannerGlobal(false);
-      return;
-    }
-
-    // 3. Navigate back through history
+    // 2. Navigate back through history if we have entries
     if (navHistory.length > 0) {
       const lastPoint = navHistory[navHistory.length - 1];
       setNavHistory(prev => prev.slice(0, -1));
-      setActiveTab(lastPoint.activeTab);
-      setMenuView(lastPoint.menuView as any);
-      setOfferSubView(lastPoint.offerSubView);
+
+      // Restore states using raw setters so we do NOT trigger new history entries
+      setActiveTabRaw(lastPoint.activeTab);
+      setMenuViewRaw(lastPoint.menuView as any);
+      setOfferSubViewRaw(lastPoint.offerSubView);
+      setIsProfileOpenRaw(lastPoint.isProfileOpen);
+      setShowScannerGlobalRaw(lastPoint.showScannerGlobal);
+      setShowSmartRegistrationRaw(lastPoint.showSmartRegistration);
+      setShowFullRegistrationRaw(lastPoint.showFullRegistration);
+      setAdminChatContextRaw(lastPoint.adminChatContext);
+      setInteractiveModalContextRaw(lastPoint.interactiveModalContext);
+      setPaymentConfirmationContextRaw(lastPoint.paymentConfirmationContext);
+
+      // If this back did NOT come from popstate, call window.history.back() to keep browser history synced
+      if (!isFromPopState) {
+        try {
+          window.history.back();
+        } catch (e) {}
+      }
       return;
     }
 
-    // 4. Default home state or exit
+    // 3. Fallback/Default exit logic
     if (activeTab === Tab.Menu && menuView === 'hub') {
       showPopup(
         "Voulez-vous quitter l’application ?",
@@ -732,27 +876,47 @@ const App: React.FC = () => {
         "Oui",
         "Non"
       );
+      if (isFromPopState) {
+        // Negate the back gesture so the user stays in the app unless they confirm exit
+        try {
+          window.history.pushState(null, '');
+        } catch (e) {}
+      }
     } else {
       navigateTo({ activeTab: Tab.Menu, menuView: 'hub' });
     }
   }, [
-    activeTab, 
-    menuView, 
-    isProfileOpen, 
-    showScannerGlobal, 
-    navHistory, 
-    showPopup, 
-    navigateTo,
-    interactiveModalContext,
-    paymentConfirmationContext,
-    showSmartRegistration,
-    showFullRegistration,
-    adminChatContext
+    activeTab,
+    menuView,
+    navHistory,
+    showPopup,
+    navigateTo
   ]);
 
+  // Sync with browser back button (popstate)
+  useEffect(() => {
+    try {
+      window.history.replaceState(null, '');
+    } catch (e) {}
+
+    const handlePopState = (e: PopStateEvent) => {
+      handleBack(true);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [handleBack]);
+
+  // Capacitor physical back button handling
   useEffect(() => {
     const backListener = CapApp.addListener('backButton', () => {
-      handleBack();
+      try {
+        window.history.back();
+      } catch (e) {
+        handleBack(false);
+      }
     });
 
     return () => {

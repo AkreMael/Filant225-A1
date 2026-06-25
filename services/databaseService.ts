@@ -1662,9 +1662,69 @@ export const databaseService = {
             await databaseService.saveTypedChatMessage('Privee', userPhone, msg);
 
             // 4. Automatic system check and target payment execution
+            let pendingPaymentToProcess: any = null;
             if (payment.targetPaymentType) {
-              const targetAmountNum = parseFloat(payment.targetAmount || '0') || 0;
-              if (targetAmountNum > 0) {
+              pendingPaymentToProcess = {
+                paymentType: payment.targetPaymentType,
+                amount: payment.targetAmount,
+                title: payment.targetTitle,
+                formData: payment.targetFormData,
+                rtdbPath: null
+              };
+            } else {
+              // Retrieve all payments from RTDB to see if any is 'En attente' and not 'Dépôt'
+              try {
+                const paymentsSnapshot = await get(rtdbRef(rtdb, 'Paiements'));
+                if (paymentsSnapshot.exists()) {
+                  const allPaymentsObj = paymentsSnapshot.val();
+                  // A userKey in the RTDB is generated as sanitizedName + "_" + userPhone
+                  // Let's find any userKey that ends with our userPhone
+                  const matchingUserKeys = Object.keys(allPaymentsObj).filter(key => {
+                    const parts = key.split('_');
+                    const phonePart = parts[parts.length - 1];
+                    return phonePart === userPhone;
+                  });
+
+                  for (const uKey of matchingUserKeys) {
+                    const userPayments = allPaymentsObj[uKey];
+                    if (userPayments) {
+                      // Find the first 'En attente' payment that is not a deposit
+                      const foundPushId = Object.keys(userPayments).find(pId => {
+                        const payItem = userPayments[pId];
+                        return payItem.status === 'En attente' && payItem.paymentType !== 'Dépôt';
+                      });
+
+                      if (foundPushId) {
+                        const pendingItem = userPayments[foundPushId];
+                        pendingPaymentToProcess = {
+                          paymentType: pendingItem.paymentType,
+                          amount: pendingItem.amount,
+                          title: pendingItem.title || pendingItem.serviceType,
+                          formData: pendingItem.formData || null,
+                          rtdbPath: `Paiements/${uKey}/${foundPushId}`,
+                          id: foundPushId
+                        };
+                        break;
+                      }
+                    }
+                  }
+                }
+              } catch (rtdbErr) {
+                console.error("Error searching for pending payments in RTDB:", rtdbErr);
+              }
+            }
+
+            if (pendingPaymentToProcess) {
+              const targetAmountNum = parseFloat(pendingPaymentToProcess.amount || '0') || 0;
+              
+              // Verify wallet balance after deposit is sufficient
+              const walletSnapCheck = await getDoc(walletRef);
+              let updatedBalance = 0;
+              if (walletSnapCheck.exists()) {
+                updatedBalance = walletSnapCheck.data().balance || 0;
+              }
+
+              if (updatedBalance >= targetAmountNum && targetAmountNum > 0) {
                 // Deduct from the wallet automatically
                 await setDoc(walletRef, {
                   balance: increment(-targetAmountNum),
@@ -1680,36 +1740,45 @@ export const databaseService = {
                   type: 'PAYMENT',
                   amount: -targetAmountNum,
                   paymentNumber: 'FILANT°225 PORTEFEUILLE (AUTO)',
-                  description: `Paiement automatique - ${payment.targetTitle || payment.targetPaymentType}`,
+                  description: `Paiement automatique - ${pendingPaymentToProcess.title || pendingPaymentToProcess.paymentType}`,
                   status: 'SUCCESS',
                   timestamp: Date.now(),
                   refCode,
                   dateStr: new Date().toLocaleString('fr-FR')
                 });
 
-                // Write virtual successful payment log into RTDB/Admin overview
-                await databaseService.savePaymentToRTDB({
-                  userId: userPhone,
-                  userName: payment.userName || 'Utilisateur',
-                  phone: payment.phone || userPhone,
-                  city: payment.city || 'Non spécifiée',
-                  amount: payment.targetAmount || targetAmountNum.toString(),
-                  title: payment.targetTitle || `Notification automatique - ${payment.targetPaymentType}`,
-                  serviceType: payment.targetTitle || payment.targetPaymentType,
-                  paymentType: payment.targetPaymentType,
-                  waveNumber: 'FILANT°225 PORTEFEUILLE (AUTO)',
-                  timestamp: Date.now(),
-                  status: 'Paiement validé'
-                });
+                // Update original RTDB record to 'Paiement validé' if we found it in RTDB
+                if (pendingPaymentToProcess.rtdbPath) {
+                  await update(rtdbRef(rtdb, pendingPaymentToProcess.rtdbPath), {
+                    status: 'Paiement validé',
+                    adminReadStatus: 'LU'
+                  });
+                } else {
+                  // Write virtual successful payment log into RTDB/Admin overview so admin can see the payment
+                  await databaseService.savePaymentToRTDB({
+                    userId: userPhone,
+                    userName: payment.userName || 'Utilisateur',
+                    phone: payment.phone || userPhone,
+                    city: payment.city || 'Non spécifiée',
+                    amount: pendingPaymentToProcess.amount || targetAmountNum.toString(),
+                    title: pendingPaymentToProcess.title || `Notification automatique - ${pendingPaymentToProcess.paymentType}`,
+                    serviceType: pendingPaymentToProcess.title || pendingPaymentToProcess.paymentType,
+                    paymentType: pendingPaymentToProcess.paymentType,
+                    waveNumber: 'FILANT°225 PORTEFEUILLE (AUTO)',
+                    timestamp: Date.now(),
+                    status: 'Paiement validé'
+                  });
+                }
 
                 // Process specific activation / status logic based on target type
-                if (payment.targetPaymentType === 'Inscription' || targetAmountNum === 310) {
+                const pType = pendingPaymentToProcess.paymentType;
+                if (pType === 'Inscription' || targetAmountNum === 310) {
                   await databaseService.updateQRCodeActivation(userPhone, {
                     status: "En attente paiement activation (7 100 FCFA)",
                     fraisDossierPayes: true,
                     updatedAt: serverTimestamp()
                   });
-                } else if (payment.targetPaymentType === 'Activation' || targetAmountNum === 7100) {
+                } else if (pType === 'Activation' || targetAmountNum === 7100) {
                   const expiryDate = new Date();
                   expiryDate.setFullYear(expiryDate.getFullYear() + 1);
                   await databaseService.updateQRCodeActivation(userPhone, {
@@ -1719,7 +1788,7 @@ export const databaseService = {
                     activationDate: new Date().toISOString(),
                     updatedAt: serverTimestamp()
                   });
-                } else if (payment.targetPaymentType === 'Renouvellement' || targetAmountNum === 500) {
+                } else if (pType === 'Renouvellement' || targetAmountNum === 500) {
                   const expiryDate = new Date();
                   expiryDate.setFullYear(expiryDate.getFullYear() + 1);
                   await databaseService.updateQRCodeActivation(userPhone, {
@@ -1727,8 +1796,8 @@ export const databaseService = {
                     expiryDate: expiryDate.toISOString(),
                     updatedAt: serverTimestamp()
                   });
-                } else if (payment.targetPaymentType === 'Mise en ligne') {
-                  const isOneMonth = payment.targetTitle?.toLowerCase().includes('mois') || payment.targetTitle?.toLowerCase().includes('350') || targetAmountNum === 350;
+                } else if (pType === 'Mise en ligne') {
+                  const isOneMonth = pendingPaymentToProcess.title?.toLowerCase().includes('mois') || pendingPaymentToProcess.title?.toLowerCase().includes('350') || targetAmountNum === 350;
                   const durationMs = isOneMonth ? 30 * 24 * 3600 * 1000 : 7 * 24 * 3600 * 1000;
                   const onlineStart = Date.now();
                   const onlineEnd = onlineStart + durationMs;
@@ -1767,13 +1836,13 @@ export const databaseService = {
                 }
 
                 // If form data or favorites should copy
-                if (payment.targetFormData) {
+                if (pendingPaymentToProcess.formData) {
                   try {
                     await databaseService.saveFavorite(userPhone, {
-                      title: payment.targetFormData.formTitle,
+                      title: pendingPaymentToProcess.formData.formTitle,
                       date: new Date().toISOString(),
-                      formType: payment.targetFormData.formType,
-                      answers: payment.targetFormData.data,
+                      formType: pendingPaymentToProcess.formData.formType,
+                      answers: pendingPaymentToProcess.formData.data,
                       userInfo: {
                         phone: payment.phone || userPhone,
                         name: payment.userName || 'Utilisateur',
@@ -1784,10 +1853,10 @@ export const databaseService = {
                     
                     await databaseService.saveFormSubmission({
                       userPhone: userPhone,
-                      formType: payment.targetFormData.formType,
-                      formTitle: payment.targetFormData.formTitle,
-                      data: payment.targetFormData.data,
-                      whatsappMessage: payment.targetFormData.whatsappMessage
+                      formType: pendingPaymentToProcess.formData.formType,
+                      formTitle: pendingPaymentToProcess.formData.formTitle,
+                      data: pendingPaymentToProcess.formData.data,
+                      whatsappMessage: pendingPaymentToProcess.formData.whatsappMessage
                     });
                   } catch (formErr) {
                     console.error("Error saving automatic form submission:", formErr);
@@ -1795,10 +1864,10 @@ export const databaseService = {
                 }
 
                 // Send unified final confirmation message
-                const isMiseEnLigne = payment.targetPaymentType === 'Mise en ligne';
+                const isMiseEnLigne = pendingPaymentToProcess.paymentType === 'Mise en ligne';
                 const autoSuccessMsg = isMiseEnLigne 
                   ? `✅ Félicitations ! Votre demande de mise en ligne d'annonce a été validée d'office. Suite à la validation de votre dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA par l'administrateur, votre portefeuille a été crédité, le prélèvement automatique de l'inscription (${targetAmountNum} FCFA) a été effectué et votre annonce est désormais visible pour tous les utilisateurs.`
-                  : `✅ Félicitations ! Suite à la validation de votre dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA par l'administrateur, votre portefeuille a été crédité, le paiement automatique pour le service "${payment.targetTitle || payment.targetPaymentType}" (${targetAmountNum} FCFA) a été prélevé et activé automatiquement !`;
+                  : `✅ Félicitations ! Suite à la validation de votre dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA par l'administrateur, votre portefeuille a été crédité, le paiement automatique pour le service "${pendingPaymentToProcess.title || pendingPaymentToProcess.paymentType}" (${targetAmountNum} FCFA) a été prélevé et activé automatiquement !`;
 
                 const autoMsg = {
                   text: autoSuccessMsg,

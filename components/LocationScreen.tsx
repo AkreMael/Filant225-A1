@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import EmbeddedForm from './EmbeddedForm';
+import { db } from '../firebase';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 
 // --- ICONS ---
 const BackIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>;
@@ -113,6 +115,8 @@ interface LocationItem {
     rating: number;
     category: 'appartement' | 'equipement';
     proposeUrl: string;
+    image?: string;
+    createdAt?: string;
 }
 
 const locationData: LocationItem[] = [
@@ -164,7 +168,7 @@ interface LocationCardProps {
 }
 
 const LocationCard: React.FC<LocationCardProps> = ({ item, user, onPropose, onOpenForm }) => {
-  const equipmentImgData = EQUIPMENT_IMAGES[item.title];
+  const equipmentImgData = item.image || EQUIPMENT_IMAGES[item.title];
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
   useEffect(() => {
@@ -261,14 +265,62 @@ interface LocationScreenProps {
 const LocationScreen: React.FC<LocationScreenProps> = ({ onBack, user, onPropose, onOpenForm, initialCategory = 'appartement' }) => {
   const [activeTab, setActiveTab] = useState<'appartement' | 'equipement'>(initialCategory);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dynamicEquipements, setDynamicEquipements] = useState<any[]>([]);
+  const [dynamicAppartements, setDynamicAppartements] = useState<any[]>([]);
 
   // Update tab if initialCategory changes (from outside navigation)
   useEffect(() => {
     setActiveTab(initialCategory);
   }, [initialCategory]);
 
-  const filteredItems = locationData.filter(item => 
-      item.category === activeTab &&
+  useEffect(() => {
+    const qEq = query(collection(db, 'Equipements'), orderBy('createdAt', 'desc'));
+    const unsubEq = onSnapshot(qEq, (snap) => {
+      setDynamicEquipements(snap.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          category: 'equipement' as const,
+          rating: 4.5,
+          proposeUrl: 'https://tally.so/r/5Bb2KM',
+          title: d.titre || '',
+          description: d.description || '',
+          image: d.image || '',
+          createdAt: d.createdAt || '',
+          ...d
+        };
+      }));
+    });
+
+    const qApp = query(collection(db, 'Appartements'), orderBy('createdAt', 'desc'));
+    const unsubApp = onSnapshot(qApp, (snap) => {
+      setDynamicAppartements(snap.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          category: 'appartement' as const,
+          rating: 4.5,
+          proposeUrl: 'https://tally.so/r/A7zJZ0',
+          title: d.titre || '',
+          description: d.description || '',
+          image: d.image || '',
+          createdAt: d.createdAt || '',
+          ...d
+        };
+      }));
+    });
+
+    return () => {
+      unsubEq();
+      unsubApp();
+    };
+  }, []);
+
+  const currentDynamicList = activeTab === 'equipement' ? dynamicEquipements : dynamicAppartements;
+  const staticList = locationData.filter(item => item.category === activeTab);
+  const combinedList = [...currentDynamicList, ...staticList];
+
+  const filteredItems = combinedList.filter(item => 
       item.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

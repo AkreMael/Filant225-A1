@@ -1237,9 +1237,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <div>
                 <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Session active</p>
                 <p className="text-lg font-bold capitalize">
-                    {user.name} <span className="text-xs font-normal bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full ml-1">Client</span>
+                    {user.name} <span className="text-xs font-black bg-white text-black px-2 py-0.5 rounded-full ml-1" style={{ color: '#000000', backgroundColor: '#ffffff' }}>Client</span>
                 </p>
-                <p className="text-sm font-medium">{user.city} <span className="text-green-400 font-bold animate-pulse ml-2">• EN LIGNE</span></p>
+                <p className="text-sm font-medium">{user.city} <span className="text-green-500 font-bold animate-pulse ml-2" style={{ color: '#22c55e' }}>• EN LIGNE</span></p>
             </div>
             <div className="flex items-start space-x-3">
                 <a href="https://www.tiktok.com/@filant225" target="_blank" rel="noopener noreferrer" className="flex flex-col items-center space-y-1 group">
