@@ -112,8 +112,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
       <div className={`relative w-full flex-shrink-0 bg-orange-600 transition-all duration-300 flex items-center justify-center overflow-hidden ${isKeyboardVisible ? 'h-0 opacity-0' : 'h-[180px] sm:h-[220px]'}`}>
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
-            <span className="text-orange-600 font-black text-5xl">F</span>
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden p-2.5 border-2 border-orange-500/10">
+            <img 
+              src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" 
+              alt="FILANT 225 Logo" 
+              className="w-full h-full object-contain animate-pulse" 
+              referrerPolicy="no-referrer" 
+            />
           </div>
         </div>
       </div>

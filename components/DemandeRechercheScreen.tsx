@@ -1769,9 +1769,24 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                 )}
               </div>
 
-              {/* Informative Dashboard HUD sheet below Map */}
-              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-150 dark:border-slate-800 p-4 rounded-3xl shadow-sm relative z-10 w-full" onClick={(e) => e.stopPropagation()}>
-                {/* 1. Searching/Locating City State */}
+              {/* Informative Dashboard HUD sheet below Map overlapping with organic wave */}
+              <div 
+                className="relative z-10 w-full -mt-12 sm:-mt-16 transition-all duration-300" 
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Organic wave curve top blending seamlessly with the map */}
+                <div className="w-full overflow-hidden leading-[0] pointer-events-none mb-[-2px] drop-shadow-[0_-8px_12px_rgba(0,0,0,0.04)] dark:drop-shadow-[0_-8px_12px_rgba(0,0,0,0.25)]">
+                  <svg viewBox="0 0 1440 120" preserveAspectRatio="none" className="w-full h-14 sm:h-20">
+                    <path 
+                      d="M0,120 L0,50 Q720,0 1440,50 L1440,120 Z" 
+                      className="fill-slate-50 dark:fill-[#1a2333] transition-colors duration-300"
+                    />
+                  </svg>
+                </div>
+
+                {/* Main body of the HUD sheet */}
+                <div className="bg-slate-50 dark:bg-slate-900 border-x border-b border-slate-150 dark:border-slate-800 p-5 pt-2 rounded-b-3xl shadow-lg w-full">
+                  {/* 1. Searching/Locating City State */}
                 {isSearchingVille && !pinnedProfile && (
                   <div className="bg-transparent p-1 flex flex-col items-center justify-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <div className="flex items-center gap-2">
@@ -1891,6 +1906,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     </div>
                   </div>
                 )}
+                </div>
               </div>
             </div>
           );
