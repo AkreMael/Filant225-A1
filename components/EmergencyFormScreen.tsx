@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from '../types';
 import { databaseService } from '../services/databaseService';
@@ -10,6 +10,16 @@ const EmergencyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h
 interface EmergencyFormScreenProps {
   onBack: () => void;
   user: User;
+  onShowPopup?: (
+    message: string, 
+    type: 'alert' | 'confirm', 
+    onConfirm?: (close: () => void, setLoading: (l: boolean) => void) => void,
+    confirmLabel?: string,
+    cancelLabel?: string,
+    title?: string
+  ) => void;
+  onGoToMenu?: () => void;
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
 const options = [
@@ -22,11 +32,53 @@ const options = [
   "Autre"
 ];
 
-const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({ onBack, user }) => {
+const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({ 
+  onBack, 
+  user,
+  onShowPopup,
+  onGoToMenu,
+  onRegisterBackHandler
+}) => {
   const [selectedOption, setSelectedOption] = useState<string>('');
   const [otherDetails, setOtherDetails] = useState('');
   const [email, setEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  const handleBackWithConfirmation = () => {
+    const hasStarted = selectedOption !== '' || otherDetails !== '' || email !== '';
+    if (hasStarted) {
+      if (onShowPopup && onGoToMenu) {
+        onShowPopup(
+          "Les informations non enregistrées seront perdues.",
+          "confirm",
+          (close) => {
+            close();
+            onGoToMenu();
+          },
+          "Quitter",
+          "Continuer la saisie",
+          "Quitter ce formulaire ?"
+        );
+      } else {
+        const confirmExit = window.confirm("Quitter ce formulaire ? Les informations non enregistrées seront perdues.");
+        if (confirmExit) {
+          if (onGoToMenu) onGoToMenu(); else onBack();
+        }
+      }
+      return true; // handled
+    }
+    onBack();
+    return true; // handled
+  };
+
+  useEffect(() => {
+    if (onRegisterBackHandler) {
+      onRegisterBackHandler(handleBackWithConfirmation);
+      return () => {
+        onRegisterBackHandler(null);
+      };
+    }
+  }, [onRegisterBackHandler, selectedOption, otherDetails, email, onBack, onGoToMenu, onShowPopup]);
 
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -97,7 +149,7 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({ onBack, user 
         >
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
             <EmergencyIcon />
-            <button onClick={onBack} className="absolute top-4 left-4 p-2.5 bg-white/30 backdrop-blur-md rounded-full text-white shadow-lg active:scale-95 z-20 border border-white/40">
+            <button onClick={handleBackWithConfirmation} className="absolute top-4 left-4 p-2.5 bg-white/30 backdrop-blur-md rounded-full text-white shadow-lg active:scale-95 z-20 border border-white/40">
                 <BackIcon />
             </button>
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">

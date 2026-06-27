@@ -21,6 +21,16 @@ interface PaymentConfirmationScreenProps {
     data: any;
     whatsappMessage: string;
   };
+  onGoToMenu?: () => void;
+  onShowPopup?: (
+    message: string, 
+    type: 'alert' | 'confirm', 
+    onConfirm?: (close: () => void, setLoading: (l: boolean) => void) => void,
+    confirmLabel?: string,
+    cancelLabel?: string,
+    title?: string
+  ) => void;
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
 const Spinner = () => (
@@ -102,13 +112,57 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     onBack, 
     onSuccess,
     onModify,
-    formData
+    formData,
+    onGoToMenu,
+    onShowPopup,
+    onRegisterBackHandler
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isNonValidated, setIsNonValidated] = useState(false);
   const [paymentPath, setPaymentPath] = useState<string | null>(null);
   const [hasAutoPaid, setHasAutoPaid] = useState(false);
+
+  const handleBackNavigation = () => {
+    // If payment is completed and validated (isSuccess is true), return directly to menu principal
+    if (isSuccess) {
+      if (onGoToMenu) {
+        onGoToMenu();
+      } else {
+        onBack();
+      }
+      return true; // handled
+    }
+
+    // If payment or deposit is in progress/pending
+    const isPendingPayment = isProcessing || !!paymentPath;
+    const isPendingDeposit = pendingDepositStatus === 'PENDING' || isDepositing;
+    if (isPendingPayment || isPendingDeposit) {
+      if (onShowPopup && onGoToMenu) {
+        onShowPopup(
+          "Votre paiement ou votre dépôt est encore en cours de traitement. Si vous quittez cette page, vous pourrez reprendre l'opération plus tard.",
+          "confirm",
+          (close) => {
+            close();
+            onGoToMenu();
+          },
+          "Quitter",
+          "Rester sur la page",
+          "Quitter cette page ?"
+        );
+      } else {
+        const confirmExit = window.confirm("Quitter cette page ? Votre paiement ou votre dépôt est encore en cours de traitement.");
+        if (confirmExit) {
+          if (onGoToMenu) onGoToMenu(); else onBack();
+        }
+      }
+      return true; // handled
+    }
+
+    // Otherwise, normal back behavior
+    onBack();
+    return true; // handled
+  };
   
   const storageKey = `filant_wave_number_${user?.phone || 'default'}`;
   const [waveNumber, setWaveNumber] = useState(() => {
@@ -159,6 +213,15 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     }
     return () => unsubWallet();
   }, [user?.phone]);
+
+  useEffect(() => {
+    if (onRegisterBackHandler) {
+      onRegisterBackHandler(handleBackNavigation);
+      return () => {
+        onRegisterBackHandler(null);
+      };
+    }
+  }, [onRegisterBackHandler, isSuccess, isProcessing, paymentPath, pendingDepositStatus, isDepositing, onBack, onGoToMenu, onShowPopup]);
 
   // Listener for pending deposit path
   useEffect(() => {
@@ -611,7 +674,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
   return (
     <div className="flex flex-col h-full bg-white animate-in fade-in duration-300 font-sans overflow-hidden relative">
       <header className="p-3 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0 z-10">
-        <button onClick={onBack} className="p-2 -ml-2 active:scale-90 transition-transform">
+        <button onClick={handleBackNavigation} className="p-2 -ml-2 active:scale-90 transition-transform">
           <BackIcon />
         </button>
         <h1 className="text-lg font-black text-blue-900 uppercase tracking-tight">Paiement</h1>

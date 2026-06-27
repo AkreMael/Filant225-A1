@@ -90,6 +90,7 @@ interface PopupState {
     confirmLabel?: string;
     cancelLabel?: string;
     isConfirmLoading?: boolean;
+    title?: string;
 }
 
 const REGISTRATION_URLS: Record<string, string> = {};
@@ -508,7 +509,8 @@ const App: React.FC = () => {
     type: 'alert' | 'confirm', 
     onConfirm?: (close: () => void, setLoading: (l: boolean) => void) => void,
     confirmLabel?: string,
-    cancelLabel?: string
+    cancelLabel?: string,
+    title?: string
   ) => {
       setPopup({
           show: true,
@@ -516,6 +518,7 @@ const App: React.FC = () => {
           type,
           confirmLabel,
           cancelLabel,
+          title,
           isConfirmLoading: false,
           onConfirm: () => {
               const close = () => setPopup(p => ({ ...p, show: false }));
@@ -1146,6 +1149,15 @@ const App: React.FC = () => {
                   <SmartRegistrationScreen 
                     onComplete={handleSmartRegistrationComplete} 
                     onBack={() => setShowSmartRegistration(false)} 
+                    onShowPopup={showPopup}
+                    onGoToMenu={() => {
+                      setShowSmartRegistration(false);
+                      setActiveTab(Tab.Menu);
+                      setMenuView('hub');
+                    }}
+                    onRegisterBackHandler={(handler) => {
+                      backHandlerRef.current = handler;
+                    }}
                   />
                 )}
               </div>
@@ -1175,6 +1187,7 @@ const App: React.FC = () => {
                         confirmLabel={popup.confirmLabel}
                         cancelLabel={popup.cancelLabel}
                         isConfirmLoading={popup.isConfirmLoading}
+                        title={popup.title}
                     />
                 )}
               </div>
@@ -1254,7 +1267,20 @@ const App: React.FC = () => {
           );
           break;
         case 'emergency_form':
-          activeScreen = <EmergencyFormScreen onBack={handleBack} user={displayUser} />;
+          activeScreen = (
+            <EmergencyFormScreen 
+              onBack={handleBack} 
+              user={displayUser} 
+              onShowPopup={showPopup}
+              onGoToMenu={() => {
+                setActiveTab(Tab.Menu);
+                setMenuView('hub');
+              }}
+              onRegisterBackHandler={(handler) => {
+                backHandlerRef.current = handler;
+              }}
+            />
+          );
           break;
         case 'assistant_qr':
           activeScreen = <AssistantQRScreen onBack={handleBack} user={displayUser} onShowPopup={showPopup} />;
@@ -1533,6 +1559,7 @@ const App: React.FC = () => {
                   confirmLabel={popup.confirmLabel}
                   cancelLabel={popup.cancelLabel}
                   isConfirmLoading={popup.isConfirmLoading}
+                  title={popup.title}
                 />
             )}
 
@@ -1571,6 +1598,15 @@ const App: React.FC = () => {
                       onModify={() => {
                         setPaymentConfirmationContext(null);
                         setShowFullRegistration(true);
+                      }}
+                      onGoToMenu={() => {
+                        setPaymentConfirmationContext(null);
+                        setActiveTab(Tab.Menu);
+                        setMenuView('hub');
+                      }}
+                      onShowPopup={showPopup}
+                      onRegisterBackHandler={(handler) => {
+                        backHandlerRef.current = handler;
                       }}
                     />
                 </div>
@@ -1738,6 +1774,15 @@ const App: React.FC = () => {
                         }));
                     }}
                     onBack={() => setShowFullRegistration(false)}
+                    onShowPopup={showPopup}
+                    onGoToMenu={() => {
+                      setShowFullRegistration(false);
+                      setActiveTab(Tab.Menu);
+                      setMenuView('hub');
+                    }}
+                    onRegisterBackHandler={(handler) => {
+                      backHandlerRef.current = handler;
+                    }}
                   />
                 </motion.div>
               )}
@@ -1755,6 +1800,15 @@ const App: React.FC = () => {
                       description={interactiveModalContext.description}
                       price={interactiveModalContext.price}
                       onClose={() => setInteractiveModalContext(null)}
+                      onShowPopup={showPopup}
+                      onGoToMenu={() => {
+                        setInteractiveModalContext(null);
+                        setActiveTab(Tab.Menu);
+                        setMenuView('hub');
+                      }}
+                      onRegisterBackHandler={(handler) => {
+                        backHandlerRef.current = handler;
+                      }}
                   />
                 </div>
               )}

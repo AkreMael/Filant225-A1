@@ -30,6 +30,16 @@ interface EmbeddedFormProps {
   description?: string;
   imageUrl?: string | string[];
   isBlurredImage?: boolean;
+  onShowPopup?: (
+    message: string, 
+    type: 'alert' | 'confirm', 
+    onConfirm?: (close: () => void, setLoading: (l: boolean) => void) => void,
+    confirmLabel?: string,
+    cancelLabel?: string,
+    title?: string
+  ) => void;
+  onGoToMenu?: () => void;
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
 const EmbeddedForm: React.FC<EmbeddedFormProps> = ({ 
@@ -39,7 +49,10 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
   onClose,
   description,
   imageUrl,
-  isBlurredImage
+  isBlurredImage,
+  onShowPopup,
+  onGoToMenu,
+  onRegisterBackHandler
 }) => {
   const isRapidTitle = title.toLowerCase().endsWith('rapide');
 
@@ -222,6 +235,45 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
   };
 
   const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const handleBackWithConfirmation = () => {
+    const hasStarted = Object.keys(answers).length > 0;
+    if (hasStarted && !showConfirmation) {
+      if (onShowPopup && onGoToMenu) {
+        onShowPopup(
+          "Les informations non enregistrées seront perdues.",
+          "confirm",
+          (close) => {
+            close();
+            // Clear draft
+            localStorage.removeItem(storageKey);
+            onGoToMenu();
+          },
+          "Quitter",
+          "Continuer la saisie",
+          "Quitter ce formulaire ?"
+        );
+      } else {
+        const confirmExit = window.confirm("Quitter ce formulaire ? Les informations non enregistrées seront perdues.");
+        if (confirmExit) {
+          localStorage.removeItem(storageKey);
+          if (onGoToMenu) onGoToMenu(); else onClose();
+        }
+      }
+      return true; // handled
+    }
+    onClose();
+    return true; // handled
+  };
+
+  useEffect(() => {
+    if (onRegisterBackHandler) {
+      onRegisterBackHandler(handleBackWithConfirmation);
+      return () => {
+        onRegisterBackHandler(null);
+      };
+    }
+  }, [onRegisterBackHandler, answers, showConfirmation, onShowPopup, onGoToMenu, storageKey, onClose]);
 
   const handleAction = async (target: 'whatsapp' | 'assistant' | 'validate') => {
     if (!isFormComplete) {
@@ -516,7 +568,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                 </div>
             )}
             <button 
-              onClick={onClose} 
+              onClick={handleBackWithConfirmation} 
               className={`absolute p-2 bg-white/20 backdrop-blur-md rounded-full text-white active:scale-90 z-20 transition-all duration-300 ${isKeyboardVisible ? 'top-2.5 left-4' : 'top-4 left-4'}`}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>

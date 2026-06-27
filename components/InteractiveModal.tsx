@@ -15,6 +15,16 @@ interface InteractiveModalProps {
   price?: string;
   onComplete?: (answers: Answers) => void;
   initialAnswers?: Answers;
+  onShowPopup?: (
+    message: string, 
+    type: 'alert' | 'confirm', 
+    onConfirm?: (close: () => void, setLoading: (l: boolean) => void) => void,
+    confirmLabel?: string,
+    cancelLabel?: string,
+    title?: string
+  ) => void;
+  onGoToMenu?: () => void;
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
 const InteractiveModal: React.FC<InteractiveModalProps> = (props) => {

@@ -22,11 +22,28 @@ interface SmartRegistrationScreenProps {
   onComplete: () => void;
   onBack: () => void;
   currentUser?: any;
+  onShowPopup?: (
+    message: string, 
+    type: 'alert' | 'confirm', 
+    onConfirm?: (close: () => void, setLoading: (l: boolean) => void) => void,
+    confirmLabel?: string,
+    cancelLabel?: string,
+    title?: string
+  ) => void;
+  onGoToMenu?: () => void;
+  onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
 type ProfileType = 'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise';
 
-const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onComplete, onBack, currentUser }) => {
+const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ 
+  onComplete, 
+  onBack, 
+  currentUser,
+  onShowPopup,
+  onGoToMenu,
+  onRegisterBackHandler
+}) => {
   const [step, setStep] = useState(1);
   const [selectedProfile, setSelectedProfile] = useState<ProfileType>('Travailleur');
   const [formData, setFormData] = useState({ 
@@ -71,6 +88,45 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+
+  const handleBackWithConfirmation = () => {
+    const hasStarted = step > 1 || formData.name !== '' || formData.city !== '' || formData.job !== '' || formData.equipmentType !== '' || formData.agencyName !== '' || formData.companyName !== '';
+    if (hasStarted && !isSaved) {
+      if (onShowPopup && onGoToMenu) {
+        onShowPopup(
+          "Les informations non enregistrées seront perdues.",
+          "confirm",
+          (close) => {
+            close();
+            // Clear local draft so they can start fresh next time
+            localStorage.removeItem('filant_registration_draft');
+            onGoToMenu();
+          },
+          "Quitter",
+          "Continuer la saisie",
+          "Quitter ce formulaire ?"
+        );
+      } else {
+        const confirmExit = window.confirm("Quitter ce formulaire ? Les informations non enregistrées seront perdues.");
+        if (confirmExit) {
+          localStorage.removeItem('filant_registration_draft');
+          if (onGoToMenu) onGoToMenu(); else onBack();
+        }
+      }
+      return true; // handled
+    }
+    onBack();
+    return true; // handled
+  };
+
+  useEffect(() => {
+    if (onRegisterBackHandler) {
+      onRegisterBackHandler(handleBackWithConfirmation);
+      return () => {
+        onRegisterBackHandler(null);
+      };
+    }
+  }, [onRegisterBackHandler, step, formData, isSaved, onBack, onGoToMenu, onShowPopup]);
   const [paymentInitiated, setPaymentInitiated] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -803,7 +859,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({ onCom
         <header className={`px-6 flex flex-col items-center text-center relative shrink-0 transition-all duration-300 ${isKeyboardVisible ? 'pt-4 pb-2' : 'pt-8 pb-6'}`}>
           <button 
             type="button"
-            onClick={onBack}
+            onClick={handleBackWithConfirmation}
             className={`absolute left-6 p-2 bg-white/10 rounded-xl active:scale-90 transition-all text-white ${isKeyboardVisible ? 'top-4' : 'top-8'}`}
           >
             <ArrowLeft className="w-5 h-5" />

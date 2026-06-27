@@ -9,9 +9,10 @@ interface GlobalPopupProps {
   confirmLabel?: string;
   cancelLabel?: string;
   isConfirmLoading?: boolean;
+  title?: string;
 }
 
-const GlobalPopup: React.FC<GlobalPopupProps> = ({ message, type, onConfirm, onCancel, confirmLabel, cancelLabel, isConfirmLoading }) => {
+const GlobalPopup: React.FC<GlobalPopupProps> = ({ message, type, onConfirm, onCancel, confirmLabel, cancelLabel, isConfirmLoading, title }) => {
   return (
     <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-[2000] p-4 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl p-8 max-w-[320px] w-full border-2 border-orange-500 transform transition-all scale-100 animate-in zoom-in-95 duration-200">
@@ -29,7 +30,12 @@ const GlobalPopup: React.FC<GlobalPopupProps> = ({ message, type, onConfirm, onC
                     </svg>
                 </div>
             )}
-            <h3 className="text-base font-bold text-gray-900 dark:text-white leading-relaxed">
+            {title && (
+              <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2 leading-tight uppercase tracking-wide">
+                {title}
+              </h2>
+            )}
+            <h3 className={`text-base font-bold leading-relaxed ${title ? 'text-gray-500 dark:text-gray-400 text-xs font-semibold mt-2' : 'text-gray-900 dark:text-white'}`}>
                 {message}
             </h3>
         </div>
