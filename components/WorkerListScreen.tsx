@@ -474,34 +474,7 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
         return matchesSearch && !isExcluded;
       });
 
-      const filteredStatics = allWorkers.filter(w => {
-        const matchesSearch = w.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = w.category === 'Disponible';
-        
-        // Titles to exclude
-        const excludedTitles = [
-          'fabricant de poufs',
-          'entretien climatisation',
-          'caméras de surveillance',
-          'fenêtres et portes vitrées',
-          'menuisier',
-          'garde malade',
-          'disque jockeys',
-          'disque jockey',
-          'installation audiovisuelle',
-          'ingénieur audio visuel',
-          'ingénieur audiovisuel',
-          'location d\'équipement',
-          'location d’équipement',
-          'location equipement'
-        ];
-        
-        const isExcluded = excludedTitles.some(title => w.name.toLowerCase().includes(title));
-        
-        return matchesSearch && matchesCategory && !isExcluded;
-      });
-
-      return [...filteredDynamics, ...filteredStatics];
+      return filteredDynamics;
     }
 
     const matchedCat = VIRTUAL_CATEGORIES.find(c => c.id === selectedCategory);

@@ -1013,6 +1013,26 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const [timeLeft, setTimeLeft] = useState<{ min: number; sec: number } | null>(null);
 
+  const [profileType, setProfileType] = useState<'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise' | 'Client'>('Client');
+
+  useEffect(() => {
+    if (!user?.phone) return;
+    const unsubscribe = databaseService.subscribeToUserProfileType(user.phone, (type) => {
+      setProfileType(type);
+    });
+    return () => unsubscribe();
+  }, [user?.phone]);
+
+  const getStatusLabel = (type: string) => {
+    switch (type) {
+      case 'Travailleur': return 'Travailleur';
+      case 'Propriétaire': return 'Équipement';
+      case 'Agence': return 'Agence immobilière';
+      case 'Entreprise': return 'Entreprise';
+      default: return 'Client';
+    }
+  };
+
   const isClientMode = user.role === 'Client';
 
   useEffect(() => {
@@ -1237,7 +1257,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <div>
                 <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Session active</p>
                 <p className="text-lg font-bold capitalize">
-                    {user.name} <span className="text-xs font-black bg-white text-black px-2 py-0.5 rounded-full ml-1" style={{ color: '#000000', backgroundColor: '#ffffff' }}>Client</span>
+                    {user.name} <span className="text-xs font-black bg-white text-black px-2 py-0.5 rounded-full ml-1" style={{ color: '#000000', backgroundColor: '#ffffff' }}>{getStatusLabel(profileType)}</span>
                 </p>
                 <p className="text-sm font-medium">{user.city} <span className="text-green-500 font-bold animate-pulse ml-2" style={{ color: '#22c55e' }}>• EN LIGNE</span></p>
             </div>

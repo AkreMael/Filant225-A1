@@ -3158,6 +3158,61 @@ export const databaseService = {
     }
   },
 
+  subscribeToUserProfileType: (phone: string, callback: (profileType: 'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise' | 'Client') => void) => {
+    if (!phone) {
+      callback('Client');
+      return () => {};
+    }
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    let isUnsubscribed = false;
+
+    // We can listen to Inscriptions doc in real-time
+    const inscrRef = doc(db, 'Inscriptions', sanitizedPhone);
+    const unsubInscr = onSnapshot(inscrRef, (snap) => {
+      if (isUnsubscribed) return;
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.profileType) {
+          let type = data.profileType;
+          if (type === 'Propriétaire' || type === 'Equipement' || type === 'Équipement') {
+            callback('Propriétaire');
+          } else if (type === 'Agence' || type === 'Agence immobilière') {
+            callback('Agence');
+          } else {
+            callback(type as any);
+          }
+          return;
+        }
+      }
+      
+      // Fallback/check other docs if not found in Inscriptions yet
+      getDoc(doc(db, 'Travailleurs', sanitizedPhone)).then(s => {
+        if (isUnsubscribed) return;
+        if (s.exists()) { callback('Travailleur'); return; }
+        getDoc(doc(db, 'Agences immobilières', sanitizedPhone)).then(s => {
+          if (isUnsubscribed) return;
+          if (s.exists()) { callback('Agence'); return; }
+          getDoc(doc(db, 'Équipements', sanitizedPhone)).then(s => {
+            if (isUnsubscribed) return;
+            if (s.exists()) { callback('Propriétaire'); return; }
+            getDoc(doc(db, 'Entreprises', sanitizedPhone)).then(s => {
+              if (isUnsubscribed) return;
+              if (s.exists()) { callback('Entreprise'); return; }
+              callback('Client');
+            });
+          });
+        });
+      });
+    }, (error) => {
+      console.error("Error subscribing to Inscriptions:", error);
+    });
+
+    return () => {
+      isUnsubscribed = true;
+      unsubInscr();
+    };
+  },
+
   subscribeToUserEvolution: (phone: string, callback: (evolution: any) => void) => {
     if (!phone) return () => {};
     const sanitizedPhone = phone.replace(/\D/g, '');
