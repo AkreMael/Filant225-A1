@@ -249,6 +249,8 @@ const App: React.FC = () => {
   const [interactiveModalContextRaw, setInteractiveModalContextRaw] = useState<InteractiveModalContext | null>(null);
 
   const [navHistory, setNavHistory] = useState<NavigationPoint[]>([]);
+  const navHistoryRef = useRef<NavigationPoint[]>([]);
+  navHistoryRef.current = navHistory;
 
   // Exposed getter values (always represent current raw state)
   const activeTab = activeTabRaw;
@@ -289,21 +291,52 @@ const App: React.FC = () => {
     paymentConfirmationContext
   };
 
+  const handleBackRef = useRef<((isFromPopState?: boolean, ignoreCustomHandlers?: boolean) => void) | null>(null);
+
   // Helper function to push the atomic snapshot to history
   const pushStateToHistory = useCallback(() => {
     const currentState: NavigationPoint = { ...stateRef.current };
-    setNavHistory(prev => [...prev, currentState]);
-    try {
-      window.history.pushState(null, '');
-    } catch (e) {
-      console.warn("pushState failed:", e);
-    }
+    const prunedState: NavigationPoint = {
+      ...currentState,
+      showSmartRegistration: false,
+      showFullRegistration: false,
+      interactiveModalContext: null,
+      paymentConfirmationContext: null,
+      adminChatContext: null
+    };
+
+    setNavHistory(prev => {
+      if (prev.length > 0) {
+        const last = prev[prev.length - 1];
+        if (
+          last.activeTab === prunedState.activeTab &&
+          last.menuView === prunedState.menuView &&
+          last.offerSubView === prunedState.offerSubView &&
+          last.isProfileOpen === prunedState.isProfileOpen &&
+          last.showScannerGlobal === prunedState.showScannerGlobal
+        ) {
+          return prev;
+        }
+      }
+      try {
+        window.history.pushState(null, '');
+      } catch (e) {
+        console.warn("pushState failed:", e);
+      }
+      return [...prev, prunedState];
+    });
   }, []);
 
   // Wrapped state setters that intercept and push to history on forward transitions
   const setActiveTab = useCallback((val: Tab | ((prev: Tab) => Tab)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.activeTab) : val;
     if (nextVal !== stateRef.current.activeTab) {
+      if (nextVal === Tab.Menu) {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].activeTab === Tab.Menu && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setActiveTabRaw(nextVal);
     }
@@ -312,6 +345,12 @@ const App: React.FC = () => {
   const setMenuView = useCallback((val: any | ((prev: any) => any)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.menuView) : val;
     if (nextVal !== stateRef.current.menuView) {
+      if (nextVal === 'hub') {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].menuView === 'hub' && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setMenuViewRaw(nextVal);
     }
@@ -320,6 +359,12 @@ const App: React.FC = () => {
   const setOfferSubView = useCallback((val: any | ((prev: any) => any)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.offerSubView) : val;
     if (nextVal !== stateRef.current.offerSubView) {
+      if (nextVal === 'main') {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].offerSubView === 'main' && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setOfferSubViewRaw(nextVal);
     }
@@ -328,6 +373,12 @@ const App: React.FC = () => {
   const setIsProfileOpen = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.isProfileOpen) : val;
     if (nextVal !== stateRef.current.isProfileOpen) {
+      if (nextVal === false) {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].isProfileOpen === false && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setIsProfileOpenRaw(nextVal);
     }
@@ -336,6 +387,12 @@ const App: React.FC = () => {
   const setShowScannerGlobal = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.showScannerGlobal) : val;
     if (nextVal !== stateRef.current.showScannerGlobal) {
+      if (nextVal === false) {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].showScannerGlobal === false && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setShowScannerGlobalRaw(nextVal);
     }
@@ -344,6 +401,12 @@ const App: React.FC = () => {
   const setShowSmartRegistration = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.showSmartRegistration) : val;
     if (nextVal !== stateRef.current.showSmartRegistration) {
+      if (nextVal === false) {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].showSmartRegistration === false && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setShowSmartRegistrationRaw(nextVal);
     }
@@ -352,6 +415,12 @@ const App: React.FC = () => {
   const setShowFullRegistration = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.showFullRegistration) : val;
     if (nextVal !== stateRef.current.showFullRegistration) {
+      if (nextVal === false) {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].showFullRegistration === false && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setShowFullRegistrationRaw(nextVal);
     }
@@ -360,6 +429,12 @@ const App: React.FC = () => {
   const setAdminChatContext = useCallback((val: any | ((prev: any) => any)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.adminChatContext) : val;
     if (nextVal !== stateRef.current.adminChatContext) {
+      if (nextVal === null) {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].adminChatContext === null && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setAdminChatContextRaw(nextVal);
     }
@@ -368,6 +443,12 @@ const App: React.FC = () => {
   const setInteractiveModalContext = useCallback((val: any | ((prev: any) => any)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.interactiveModalContext) : val;
     if (nextVal !== stateRef.current.interactiveModalContext) {
+      if (nextVal === null) {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].interactiveModalContext === null && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setInteractiveModalContextRaw(nextVal);
     }
@@ -376,6 +457,12 @@ const App: React.FC = () => {
   const setPaymentConfirmationContext = useCallback((val: any | ((prev: any) => any)) => {
     const nextVal = typeof val === 'function' ? val(stateRef.current.paymentConfirmationContext) : val;
     if (nextVal !== stateRef.current.paymentConfirmationContext) {
+      if (nextVal === null) {
+        if (navHistoryRef.current.length > 0 && navHistoryRef.current[navHistoryRef.current.length - 1].paymentConfirmationContext === null && handleBackRef.current) {
+          handleBackRef.current(false, true);
+          return;
+        }
+      }
       pushStateToHistory();
       setPaymentConfirmationContextRaw(nextVal);
     }
@@ -393,8 +480,27 @@ const App: React.FC = () => {
     checkAuth();
   }, []);
 
+  const goToMainMenu = useCallback(() => {
+    setNavHistory([]);
+    setActiveTabRaw(Tab.Menu);
+    setMenuViewRaw('hub');
+    setOfferSubViewRaw('main');
+    setIsProfileOpenRaw(false);
+    setShowScannerGlobalRaw(false);
+    setShowSmartRegistrationRaw(false);
+    setShowFullRegistrationRaw(false);
+    setAdminChatContextRaw(null);
+    setInteractiveModalContextRaw(null);
+    setPaymentConfirmationContextRaw(null);
+    try {
+      window.history.replaceState(null, '');
+    } catch (e) {}
+  }, []);
+
   const navigateTo = useCallback((updates: Partial<NavigationPoint>) => {
     const currentState: NavigationPoint = { ...stateRef.current };
+    
+    const isReturningToHub = (updates.activeTab === Tab.Menu && updates.menuView === 'hub');
     
     const willChange = 
       (updates.activeTab !== undefined && updates.activeTab !== currentState.activeTab) ||
@@ -409,11 +515,37 @@ const App: React.FC = () => {
       (updates.paymentConfirmationContext !== undefined && updates.paymentConfirmationContext !== currentState.paymentConfirmationContext);
 
     if (willChange) {
-      setNavHistory(prev => [...prev, currentState]);
-      try {
-        window.history.pushState(null, '');
-      } catch (e) {
-        console.warn("pushState failed:", e);
+      if (isReturningToHub) {
+        setNavHistory([]);
+      } else {
+        const prunedState: NavigationPoint = {
+          ...currentState,
+          showSmartRegistration: false,
+          showFullRegistration: false,
+          interactiveModalContext: null,
+          paymentConfirmationContext: null,
+          adminChatContext: null
+        };
+        setNavHistory(prev => {
+          if (prev.length > 0) {
+            const last = prev[prev.length - 1];
+            if (
+              last.activeTab === prunedState.activeTab &&
+              last.menuView === prunedState.menuView &&
+              last.offerSubView === prunedState.offerSubView &&
+              last.isProfileOpen === prunedState.isProfileOpen &&
+              last.showScannerGlobal === prunedState.showScannerGlobal
+            ) {
+              return prev;
+            }
+          }
+          try {
+            window.history.pushState(null, '');
+          } catch (e) {
+            console.warn("pushState failed:", e);
+          }
+          return [...prev, prunedState];
+        });
       }
 
       if (updates.activeTab !== undefined) setActiveTabRaw(updates.activeTab);
@@ -828,10 +960,11 @@ const App: React.FC = () => {
   };
 
   const backHandlerRef = useRef<(() => boolean) | null>(null);
+  const ignoreNextPopStateRef = useRef(false);
 
-  const handleBack = useCallback((isFromPopState = false) => {
+  const handleBack = useCallback((isFromPopState = false, ignoreCustomHandlers = false) => {
     // 1. Check if a registered custom back handler intercepts
-    if (backHandlerRef.current && backHandlerRef.current()) {
+    if (!ignoreCustomHandlers && backHandlerRef.current && backHandlerRef.current()) {
       if (isFromPopState) {
         // Negate the pop state because we intercepted: push a dummy entry back
         try {
@@ -861,6 +994,7 @@ const App: React.FC = () => {
       // If this back did NOT come from popstate, call window.history.back() to keep browser history synced
       if (!isFromPopState) {
         try {
+          ignoreNextPopStateRef.current = true;
           window.history.back();
         } catch (e) {}
       }
@@ -896,6 +1030,10 @@ const App: React.FC = () => {
     navigateTo
   ]);
 
+  useEffect(() => {
+    handleBackRef.current = handleBack;
+  }, [handleBack]);
+
   // Sync with browser back button (popstate)
   useEffect(() => {
     try {
@@ -903,6 +1041,10 @@ const App: React.FC = () => {
     } catch (e) {}
 
     const handlePopState = (e: PopStateEvent) => {
+      if (ignoreNextPopStateRef.current) {
+        ignoreNextPopStateRef.current = false;
+        return;
+      }
       handleBack(true);
     };
 
@@ -1150,11 +1292,7 @@ const App: React.FC = () => {
                     onComplete={handleSmartRegistrationComplete} 
                     onBack={() => setShowSmartRegistration(false)} 
                     onShowPopup={showPopup}
-                    onGoToMenu={() => {
-                      setShowSmartRegistration(false);
-                      setActiveTab(Tab.Menu);
-                      setMenuView('hub');
-                    }}
+                    onGoToMenu={goToMainMenu}
                     onRegisterBackHandler={(handler) => {
                       backHandlerRef.current = handler;
                     }}
@@ -1775,11 +1913,7 @@ const App: React.FC = () => {
                     }}
                     onBack={() => setShowFullRegistration(false)}
                     onShowPopup={showPopup}
-                    onGoToMenu={() => {
-                      setShowFullRegistration(false);
-                      setActiveTab(Tab.Menu);
-                      setMenuView('hub');
-                    }}
+                    onGoToMenu={goToMainMenu}
                     onRegisterBackHandler={(handler) => {
                       backHandlerRef.current = handler;
                     }}
@@ -1801,11 +1935,7 @@ const App: React.FC = () => {
                       price={interactiveModalContext.price}
                       onClose={() => setInteractiveModalContext(null)}
                       onShowPopup={showPopup}
-                      onGoToMenu={() => {
-                        setInteractiveModalContext(null);
-                        setActiveTab(Tab.Menu);
-                        setMenuView('hub');
-                      }}
+                      onGoToMenu={goToMainMenu}
                       onRegisterBackHandler={(handler) => {
                         backHandlerRef.current = handler;
                       }}

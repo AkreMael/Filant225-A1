@@ -406,7 +406,6 @@ interface WorkerListScreenProps {
 }
 
 const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onScheduleService, onOpenSiteWorkers, onOpenForm }) => {
-  const [allWorkers, setAllWorkers] = useState<Worker[]>([]);
   const [dynamicDisponibles, setDynamicDisponibles] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -414,6 +413,7 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
   const [selectedCategory, setSelectedCategory] = useState('Disponible');
 
   useEffect(() => {
+    setLoading(true);
     const q = query(collection(db, 'Disponible'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map(doc => {
@@ -430,30 +430,14 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
         } as Worker;
       });
       setDynamicDisponibles(list);
+      setLoading(false);
+      setError(null);
     }, (err) => {
       console.error("Error loading dynamic disponibles:", err);
+      setError("Impossible de charger la liste des professionnels.");
+      setLoading(false);
     });
     return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    const fetchWorkers = async () => {
-      try {
-        // Only show loading if we don't have workers yet
-        if (allWorkers.length === 0) {
-          setLoading(true);
-        }
-        const workers = await databaseService.getWorkers();
-        setAllWorkers(workers);
-        setError(null);
-      } catch (e) {
-        setError("Impossible de charger la liste des professionnels.");
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchWorkers();
   }, []);
 
   const getRenderedWorkers = () => {
