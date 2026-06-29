@@ -2143,23 +2143,62 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                         </div>
 
                         {/* Bottom action button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRetrieveProfile(item);
-                          }}
-                          disabled={isLinking || retrievingProfileId !== null}
-                          className="w-full bg-[#ff4500] hover:bg-[#e03a00] disabled:bg-slate-300 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
-                        >
-                          {retrievingProfileId === item.id ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin text-white" />
-                              <span>RÉCUPÉRATION...</span>
-                            </>
-                          ) : (
-                            <span>DEMANDE DE SERVICE</span>
-                          )}
-                        </button>
+                        {(() => {
+                          const isOwnCard = user?.phone && (item.id === user.phone.replace(/\D/g, ''));
+                          const isProfileOnline = item.isOnline === true && item.onlineEnd && Date.now() <= item.onlineEnd;
+
+                          if (isOwnCard) {
+                            if (isProfileOnline) {
+                              return (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedAdDetail(item);
+                                    setActiveImageIndex(0);
+                                    setIsSaved(false);
+                                  }}
+                                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
+                                >
+                                  <span className="w-1.5 h-1.5 bg-emerald-300 rounded-full animate-ping shrink-0" />
+                                  <span>PROFIL EN LIGNE</span>
+                                </button>
+                              );
+                            } else {
+                              return (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenOnlineForm();
+                                  }}
+                                  className="w-full bg-red-600 hover:bg-red-700 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
+                                >
+                                  <span className="w-1.5 h-1.5 bg-white rounded-full shrink-0 animate-pulse" />
+                                  <span>SE REMETTRE EN LIGNE</span>
+                                </button>
+                              );
+                            }
+                          }
+
+                          return (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRetrieveProfile(item);
+                              }}
+                              disabled={isLinking || retrievingProfileId !== null}
+                              className="w-full bg-[#ff4500] hover:bg-[#e03a00] disabled:bg-slate-300 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
+                            >
+                              {retrievingProfileId === item.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                                  <span>RÉCUPÉRATION...</span>
+                                </>
+                              ) : (
+                                <span>DEMANDE DE SERVICE</span>
+                              )}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   );
@@ -3017,21 +3056,59 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
             {/* Fixed/Sticky Bottom Floating Action Bar */}
             <div className="shrink-0 p-4 bg-white/95 border-t border-slate-100 backdrop-blur-md z-[5020] flex justify-center w-full pb-safe">
-              <button
-                type="button"
-                onClick={() => {
-                  setPinnedProfile(selectedAdDetail);
-                  setSelectedItemForForm(selectedAdDetail);
-                  setSelectedAdDetail(null);
-                }}
-                className="w-full py-4 bg-[#ff4500] hover:bg-[#e03a00] active:scale-[0.98] text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <svg className="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-                DEMANDE DE SERVICE
-              </button>
+              {(() => {
+                const isDetailOwnCard = user?.phone && (selectedAdDetail.id === user.phone.replace(/\D/g, ''));
+                const isDetailProfileOnline = selectedAdDetail.isOnline === true && selectedAdDetail.onlineEnd && Date.now() <= selectedAdDetail.onlineEnd;
+
+                if (isDetailOwnCard) {
+                  if (isDetailProfileOnline) {
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedAdDetail(selectedAdDetail);
+                        }}
+                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping shrink-0" />
+                        PROFIL EN LIGNE
+                      </button>
+                    );
+                  } else {
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedAdDetail(null);
+                          handleOpenOnlineForm();
+                        }}
+                        className="w-full py-4 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <span className="w-2.5 h-2.5 bg-white rounded-full shrink-0 animate-pulse" />
+                        SE REMETTRE EN LIGNE
+                      </button>
+                    );
+                  }
+                }
+
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPinnedProfile(selectedAdDetail);
+                      setSelectedItemForForm(selectedAdDetail);
+                      setSelectedAdDetail(null);
+                    }}
+                    className="w-full py-4 bg-[#ff4500] hover:bg-[#e03a00] active:scale-[0.98] text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                    DEMANDE DE SERVICE
+                  </button>
+                );
+              })()}
             </div>
           </motion.div>
         )}
