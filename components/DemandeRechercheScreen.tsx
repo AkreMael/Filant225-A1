@@ -226,6 +226,56 @@ const getStableCoordinatesForCity = (cityName: string): { x: number; y: number; 
   return { x, y, lat, lng };
 };
 
+export const getProfileDisplayInfo = (item: any) => {
+  let mainTitle = '';
+  let userName = '';
+
+  const type = (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur';
+
+  if (type === 'Travailleur') {
+    mainTitle = item.job || 'Travailleur Qualifié';
+    userName = item.userName || item.name || 'Prestataire';
+  } else if (type === 'Propriétaire') {
+    mainTitle = item.equipmentType || item.equipmentCategory || 'Équipement';
+    userName = item.ownerName || item.userName || item.name || 'Prestataire';
+  } else if (type === 'Agence') {
+    mainTitle = item.propertyTypes ? (Array.isArray(item.propertyTypes) ? item.propertyTypes.join(', ') : item.propertyTypes) : '';
+    userName = item.agencyName || item.userName || item.name || 'Prestataire';
+  } else if (type === 'Entreprise') {
+    mainTitle = item.companyName || 'Entreprise';
+    userName = item.companyOwner || item.userName || item.name || 'Prestataire';
+  } else {
+    mainTitle = item.titleOrActivity || 'Prestataire';
+    userName = item.userName || item.name || 'Prestataire';
+  }
+
+  // Double check and ensure we clean any potential double display or undefined
+  if (!mainTitle) {
+    if (type === 'Agence') {
+      mainTitle = 'Immobilier';
+    } else {
+      mainTitle = item.titleOrActivity || 'Service';
+    }
+  }
+  if (!userName) userName = item.name || 'Prestataire';
+
+  // Prevent same name duplication
+  if (mainTitle.toLowerCase() === userName.toLowerCase()) {
+    if (type === 'Agence') {
+      mainTitle = item.propertyTypes ? (Array.isArray(item.propertyTypes) ? item.propertyTypes.join(', ') : item.propertyTypes) : 'Immobilier';
+      if (!mainTitle || mainTitle.toLowerCase() === userName.toLowerCase()) {
+        mainTitle = 'Immobilier';
+      }
+    } else if (type === 'Propriétaire') {
+      mainTitle = item.equipmentCategory || 'Location d\'équipements';
+    } else if (type === 'Entreprise') {
+      mainTitle = item.companyDomain || 'Services aux Entreprises';
+    }
+  }
+
+  return { mainTitle, userName };
+};
+
 export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ onBack, user, onSelectTab, initialQuery }) => {
   const [queryInput, setQueryInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -660,6 +710,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           ...item,
           id: item.id || Math.random().toString(),
           name: item.name || item.agencyName || item.companyName || 'Prestataire',
+          userName: item.userName || item.name || 'Prestataire',
           city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
           profileType: (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur',
           titleOrActivity,
@@ -828,6 +879,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       city: formCity,
       skillsDescription: formProfileType === 'Entreprise' ? formCompanySkills : formDesc,
       onlineImages: uploadedUrls,
+      userName: user?.name || currentUserAd?.userName || currentUserAd?.name || '',
     };
 
     if (formProfileType === 'Travailleur') {
@@ -2026,16 +2078,18 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 pb-20">
                 {results.map((item) => {
                   const cardImages = item.images && item.images.length > 0
                     ? item.images
                     : [item.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"];
 
+                  const { mainTitle, userName } = getProfileDisplayInfo(item);
+
                   return (
                     <div
                       key={item.id}
-                      className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 flex flex-col h-full cursor-pointer"
+                      className="bg-white rounded-2xl sm:rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 flex flex-col h-full cursor-pointer"
                       id={`display-card-${item.id}`}
                       onClick={() => {
                         setSelectedAdDetail(item);
@@ -2044,7 +2098,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                       }}
                     >
                       {/* Swipe & Auto-fade horizontal image gallery */}
-                      <div className="relative w-full h-52 bg-slate-50 overflow-hidden shrink-0 group">
+                      <div className="relative w-full h-32 sm:h-48 bg-slate-50 overflow-hidden shrink-0 group">
                         <CardImageCarousel
                           images={cardImages}
                           onImageClick={() => {
@@ -2054,46 +2108,46 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                           }}
                         />
 
-                        <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm z-20">
+                        <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#ff4500] text-white text-[7px] sm:text-[8px] font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-full uppercase tracking-widest shadow-sm z-20">
                           {item.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : item.profileType}
                         </span>
                       </div>
 
                       {/* Info & Text Content */}
-                      <div className="p-5 flex-1 flex flex-col justify-between space-y-4 text-left">
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-start gap-2.5">
-                            <div className="min-w-0">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-[#2dadac] block mb-0.5 truncate">
-                                {item.titleOrActivity}
-                              </span>
-                              <h3 className="text-base font-black text-slate-900 tracking-tight leading-tight uppercase truncate">
-                                {item.name}
+                      <div className="p-3 sm:p-5 flex-1 flex flex-col justify-between space-y-3 sm:space-y-4 text-left">
+                        <div className="space-y-2 sm:space-y-3">
+                          <div className="flex justify-between items-start gap-1.5 sm:gap-2.5">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-xs sm:text-sm md:text-base font-black text-slate-900 tracking-tight leading-tight uppercase truncate" title={mainTitle}>
+                                {mainTitle}
                               </h3>
+                              <span className="text-[9px] sm:text-[11px] font-bold text-slate-500 block truncate mt-0.5">
+                                {userName}
+                              </span>
                             </div>
                             
-                            <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-full shrink-0">
-                              <MapPin className="h-3.5 w-3.5 text-[#ff00ff] fill-[#ff00ff]/10" />
-                              <span className="text-[10px] font-black uppercase tracking-tight text-slate-700">{item.city}</span>
+                            <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-50 border border-slate-100 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full shrink-0">
+                              <MapPin className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5 text-[#ff00ff] fill-[#ff00ff]/10" />
+                              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-tight text-slate-700">{item.city}</span>
                             </div>
                           </div>
 
-                          <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-3">
+                          <p className="text-[10px] sm:text-xs text-slate-400 font-medium leading-relaxed line-clamp-2" title={item.description}>
                             {item.description || "Aucune description fournie par le prestataire."}
                           </p>
                         </div>
 
                         {/* Complementary data */}
-                        <div className="py-2.5 px-3 bg-slate-50 rounded-2xl border border-slate-100/50 flex flex-col gap-1 text-[10px] text-slate-600 font-bold shrink-0">
-                          <span className="font-extrabold text-[#2dadac] uppercase tracking-wider text-[9px] mb-1">
+                        <div className="py-2 px-2.5 bg-slate-50 rounded-xl border border-slate-100/50 flex flex-col gap-0.5 text-[8px] sm:text-[10px] text-slate-600 font-bold shrink-0">
+                          <span className="font-extrabold text-[#2dadac] uppercase tracking-wider text-[8px] sm:text-[9px] mb-0.5">
                             Informations complémentaires :
                           </span>
 
                           {item.profileType === 'Travailleur' && (
                             <div className="flex justify-between items-center font-bold">
                               <span>Salaire souhaité :</span>
-                              <span className="font-black text-slate-900 uppercase text-right max-w-[150px] truncate items-center">
-                                {item.desiredSalary ? `${item.desiredSalary} FCFA / ${item.salaryPeriod === 'Par semaine' ? 'Semaine' : 'Mois'}` : 'Non spécifié'}
+                              <span className="font-black text-slate-900 uppercase text-right max-w-[90px] sm:max-w-[150px] truncate items-center">
+                                {item.desiredSalary ? `${item.desiredSalary} FCFA` : 'Non spécifié'}
                               </span>
                             </div>
                           )}
@@ -2101,7 +2155,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                           {item.profileType === 'Agence' && (
                             <div className="flex justify-between items-start font-bold">
                               <span>Biens proposés :</span>
-                              <span className="font-black text-slate-900 text-right max-w-[150px] truncate uppercase">
+                              <span className="font-black text-slate-900 text-right max-w-[90px] sm:max-w-[150px] truncate uppercase">
                                 {item.propertyTypes ? (Array.isArray(item.propertyTypes) ? item.propertyTypes.join(', ') : item.propertyTypes) : 'Tous types'}
                               </span>
                             </div>
@@ -2110,8 +2164,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                           {item.profileType === 'Propriétaire' && (
                             <div className="space-y-0.5">
                               <div className="flex justify-between items-center font-bold">
-                                <span>Matériels d'équipements :</span>
-                                <span className="font-black text-slate-900 uppercase">
+                                <span>Matériels :</span>
+                                <span className="font-black text-slate-900 uppercase truncate max-w-[90px] sm:max-w-[150px]">
                                   {item.equipmentCategory || 'Général'}
                                 </span>
                               </div>
@@ -2128,13 +2182,13 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                             <div className="space-y-0.5">
                               <div className="flex justify-between items-center font-bold">
                                 <span>Domaine principal :</span>
-                                <span className="font-black text-slate-900 uppercase truncate max-w-[160px]">
+                                <span className="font-black text-slate-900 uppercase truncate max-w-[90px] sm:max-w-[150px]">
                                   {item.companyDomain || 'Général'}
                                 </span>
                               </div>
                               <div className="flex justify-between items-start font-bold">
                                 <span>Services :</span>
-                                <span className="font-black text-slate-900 text-right uppercase truncate max-w-[150px]">
+                                <span className="font-black text-slate-900 text-right uppercase truncate max-w-[90px] sm:max-w-[150px]">
                                   {item.companyServices || 'Inconnu'}
                                 </span>
                               </div>
@@ -2157,7 +2211,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                                     setActiveImageIndex(0);
                                     setIsSaved(false);
                                   }}
-                                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
+                                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-black uppercase text-[7px] sm:text-[9px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1 active:scale-95 duration-200 cursor-pointer"
                                 >
                                   <span className="w-1.5 h-1.5 bg-emerald-300 rounded-full animate-ping shrink-0" />
                                   <span>PROFIL EN LIGNE</span>
@@ -2170,7 +2224,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                                     e.stopPropagation();
                                     handleOpenOnlineForm();
                                   }}
-                                  className="w-full bg-red-600 hover:bg-red-700 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
+                                  className="w-full bg-red-600 hover:bg-red-700 text-white py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-black uppercase text-[7px] sm:text-[9px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1 active:scale-95 duration-200 cursor-pointer"
                                 >
                                   <span className="w-1.5 h-1.5 bg-white rounded-full shrink-0 animate-pulse" />
                                   <span>SE REMETTRE EN LIGNE</span>
@@ -2186,11 +2240,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                                 handleRetrieveProfile(item);
                               }}
                               disabled={isLinking || retrievingProfileId !== null}
-                              className="w-full bg-[#ff4500] hover:bg-[#e03a00] disabled:bg-slate-300 text-white py-3.5 px-4 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 duration-200 cursor-pointer"
+                              className="w-full bg-[#ff4500] hover:bg-[#e03a00] disabled:bg-slate-300 text-white py-2 sm:py-3 px-2 sm:px-4 rounded-xl font-black uppercase text-[7px] sm:text-[9px] tracking-widest transition-all shadow-sm flex items-center justify-center gap-1 active:scale-95 duration-200 cursor-pointer"
                             >
                               {retrievingProfileId === item.id ? (
                                 <>
-                                  <Loader2 className="h-4 w-4 animate-spin text-white" />
+                                  <Loader2 className="h-3 w-3 animate-spin text-white" />
                                   <span>RÉCUPÉRATION...</span>
                                 </>
                               ) : (
@@ -2857,15 +2911,22 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     {/* Body Information */}
                     <div className="bg-white rounded-t-[2.5rem] -mt-6 relative z-30 p-6 md:p-8 space-y-6 pb-32 text-left">
                       <div className="space-y-1.5">
-                        <span className="bg-[#ff4500]/10 text-[#ff4500] text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
+                        <span className="bg-[#ff4500]/10 text-[#ff4500] text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full inline-block">
                           {selectedAdDetail.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : selectedAdDetail.profileType}
                         </span>
-                        <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight uppercase pt-2">
-                          {selectedAdDetail.name}
-                        </h2>
-                        <p className="text-xs font-black text-[#2dadac] uppercase tracking-wider">
-                          {selectedAdDetail.titleOrActivity || (selectedAdDetail.profileType === 'Travailleur' ? selectedAdDetail.job : (selectedAdDetail.profileType === 'Propriétaire' ? selectedAdDetail.equipmentCategory : (selectedAdDetail.profileType === 'Agence' ? 'IMMOBILIER' : 'ENTREPRISE')))}
-                        </p>
+                        {(() => {
+                          const { mainTitle, userName } = getProfileDisplayInfo(selectedAdDetail);
+                          return (
+                            <>
+                              <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight uppercase pt-2">
+                                {mainTitle}
+                              </h2>
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">
+                                {userName}
+                              </p>
+                            </>
+                          );
+                        })()}
                       </div>
 
                       {/* Location Display */}
