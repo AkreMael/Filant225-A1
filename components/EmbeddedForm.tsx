@@ -9,6 +9,7 @@ import { databaseService } from '../services/databaseService';
 import { audioService } from '../services/audioService';
 
 import { Phone } from 'lucide-react';
+import PaymentConfirmationScreen from './PaymentConfirmationScreen';
 
 const Spinner = () => (
     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -234,11 +235,11 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     setTimeout(() => setToastMessage(null), 5000);
   };
 
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
   const handleBackWithConfirmation = () => {
     const hasStarted = Object.keys(answers).length > 0;
-    if (hasStarted && !showConfirmation) {
+    if (hasStarted && !showPayment) {
       if (onShowPopup && onGoToMenu) {
         onShowPopup(
           "Les informations non enregistrées seront perdues.",
@@ -267,13 +268,13 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
   };
 
   useEffect(() => {
-    if (onRegisterBackHandler) {
+    if (onRegisterBackHandler && !showPayment) {
       onRegisterBackHandler(handleBackWithConfirmation);
       return () => {
         onRegisterBackHandler(null);
       };
     }
-  }, [onRegisterBackHandler, answers, showConfirmation, onShowPopup, onGoToMenu, storageKey, onClose]);
+  }, [onRegisterBackHandler, answers, showPayment, onShowPopup, onGoToMenu, storageKey, onClose]);
 
   const handleAction = async (target: 'whatsapp' | 'assistant' | 'validate') => {
     if (!isFormComplete) {
@@ -377,28 +378,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
             window.open(`https://wa.me/2250705052632?text=${encodeURIComponent(message)}`, '_blank');
         }
 
-        if (formType === 'simple_demande') {
-            const payAmount = 100;
-            const payMessage = generateWhatsAppMessage("Paiement des frais de communication", questions, answers, user, payAmount, serviceMode, count);
-            window.dispatchEvent(new CustomEvent('trigger-payment-view', { 
-              detail: {
-                title: "Paiement des frais de communication",
-                amount: payAmount.toString(),
-                paymentType: 'simple_demande',
-                waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${payAmount}`,
-                formData: {
-                    formType: 'simple_demande',
-                    formTitle: "Paiement des frais de communication",
-                    data: answers,
-                    whatsappMessage: payMessage
-                }
-              }
-            }));
-            onClose();
-        } else {
-            // Afficher l'écran de confirmation
-            setShowConfirmation(true);
-        }
+        setShowPayment(true);
     } catch (error) {
         console.error("Error saving form to private chat:", error);
         showToast("Erreur lors de l'enregistrement. Réessayez.");
@@ -407,131 +387,38 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
     }
   };
 
-  if (showConfirmation) {
-    if (formType === 'simple_demande') {
-      return (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-white z-[700] flex flex-col font-sans p-8 items-center justify-center text-center animate-in fade-in duration-300"
-        >
-          <div className="w-full max-w-[320px] flex flex-col items-center">
-              {/* Logo area */}
-              <div className="relative w-48 h-48 mb-8">
-                  <div className="w-full h-full bg-white rounded-[2.3rem] shadow-2xl border-4 border-orange-50 flex items-center justify-center p-2.5 overflow-hidden">
-                      <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                  </div>
-              </div>
-
-              <div className="space-y-6 mb-12">
-                  <p className="text-xl font-bold text-gray-900 leading-tight">
-                      Votre demande a été envoyée avec succès !
-                  </p>
-                  
-                  <p className="text-[14px] font-semibold text-gray-400 leading-relaxed">
-                      Les détails de votre demande ont été transmis directement à l'administrateur dans votre messagerie privée.
-                  </p>
-              </div>
-
-              <div className="w-full">
-                  <button 
-                    onClick={onClose}
-                    className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-4 rounded-2xl text-lg shadow-xl active:scale-[0.98] transition-all"
-                  >
-                      Compris
-                  </button>
-              </div>
-          </div>
-        </motion.div>
-      );
-    }
+  if (showPayment) {
+    const payAmount = formType === 'simple_demande' ? 100 : totalPrice;
+    const payTitle = formType === 'simple_demande' ? "Paiement des frais de communication" : title;
+    const payMessage = generateWhatsAppMessage(payTitle, questions, answers, user, payAmount, serviceMode, count);
 
     return (
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-white z-[700] flex flex-col font-sans p-8 items-center justify-center text-center"
+        className="absolute inset-0 bg-white z-[700] flex flex-col font-sans overflow-hidden animate-in fade-in duration-300"
       >
-        <div className="w-full max-w-[320px] flex flex-col items-center">
-            {/* Logo area from the image */}
-            <div className="relative w-48 h-48 mb-8">
-                <div className="w-full h-full bg-white rounded-[2.3rem] shadow-2xl border-4 border-orange-50 flex items-center justify-center p-2.5 overflow-hidden">
-                    <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                </div>
-            </div>
-
-            <div className="space-y-6 mb-12">
-                <p className="text-xl font-bold text-gray-900 leading-tight">
-                    Nous avons bien reçu votre demande de recherche de
-                </p>
-                
-                <p className="text-2xl font-black text-orange-600 uppercase tracking-tight">
-                    {title.replace(/ Rapide$/i, '').toUpperCase()}{title.toLowerCase().endsWith('s') ? '' : 'S'}.
-                </p>
-
-                {(formType === 'stage' || formType === 'formation') ? (
-                  <div className="space-y-4">
-                    <p className="text-lg font-bold text-gray-900 leading-snug">
-                        Dès que vous procéderez au paiement, un conseiller vous contactera dans les plus brefs délais.
-                    </p>
-                    <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl px-5 py-4 shadow-sm">
-                      <p className="text-[13px] font-black text-orange-700 uppercase tracking-wide">
-                        Frais de communication du service : 100 CFA
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-lg font-bold text-gray-900 leading-snug">
-                      Dès que vous procéderez au paiement de mise en relation, un agent vous contactera dans les plus brefs délais.
-                  </p>
-                )}
-            </div>
-
-            <div className="w-full space-y-4">
-                <button 
-                  onClick={() => {
-                    const message = generateWhatsAppMessage(title, questions, answers, user, totalPrice, serviceMode, count);
-                    window.dispatchEvent(new CustomEvent('trigger-payment-view', { 
-                      detail: {
-                        title: title,
-                        amount: totalPrice.toString(),
-                        paymentType: formType,
-                        waveLink: "https://pay.wave.com/m/M_filant/c/ci",
-                        formData: {
-                            formType,
-                            formTitle: title,
-                            data: answers,
-                            whatsappMessage: message
-                        }
-                      }
-                    }));
-                    onClose();
-                  }}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-2xl text-xl shadow-xl active:scale-[0.98] transition-all"
-                >
-                    Frais {totalPrice} FCFA
-                </button>
-
-                <button 
-                  onClick={() => {
-                    const message = generateWhatsAppMessage(title, questions, answers, user, totalPrice, serviceMode, count);
-                    window.open(`https://wa.me/2250705052632?text=${encodeURIComponent(message)}`, '_blank');
-                  }}
-                  className="w-full bg-[#16a34a] hover:bg-[#15803d] text-white font-black py-4 rounded-2xl text-xl shadow-xl active:scale-[0.98] transition-all"
-                >
-                    Agence WhatsApp
-                </button>
-            </div>
-            
-            <button 
-                onClick={onClose}
-                className="mt-12 text-gray-400 font-bold uppercase tracking-widest text-[10px] hover:text-gray-600"
-            >
-                Fermer
-            </button>
-        </div>
+        <PaymentConfirmationScreen 
+          title={payTitle}
+          amount={payAmount.toString()}
+          paymentType={formType}
+          user={user}
+          waveLink={formType === 'simple_demande' ? `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=100` : `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${totalPrice}`}
+          onBack={() => setShowPayment(false)}
+          onSuccess={() => {
+            onClose();
+          }}
+          onGoToMenu={onGoToMenu || onClose}
+          onShowPopup={onShowPopup}
+          onRegisterBackHandler={onRegisterBackHandler}
+          formData={{
+            formType: formType as any,
+            formTitle: payTitle,
+            data: answers,
+            whatsappMessage: payMessage
+          }}
+        />
       </motion.div>
     );
   }
@@ -693,23 +580,7 @@ const EmbeddedForm: React.FC<EmbeddedFormProps> = ({
                                 try {
                                     await databaseService.savePrivateChatMessage(chatUserId, chatMsg);
                                     
-                                    const payAmount = 100;
-                                    const payMessage = generateWhatsAppMessage("Paiement des frais de communication", questions, answers, user, payAmount, serviceMode, count);
-                                    window.dispatchEvent(new CustomEvent('trigger-payment-view', { 
-                                      detail: {
-                                        title: "Paiement des frais de communication",
-                                        amount: payAmount.toString(),
-                                        paymentType: 'simple_demande',
-                                        waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${payAmount}`,
-                                        formData: {
-                                            formType: 'simple_demande',
-                                            formTitle: "Paiement des frais de communication",
-                                            data: answers,
-                                            whatsappMessage: payMessage
-                                        }
-                                      }
-                                    }));
-                                    onClose();
+                                    setShowPayment(true);
                                 } catch (error) {
                                     console.error("Error submitting simple demand form:", error);
                                     showToast("Erreur lors de la soumission. Réessayez.");
