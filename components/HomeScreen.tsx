@@ -1027,7 +1027,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     switch (type) {
       case 'Travailleur': return 'Travailleur';
       case 'Propriétaire': return 'Équipement';
-      case 'Agence': return 'Agence immobilière';
+      case 'Agence': return 'Agence';
       case 'Entreprise': return 'Entreprise';
       default: return 'Client';
     }
@@ -1256,8 +1256,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className="flex justify-between items-end px-4">
             <div>
                 <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Session active</p>
-                <p className="text-lg font-bold capitalize">
-                    {user.name} <span className="text-xs font-black bg-white text-black px-2 py-0.5 rounded-full ml-1" style={{ color: '#000000', backgroundColor: '#ffffff' }}>{getStatusLabel(profileType)}</span>
+                <p className="text-lg font-bold capitalize flex items-center gap-1.5">
+                    {user.name} <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#6b7280', backgroundColor: '#f3f4f6' }}>{getStatusLabel(profileType)}</span>
                 </p>
                 <p className="text-sm font-medium">{user.city} <span className="text-green-500 font-bold animate-pulse ml-2" style={{ color: '#22c55e' }}>• EN LIGNE</span></p>
             </div>
