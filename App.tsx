@@ -481,6 +481,7 @@ const App: React.FC = () => {
   }, []);
 
   const goToMainMenu = useCallback(() => {
+    backHandlerRef.current = null;
     setNavHistory([]);
     setActiveTabRaw(Tab.Menu);
     setMenuViewRaw('hub');
@@ -975,8 +976,8 @@ const App: React.FC = () => {
     }
 
     // 2. Navigate back through history if we have entries
-    if (navHistory.length > 0) {
-      const lastPoint = navHistory[navHistory.length - 1];
+    if (navHistoryRef.current.length > 0) {
+      const lastPoint = navHistoryRef.current[navHistoryRef.current.length - 1];
       setNavHistory(prev => prev.slice(0, -1));
 
       // Restore states using raw setters so we do NOT trigger new history entries
@@ -1002,7 +1003,9 @@ const App: React.FC = () => {
     }
 
     // 3. Fallback/Default exit logic
-    if (activeTab === Tab.Menu && menuView === 'hub') {
+    const currentActiveTab = stateRef.current.activeTab;
+    const currentMenuView = stateRef.current.menuView;
+    if (currentActiveTab === Tab.Menu && currentMenuView === 'hub') {
       showPopup(
         "Voulez-vous quitter l’application ?",
         "confirm",
@@ -1023,9 +1026,6 @@ const App: React.FC = () => {
       navigateTo({ activeTab: Tab.Menu, menuView: 'hub' });
     }
   }, [
-    activeTab,
-    menuView,
-    navHistory,
     showPopup,
     navigateTo
   ]);
@@ -1407,13 +1407,10 @@ const App: React.FC = () => {
         case 'emergency_form':
           activeScreen = (
             <EmergencyFormScreen 
-              onBack={handleBack} 
+              onBack={() => handleBack(false, true)} 
               user={displayUser} 
               onShowPopup={showPopup}
-              onGoToMenu={() => {
-                setActiveTab(Tab.Menu);
-                setMenuView('hub');
-              }}
+              onGoToMenu={goToMainMenu}
               onRegisterBackHandler={(handler) => {
                 backHandlerRef.current = handler;
               }}
@@ -1425,7 +1422,7 @@ const App: React.FC = () => {
           break;
         case 'stage_formation_hub':
           activeScreen = <StageFormationHubScreen 
-            onBack={handleBack} 
+            onBack={() => handleBack(false, true)} 
             user={displayUser} 
             onOpenForm={(context) => setInteractiveModalContext(context as any)} 
             onRegisterBackHandler={(handler) => backHandlerRef.current = handler}
@@ -1737,11 +1734,7 @@ const App: React.FC = () => {
                         setPaymentConfirmationContext(null);
                         setShowFullRegistration(true);
                       }}
-                      onGoToMenu={() => {
-                        setPaymentConfirmationContext(null);
-                        setActiveTab(Tab.Menu);
-                        setMenuView('hub');
-                      }}
+                      onGoToMenu={goToMainMenu}
                       onShowPopup={showPopup}
                       onRegisterBackHandler={(handler) => {
                         backHandlerRef.current = handler;
