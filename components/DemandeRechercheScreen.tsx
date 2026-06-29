@@ -609,6 +609,71 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     }
   }, [initialQuery]);
 
+  // Auto-open ad details on deep link
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const deepLinkId = params.get('adId');
+      if (deepLinkId) {
+        console.log("Deep link detected for adId:", deepLinkId);
+        const docRef = doc(db, 'Inscriptions', deepLinkId);
+        getDoc(docRef).then((snap) => {
+          if (snap.exists()) {
+            const item = snap.data();
+            
+            // Format to match InscriptionResult style
+            let titleOrActivity = '';
+            if (item.profileType === 'Travailleur') {
+              titleOrActivity = item.job || 'Travailleur Qualifié';
+            } else if (item.profileType === 'Propriétaire') {
+              titleOrActivity = `${item.equipmentType || item.equipmentCategory || 'Équipement'}`;
+            } else if (item.profileType === 'Agence' || item.profileType === 'Agence immobilière') {
+              titleOrActivity = item.agencyName || 'Agence Immobilière';
+            } else if (item.profileType === 'Entreprise') {
+              titleOrActivity = item.companyName || 'Entreprise';
+            }
+
+            const formattedAd = {
+              ...item,
+              id: snap.id,
+              name: item.name || item.agencyName || item.companyName || 'Prestataire',
+              userName: item.userName || item.name || 'Prestataire',
+              city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
+              profileType: (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur',
+              titleOrActivity,
+              description: item.skillsDescription || item.equipmentDescription || item.companyServices || item.description || '',
+              imageLink: item.imageLink || '',
+              images: item.onlineImages || item.images || [],
+              desiredSalary: item.desiredSalary || '',
+              salaryPeriod: item.salaryPeriod || '',
+              propertyTypes: item.propertyTypes || '',
+              equipmentsAvailable: item.equipmentsAvailable || '',
+              equipmentCategory: item.equipmentCategory || '',
+              companyDomain: item.companyDomain || '',
+              companyServices: item.companyServices || ''
+            };
+
+            setSelectedAdDetail(formattedAd);
+          } else {
+            console.error("Deep linked ad document not found in Inscriptions.");
+          }
+        }).catch((err) => {
+          console.error("Error loading deep linked ad:", err);
+        });
+      }
+    }
+  }, []);
+
+  // Clean URL when detail modal is closed
+  useEffect(() => {
+    if (!selectedAdDetail && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('adId')) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [selectedAdDetail]);
+
   // Hook to handle external auto pinnings (e.g. from Site page)
   useEffect(() => {
     const handleAutoPinEvent = (e: Event) => {
@@ -2813,17 +2878,23 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               <button 
                 type="button"
                 onClick={() => {
+                  const { mainTitle, userName } = getProfileDisplayInfo(selectedAdDetail);
+                  const shareUrl = `${window.location.protocol}//${window.location.host}/?adId=${encodeURIComponent(selectedAdDetail.id)}&col=Inscriptions`;
+                  const shareTitle = `${mainTitle} - ${userName}`;
+                  const shareText = selectedAdDetail.description || "";
+
                   if (navigator.share) {
                     navigator.share({
-                      title: selectedAdDetail.name,
-                      text: selectedAdDetail.description || "",
-                      url: window.location.href,
+                      title: shareTitle,
+                      text: shareText,
+                      url: shareUrl,
                     }).catch(console.error);
                   } else {
                     try {
-                      navigator.clipboard.writeText(window.location.href);
+                      navigator.clipboard.writeText(shareUrl);
+                      alert("Lien de l'annonce copié dans le presse-papiers !");
                     } catch (e) {
-                      alert("Lien de l'annonce : " + window.location.href);
+                      alert("Lien de l'annonce : " + shareUrl);
                     }
                   }
                 }}

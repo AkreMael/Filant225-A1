@@ -620,12 +620,139 @@ async function startServer() {
     }
   });
 
+  // Custom router/middleware to intercept HTML requests for sharing preview metadata
+  let globalViteInstance: any = null;
+
+  app.get(["/", "/index.html"], async (req, res, next) => {
+    // We only intercept if adId is present
+    if (!req.query.adId) {
+      return next();
+    }
+    
+    try {
+      const adId = req.query.adId as string;
+      const col = req.query.col as string || "Travailleurs";
+      
+      let title = "FILANT°225";
+      let description = "Trouvez des travailleurs, équipements, agences ou opportunités en Côte d'Ivoire.";
+      let imageUrl = "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2286048e-7c07-4f27-b7c3-d7ce09254214.png";
+
+      try {
+        const docSnap = await firestore.collection(col).doc(adId).get();
+        if (docSnap.exists) {
+          const data = docSnap.data() || {};
+          
+          const type = (data.profileType === 'Agence immobilière' ? 'Agence' : data.profileType) || 'Travailleur';
+          let mainTitle = '';
+          let userName = '';
+
+          if (type === 'Travailleur') {
+            mainTitle = data.job || 'Travailleur Qualifié';
+            userName = data.userName || data.name || 'Prestataire';
+          } else if (type === 'Propriétaire') {
+            mainTitle = data.equipmentType || data.equipmentCategory || 'Équipement';
+            userName = data.ownerName || data.userName || data.name || 'Prestataire';
+          } else if (type === 'Agence') {
+            mainTitle = data.propertyTypes ? (Array.isArray(data.propertyTypes) ? data.propertyTypes.join(', ') : data.propertyTypes) : '';
+            userName = data.agencyName || data.userName || data.name || 'Prestataire';
+          } else if (type === 'Entreprise') {
+            mainTitle = data.companyName || 'Entreprise';
+            userName = data.companyOwner || data.userName || data.name || 'Prestataire';
+          } else {
+            mainTitle = data.titleOrActivity || 'Prestataire';
+            userName = data.userName || data.name || 'Prestataire';
+          }
+
+          if (!mainTitle) {
+            mainTitle = type === 'Agence' ? 'Immobilier' : (data.titleOrActivity || 'Service');
+          }
+          if (!userName) userName = data.name || 'Prestataire';
+
+          if (mainTitle.toLowerCase() === userName.toLowerCase()) {
+            if (type === 'Agence') {
+              mainTitle = data.propertyTypes ? (Array.isArray(data.propertyTypes) ? data.propertyTypes.join(', ') : data.propertyTypes) : 'Immobilier';
+              if (!mainTitle || mainTitle.toLowerCase() === userName.toLowerCase()) {
+                mainTitle = 'Immobilier';
+              }
+            } else if (type === 'Propriétaire') {
+              mainTitle = data.equipmentCategory || 'Location d\'équipements';
+            } else if (type === 'Entreprise') {
+              mainTitle = data.companyDomain || 'Services aux Entreprises';
+            }
+          }
+
+          title = `${mainTitle} - ${userName}`;
+          description = data.description || `Découvrez l'annonce de ${userName} sur FILANT°225.`;
+          
+          let primaryImg = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80";
+          if (data.onlineImages && data.onlineImages.length > 0) {
+            primaryImg = data.onlineImages[0];
+          } else if (data.images && data.images.length > 0) {
+            primaryImg = data.images[0];
+          } else if (data.imageLink) {
+            primaryImg = data.imageLink;
+          } else if (data.photoUrl) {
+            primaryImg = data.photoUrl;
+          }
+          imageUrl = primaryImg;
+          if (imageUrl.startsWith("/")) {
+            imageUrl = `${req.protocol}://${req.get('host')}${imageUrl}`;
+          }
+        }
+      } catch (dbErr) {
+        console.error("Error reading Firestore document for share metadata:", dbErr);
+      }
+
+      // Read template index.html
+      let templatePath = path.join(__dirname, process.env.NODE_ENV === "production" ? "dist" : "", "index.html");
+      if (!fs.existsSync(templatePath)) {
+        templatePath = path.join(__dirname, "index.html");
+      }
+
+      let html = fs.readFileSync(templatePath, "utf8");
+
+      // In development mode, transform index.html with Vite
+      if (process.env.NODE_ENV !== "production" && globalViteInstance) {
+        html = await globalViteInstance.transformIndexHtml(req.originalUrl, html);
+      }
+
+      const metaTags = `
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="${title.replace(/"/g, '&quot;')}" />
+    <meta property="og:description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:url" content="${req.protocol}://${req.get('host')}${req.originalUrl}" />
+    <meta property="og:site_name" content="FILANT°225" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="${title.replace(/"/g, '&quot;')}" />
+    <meta property="twitter:description" content="${description.replace(/"/g, '&quot;')}" />
+    <meta property="twitter:image" content="${imageUrl}" />
+      `;
+
+      if (html.includes("</head>")) {
+        html = html.replace("</head>", `${metaTags}\n</head>`);
+      } else {
+        html = html + metaTags;
+      }
+
+      res.setHeader("Content-Type", "text/html");
+      return res.status(200).send(html);
+    } catch (err) {
+      console.error("Error generating dynamic share page:", err);
+      return next();
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
+    globalViteInstance = vite;
     app.use(vite.middlewares);
   } else {
     app.use(express.static(path.join(__dirname, "dist")));

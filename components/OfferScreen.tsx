@@ -1298,18 +1298,24 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                       <button 
                         type="button"
                         onClick={() => {
+                          const mainTitle = selectedAdDetail.titleOrActivity || (selectedAdDetail.profileType === 'Travailleur' ? selectedAdDetail.job : (selectedAdDetail.profileType === 'Propriétaire' ? selectedAdDetail.equipmentCategory : (selectedAdDetail.profileType === 'Agence' ? 'IMMOBILIER' : 'ENTREPRISE')));
+                          const userName = selectedAdDetail.name;
+                          const shareTitle = `${mainTitle} - ${userName}`;
+                          const shareUrl = `${window.location.protocol}//${window.location.host}/?adId=${encodeURIComponent(selectedAdDetail.id)}&col=Inscriptions`;
+                          const shareText = selectedAdDetail.description || selectedAdDetail.skillsDescription || "";
+
                           if (navigator.share) {
                             navigator.share({
-                              title: selectedAdDetail.name,
-                              text: selectedAdDetail.description || selectedAdDetail.skillsDescription || "",
-                              url: window.location.href,
+                              title: shareTitle,
+                              text: shareText,
+                              url: shareUrl,
                             }).catch(console.error);
                           } else {
                             try {
-                              navigator.clipboard.writeText(window.location.href);
+                              navigator.clipboard.writeText(shareUrl);
                               audioService.speak("Lien copié dans le presse-papier");
                             } catch (e) {
-                              alert("Lien de l'annonce : " + window.location.href);
+                              alert("Lien de l'annonce : " + shareUrl);
                             }
                           }
                         }}

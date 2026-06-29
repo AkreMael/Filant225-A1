@@ -240,7 +240,15 @@ const App: React.FC = () => {
   const [showFullRegistrationRaw, setShowFullRegistrationRaw] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminForceAppView, setAdminForceAppView] = useState(false);
-  const [menuViewRaw, setMenuViewRaw] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>('hub');
+  const [menuViewRaw, setMenuViewRaw] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('adId')) {
+        return 'demande_recherche';
+      }
+    }
+    return 'hub';
+  });
   const [adminChatContextRaw, setAdminChatContextRaw] = useState<{ userId: string, userName: string, type: 'Privee' } | null>(null);
   const [offerSubViewRaw, setOfferSubViewRaw] = useState<'main' | 'shop' | 'info_travailleurs' | 'info_clients'>('main');
   const [isProfileOpenRaw, setIsProfileOpenRaw] = useState(false);
