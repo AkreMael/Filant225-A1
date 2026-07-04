@@ -1441,8 +1441,7 @@ const App: React.FC = () => {
             onBack={handleBack} 
             user={displayUser} 
             onSelectTab={(tab) => {
-              setActiveTab(tab);
-              setMenuView('hub');
+              handleTabChange(tab);
             }}
             initialQuery={demandeRechercheInitialQuery}
           />;
