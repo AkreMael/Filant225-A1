@@ -1294,7 +1294,11 @@ const App: React.FC = () => {
             <div className="w-full max-w-full md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl relative flex flex-col overflow-hidden bg-white shadow-2xl" style={{ height: globalViewportHeight, maxHeight: globalViewportHeight }}>
               <div className="flex-1 relative overflow-hidden">
                 {!showSmartRegistration ? (
-                  <FirstLaunchScreen onComplete={handleFirstLaunchComplete} />
+                  <FirstLaunchScreen 
+                    onComplete={handleFirstLaunchComplete} 
+                    deferredPrompt={deferredPrompt}
+                    onShowPopup={showPopup}
+                  />
                 ) : (
                   <SmartRegistrationScreen 
                     onComplete={handleSmartRegistrationComplete} 
