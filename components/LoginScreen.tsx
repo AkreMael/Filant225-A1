@@ -108,6 +108,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
         errMsg = "Le numéro de téléphone n'est pas au bon format ou est invalide.";
       } else if (error?.code === 'auth/too-many-requests') {
         errMsg = "Trop de requêtes SMS de vérification envoyées. Veuillez réessayer plus tard.";
+      } else if (error?.code === 'auth/unauthorized-domain') {
+        errMsg = "Domaine non autorisé dans Firebase. Veuillez ajouter ce domaine (ais-dev-todibgxmys2sri52xg745i-64757290174.europe-west2.run.app) aux domaines autorisés dans la console Firebase (Authentication -> Paramètres -> Domaines autorisés).";
+      } else if (error?.code) {
+        errMsg = `Erreur de sécurité/configuration (${error.code}) : ${error.message || 'Veuillez réessayer.'}`;
+      } else if (error?.message) {
+        errMsg = `Erreur : ${error.message}`;
       }
       onShowPopup(errMsg, "alert");
     } finally {
@@ -147,6 +153,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
         errMsg = "Le numéro de téléphone n'est pas au bon format ou est invalide.";
       } else if (error?.code === 'auth/too-many-requests') {
         errMsg = "Trop de requêtes SMS de vérification envoyées. Veuillez réessayer plus tard.";
+      } else if (error?.code === 'auth/unauthorized-domain') {
+        errMsg = "Domaine non autorisé dans Firebase. Veuillez ajouter ce domaine (ais-dev-todibgxmys2sri52xg745i-64757290174.europe-west2.run.app) aux domaines autorisés dans la console Firebase (Authentication -> Paramètres -> Domaines autorisés).";
+      } else if (error?.code) {
+        errMsg = `Erreur de sécurité/configuration (${error.code}) : ${error.message || 'Veuillez réessayer.'}`;
+      } else if (error?.message) {
+        errMsg = `Erreur : ${error.message}`;
       }
       onShowPopup(errMsg, "alert");
     } finally {
@@ -394,7 +406,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
       </div>
 
       {/* Recaptcha container */}
-      <div id="recaptcha-container" className="absolute bottom-0 right-0 pointer-events-none opacity-0"></div>
+      <div id="recaptcha-container" className="absolute bottom-4 right-4 z-50"></div>
     </div>
   );
 };
