@@ -1,92 +1,219 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface FirstLaunchScreenProps {
   onComplete: () => void;
 }
 
 const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleStartRegister = () => {
-    // Lead directly to login/app as before
-    onComplete();
+  // Keep track of interaction states using a ref to avoid re-running effects or event listeners
+  const stateRef = useRef({
+    isDragging: false,
+    dragStart: { x: 0, y: 0 },
+    positionStart: { x: 0, y: 0 },
+
+    isPinching: false,
+    initialDistance: 0,
+    initialScale: 1,
+    midpointStart: { x: 0, y: 0 },
+
+    // Detection for click vs scroll/drag
+    touchStartTime: 0,
+    hasMovedSignificant: false,
+  });
+
+  // Calculate distance between two touches
+  const getTouchDistance = (e: TouchEvent) => {
+    if (e.touches.length < 2) return 0;
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-4">
-        <div className="w-16 h-16 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-6 shadow-xl"></div>
-        <h2 className="text-2xl font-black uppercase tracking-tighter animate-pulse text-orange-500">FILANT°225</h2>
-        <p className="text-xs text-white/50 mt-2 font-bold uppercase tracking-widest">Initialisation...</p>
-      </div>
-    );
-  }
+  // Calculate midpoint between two touches
+  const getTouchMidpoint = (e: TouchEvent) => {
+    if (e.touches.length < 2) return { x: 0, y: 0 };
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    return {
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2,
+    };
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // We use raw event listeners with { passive: false } to support e.preventDefault() for custom scrolling control.
+    const onTouchStart = (e: TouchEvent) => {
+      const state = stateRef.current;
+      state.touchStartTime = Date.now();
+      state.hasMovedSignificant = false;
+
+      if (e.touches.length === 1) {
+        state.isDragging = true;
+        const touch = e.touches[0];
+        state.dragStart = { x: touch.clientX, y: touch.clientY };
+        state.positionStart = { ...position };
+      } else if (e.touches.length === 2) {
+        state.isDragging = false;
+        state.isPinching = true;
+        state.initialDistance = getTouchDistance(e);
+        state.initialScale = scale;
+        state.midpointStart = getTouchMidpoint(e);
+        state.positionStart = { ...position };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const state = stateRef.current;
+
+      if (e.touches.length === 1 && state.isDragging) {
+        const touch = e.touches[0];
+        const dx = touch.clientX - state.dragStart.x;
+        const dy = touch.clientY - state.dragStart.y;
+
+        if (Math.hypot(dx, dy) > 6) {
+          state.hasMovedSignificant = true;
+        }
+
+        setPosition({
+          x: state.positionStart.x + dx,
+          y: state.positionStart.y + dy,
+        });
+      } else if (e.touches.length === 2 && state.isPinching) {
+        e.preventDefault(); // Prevent native zoom/pan behavior
+        state.hasMovedSignificant = true;
+        const currentDistance = getTouchDistance(e);
+        if (currentDistance > 0 && state.initialDistance > 0) {
+          const newScale = state.initialScale * (currentDistance / state.initialDistance);
+          // Wide flexible bounds, allowing extreme zoom as requested ("sans aucune limitation")
+          const clampedScale = Math.max(0.1, Math.min(40, newScale));
+          setScale(clampedScale);
+
+          const currentMidpoint = getTouchMidpoint(e);
+          const dx = currentMidpoint.x - state.midpointStart.x;
+          const dy = currentMidpoint.y - state.midpointStart.y;
+          setPosition({
+            x: state.positionStart.x + dx,
+            y: state.positionStart.y + dy,
+          });
+        }
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const state = stateRef.current;
+      const timeElapsed = Date.now() - state.touchStartTime;
+
+      // If it was a quick, stationary touch, treat it as a click to dismiss/proceed
+      if (!state.hasMovedSignificant && !state.isPinching && timeElapsed < 250) {
+        onComplete();
+        return;
+      }
+
+      state.isDragging = false;
+      state.isPinching = false;
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = 1.1;
+      let newScale = scale;
+      if (e.deltaY < 0) {
+        newScale = scale * zoomFactor;
+      } else {
+        newScale = scale / zoomFactor;
+      }
+      setScale(Math.max(0.1, Math.min(40, newScale)));
+    };
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd, { passive: true });
+    container.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      container.removeEventListener('wheel', onWheel);
+    };
+  }, [scale, position, onComplete]);
+
+  // Mouse Handlers for Desktop fallback dragging
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const state = stateRef.current;
+    state.touchStartTime = Date.now();
+    state.hasMovedSignificant = false;
+    state.isDragging = true;
+    state.dragStart = { x: e.clientX, y: e.clientY };
+    state.positionStart = { ...position };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const state = stateRef.current;
+    if (state.isDragging) {
+      const dx = e.clientX - state.dragStart.x;
+      const dy = e.clientY - state.dragStart.y;
+
+      if (Math.hypot(dx, dy) > 6) {
+        state.hasMovedSignificant = true;
+      }
+
+      setPosition({
+        x: state.positionStart.x + dx,
+        y: state.positionStart.y + dy,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    const state = stateRef.current;
+    const timeElapsed = Date.now() - state.touchStartTime;
+
+    if (state.isDragging && !state.hasMovedSignificant && timeElapsed < 250) {
+      onComplete();
+      return;
+    }
+
+    state.isDragging = false;
+  };
+
+  const handleDoubleClick = () => {
+    // Reset zoom and position on double click
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-[#FFA200] via-[#FF7E00] to-[#FF4500] text-white font-sans overflow-hidden">
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-8">
-        
-        {/* Welcome Section */}
-        <div className="mb-1 transition-all duration-700 animate-in fade-in slide-in-from-top-10 ease-out">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-0 opacity-90">Bienvenue chez</h2>
-          <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter leading-none mt-1">
-            FILANT°225
-          </h1>
-        </div>
-
-        {/* Description Section */}
-        <div className="mt-6 space-y-4 max-w-sm transition-all duration-1000 delay-300 animate-in fade-in slide-in-from-bottom-10 ease-out">
-          <p className="text-base sm:text-lg font-black leading-tight px-4 text-white">
-            Trouvez facilement ce dont vous avez besoin.
-          </p>
-          
-          <div className="bg-black/10 backdrop-blur-sm rounded-3xl p-5 py-3.5 space-y-1.5 border border-white/10">
-            <p className="text-xs font-black uppercase tracking-widest text-black/60">
-              🔎 Recherchez rapidement :
-            </p>
-            <ul className="text-sm sm:text-base font-bold space-y-1">
-              <li>• Des travailleurs (tous types de métiers)</li>
-              <li>• Des équipements</li>
-              <li>• Des appartements</li>
-            </ul>
-          </div>
-
-          <p className="text-xs sm:text-sm font-bold leading-tight px-4 opacity-90">
-            🤝 FILANT°225 vous met en relation directe avec les bonnes personnes.
-          </p>
-          
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] opacity-80 py-1">
-            Simple. Rapide. Efficace.
-          </p>
-          
-          <p className="text-sm sm:text-base font-bold leading-tight px-4">
-            Connectez-vous et commencez dès aujourd'hui.
-          </p>
-        </div>
-
-        {/* Action Section */}
-        <div className="mt-8 flex flex-col items-center gap-2.5 w-full max-w-xs transition-all duration-1000 delay-700 animate-in fade-in slide-in-from-bottom-10 ease-out">
-          <button
-            onClick={handleStartRegister}
-            className="w-full bg-white text-black text-base font-black py-3 px-8 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.15)] hover:bg-gray-100 active:scale-95 transition-all duration-300 transform border border-white/20 uppercase tracking-widest"
-          >
-            Se connecter
-          </button>
-          
-          <button className="w-8 h-8 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform border border-white/10 group">
-            <span className="text-white text-xs font-serif italic font-bold group-hover:scale-110 transition-transform">i</span>
-          </button>
-        </div>
-
-      </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        .font-sans {
-          font-family: 'Inter', system-ui, sans-serif;
-        }
-      `}</style>
+    <div
+      id="first-launch-screen-container"
+      ref={containerRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onDoubleClick={handleDoubleClick}
+      className="absolute inset-0 z-[1000] w-full h-full bg-black overflow-hidden flex items-center justify-center select-none cursor-grab active:cursor-grabbing"
+      style={{ touchAction: 'none' }}
+    >
+      <img
+        id="first-launch-splash-img"
+        src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4b97bfd0-e940-4985-9b5d-d812a9d51885.png"
+        alt="Splash Screen Image"
+        className="w-full h-full object-cover select-none pointer-events-none transition-transform duration-75 ease-out"
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+          transformOrigin: 'center center',
+          willChange: 'transform',
+        }}
+        referrerPolicy="no-referrer"
+      />
     </div>
   );
 };
