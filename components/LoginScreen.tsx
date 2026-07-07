@@ -54,6 +54,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
     if (tempCity) setCity(tempCity);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if ((window as any).recaptchaVerifier) {
+        try {
+          (window as any).recaptchaVerifier.clear();
+        } catch (e) {
+          console.error("Error clearing RecaptchaVerifier on unmount:", e);
+        }
+        (window as any).recaptchaVerifier = null;
+      }
+    };
+  }, []);
+
   const setupRecaptcha = () => {
     if ((window as any).recaptchaVerifier) {
       return (window as any).recaptchaVerifier;
@@ -61,6 +74,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
     try {
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         size: 'invisible',
+        sitekey: '6LcLhkgtAAAAANq13TWiomuMqZR2HoYQdoMY_XhA',
         callback: () => {
           console.log("reCAPTCHA solved successfully");
         },
