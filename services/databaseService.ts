@@ -1487,25 +1487,7 @@ export const databaseService = {
         timestamp: serverTimestamp(),
         isRead: false
       });
-      
-      // Trigger background FCM Push notification through the Express backend
-      fetch('/api/notifications/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          phone: phone,
-          title: notification.title || "Notification",
-          body: notification.message
-        })
-      }).then(res => {
-        if (!res.ok) {
-          console.warn(`[FCM Push] Backend returned status ${res.status} for user ${phone}`);
-        }
-      }).catch(err => {
-        console.error(`[FCM Push] Failed to trigger push for user ${phone}:`, err);
-      });
+      // Push notification API call removed as it depends on external backend
     } catch (e) {
       console.error("Error saving notification to Firestore:", e);
     }
