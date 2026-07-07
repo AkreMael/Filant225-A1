@@ -206,7 +206,7 @@ const FirstLaunchScreen: React.FC<FirstLaunchScreenProps> = ({ onComplete }) => 
         id="first-launch-splash-img"
         src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/4b97bfd0-e940-4985-9b5d-d812a9d51885.png"
         alt="Splash Screen Image"
-        className="w-full h-full object-cover select-none pointer-events-none transition-transform duration-75 ease-out"
+        className="w-full h-full object-contain select-none pointer-events-none transition-transform duration-75 ease-out"
         style={{
           transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
           transformOrigin: 'center center',
