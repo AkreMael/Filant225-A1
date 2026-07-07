@@ -30,6 +30,8 @@ export interface User {
   idCardBack?: string;
   idCardUploadedAt?: any;
   idCardStatus?: string;
+  googleUid?: string;
+  googleEmail?: string;
 }
 
 export interface NotificationButton {
