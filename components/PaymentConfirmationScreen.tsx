@@ -323,7 +323,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           
           if ((window as any).PaiementPro) {
             try {
-              const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP_F175';
+              const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP-F92394';
               const payment = new (window as any).PaiementPro(merchantId);
               payment.amount = currentAmount;
               payment.description = "Dépôt Portefeuille FILANT°225";
@@ -605,7 +605,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 
           if ((window as any).PaiementPro) {
             try {
-              const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP_F175';
+              const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP-F92394';
               const payment = new (window as any).PaiementPro(merchantId);
               payment.amount = depositAmount;
               payment.description = "Dépôt Portefeuille FILANT°225";
@@ -662,10 +662,10 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           </div>
           <h2 className="text-lg font-black text-slate-950 uppercase tracking-tight font-sans">Demande enregistrée</h2>
           <p className="text-slate-600 text-[11px] font-extrabold uppercase leading-relaxed font-sans">
-            Votre demande de dépôt de <span className="text-orange-600 font-extrabold">{parseFloat(depositAmount).toLocaleString('fr-FR')} FCFA</span> a été transmise à l'administrateur.
+            Votre demande de dépôt de <span className="text-orange-600 font-extrabold">{parseFloat(depositAmount).toLocaleString('fr-FR')} FCFA</span> a été initiée.
           </p>
           <p className="text-[9px] text-slate-400 font-black uppercase font-sans">
-            Le montant restera bloqué en attente de sa validation.
+            Le montant sera crédité sur votre portefeuille automatiquement dès confirmation du paiement.
           </p>
           <button
             onClick={() => {
@@ -886,19 +886,19 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                   pendingDepositStatus === 'PENDING' ? (
                     <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 text-center space-y-1 animate-pulse">
                       <p className="text-[9px] font-black text-orange-600 uppercase tracking-wide font-sans">
-                        ⏳ DÉPÔT EN ATTENTE DE VALIDATION
+                        ⏳ DÉPÔT EN ATTENTE DE CONFIRMATION
                       </p>
                       <p className="text-[8px] font-extrabold text-orange-800 leading-relaxed font-sans">
-                        Votre demande de recharge de <span className="font-black text-[10px] text-orange-700">{(parseFloat(depositAmount) || 0).toLocaleString('fr-FR')} FCFA</span> est en cours de vérification par l'administrateur. Dès validation, votre solde de compte sera mis à jour.
+                        Votre recharge de <span className="font-black text-[10px] text-orange-700">{(parseFloat(depositAmount) || 0).toLocaleString('fr-FR')} FCFA</span> est en attente de confirmation par Wave. Le solde sera mis à jour automatiquement.
                       </p>
                     </div>
                   ) : pendingDepositStatus === 'SUCCESS' ? (
                     <div className="bg-green-50 border border-green-150 rounded-xl p-3 text-center space-y-2 animate-in zoom-in-95 duration-300">
                       <p className="text-[9.5px] font-black text-green-600 uppercase tracking-wide font-sans">
-                        ✅ DÉPÔT VALIDÉ AVEC SUCCÈS !
+                        ✅ DÉPÔT CONFIRMÉ AVEC SUCCÈS !
                       </p>
                       <p className="text-[8.5px] font-extrabold text-green-800 leading-relaxed font-sans">
-                        L'administrateur a validé votre dépôt de {(parseFloat(depositAmount) || 0).toLocaleString('fr-FR')} FCFA. Votre nouveau solde est de <span className="font-black text-xs text-green-700">{wallet.balance.toLocaleString('fr-FR')} FCFA</span>.
+                        Votre dépôt de {(parseFloat(depositAmount) || 0).toLocaleString('fr-FR')} FCFA a été confirmé. Votre nouveau solde est de <span className="font-black text-xs text-green-700">{wallet.balance.toLocaleString('fr-FR')} FCFA</span>.
                       </p>
                       <button
                         onClick={() => {
@@ -913,10 +913,10 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                   ) : (
                     <div className="bg-rose-50 border border-rose-150 rounded-xl p-3 text-center space-y-2 animate-in zoom-in-95 duration-300">
                       <p className="text-[9.5px] font-black text-rose-600 uppercase tracking-wide font-sans">
-                        ❌ DÉPÔT NON VALIDÉ
+                        ❌ PAIEMENT ÉCHOUÉ
                       </p>
                       <p className="text-[8.5px] font-extrabold text-rose-800 leading-relaxed font-sans">
-                        Votre demande de recharge de {(parseFloat(depositAmount) || 0).toLocaleString('fr-FR')} FCFA n'a pas été validée par l'administrateur. Aucun crédit n'a été ajouté.
+                        Le paiement Wave de {(parseFloat(depositAmount) || 0).toLocaleString('fr-FR')} FCFA a échoué ou a été annulé.
                       </p>
                       <div className="flex gap-2 font-sans">
                         <button
@@ -983,9 +983,9 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                   </div>
                 ) : (paymentPath && isNonValidated) ? (
                   <div className="text-rose-600 block bg-rose-50 p-3 rounded-xl border border-rose-150 space-y-2 transition-all">
-                    <p className="font-black text-[10px] uppercase tracking-wider font-sans">❌ DÉPÔT NON VALIDÉ</p>
+                    <p className="font-black text-[10px] uppercase tracking-wider font-sans">❌ PAIEMENT ÉCHOUÉ</p>
                     <p className="text-[9px] leading-relaxed text-rose-950 font-semibold font-sans">
-                      Votre demande de recharge de <span className="font-black text-[11px] text-rose-700">{parseFloat(currentAmount).toLocaleString('fr-FR')} FCFA</span> n'a pas été validée ou n'a pas été détectée par l'administrateur.
+                      Le paiement Wave de <span className="font-black text-[11px] text-rose-700">{parseFloat(currentAmount).toLocaleString('fr-FR')} FCFA</span> a échoué ou a été annulé.
                     </p>
                     <button
                       onClick={() => {
@@ -1000,12 +1000,12 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                   </div>
                 ) : paymentPath ? (
                   <div className="text-orange-600 block bg-orange-50 p-3 rounded-xl border-2 border-orange-100 space-y-1 transition-all">
-                    <p className="font-black text-[10px] uppercase tracking-wider animate-pulse font-sans">Dépôt en attente de validation</p>
+                    <p className="font-black text-[10px] uppercase tracking-wider animate-pulse font-sans">Dépôt en attente de confirmation</p>
                     <p className="text-[9.5px] leading-relaxed text-orange-950 font-semibold font-sans">
                       Votre demande de <span className="font-black text-sm text-orange-700">{parseFloat(currentAmount).toLocaleString('fr-FR')} FCFA</span> a été enregistrée avec succès.
                     </p>
                     <p className="text-[8.5px] leading-relaxed text-slate-500 font-sans">
-                      Veuillez patienter pendant que l'administrateur valide votre dépôt. Le solde de votre compte sera rechargé instantanément après confirmation.
+                      Veuillez finaliser le paiement sur l'application Wave. Votre solde sera mis à jour automatiquement dès confirmation.
                     </p>
                   </div>
                 ) : pendingDepositStatus === 'PENDING' ? (
@@ -1019,7 +1019,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                   <span className="text-rose-500 text-[10px] font-black uppercase tracking-wide">Solde insuffisant pour commander ce service.</span>
                 ) : (
                   paymentType === 'Dépôt' 
-                    ? "Saisissez le montant et confirmez le dépôt pour soumettre à la validation administrative."
+                    ? "Saisissez le montant et lancez le paiement Wave."
                     : "Validez la transaction pour continuer l'opération du service."
                 )}
               </div>

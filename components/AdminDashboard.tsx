@@ -1034,36 +1034,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                          
                          return (
                            <td key={j} className="px-6 py-4">
-                             <div className="flex flex-col gap-2 min-w-[160px]">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (!isValidated) handleValidatePayment(item);
-                                  }}
-                                  className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 border-2 ${
-                                    isValidated 
-                                      ? 'bg-green-600 text-white border-green-500 shadow-lg shadow-green-600/30 scale-[1.02]' 
-                                      : 'bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700 hover:border-green-400 hover:text-green-600'
-                                  }`}
-                                >
-                                  <ShieldCheck size={14} className={isValidated ? 'text-white' : 'text-slate-300'} />
-                                  {item.paymentType === 'Dépôt' ? 'Dépôt validé' : 'Paiement validé'}
-                                </button>
-                                
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (!isNotValidated) handleInvalidatePayment(item);
-                                  }}
-                                  className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all duration-300 active:scale-95 flex items-center justify-center gap-2 border-2 ${
-                                    isNotValidated 
-                                      ? 'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-600/30 scale-[1.02]' 
-                                      : 'bg-white dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700 hover:border-rose-400 hover:text-rose-600'
-                                  }`}
-                                >
-                                  <AlertCircle size={14} className={isNotValidated ? 'text-white' : 'text-slate-300'} />
-                                  {item.paymentType === 'Dépôt' ? 'Dépôt non validé' : 'Paiement non validé'}
-                                </button>
+                             <div className="flex flex-col gap-1.5 min-w-[160px]">
+                               {isValidated ? (
+                                 <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-4 py-2.5 rounded-2xl justify-center font-black text-[10px] uppercase tracking-wider">
+                                   <Check size={14} className="text-emerald-500" />
+                                   {item.paymentType === 'Dépôt' ? 'Dépôt validé' : 'Paiement validé'}
+                                 </div>
+                               ) : isNotValidated ? (
+                                 <div className="flex items-center gap-2 text-rose-600 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-4 py-2.5 rounded-2xl justify-center font-black text-[10px] uppercase tracking-wider">
+                                   <AlertCircle size={14} className="text-rose-500" />
+                                   {item.paymentType === 'Dépôt' ? 'Dépôt non validé' : 'Paiement non validé'}
+                                 </div>
+                               ) : (
+                                 <div className="flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-4 py-2.5 rounded-2xl justify-center font-black text-[10px] uppercase tracking-wider animate-pulse">
+                                   <AlertCircle size={14} className="text-amber-500" />
+                                   En attente
+                                 </div>
+                               )}
                              </div>
                            </td>
                          );
