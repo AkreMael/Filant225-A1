@@ -790,6 +790,20 @@ const App: React.FC = () => {
             } catch (e: any) {
               if (e.code === 'auth/admin-restricted-operation') {
                 console.error("Anonymous authentication is disabled in Firebase Console. Please enable it in Authentication > Sign-in method.");
+              } else if (e.code === 'auth/firebase-app-check-token-is-invalid' || e.message?.includes('app-check') || e.message?.includes('App Check')) {
+                console.error("Failed to sign in anonymously during recovery due to App Check:", e);
+                showPopup(
+                  "L'authentification a échoué car Firebase App Check est activé et exige un jeton valide.\n\n" +
+                  "Pour résoudre ce problème :\n" +
+                  "1. Ouvrez les outils de développement (F12) et copiez le Debug Token généré.\n" +
+                  "2. Ajoutez ce jeton dans votre console Firebase (App Check > Gérer les jetons de débogage).\n\n" +
+                  "Ou désactivez temporairement l'application d'App Check pour l'Authentication dans votre console Firebase.",
+                  "alert",
+                  undefined,
+                  "Compris",
+                  undefined,
+                  "App Check Requis"
+                );
               } else {
                 console.error("Failed to sign in anonymously during recovery:", e);
               }
@@ -922,6 +936,29 @@ const App: React.FC = () => {
           window.removeEventListener('trigger-payment-view' as any, handlePaymentTrigger as any);
       };
   }, []);
+
+  useEffect(() => {
+    const handleAppCheckError = () => {
+      showPopup(
+        "L'accès aux services Firebase est limité par les règles de sécurité Firebase App Check.\n\n" +
+        "Pour résoudre cela :\n" +
+        "1. Ouvrez les outils de développement de votre navigateur (F12).\n" +
+        "2. Copiez le 'App Check debug token' affiché dans la console.\n" +
+        "3. Collez ce jeton dans votre console Firebase sous 'App Check > Gérer les jetons de débogage'.\n\n" +
+        "Ou désactivez l'obligation d'App Check pour l'Authentication et Firestore dans votre console Firebase.",
+        "alert",
+        undefined,
+        "Fermer",
+        undefined,
+        "Sécurité App Check"
+      );
+    };
+
+    window.addEventListener('firebase-app-check-error' as any, handleAppCheckError);
+    return () => {
+      window.removeEventListener('firebase-app-check-error' as any, handleAppCheckError);
+    };
+  }, [showPopup]);
 
   const isUserAdmin = currentUser?.phone === '0705052632';
 

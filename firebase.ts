@@ -15,24 +15,36 @@ export const rtdb = getDatabase(app);
 export const storage = getStorage(app, firebaseConfig.storageBucket);
 export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
 
-// Initialisation de App Check en mode Debug pour l'environnement de développement / iframe
-// REMARQUE: Mettez ENABLE_APP_CHECK à true UNIQUEMENT si vous avez activé et configuré
-// App Check et enregistré vos jetons de débogage (Debug Tokens) dans la console Firebase.
-// Pour le développement local ou l'iframe de l'AI Studio, il est recommandé de le laisser à false.
-const ENABLE_APP_CHECK = false;
+// Initialisation de App Check
+if (typeof window !== 'undefined') {
+  const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
+  const isDev = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname.includes('aistudio.google');
 
-if (typeof window !== 'undefined' && ENABLE_APP_CHECK) {
-  // Activer le mode debug d'App Check pour générer un jeton de débogage dans la console
-  (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  try {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(firebaseConfig.measurementId || 'any-dummy-recaptcha-key-for-debug'),
-      isTokenAutoRefreshEnabled: true
-    });
-    console.log("🔥 Firebase App Check a été initialisé en mode DEBUG.");
-    console.log("ℹ️ Regardez ci-dessus pour copier le 'App Check debug token' généré par Firebase, puis ajoutez-le dans la console Firebase pour autoriser la base de données.");
-  } catch (error) {
-    console.warn("⚠️ Impossible d'initialiser App Check :", error);
+  if (debugToken) {
+    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+    console.log("🔥 [Firebase App Check] Utilisation du jeton de débogage fourni par l'environnement.");
+  } else if (isDev) {
+    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+    console.log("🔥 [Firebase App Check] Mode débogage actif.");
+  }
+
+  // Activer App Check pour prendre en charge les projets qui l'imposent
+  const ENABLE_APP_CHECK = true;
+
+  if (ENABLE_APP_CHECK) {
+    try {
+      const siteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY || "6LdCwCcqAAAAAJ9O7WnS97_Hn3G7B7b6E8Tz1WvA"; // Clé Recaptcha V3 par défaut
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(siteKey),
+        isTokenAutoRefreshEnabled: true
+      });
+      console.log("🔥 Firebase App Check initialisé avec succès !");
+      if (debugToken || isDev) {
+        console.log("ℹ️ Si vous rencontrez des erreurs d'autorisation, vérifiez que le Debug Token affiché ci-dessus dans la console de votre navigateur est bien enregistré dans votre console Firebase.");
+      }
+    } catch (error) {
+      console.warn("⚠️ Impossible d'initialiser App Check :", error);
+    }
   }
 }
 
