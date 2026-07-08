@@ -103,6 +103,51 @@ const CardIconArea = ({ amount, isManual, onValueChange, onValidate, isValidated
     </div>
 );
 
+// Helper to guarantee that PaiementPro is loaded dynamically and successfully
+const ensurePaiementProLoaded = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if ((window as any).PaiementPro) {
+      resolve();
+      return;
+    }
+
+    const scriptUrl = "https://www.paiementpro.net/webservice/onlinepayment/js/paiementpro.v1.0.1.js";
+
+    // Check if script tag is already in DOM
+    const existingScript = document.querySelector(`script[src="${scriptUrl}"]`);
+    if (existingScript) {
+      const handleLoad = () => {
+        if ((window as any).PaiementPro) {
+          resolve();
+        } else {
+          reject(new Error("Le script Paiement Pro a été téléchargé, mais la classe globale 'PaiementPro' est indisponible (Erreur de chargement du SDK ou de configuration du navigateur)."));
+        }
+      };
+      const handleError = () => {
+        reject(new Error("Échec du chargement du script existant Paiement Pro. Vérifiez votre connexion Internet ou les restrictions de sécurité de votre navigateur."));
+      };
+      existingScript.addEventListener('load', handleLoad);
+      existingScript.addEventListener('error', handleError);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = scriptUrl;
+    script.async = true;
+    script.onload = () => {
+      if ((window as any).PaiementPro) {
+        resolve();
+      } else {
+        reject(new Error("Le script Paiement Pro a été injecté et chargé avec succès, mais la classe globale 'PaiementPro' reste introuvable. Veuillez vérifier l'intégrité du SDK."));
+      }
+    };
+    script.onerror = () => {
+      reject(new Error("Impossible de joindre les serveurs de Paiement Pro pour charger la bibliothèque de paiement sécurisé. Veuillez vérifier votre connexion Internet, les restrictions du réseau ou les bloqueurs de scripts."));
+    };
+    document.head.appendChild(script);
+  });
+};
+
 const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({ 
     title, 
     amount: initialAmount, 
@@ -321,53 +366,48 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           setPaymentPath(path);
           const pushId = path.split('/').pop() || '';
           
-          if ((window as any).PaiementPro) {
-            try {
-              const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP-F92394';
-              const payment = new (window as any).PaiementPro(merchantId);
-              payment.amount = currentAmount;
-              payment.description = "Dépôt Portefeuille FILANT°225";
-              payment.channel = "Wave";
-              payment.countryCurrencyCode = "952";
-              payment.referenceNumber = pushId;
-              payment.customerEmail = `${waveNumber}@filant225.com`;
-              payment.customerFirstName = user.name || "Client";
-              payment.customerLastname = "FILANT";
-              payment.customerPhoneNumber = waveNumber;
-              payment.notificationURL = `${window.location.origin}/api/payments/webhook`;
+          try {
+            await ensurePaiementProLoaded();
+            const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP-F92394';
+            const payment = new (window as any).PaiementPro(merchantId);
+            payment.amount = currentAmount;
+            payment.description = "Dépôt Portefeuille FILANT°225";
+            payment.channel = "Wave";
+            payment.countryCurrencyCode = "952";
+            payment.referenceNumber = pushId;
+            payment.customerEmail = `${waveNumber}@filant225.com`;
+            payment.customerFirstName = user.name || "Client";
+            payment.customerLastname = "FILANT";
+            payment.customerPhoneNumber = waveNumber;
+            payment.notificationURL = `${window.location.origin}/api/payments/webhook`;
 
-              console.log("Launching PaiementPro for paymentType=Dépôt...", payment);
-              const response = await payment.init();
-              console.log("PaiementPro response:", response);
+            console.log("Launching PaiementPro for paymentType=Dépôt...", payment);
+            const response = await payment.init();
+            console.log("PaiementPro response:", response);
 
-              let finalUrl = null;
-              if (response) {
-                if (typeof response === 'string') {
-                  finalUrl = response;
-                } else if (response.url) {
-                  finalUrl = response.url;
-                } else if (response.redirect_url) {
-                  finalUrl = response.redirect_url;
-                }
+            let finalUrl = null;
+            if (response) {
+              if (typeof response === 'string') {
+                finalUrl = response;
+              } else if (response.url) {
+                finalUrl = response.url;
+              } else if (response.redirect_url) {
+                finalUrl = response.redirect_url;
               }
-              if (!finalUrl && payment.url) {
-                finalUrl = payment.url;
-              }
-
-              if (finalUrl) {
-                setIframeUrl(finalUrl);
-              } else {
-                alert("Impossible d'obtenir le lien de paiement Paiement Pro. Veuillez réessayer.");
-                setIsProcessing(false);
-              }
-            } catch (sdkErr) {
-              console.error("PaiementPro SDK initiation error:", sdkErr);
-              alert("Erreur d'initialisation du service de paiement sécurisé Wave. Veuillez réessayer.");
-              setIsProcessing(false);
             }
-          } else {
-            console.warn("PaiementPro global class is not present.");
-            alert("Le service de paiement sécurisé Wave (Paiement Pro) n'est pas encore chargé. Veuillez recharger la page ou patienter.");
+            if (!finalUrl && payment.url) {
+              finalUrl = payment.url;
+            }
+
+            if (finalUrl) {
+              setIframeUrl(finalUrl);
+            } else {
+              throw new Error("Paiement Pro n'a pas renvoyé d'URL de redirection valide.");
+            }
+          } catch (sdkErr: any) {
+            console.error("PaiementPro SDK initiation error:", sdkErr);
+            const exactMsg = sdkErr?.message || String(sdkErr) || "Erreur d'initialisation";
+            alert(`Erreur d'initialisation du service de paiement sécurisé Wave (Paiement Pro) : ${exactMsg}.`);
             setIsProcessing(false);
           }
         } else {
@@ -617,53 +657,48 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           setDepositSuccess(true);
           const pushId = path.split('/').pop() || '';
 
-          if ((window as any).PaiementPro) {
-            try {
-              const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP-F92394';
-              const payment = new (window as any).PaiementPro(merchantId);
-              payment.amount = depositAmount;
-              payment.description = "Dépôt Portefeuille FILANT°225";
-              payment.channel = "Wave";
-              payment.countryCurrencyCode = "952";
-              payment.referenceNumber = pushId;
-              payment.customerEmail = `${depositPhone}@filant225.com`;
-              payment.customerFirstName = user.name || "Client";
-              payment.customerLastname = "FILANT";
-              payment.customerPhoneNumber = depositPhone;
-              payment.notificationURL = `${window.location.origin}/api/payments/webhook`;
+          try {
+            await ensurePaiementProLoaded();
+            const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP-F92394';
+            const payment = new (window as any).PaiementPro(merchantId);
+            payment.amount = depositAmount;
+            payment.description = "Dépôt Portefeuille FILANT°225";
+            payment.channel = "Wave";
+            payment.countryCurrencyCode = "952";
+            payment.referenceNumber = pushId;
+            payment.customerEmail = `${depositPhone}@filant225.com`;
+            payment.customerFirstName = user.name || "Client";
+            payment.customerLastname = "FILANT";
+            payment.customerPhoneNumber = depositPhone;
+            payment.notificationURL = `${window.location.origin}/api/payments/webhook`;
 
-              console.log("Launching PaiementPro for Deposit Overlay...", payment);
-              const response = await payment.init();
-              console.log("PaiementPro Deposit response:", response);
+            console.log("Launching PaiementPro for Deposit Overlay...", payment);
+            const response = await payment.init();
+            console.log("PaiementPro Deposit response:", response);
 
-              let finalUrl = null;
-              if (response) {
-                if (typeof response === 'string') {
-                  finalUrl = response;
-                } else if (response.url) {
-                  finalUrl = response.url;
-                } else if (response.redirect_url) {
-                  finalUrl = response.redirect_url;
-                }
+            let finalUrl = null;
+            if (response) {
+              if (typeof response === 'string') {
+                finalUrl = response;
+              } else if (response.url) {
+                finalUrl = response.url;
+              } else if (response.redirect_url) {
+                finalUrl = response.redirect_url;
               }
-              if (!finalUrl && payment.url) {
-                finalUrl = payment.url;
-              }
-
-              if (finalUrl) {
-                setIframeUrl(finalUrl);
-              } else {
-                alert("Impossible d'obtenir le lien de paiement Paiement Pro. Veuillez réessayer.");
-                setIsDepositing(false);
-              }
-            } catch (sdkErr) {
-              console.error("PaiementPro Deposit SDK initiation error:", sdkErr);
-              alert("Erreur d'initialisation du service de paiement sécurisé Wave. Veuillez réessayer.");
-              setIsDepositing(false);
             }
-          } else {
-            console.warn("PaiementPro global class is not present in deposit.");
-            alert("Le service de paiement sécurisé Wave (Paiement Pro) n'est pas encore chargé. Veuillez recharger la page ou patienter.");
+            if (!finalUrl && payment.url) {
+              finalUrl = payment.url;
+            }
+
+            if (finalUrl) {
+              setIframeUrl(finalUrl);
+            } else {
+              throw new Error("Paiement Pro n'a pas renvoyé d'URL de redirection valide.");
+            }
+          } catch (sdkErr: any) {
+            console.error("PaiementPro Deposit SDK initiation error:", sdkErr);
+            const exactMsg = sdkErr?.message || String(sdkErr) || "Erreur d'initialisation";
+            alert(`Erreur d'initialisation du service de paiement sécurisé Wave (Paiement Pro) : ${exactMsg}.`);
             setIsDepositing(false);
           }
         } else {
