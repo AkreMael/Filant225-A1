@@ -301,13 +301,6 @@ export const databaseService = {
           console.error("Anonymous authentication is disabled in Firebase Console. Please enable it in Authentication > Sign-in method.");
         } else {
           console.warn("Anonymous authentication failed or restricted:", authError.message);
-          if (authError.code === 'auth/firebase-app-check-token-is-invalid' || authError.message?.includes('app-check') || authError.message?.includes('App Check')) {
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('firebase-app-check-error', { 
-                detail: { message: authError.message } 
-              }));
-            }
-          }
         }
       }
     }

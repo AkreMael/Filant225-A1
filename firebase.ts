@@ -4,7 +4,7 @@ import { getFirestore } from "firebase/firestore";
 import { getMessaging } from "firebase/messaging";
 import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+// import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import firebaseConfig from './firebase-applet-config.json';
 
 // Initialisation de Firebase
@@ -15,37 +15,40 @@ export const rtdb = getDatabase(app);
 export const storage = getStorage(app, firebaseConfig.storageBucket);
 export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
 
-// Initialisation de App Check
+/* 
+================================================================================
+🔒 CONFIGURATION DE FIREBASE APP CHECK (DESACTIVÉ POUR LE DÉVELOPPEMENT)
+================================================================================
+Pour réactiver Firebase App Check plus tard en production, suivez ces étapes :
+
+1. Décommentez l'importation au début du fichier :
+   import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+
+2. Décommentez le bloc de code ci-dessous.
+3. Configurez vos clés de site Google ReCAPTCHA v3 dans votre console Firebase et .env.
+
 if (typeof window !== 'undefined') {
   const debugToken = import.meta.env.VITE_APPCHECK_DEBUG_TOKEN;
   const isDev = import.meta.env.DEV || window.location.hostname === 'localhost' || window.location.hostname.includes('aistudio.google');
 
   if (debugToken) {
     (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
-    console.log("🔥 [Firebase App Check] Utilisation du jeton de débogage fourni par l'environnement.");
   } else if (isDev) {
     (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-    console.log("🔥 [Firebase App Check] Mode débogage actif.");
   }
 
-  // Activer App Check pour prendre en charge les projets qui l'imposent
-  const ENABLE_APP_CHECK = true;
-
-  if (ENABLE_APP_CHECK) {
-    try {
-      const siteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY || "6LdCwCcqAAAAAJ9O7WnS97_Hn3G7B7b6E8Tz1WvA"; // Clé Recaptcha V3 par défaut
-      initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider(siteKey),
-        isTokenAutoRefreshEnabled: true
-      });
-      console.log("🔥 Firebase App Check initialisé avec succès !");
-      if (debugToken || isDev) {
-        console.log("ℹ️ Si vous rencontrez des erreurs d'autorisation, vérifiez que le Debug Token affiché ci-dessus dans la console de votre navigateur est bien enregistré dans votre console Firebase.");
-      }
-    } catch (error) {
-      console.warn("⚠️ Impossible d'initialiser App Check :", error);
-    }
+  try {
+    const siteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY || "VOTRE_CLE_RECAPTCHA_ICI";
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(siteKey),
+      isTokenAutoRefreshEnabled: true
+    });
+    console.log("🔥 Firebase App Check réactivé avec succès !");
+  } catch (error) {
+    console.warn("⚠️ Impossible d'initialiser App Check :", error);
   }
 }
+================================================================================
+*/
 
 export default app;
