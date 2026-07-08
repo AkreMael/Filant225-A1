@@ -340,21 +340,35 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               const response = await payment.init();
               console.log("PaiementPro response:", response);
 
-              if (response && (response.url || response.redirect_url || typeof response === 'string')) {
-                const url = response.url || response.redirect_url || (typeof response === 'string' ? response : null);
-                if (url) {
-                  setIframeUrl(url);
+              let finalUrl = null;
+              if (response) {
+                if (typeof response === 'string') {
+                  finalUrl = response;
+                } else if (response.url) {
+                  finalUrl = response.url;
+                } else if (response.redirect_url) {
+                  finalUrl = response.redirect_url;
                 }
               }
+              if (!finalUrl && payment.url) {
+                finalUrl = payment.url;
+              }
+
+              if (finalUrl) {
+                setIframeUrl(finalUrl);
+              } else {
+                alert("Impossible d'obtenir le lien de paiement Paiement Pro. Veuillez réessayer.");
+                setIsProcessing(false);
+              }
             } catch (sdkErr) {
-              console.error("PaiementPro SDK initiation error, falling back to standard Wave link:", sdkErr);
-              const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${currentAmount}`;
-              window.open(link, '_blank');
+              console.error("PaiementPro SDK initiation error:", sdkErr);
+              alert("Erreur d'initialisation du service de paiement sécurisé Wave. Veuillez réessayer.");
+              setIsProcessing(false);
             }
           } else {
-            console.warn("PaiementPro global class is not present. Falling back to standard Wave link.");
-            const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${currentAmount}`;
-            window.open(link, '_blank');
+            console.warn("PaiementPro global class is not present.");
+            alert("Le service de paiement sécurisé Wave (Paiement Pro) n'est pas encore chargé. Veuillez recharger la page ou patienter.");
+            setIsProcessing(false);
           }
         } else {
           alert("Une erreur s'est produite lors de l'enregistrement du dépôt.");
@@ -622,21 +636,35 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               const response = await payment.init();
               console.log("PaiementPro Deposit response:", response);
 
-              if (response && (response.url || response.redirect_url || typeof response === 'string')) {
-                const url = response.url || response.redirect_url || (typeof response === 'string' ? response : null);
-                if (url) {
-                  setIframeUrl(url);
+              let finalUrl = null;
+              if (response) {
+                if (typeof response === 'string') {
+                  finalUrl = response;
+                } else if (response.url) {
+                  finalUrl = response.url;
+                } else if (response.redirect_url) {
+                  finalUrl = response.redirect_url;
                 }
               }
+              if (!finalUrl && payment.url) {
+                finalUrl = payment.url;
+              }
+
+              if (finalUrl) {
+                setIframeUrl(finalUrl);
+              } else {
+                alert("Impossible d'obtenir le lien de paiement Paiement Pro. Veuillez réessayer.");
+                setIsDepositing(false);
+              }
             } catch (sdkErr) {
-              console.error("PaiementPro Deposit SDK initiation error, falling back to Wave link:", sdkErr);
-              const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${depositAmount}`;
-              window.open(link, '_blank');
+              console.error("PaiementPro Deposit SDK initiation error:", sdkErr);
+              alert("Erreur d'initialisation du service de paiement sécurisé Wave. Veuillez réessayer.");
+              setIsDepositing(false);
             }
           } else {
-            console.warn("PaiementPro global class is not present in deposit. Falling back to Wave link.");
-            const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${depositAmount}`;
-            window.open(link, '_blank');
+            console.warn("PaiementPro global class is not present in deposit.");
+            alert("Le service de paiement sécurisé Wave (Paiement Pro) n'est pas encore chargé. Veuillez recharger la page ou patienter.");
+            setIsDepositing(false);
           }
         } else {
           alert("Erreur lors de l'enregistrement de votre demande.");
