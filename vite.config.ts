@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => {
             description: "Réseau de services, mise en relation, de sécurité et de paiements sécurisés en Côte d'Ivoire. FILANT°225 vous connecte avec des professionnels certifiés en toute simplicité.",
             start_url: "/",
             display: "standalone",
-            orientation: "any",
+            orientation: "portrait-primary",
             background_color: "#ffffff",
             theme_color: "#000000",
             icons: [

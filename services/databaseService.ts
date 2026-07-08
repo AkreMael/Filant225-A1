@@ -3279,52 +3279,5 @@ export const databaseService = {
       if (unsubscribeScansTx) unsubscribeScansTx();
       if (unsubscribeReqs) unsubscribeReqs();
     };
-  },
-
-  associateGoogleAccount: async (phone: string, googleUid: string, googleEmail: string): Promise<boolean> => {
-    const sanitizedPhone = phone.replace(/\D/g, '');
-    try {
-      await databaseService.ensureAuth();
-      const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
-      
-      let foundCollection = 'Clients';
-      for (const col of collections) {
-        const userRef = doc(db, col, sanitizedPhone);
-        const docSnap = await getDoc(userRef);
-        if (docSnap.exists()) {
-          foundCollection = col;
-          break;
-        }
-      }
-
-      const userRef = doc(db, foundCollection, sanitizedPhone);
-      await setDoc(userRef, {
-        googleUid,
-        googleEmail,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-
-      // Update active user in local storage
-      const activeUser = databaseService.getActiveUser();
-      if (activeUser && activeUser.phone.replace(/\D/g, '') === sanitizedPhone) {
-        activeUser.googleUid = googleUid;
-        activeUser.googleEmail = googleEmail;
-        databaseService.saveActiveUser(activeUser);
-      }
-
-      // Also update in users list in localStorage
-      const users = getUsers();
-      const existingIndex = users.findIndex(u => u.phone.replace(/\D/g, '') === sanitizedPhone);
-      if (existingIndex !== -1) {
-        users[existingIndex].googleUid = googleUid;
-        users[existingIndex].googleEmail = googleEmail;
-        saveUsers(users);
-      }
-
-      return true;
-    } catch (e) {
-      console.error("Error in associateGoogleAccount:", e);
-      return false;
-    }
   }
 };
