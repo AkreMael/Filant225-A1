@@ -122,6 +122,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
   const [isNonValidated, setIsNonValidated] = useState(false);
   const [paymentPath, setPaymentPath] = useState<string | null>(null);
   const [hasAutoPaid, setHasAutoPaid] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
 
   const handleBackNavigation = () => {
     // If payment is completed and validated (isSuccess is true), return directly to menu principal
@@ -318,9 +319,43 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 
         if (path) {
           setPaymentPath(path);
-          // Rediriger automatiquement vers le lien de paiement Wave
-          const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${currentAmount}`;
-          window.open(link, '_blank');
+          const pushId = path.split('/').pop() || '';
+          
+          if ((window as any).PaiementPro) {
+            try {
+              const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP_F175';
+              const payment = new (window as any).PaiementPro(merchantId);
+              payment.amount = currentAmount;
+              payment.description = "Dépôt Portefeuille FILANT°225";
+              payment.channel = "Wave";
+              payment.countryCurrencyCode = "952";
+              payment.referenceNumber = pushId;
+              payment.customerEmail = `${waveNumber}@filant225.com`;
+              payment.customerFirstName = user.name || "Client";
+              payment.customerLastname = "FILANT";
+              payment.customerPhoneNumber = waveNumber;
+              payment.notificationURL = `${window.location.origin}/api/payments/webhook`;
+
+              console.log("Launching PaiementPro for paymentType=Dépôt...", payment);
+              const response = await payment.init();
+              console.log("PaiementPro response:", response);
+
+              if (response && (response.url || response.redirect_url || typeof response === 'string')) {
+                const url = response.url || response.redirect_url || (typeof response === 'string' ? response : null);
+                if (url) {
+                  setIframeUrl(url);
+                }
+              }
+            } catch (sdkErr) {
+              console.error("PaiementPro SDK initiation error, falling back to standard Wave link:", sdkErr);
+              const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${currentAmount}`;
+              window.open(link, '_blank');
+            }
+          } else {
+            console.warn("PaiementPro global class is not present. Falling back to standard Wave link.");
+            const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${currentAmount}`;
+            window.open(link, '_blank');
+          }
         } else {
           alert("Une erreur s'est produite lors de l'enregistrement du dépôt.");
           setIsProcessing(false);
@@ -566,9 +601,43 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           setIsEditingWaveNumber(false);
           setPendingDepositPath(path);
           setDepositSuccess(true);
-          // Rediriger automatiquement vers le lien de paiement Wave
-          const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${depositAmount}`;
-          window.open(link, '_blank');
+          const pushId = path.split('/').pop() || '';
+
+          if ((window as any).PaiementPro) {
+            try {
+              const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP_F175';
+              const payment = new (window as any).PaiementPro(merchantId);
+              payment.amount = depositAmount;
+              payment.description = "Dépôt Portefeuille FILANT°225";
+              payment.channel = "Wave";
+              payment.countryCurrencyCode = "952";
+              payment.referenceNumber = pushId;
+              payment.customerEmail = `${depositPhone}@filant225.com`;
+              payment.customerFirstName = user.name || "Client";
+              payment.customerLastname = "FILANT";
+              payment.customerPhoneNumber = depositPhone;
+              payment.notificationURL = `${window.location.origin}/api/payments/webhook`;
+
+              console.log("Launching PaiementPro for Deposit Overlay...", payment);
+              const response = await payment.init();
+              console.log("PaiementPro Deposit response:", response);
+
+              if (response && (response.url || response.redirect_url || typeof response === 'string')) {
+                const url = response.url || response.redirect_url || (typeof response === 'string' ? response : null);
+                if (url) {
+                  setIframeUrl(url);
+                }
+              }
+            } catch (sdkErr) {
+              console.error("PaiementPro Deposit SDK initiation error, falling back to Wave link:", sdkErr);
+              const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${depositAmount}`;
+              window.open(link, '_blank');
+            }
+          } else {
+            console.warn("PaiementPro global class is not present in deposit. Falling back to Wave link.");
+            const link = `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${depositAmount}`;
+            window.open(link, '_blank');
+          }
         } else {
           alert("Erreur lors de l'enregistrement de votre demande.");
         }
@@ -1007,6 +1076,42 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         <div className="absolute inset-0 bg-black/60 z-[200] flex items-end justify-center animate-in fade-in duration-300">
           <div className="bg-white rounded-t-[2.5rem] w-full max-w-md h-[440px] shadow-2xl animate-in slide-in-from-bottom duration-300 overflow-hidden">
             {renderDepositOverlayContent()}
+          </div>
+        </div>
+      )}
+
+      {/* Embedded Paiement Pro Secure Payment Iframe Overlay */}
+      {iframeUrl && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[250] flex flex-col animate-in fade-in duration-300">
+          <div className="bg-white border-b border-gray-150 p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-100 p-0.5 shadow-sm">
+                <img 
+                  src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/98b8035e-bacd-491a-8ff2-81d947531063.png" 
+                  alt="Wave Logo" 
+                  className="w-full h-full object-contain" 
+                  referrerPolicy="no-referrer" 
+                />
+              </div>
+              <div className="text-left">
+                <h3 className="text-xs font-black text-slate-950 uppercase tracking-tight font-sans">Paiement Sécurisé Wave</h3>
+                <p className="text-[9px] font-bold text-slate-500 uppercase font-sans">FILANT°225 × PAIEMENT PRO</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setIframeUrl(null)} 
+              className="text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg uppercase tracking-wider cursor-pointer font-sans"
+            >
+              Fermer
+            </button>
+          </div>
+          <div className="flex-1 bg-slate-50 relative">
+            <iframe 
+              src={iframeUrl} 
+              className="w-full h-full border-none"
+              title="Paiement Pro Checkout"
+              allow="payment"
+            />
           </div>
         </div>
       )}

@@ -31,6 +31,7 @@ const firebaseConfig = JSON.parse(fs.readFileSync(path.join(__dirname, "firebase
 if (!admin.apps.length) {
   admin.initializeApp({
     projectId: process.env.GCP_PROJECT_ID || firebaseConfig.projectId,
+    databaseURL: firebaseConfig.databaseURL,
   });
 }
 const firestore = admin.firestore();
@@ -276,6 +277,484 @@ async function startServer() {
     } catch (error: any) {
       console.error("Error updating offer blur:", error);
       res.status(500).json({ error: "Failed to update blur", details: error.message });
+    }
+  });
+
+  // --- PAIEMENT PRO WAVE ONLY WEBHOOK INTEGRATION ---
+
+  async function findPaymentByReference(reference: string) {
+    try {
+      const dbRef = admin.database().ref('Paiements');
+      const snapshot = await dbRef.once('value');
+      if (snapshot.exists()) {
+        const allPayments = snapshot.val();
+        for (const userKey of Object.keys(allPayments)) {
+          const userPayments = allPayments[userKey];
+          if (!userPayments) continue;
+          for (const pushId of Object.keys(userPayments)) {
+            const payment = userPayments[pushId];
+            if (!payment) continue;
+            // Match reference or referenceNumber
+            if (payment.referenceNumber === reference || payment.reference === reference) {
+              return {
+                userKey,
+                pushId,
+                payment,
+                rtdbPath: `Paiements/${userKey}/${pushId}`
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error in findPaymentByReference:", e);
+    }
+    return null;
+  }
+
+  async function serverValidatePaymentStatus(payment: any) {
+    if (!payment.rtdbPath) return;
+    const db = admin.firestore();
+    const rtdb = admin.database();
+
+    const isDeposit = payment.paymentType === 'Dépôt' || payment.title === 'Dépôt vers le compte principal';
+    const successStatus = isDeposit ? 'Dépôt validé' : 'Paiement validé';
+
+    console.log(`Setting RTDB path ${payment.rtdbPath} status to: ${successStatus}`);
+
+    // 1. Update RTDB status
+    await rtdb.ref(payment.rtdbPath).update({
+      status: successStatus,
+      adminReadStatus: 'LU'
+    });
+
+    const userPhone = (payment.userPhone || payment.phone || '').replace(/\D/g, '');
+    const userId = (payment.userId || userPhone).replace(/\D/g, '');
+
+    if (isDeposit) {
+      // Avoid duplicate wallet credit if already processed
+      if (payment.status !== 'Dépôt validé' && payment.status !== 'Paiement validé') {
+        const amountNum = parseFloat(payment.amount);
+        if (!isNaN(amountNum) && amountNum > 0) {
+          const walletRef = db.collection('Wallets').doc(userPhone);
+
+          console.log(`Crediting wallet for client ${userPhone} with: +${amountNum} FCFA`);
+
+          // A. Update wallet balance
+          await walletRef.set({
+            phone: userPhone,
+            name: payment.userName || 'Utilisateur',
+            city: payment.city || 'Non spécifiée',
+            balance: admin.firestore.FieldValue.increment(amountNum),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          // B. Record transaction in account history
+          await db.collection('WalletTransactions').add({
+            phone: userPhone,
+            userName: payment.userName || 'Utilisateur',
+            userCity: payment.city || 'Non spécifiée',
+            type: 'DEPOSIT',
+            amount: amountNum,
+            paymentNumber: payment.waveNumber || 'N/A',
+            status: 'SUCCESS',
+            timestamp: Date.now(),
+            dateStr: new Date().toLocaleString('fr-FR')
+          });
+
+          // C. Send chat message notification
+          const msgId = `admin_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+          const msgDoc = {
+            id: msgId,
+            text: `🤖 DÉPÔT VALIDÉ : Un dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA a été crédité avec succès sur votre Portefeuille FILANT°225. Votre solde a été mis à jour d'un montant de +${amountNum.toLocaleString('fr-FR')} FCFA.`,
+            sender: 'admin',
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
+            isRead: false,
+            adminReadStatus: 'LU',
+            userId: userPhone,
+            userName: payment.userName || 'Utilisateur',
+            phone: userPhone,
+            city: payment.city || 'Non spécifiée'
+          };
+          await db.collection('MessageriePrivee').doc(userPhone).collection('messages').doc(msgId).set(msgDoc);
+
+          // D. Automatic system check and target payment execution
+          let pendingPaymentToProcess: any = null;
+          if (payment.targetPaymentType) {
+            pendingPaymentToProcess = {
+              paymentType: payment.targetPaymentType,
+              amount: payment.targetAmount,
+              title: payment.targetTitle,
+              formData: payment.targetFormData,
+              rtdbPath: null
+            };
+          } else {
+            try {
+              const paymentsSnapshot = await rtdb.ref('Paiements').once('value');
+              if (paymentsSnapshot.exists()) {
+                const allPaymentsObj = paymentsSnapshot.val();
+                const matchingUserKeys = Object.keys(allPaymentsObj).filter(key => {
+                  const parts = key.split('_');
+                  const phonePart = parts[parts.length - 1];
+                  return phonePart === userPhone;
+                });
+
+                for (const uKey of matchingUserKeys) {
+                  const userPayments = allPaymentsObj[uKey];
+                  if (userPayments) {
+                    const foundPushId = Object.keys(userPayments).find(pId => {
+                      const payItem = userPayments[pId];
+                      return payItem.status === 'En attente' && payItem.paymentType !== 'Dépôt';
+                    });
+
+                    if (foundPushId) {
+                      const pendingItem = userPayments[foundPushId];
+                      pendingPaymentToProcess = {
+                        paymentType: pendingItem.paymentType,
+                        amount: pendingItem.amount,
+                        title: pendingItem.title || pendingItem.serviceType,
+                        formData: pendingItem.formData || null,
+                        rtdbPath: `Paiements/${uKey}/${foundPushId}`,
+                        id: foundPushId
+                      };
+                      break;
+                    }
+                  }
+                }
+              }
+            } catch (rtdbErr) {
+              console.error("Error searching pending payments in RTDB:", rtdbErr);
+            }
+          }
+
+          if (pendingPaymentToProcess) {
+            const targetAmountNum = parseFloat(pendingPaymentToProcess.amount || '0') || 0;
+            const walletSnapCheck = await walletRef.get();
+            let updatedBalance = 0;
+            if (walletSnapCheck.exists) {
+              updatedBalance = walletSnapCheck.data()?.balance || 0;
+            }
+
+            if (updatedBalance >= targetAmountNum && targetAmountNum > 0) {
+              console.log(`Deducting wallet automatic fee for client ${userPhone}: -${targetAmountNum} FCFA`);
+
+              // Deduct wallet balance
+              await walletRef.set({
+                balance: admin.firestore.FieldValue.increment(-targetAmountNum),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+              }, { merge: true });
+
+              // Record debit transaction in history
+              const refCode = `REF-AUTO-${Date.now().toString(36).toUpperCase()}`;
+              await db.collection('WalletTransactions').add({
+                phone: userPhone,
+                userName: payment.userName || 'Utilisateur',
+                userCity: payment.city || 'Non spécifiée',
+                type: 'PAYMENT',
+                amount: -targetAmountNum,
+                paymentNumber: 'FILANT°225 PORTEFEUILLE (AUTO)',
+                description: `Paiement automatique - ${pendingPaymentToProcess.title || pendingPaymentToProcess.paymentType}`,
+                status: 'SUCCESS',
+                timestamp: Date.now(),
+                refCode,
+                dateStr: new Date().toLocaleString('fr-FR')
+              });
+
+              // Update original RTDB record to 'Paiement validé'
+              if (pendingPaymentToProcess.rtdbPath) {
+                await rtdb.ref(pendingPaymentToProcess.rtdbPath).update({
+                  status: 'Paiement validé',
+                  adminReadStatus: 'LU'
+                });
+              } else {
+                // Create virtual payment entry
+                const sanitizedName = (payment.userName || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
+                const uKey = sanitizedName + "_" + userPhone;
+                const newPaymentRef = rtdb.ref(`Paiements/${uKey}`).push();
+                const virtualRtdbPath = `Paiements/${uKey}/${newPaymentRef.key}`;
+                await newPaymentRef.set({
+                  userId: userPhone,
+                  userName: payment.userName || 'Utilisateur',
+                  phone: payment.phone || userPhone,
+                  city: payment.city || 'Non spécifiée',
+                  amount: pendingPaymentToProcess.amount || targetAmountNum.toString(),
+                  title: pendingPaymentToProcess.title || `Notification automatique - ${pendingPaymentToProcess.paymentType}`,
+                  serviceType: pendingPaymentToProcess.title || pendingPaymentToProcess.paymentType,
+                  paymentType: pendingPaymentToProcess.paymentType,
+                  waveNumber: 'FILANT°225 PORTEFEUILLE (AUTO)',
+                  timestamp: Date.now(),
+                  status: 'Paiement validé',
+                  rtdbPath: virtualRtdbPath,
+                  adminReadStatus: 'LU'
+                });
+              }
+
+              // Activation logic depending on payment type
+              const pType = pendingPaymentToProcess.paymentType;
+              if (pType === 'Inscription' || targetAmountNum === 310) {
+                const actRef = db.collection('QRCodeActivations').doc(userPhone);
+                await actRef.set({
+                  status: "En attente paiement activation (7 100 FCFA)",
+                  fraisDossierPayes: true,
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                const clientRef = db.collection('Clients').doc(userPhone);
+                await clientRef.set({
+                  qrCodeStatus: "En attente paiement activation (7 100 FCFA)",
+                  fraisDossierPayes: true
+                }, { merge: true });
+              } else if (pType === 'Activation' || targetAmountNum === 7100) {
+                const expiryDate = new Date();
+                expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+                const actRef = db.collection('QRCodeActivations').doc(userPhone);
+                await actRef.set({
+                  status: "Code QR Actif",
+                  isVerified: true,
+                  expiryDate: expiryDate.toISOString(),
+                  activationDate: new Date().toISOString(),
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                const clientRef = db.collection('Clients').doc(userPhone);
+                await clientRef.set({
+                  qrCodeStatus: "Code QR Actif",
+                  fraisDossierPayes: true,
+                  qrCodeExpiryDate: expiryDate.toISOString()
+                }, { merge: true });
+              } else if (pType === 'Renouvellement' || targetAmountNum === 500) {
+                const expiryDate = new Date();
+                expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+                const actRef = db.collection('QRCodeActivations').doc(userPhone);
+                await actRef.set({
+                  status: "Code QR Actif",
+                  expiryDate: expiryDate.toISOString(),
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                const clientRef = db.collection('Clients').doc(userPhone);
+                await clientRef.set({
+                  qrCodeStatus: "Code QR Actif",
+                  qrCodeExpiryDate: expiryDate.toISOString()
+                }, { merge: true });
+              } else if (pType === 'Mise en ligne') {
+                const isOneMonth = pendingPaymentToProcess.title?.toLowerCase().includes('mois') || pendingPaymentToProcess.title?.toLowerCase().includes('350') || targetAmountNum === 350;
+                const durationMs = isOneMonth ? 30 * 24 * 3600 * 1000 : 7 * 24 * 3600 * 1000;
+                const onlineStart = Date.now();
+                const onlineEnd = onlineStart + durationMs;
+
+                const inscrRef = db.collection('Inscriptions').doc(userPhone);
+                const inscrSnap = await inscrRef.get();
+                let profileType = 'Travailleur';
+                if (inscrSnap.exists) {
+                  profileType = inscrSnap.data()?.profileType || 'Travailleur';
+                }
+
+                const updatedFields = {
+                  isOnline: true,
+                  onlinePending: false,
+                  onlineApproved: true,
+                  onlineRefused: false,
+                  onlineStart,
+                  onlineEnd,
+                  updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                };
+
+                await inscrRef.set(updatedFields, { merge: true });
+
+                let targetCollection = '';
+                if (profileType === 'Travailleur') targetCollection = 'Travailleurs';
+                else if (profileType === 'Propriétaire' || profileType === 'Equipement') targetCollection = 'Équipements';
+                else if (profileType === 'Agence' || profileType === 'Agence immobilière') targetCollection = 'Agences immobilières';
+                else if (profileType === 'Entreprise') targetCollection = 'Entreprises';
+
+                if (targetCollection) {
+                  await db.collection(targetCollection).doc(userPhone).set(updatedFields, { merge: true });
+                }
+              }
+
+              // If form data exists, save favorite and form submissions
+              if (pendingPaymentToProcess.formData) {
+                try {
+                  const favId = `fav_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+                  await db.collection('Clients').doc(userPhone).collection('Favorites').doc(favId).set({
+                    title: pendingPaymentToProcess.formData.formTitle,
+                    date: new Date().toISOString(),
+                    formType: pendingPaymentToProcess.formData.formType,
+                    answers: pendingPaymentToProcess.formData.data,
+                    userInfo: {
+                      phone: payment.phone || userPhone,
+                      name: payment.userName || 'Utilisateur',
+                      city: payment.city || 'Non spécifiée'
+                    },
+                    totalPrice: targetAmountNum,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp()
+                  });
+
+                  await db.collection('FormSubmissions').add({
+                    userPhone: userPhone,
+                    formType: pendingPaymentToProcess.formData.formType,
+                    formTitle: pendingPaymentToProcess.formData.formTitle,
+                    data: pendingPaymentToProcess.formData.data,
+                    whatsappMessage: pendingPaymentToProcess.formData.whatsappMessage,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp()
+                  });
+                } catch (formErr) {
+                  console.error("Error saving automated forms on server-side webhook:", formErr);
+                }
+              }
+
+              // Send automated congratulations message
+              const isMiseEnLigne = pendingPaymentToProcess.paymentType === 'Mise en ligne';
+              const autoSuccessMsg = isMiseEnLigne 
+                ? `✅ Félicitations ! Votre demande de mise en ligne d'annonce a été validée d'office. Suite à la validation de votre dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA par l'administrateur, votre portefeuille a été crédité, le prélèvement automatique de l'inscription (${targetAmountNum} FCFA) a été effectué et votre annonce est désormais visible pour tous les utilisateurs.`
+                : `✅ Félicitations ! Suite à la validation de votre dépôt de ${amountNum.toLocaleString('fr-FR')} FCFA par l'administrateur, votre portefeuille a été crédité, le paiement automatique pour le service "${pendingPaymentToProcess.title || pendingPaymentToProcess.paymentType}" (${targetAmountNum} FCFA) a été prélevé et activé automatiquement !`;
+
+              const congratMsgId = `admin_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+              await db.collection('MessageriePrivee').doc(userPhone).collection('messages').doc(congratMsgId).set({
+                id: congratMsgId,
+                text: autoSuccessMsg,
+                sender: 'admin',
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                isRead: false,
+                adminReadStatus: 'LU',
+                userId: userPhone,
+                userName: payment.userName || 'Utilisateur',
+                phone: userPhone,
+                city: payment.city || 'Non spécifiée'
+              });
+            }
+          }
+        }
+      }
+    } else {
+      // Standard Payment activation
+      if (userId) {
+        const pType = payment.paymentType;
+        const amountNum = parseFloat(payment.amount) || 0;
+        if (pType === 'Inscription' || amountNum === 310) {
+          const actRef = db.collection('QRCodeActivations').doc(userId);
+          await actRef.set({
+            status: "En attente paiement activation (7 100 FCFA)",
+            fraisDossierPayes: true,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          const clientRef = db.collection('Clients').doc(userId);
+          await clientRef.set({
+            qrCodeStatus: "En attente paiement activation (7 100 FCFA)",
+            fraisDossierPayes: true
+          }, { merge: true });
+        } else if (pType === 'Activation' || amountNum === 7100) {
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+          const actRef = db.collection('QRCodeActivations').doc(userId);
+          await actRef.set({
+            status: "Code QR Actif",
+            isVerified: true,
+            expiryDate: expiryDate.toISOString(),
+            activationDate: new Date().toISOString(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          const clientRef = db.collection('Clients').doc(userId);
+          await clientRef.set({
+            qrCodeStatus: "Code QR Actif",
+            fraisDossierPayes: true,
+            qrCodeExpiryDate: expiryDate.toISOString()
+          }, { merge: true });
+        } else if (pType === 'Renouvellement' || amountNum === 500) {
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+          const actRef = db.collection('QRCodeActivations').doc(userId);
+          await actRef.set({
+            status: "Code QR Actif",
+            expiryDate: expiryDate.toISOString(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          const clientRef = db.collection('Clients').doc(userId);
+          await clientRef.set({
+            qrCodeStatus: "Code QR Actif",
+            qrCodeExpiryDate: expiryDate.toISOString()
+          }, { merge: true });
+        }
+      }
+    }
+  }
+
+  app.all("/api/payments/webhook", async (req, res) => {
+    console.log("=== PAIEMENTPRO WEBHOOK CALLBACK RECEIVED ===");
+    console.log("Method:", req.method);
+    console.log("Headers:", req.headers);
+    console.log("Query params:", req.query);
+    console.log("Body:", req.body);
+
+    try {
+      // Support various field key naming variations used by PaiementPro callback/notifications
+      const reference = req.body.referenceNumber || req.body.reference_number || req.body.reference || req.body.ref ||
+                        req.query.referenceNumber || req.query.reference_number || req.query.reference || req.query.ref;
+
+      const merchantId = req.body.merchantId || req.body.merchant_id || req.body.merchant ||
+                         req.query.merchantId || req.query.merchant_id || req.query.merchant;
+
+      const amount = req.body.amount || req.body.amount_paid || req.body.price ||
+                     req.query.amount || req.query.amount_paid;
+
+      const state = req.body.state || req.body.status || req.body.payment_status ||
+                    req.query.state || req.query.status || req.query.payment_status;
+
+      console.log(`Parsed Webhook Info - Reference: ${reference}, Merchant: ${merchantId}, Amount: ${amount}, State: ${state}`);
+
+      if (!reference) {
+        console.warn("Webhook callback lacks a reference identifier. Cannot match transaction.");
+        return res.status(400).json({ error: "Reference missing" });
+      }
+
+      // 1. Locate the pending payment in RTDB using the reference code
+      const matched = await findPaymentByReference(reference);
+
+      if (!matched) {
+        console.warn(`No pending payment found in RTDB for reference: ${reference}`);
+        // Return 200 to acknowledge, but specify not found
+        return res.status(200).json({ status: "ignored", reason: "payment_not_found" });
+      }
+
+      console.log(`Matching payment found in RTDB:`, matched.payment);
+
+      // 2. Process transaction validation if success/approved
+      const isApproved = String(state).toLowerCase() === 'success' || 
+                         String(state).toLowerCase() === 'approved' || 
+                         String(state).toLowerCase() === 'validated' ||
+                         String(state).toLowerCase() === 'valide' ||
+                         String(state).toLowerCase() === 'validé' ||
+                         String(state) === '1' ||
+                         String(state).toUpperCase() === 'SUCCESS';
+
+      if (isApproved) {
+        console.log(`Transaction ${reference} is approved. Validating database states...`);
+        await serverValidatePaymentStatus(matched.payment);
+        console.log(`Database updates successfully applied for transaction ${reference}.`);
+        return res.status(200).json({ status: "success", validated: true });
+      } else {
+        console.log(`Transaction ${reference} status is: ${state}. Updating RTDB status to failed.`);
+        const isDeposit = matched.payment.paymentType === 'Dépôt' || matched.payment.title === 'Dépôt vers le compte principal';
+        const failStatus = isDeposit ? 'Dépôt non validé' : 'Paiement non validé';
+
+        await admin.database().ref(matched.rtdbPath).update({
+          status: failStatus,
+          adminReadStatus: 'LU'
+        });
+
+        return res.status(200).json({ status: "success", validated: false, reason: "payment_failed" });
+      }
+    } catch (err: any) {
+      console.error("CRITICAL ERROR IN PAIEMENTPRO WEBHOOK HANDLER:", err);
+      return res.status(500).json({ error: "Internal Server Error", details: err.message });
     }
   });
 
