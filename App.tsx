@@ -29,7 +29,6 @@ import InterventionShopScreen from './components/InterventionShopScreen';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import StageFormationHubScreen from './components/StageFormationHubScreen';
-import { PublicInfoPage } from './components/PublicInfoPage';
 import { DemandeRechercheScreen } from './components/DemandeRechercheScreen';
 import { EvolutionScreen } from './components/EvolutionScreen';
 import { motion, AnimatePresence } from 'motion/react';
@@ -141,15 +140,6 @@ interface NavigationPoint {
 
 const App: React.FC = () => {
   const [globalViewportHeight, setGlobalViewportHeight] = useState<string>('100dvh');
-  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
   useEffect(() => {
     let maxHeight = window.innerHeight;
@@ -1321,30 +1311,6 @@ const App: React.FC = () => {
           </div>
         </GlobalRippleEffect>
       );
-  }
-
-  if (currentPath === '/informations-utilisation') {
-    return (
-      <PublicInfoPage 
-        type="utilisation" 
-        onBack={() => {
-          window.history.pushState(null, "", "/");
-          setCurrentPath("/");
-        }} 
-      />
-    );
-  }
-
-  if (currentPath === '/conditions-services') {
-    return (
-      <PublicInfoPage 
-        type="conditions" 
-        onBack={() => {
-          window.history.pushState(null, "", "/");
-          setCurrentPath("/");
-        }} 
-      />
-    );
   }
 
   if (isAuthChecking) {
