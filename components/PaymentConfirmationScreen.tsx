@@ -297,10 +297,15 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
               }
             }, 1850);
           }
-        } else if (data.status === 'Paiement non validé' || data.status === 'Dépôt non validé') {
-          if (data.status === 'Dépôt non validé') {
-            setPendingDepositStatus('FAILED');
-          }
+        } else if (
+          data.status === 'Paiement non validé' || 
+          data.status === 'Dépôt non validé' ||
+          data.status === 'Paiement refusé' ||
+          data.status === 'Paiement annulé' ||
+          data.status === 'Dépôt refusé' ||
+          data.status === 'Dépôt annulé'
+        ) {
+          setPendingDepositStatus('FAILED');
         }
       }
     });
@@ -319,7 +324,14 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           setIsProcessing(false);
           setIsNonValidated(false);
           if (onSuccess) setTimeout(onSuccess, 1500);
-        } else if (data.status === 'Paiement non validé' || data.status === 'Dépôt non validé') {
+        } else if (
+          data.status === 'Paiement non validé' || 
+          data.status === 'Dépôt non validé' ||
+          data.status === 'Paiement refusé' ||
+          data.status === 'Paiement annulé' ||
+          data.status === 'Dépôt refusé' ||
+          data.status === 'Dépôt annulé'
+        ) {
           setIsNonValidated(true);
           setIsProcessing(false);
         } else {
@@ -369,9 +381,19 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           try {
             await ensurePaiementProLoaded();
             const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP-F92394';
+            const apiPassword = (import.meta.env.VITE_PAIEMENTPRO_API_PASSWORD) || '49885';
             const payment = new (window as any).PaiementPro(merchantId);
             payment.amount = currentAmount;
-            payment.description = "Dépôt Portefeuille FILANT°225";
+            
+            // Adapt description to operation
+            let paymentDesc = "Dépôt Portefeuille FILANT°225";
+            if (paymentType && paymentType !== 'Dépôt') {
+              paymentDesc = `Paiement de service - ${paymentType}`;
+            } else {
+              paymentDesc = "Recharge Portefeuille FILANT°225";
+            }
+            payment.description = paymentDesc;
+            
             payment.channel = "Wave";
             payment.countryCurrencyCode = "952";
             payment.referenceNumber = pushId;
@@ -380,6 +402,11 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             payment.customerLastname = "FILANT";
             payment.customerPhoneNumber = waveNumber;
             payment.notificationURL = `${window.location.origin}/api/payments/webhook`;
+            
+            // Configure API Password for the SDK
+            payment.apiPassword = apiPassword;
+            payment.api_password = apiPassword;
+            payment.password = apiPassword;
 
             console.log("Launching PaiementPro for paymentType=Dépôt...", payment);
             const response = await payment.init();
@@ -660,9 +687,21 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           try {
             await ensurePaiementProLoaded();
             const merchantId = (import.meta.env.VITE_PAIEMENTPRO_MERCHANT_ID) || 'PP-F92394';
+            const apiPassword = (import.meta.env.VITE_PAIEMENTPRO_API_PASSWORD) || '49885';
             const payment = new (window as any).PaiementPro(merchantId);
             payment.amount = depositAmount;
-            payment.description = "Dépôt Portefeuille FILANT°225";
+            
+            // Adapt description to operation
+            let paymentDesc = "Dépôt Portefeuille FILANT°225";
+            if (paymentType && paymentType !== 'Dépôt') {
+              paymentDesc = `Paiement de service - ${paymentType}`;
+            } else if (title) {
+              paymentDesc = `Paiement de service - ${title}`;
+            } else {
+              paymentDesc = "Recharge Portefeuille FILANT°225";
+            }
+            payment.description = paymentDesc;
+            
             payment.channel = "Wave";
             payment.countryCurrencyCode = "952";
             payment.referenceNumber = pushId;
@@ -671,6 +710,11 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
             payment.customerLastname = "FILANT";
             payment.customerPhoneNumber = depositPhone;
             payment.notificationURL = `${window.location.origin}/api/payments/webhook`;
+            
+            // Configure API Password for the SDK
+            payment.apiPassword = apiPassword;
+            payment.api_password = apiPassword;
+            payment.password = apiPassword;
 
             console.log("Launching PaiementPro for Deposit Overlay...", payment);
             const response = await payment.init();

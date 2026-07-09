@@ -741,16 +741,26 @@ async function startServer() {
         console.log(`Database updates successfully applied for transaction ${reference}.`);
         return res.status(200).json({ status: "success", validated: true });
       } else {
-        console.log(`Transaction ${reference} status is: ${state}. Updating RTDB status to failed.`);
+        console.log(`Transaction ${reference} status is: ${state}. Updating RTDB status to failed/cancelled.`);
         const isDeposit = matched.payment.paymentType === 'Dépôt' || matched.payment.title === 'Dépôt vers le compte principal';
-        const failStatus = isDeposit ? 'Dépôt non validé' : 'Paiement non validé';
+        
+        let failStatus = isDeposit ? 'Dépôt non validé' : 'Paiement non validé';
+        const lowerState = String(state).toLowerCase();
+        
+        if (lowerState.includes('cancel') || lowerState.includes('annul')) {
+          failStatus = isDeposit ? 'Dépôt annulé' : 'Paiement annulé';
+        } else if (lowerState.includes('fail') || lowerState.includes('refus') || lowerState.includes('reject')) {
+          failStatus = isDeposit ? 'Dépôt refusé' : 'Paiement refusé';
+        } else {
+          failStatus = isDeposit ? 'Dépôt refusé' : 'Paiement refusé';
+        }
 
         await admin.database().ref(matched.rtdbPath).update({
           status: failStatus,
           adminReadStatus: 'LU'
         });
 
-        return res.status(200).json({ status: "success", validated: false, reason: "payment_failed" });
+        return res.status(200).json({ status: "success", validated: false, reason: "payment_failed", status_set: failStatus });
       }
     } catch (err: any) {
       console.error("CRITICAL ERROR IN PAIEMENTPRO WEBHOOK HANDLER:", err);
