@@ -1136,6 +1136,31 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
             </div>
           )}
 
+          {/* Public Info Footer */}
+          <footer className="mt-12 mb-6 px-6 pt-8 border-t border-gray-150 flex flex-col items-center space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm justify-center">
+              <a
+                href="/informations-utilisation"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3.5 px-5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-extrabold text-[11px] uppercase tracking-wider rounded-2xl shadow-sm hover:shadow active:scale-[0.98] transition-all text-center cursor-pointer decoration-transparent block"
+              >
+                Informations sur l'utilisation
+              </a>
+              <a
+                href="/conditions-services"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3.5 px-5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-extrabold text-[11px] uppercase tracking-wider rounded-2xl shadow-sm hover:shadow active:scale-[0.98] transition-all text-center cursor-pointer decoration-transparent block"
+              >
+                Conditions des services
+              </a>
+            </div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center mt-2">
+              FILANT°225 • TRANSPARENCE & RESPONSABILITÉ
+            </p>
+          </footer>
+
              <AnimatePresence>
                 {showSmartRegistration && (
                     <motion.div 

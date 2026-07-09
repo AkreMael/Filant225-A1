@@ -229,9 +229,28 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
             </button>
           </div>
           <div className="mt-8 pt-6 border-t border-gray-100 w-full">
-            <p className="text-[10px] text-gray-400 italic leading-tight text-center px-4">
+            <p className="text-[10px] text-gray-400 italic leading-tight text-center px-4 mb-4">
               FILANT°225 est votre partenaire de confiance pour trouver des professionnels qualifiés en Côte d'Ivoire.
             </p>
+            <div className="flex justify-center gap-4 text-[10px] font-black uppercase tracking-widest text-gray-400">
+              <a
+                href="/informations-utilisation"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-orange-500 cursor-pointer decoration-transparent"
+              >
+                Utilisation
+              </a>
+              <span>•</span>
+              <a
+                href="/conditions-services"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-orange-500 cursor-pointer decoration-transparent"
+              >
+                Conditions
+              </a>
+            </div>
           </div>
         </div>
       </div>
