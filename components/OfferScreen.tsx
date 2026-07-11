@@ -1192,9 +1192,15 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                     {/* scrollable items list */}
                     <div className="flex-1 p-4 max-w-md mx-auto w-full space-y-6 pb-24 text-left">
                       {onlineAds.map((item) => {
+                        const hasImage = !!(
+                          (item.onlineImages && item.onlineImages.length > 0 && item.onlineImages[0]) ||
+                          (item.images && item.images.length > 0 && item.images[0]) ||
+                          (item.imageLink && item.imageLink.trim())
+                        );
+
                         const cardImages = item.onlineImages && item.onlineImages.length > 0
                           ? item.onlineImages
-                          : (item.images && item.images.length > 0 ? item.images : [item.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"]);
+                          : (item.images && item.images.length > 0 ? item.images : (item.imageLink ? [item.imageLink] : []));
 
                         return (
                           <div
@@ -1207,13 +1213,19 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                             className="w-full bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer text-left relative"
                           >
                             {/* Card Image */}
-                            <div className="relative w-full h-48 bg-slate-50 overflow-hidden shrink-0">
-                              <img 
-                                src={cardImages[0]} 
-                                alt={item.name} 
-                                className="w-full h-full object-cover"
-                                referrerPolicy="no-referrer"
-                              />
+                            <div className="relative w-full h-48 bg-slate-50 overflow-hidden shrink-0 flex items-center justify-center">
+                              {hasImage && cardImages.length > 0 ? (
+                                <img 
+                                  src={cardImages[0]} 
+                                  alt={item.name} 
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                  Image masquée
+                                </span>
+                              )}
                               <span className="absolute top-4 left-4 bg-[#ff4500] text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
                                 {item.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : item.profileType}
                               </span>
@@ -1328,75 +1340,89 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                     {/* Scrollable Area (Images + Detailed Info) */}
                     <div className="flex-1 overflow-y-auto scroll-smooth">
                       {(() => {
+                        const hasAdImage = !!(
+                          (selectedAdDetail.onlineImages && selectedAdDetail.onlineImages.length > 0 && selectedAdDetail.onlineImages[0]) ||
+                          (selectedAdDetail.images && selectedAdDetail.images.length > 0 && selectedAdDetail.images[0]) ||
+                          (selectedAdDetail.imageLink && selectedAdDetail.imageLink.trim())
+                        );
+
                         const detailImages = selectedAdDetail.onlineImages && selectedAdDetail.onlineImages.length > 0
                           ? selectedAdDetail.onlineImages
-                          : (selectedAdDetail.images && selectedAdDetail.images.length > 0 ? selectedAdDetail.images : [selectedAdDetail.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"]);
+                          : (selectedAdDetail.images && selectedAdDetail.images.length > 0 ? selectedAdDetail.images : (selectedAdDetail.imageLink ? [selectedAdDetail.imageLink] : []));
                           
                         return (
                           <>
-                            <div className="relative w-full h-[45vh] sm:h-[50vh] bg-slate-100 overflow-hidden shrink-0">
-                              <div className="w-full h-full relative">
-                                {detailImages.map((imgUrl: string, idx: number) => (
-                                  <div
-                                    key={idx}
-                                    className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                                      idx === activeImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-                                    }`}
-                                  >
-                                    <img
-                                      src={imgUrl}
-                                      alt={`product-${idx}`}
-                                      className="w-full h-full object-cover"
-                                      referrerPolicy="no-referrer"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Center Chevron Controllers */}
-                              {detailImages.length > 1 && (
+                            <div className="relative w-full h-[45vh] sm:h-[50vh] bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                              {hasAdImage && detailImages.length > 0 ? (
                                 <>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveImageIndex((prev) => (prev - 1 + detailImages.length) % detailImages.length);
-                                    }}
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
-                                  >
-                                    <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveImageIndex((prev) => (prev + 1) % detailImages.length);
-                                    }}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
-                                  >
-                                    <ChevronRight className="w-5 h-5 stroke-[2.5]" />
-                                  </button>
-                                </>
-                              )}
+                                  <div className="w-full h-full relative">
+                                    {detailImages.map((imgUrl: string, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                                          idx === activeImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                                        }`}
+                                      >
+                                        <img
+                                          src={imgUrl}
+                                          alt={`product-${idx}`}
+                                          className="w-full h-full object-cover"
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
 
-                              {/* Bottom visual dots / counter */}
-                              <div className="absolute bottom-5 left-5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-black z-20 tracking-wider">
-                                {activeImageIndex + 1} / {detailImages.length}
-                              </div>
-                              
-                              {detailImages.length > 1 && (
-                                <div className="absolute bottom-5 right-5 flex gap-1 z-20 bg-black/40 backdrop-blur-[2px] px-2 py-1 rounded-full border border-white/10 text-white font-black">
-                                  {detailImages.map((_: any, idx: number) => (
-                                    <button
-                                      key={idx}
-                                      type="button"
-                                      onClick={() => setActiveImageIndex(idx)}
-                                      className={`w-1.5 h-1.5 rounded-full transition-all ${
-                                        idx === activeImageIndex ? 'bg-orange-500 scale-125' : 'bg-white/60 hover:bg-white'
-                                      }`}
-                                    />
-                                  ))}
-                                </div>
+                                  {/* Center Chevron Controllers */}
+                                  {detailImages.length > 1 && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveImageIndex((prev) => (prev - 1 + detailImages.length) % detailImages.length);
+                                        }}
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
+                                      >
+                                        <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveImageIndex((prev) => (prev + 1) % detailImages.length);
+                                        }}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
+                                      >
+                                        <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                                      </button>
+                                    </>
+                                  )}
+
+                                  {/* Bottom visual dots / counter */}
+                                  <div className="absolute bottom-5 left-5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-black z-20 tracking-wider">
+                                    {activeImageIndex + 1} / {detailImages.length}
+                                  </div>
+                                  
+                                  {detailImages.length > 1 && (
+                                    <div className="absolute bottom-5 right-5 flex gap-1 z-20 bg-black/40 backdrop-blur-[2px] px-2 py-1 rounded-full border border-white/10 text-white font-black">
+                                      {detailImages.map((_: any, idx: number) => (
+                                        <button
+                                          key={idx}
+                                          type="button"
+                                          onClick={() => setActiveImageIndex(idx)}
+                                          className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                            idx === activeImageIndex ? 'bg-orange-500 scale-125' : 'bg-white/60 hover:bg-white'
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-slate-400">
+                                  Image masquée
+                                </span>
                               )}
                             </div>
 
@@ -1466,7 +1492,15 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                                       <div className="flex justify-between items-center py-3 px-4">
                                         <span className="text-slate-500 font-bold">Salaire souhaité</span>
                                         <span className="font-extrabold text-slate-900 uppercase">
-                                          {selectedAdDetail.desiredSalary ? `${selectedAdDetail.desiredSalary} FCFA / ${selectedAdDetail.salaryPeriod === 'Par semaine' ? 'Semaine' : 'Mois'}` : (selectedAdDetail.proposedSalary || 'Non spécifié')}
+                                          {selectedAdDetail.salaryPeriod === 'Contrat'
+                                            ? 'Contrat'
+                                            : (selectedAdDetail.desiredSalary
+                                                ? `${selectedAdDetail.desiredSalary} FCFA / ${
+                                                    selectedAdDetail.salaryPeriod === 'Par semaine' || selectedAdDetail.salaryPeriod === 'Une semaine'
+                                                      ? 'Semaine'
+                                                      : 'Mois'
+                                                  }`
+                                                : (selectedAdDetail.proposedSalary || 'Non spécifié'))}
                                         </span>
                                       </div>
                                     </>

@@ -319,7 +319,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   // Worker specialized fields
   const [formJob, setFormJob] = useState('');
   const [formSalary, setFormSalary] = useState('');
-  const [formSalaryPeriod, setFormSalaryPeriod] = useState<'Par semaine' | 'Par mois'>('Par mois');
+  const [formSalaryPeriod, setFormSalaryPeriod] = useState<string>('Un mois');
 
   // Real estate Agence specialized fields
   const [formAgencyName, setFormAgencyName] = useState('');
@@ -841,7 +841,9 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
     setFormJob(currentUserAd?.job || '');
     setFormSalary(currentUserAd?.desiredSalary || '');
-    setFormSalaryPeriod(currentUserAd?.salaryPeriod || 'Par mois');
+    const initialPeriod = currentUserAd?.salaryPeriod || 'Un mois';
+    const mappedPeriod = initialPeriod === 'Par mois' ? 'Un mois' : (initialPeriod === 'Par semaine' ? 'Une semaine' : initialPeriod);
+    setFormSalaryPeriod(mappedPeriod);
 
     setFormAgencyName(currentUserAd?.agencyName || currentUserAd?.name || user?.name || '');
     setFormPropertyTypes(currentUserAd?.propertyTypes || []);
@@ -911,7 +913,8 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     }
     
     if (formProfileType === 'Travailleur') {
-      if (!formName.trim() || !formCity.trim() || !formJob.trim() || !formDesc.trim() || !formSalary.trim()) {
+      const isSalaryRequired = formSalaryPeriod !== 'Contrat';
+      if (!formName.trim() || !formCity.trim() || !formJob.trim() || !formDesc.trim() || (isSalaryRequired && !formSalary.trim())) {
         alert("Veuillez remplir tous les champs obligatoires (*) pour votre profil de Travailleur.");
         return;
       }
@@ -942,11 +945,6 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       }
     }
 
-    if (formProfileType !== 'Travailleur' && formImages.length < 2) {
-      alert("Vous devez sélectionner au moins 2 images pour une annonce professionnelle.");
-      return;
-    }
-
     setIsUploadingImages(true);
     let uploadedUrls: string[] = [];
     try {
@@ -973,7 +971,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     if (formProfileType === 'Travailleur') {
       adData.name = formName;
       adData.job = formJob;
-      adData.desiredSalary = formSalary;
+      adData.desiredSalary = formSalaryPeriod === 'Contrat' ? '' : formSalary;
       adData.salaryPeriod = formSalaryPeriod;
     } else if (formProfileType === 'Agence') {
       adData.name = formAgencyName;
@@ -2184,9 +2182,17 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 pb-20">
                 {results.map((item) => {
-                  const cardImages = item.images && item.images.length > 0
-                    ? item.images
-                    : [item.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"];
+                  const hasImage = !!(
+                    (item.onlineImages && item.onlineImages.length > 0 && item.onlineImages[0]) ||
+                    (item.images && item.images.length > 0 && item.images[0]) ||
+                    (item.imageLink && item.imageLink.trim())
+                  );
+
+                  const cardImages = item.onlineImages && item.onlineImages.length > 0
+                    ? item.onlineImages
+                    : (item.images && item.images.length > 0
+                        ? item.images
+                        : (item.imageLink ? [item.imageLink] : []));
 
                   const { mainTitle, userName } = getProfileDisplayInfo(item);
 
@@ -2202,15 +2208,21 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                       }}
                     >
                       {/* Swipe & Auto-fade horizontal image gallery */}
-                      <div className="relative w-full h-32 sm:h-48 bg-slate-50 overflow-hidden shrink-0 group">
-                        <CardImageCarousel
-                          images={cardImages}
-                          onImageClick={() => {
-                            setSelectedAdDetail(item);
-                            setActiveImageIndex(0);
-                            setIsSaved(false);
-                          }}
-                        />
+                      <div className="relative w-full h-32 sm:h-48 bg-slate-50 overflow-hidden shrink-0 group flex items-center justify-center">
+                        {hasImage ? (
+                          <CardImageCarousel
+                            images={cardImages}
+                            onImageClick={() => {
+                              setSelectedAdDetail(item);
+                              setActiveImageIndex(0);
+                              setIsSaved(false);
+                            }}
+                          />
+                        ) : (
+                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                            Image masquée
+                          </span>
+                        )}
 
                         <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#ff4500] text-white text-[7px] sm:text-[8px] font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-full uppercase tracking-widest shadow-sm z-20">
                           {item.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : item.profileType}
@@ -2251,7 +2263,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                             <div className="flex justify-between items-center font-bold">
                               <span>Salaire souhaité :</span>
                               <span className="font-black text-slate-900 uppercase text-right max-w-[90px] sm:max-w-[150px] truncate items-center">
-                                {item.desiredSalary ? `${item.desiredSalary} FCFA` : 'Non spécifié'}
+                                {item.salaryPeriod === 'Contrat' ? 'Contrat' : (item.desiredSalary ? `${item.desiredSalary} FCFA` : 'Non spécifié')}
                               </span>
                             </div>
                           )}
@@ -2511,27 +2523,30 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Salaire souhaité (FCFA) *</label>
-                          <input
-                            type="text"
-                            value={formSalary}
-                            onChange={(e) => setFormSalary(e.target.value.replace(/\D/g, ''))}
-                            placeholder="Ex. 150000"
-                            className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Période de salaire *</label>
                           <select
                             value={formSalaryPeriod}
                             onChange={(e: any) => setFormSalaryPeriod(e.target.value)}
                             className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold focus:outline-none transition-all font-sans appearance-none cursor-pointer"
                           >
-                            <option value="Par mois">Par mois</option>
-                            <option value="Par semaine">Par semaine</option>
+                            <option value="Une semaine">Une semaine</option>
+                            <option value="Un mois">Un mois</option>
+                            <option value="Contrat">Contrat</option>
                           </select>
                         </div>
+
+                        {formSalaryPeriod !== 'Contrat' && (
+                          <div className="space-y-2 animate-in fade-in duration-200">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#2dadac] ml-1">Salaire souhaité (FCFA) *</label>
+                            <input
+                              type="text"
+                              value={formSalary}
+                              onChange={(e) => setFormSalary(e.target.value.replace(/\D/g, ''))}
+                              placeholder="Ex. 150000"
+                              className="w-full px-5 py-4 bg-white border border-slate-200 focus:border-indigo-500 rounded-2xl text-black text-sm font-bold placeholder-slate-400 focus:outline-none transition-all font-sans"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -2946,75 +2961,89 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
             {/* Scrollable Area (Images + Detailed Info) */}
             <div className="flex-1 overflow-y-auto scroll-smooth">
               {(() => {
+                const hasAdImage = !!(
+                  (selectedAdDetail.onlineImages && selectedAdDetail.onlineImages.length > 0 && selectedAdDetail.onlineImages[0]) ||
+                  (selectedAdDetail.images && selectedAdDetail.images.length > 0 && selectedAdDetail.images[0]) ||
+                  (selectedAdDetail.imageLink && selectedAdDetail.imageLink.trim())
+                );
+
                 const detailImages = selectedAdDetail.onlineImages && selectedAdDetail.onlineImages.length > 0
                   ? selectedAdDetail.onlineImages
-                  : (selectedAdDetail.images && selectedAdDetail.images.length > 0 ? selectedAdDetail.images : [selectedAdDetail.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"]);
+                  : (selectedAdDetail.images && selectedAdDetail.images.length > 0 ? selectedAdDetail.images : (selectedAdDetail.imageLink ? [selectedAdDetail.imageLink] : []));
                   
                 return (
                   <>
-                    <div className="relative w-full h-[45vh] sm:h-[50vh] bg-slate-100 overflow-hidden shrink-0">
-                      <div className="w-full h-full relative">
-                        {detailImages.map((imgUrl: string, idx: number) => (
-                          <div
-                            key={idx}
-                            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                              idx === activeImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-                            }`}
-                          >
-                            <img
-                              src={imgUrl}
-                              alt={`product-${idx}`}
-                              className="w-full h-full object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Center Chevron Controllers */}
-                      {detailImages.length > 1 && (
+                    <div className="relative w-full h-[45vh] sm:h-[50vh] bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                      {hasAdImage && detailImages.length > 0 ? (
                         <>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImageIndex((prev) => (prev - 1 + detailImages.length) % detailImages.length);
-                            }}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
-                          >
-                            <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveImageIndex((prev) => (prev + 1) % detailImages.length);
-                            }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
-                          >
-                            <ChevronRight className="w-5 h-5 stroke-[2.5]" />
-                          </button>
-                        </>
-                      )}
+                          <div className="w-full h-full relative">
+                            {detailImages.map((imgUrl: string, idx: number) => (
+                              <div
+                                key={idx}
+                                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                                  idx === activeImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                                }`}
+                              >
+                                <img
+                                  src={imgUrl}
+                                  alt={`product-${idx}`}
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                            ))}
+                          </div>
 
-                      {/* Bottom visual dots / counter */}
-                      <div className="absolute bottom-5 left-5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-black z-20 tracking-wider">
-                        {activeImageIndex + 1} / {detailImages.length}
-                      </div>
-                      
-                      {detailImages.length > 1 && (
-                        <div className="absolute bottom-5 right-5 flex gap-1 z-20 bg-black/40 backdrop-blur-[2px] px-2 py-1 rounded-full border border-white/10 text-white font-black">
-                          {detailImages.map((_: any, idx: number) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setActiveImageIndex(idx)}
-                              className={`w-1.5 h-1.5 rounded-full transition-all ${
-                                idx === activeImageIndex ? 'bg-orange-500 scale-125' : 'bg-white/60 hover:bg-white'
-                              }`}
-                            />
-                          ))}
-                        </div>
+                          {/* Center Chevron Controllers */}
+                          {detailImages.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveImageIndex((prev) => (prev - 1 + detailImages.length) % detailImages.length);
+                                }}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
+                              >
+                                <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveImageIndex((prev) => (prev + 1) % detailImages.length);
+                                }}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 backdrop-blur-xs text-white flex items-center justify-center hover:bg-black/50 active:scale-90 transition-all z-20 cursor-pointer"
+                              >
+                                <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                              </button>
+                            </>
+                          )}
+
+                          {/* Bottom visual dots / counter */}
+                          <div className="absolute bottom-5 left-5 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-white text-[10px] font-black z-20 tracking-wider">
+                            {activeImageIndex + 1} / {detailImages.length}
+                          </div>
+                          
+                          {detailImages.length > 1 && (
+                            <div className="absolute bottom-5 right-5 flex gap-1 z-20 bg-black/40 backdrop-blur-[2px] px-2 py-1 rounded-full border border-white/10 text-white font-black">
+                              {detailImages.map((_: any, idx: number) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setActiveImageIndex(idx)}
+                                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                    idx === activeImageIndex ? 'bg-orange-500 scale-125' : 'bg-white/60 hover:bg-white'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs sm:text-sm font-black uppercase tracking-widest text-slate-400">
+                          Image masquée
+                        </span>
                       )}
                     </div>
 
@@ -3091,7 +3120,15 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                               <div className="flex justify-between items-center py-3 px-4">
                                 <span className="text-slate-500 font-bold">Salaire souhaité</span>
                                 <span className="font-extrabold text-slate-900 uppercase">
-                                  {selectedAdDetail.desiredSalary ? `${selectedAdDetail.desiredSalary} FCFA / ${selectedAdDetail.salaryPeriod === 'Par semaine' ? 'Semaine' : 'Mois'}` : (selectedAdDetail.proposedSalary || 'Non spécifié')}
+                                  {selectedAdDetail.salaryPeriod === 'Contrat'
+                                    ? 'Contrat'
+                                    : (selectedAdDetail.desiredSalary
+                                        ? `${selectedAdDetail.desiredSalary} FCFA / ${
+                                            selectedAdDetail.salaryPeriod === 'Par semaine' || selectedAdDetail.salaryPeriod === 'Une semaine'
+                                              ? 'Semaine'
+                                              : 'Mois'
+                                          }`
+                                        : (selectedAdDetail.proposedSalary || 'Non spécifié'))}
                                 </span>
                               </div>
                             </>
