@@ -11,7 +11,7 @@ export const IVORY_COAST_CITIES = [
   // Bas-Sassandra / Nawa
   "Soubré", "Méagui", "Buyo", "Gueyo",
   // Gôh-Djiboua
-  "Gagnoa", "Oumé", "Ouragahio", "Divo", "Lakota", "Guitry", "Fresco",
+  "Gagnoa", "Oumé", "Ouragahio", "Divo", "Lakota", "Guitry",
   // Sud-Comoé / Grand-Bassam
   "Grand-Bassam", "Bonoua", "Aboisso", "Adiaké", "Tiapoum", "Maféré", "Ayame",
   // Agnéby-Tiassa & La Mé
@@ -105,8 +105,11 @@ const CityAutocompleteInput: React.FC<CityAutocompleteInputProps> = ({
       return a.localeCompare(b);
     });
 
+    // Deduplicate suggestions just in case there are duplicates
+    const uniqueSorted = Array.from(new Set(sorted));
+
     // Limit to 8 suggestions for better UX and performance
-    setSuggestions(sorted.slice(0, 8));
+    setSuggestions(uniqueSorted.slice(0, 8));
   }, [value]);
 
   // Click outside handler
@@ -190,7 +193,7 @@ const CityAutocompleteInput: React.FC<CityAutocompleteInputProps> = ({
             const isActive = idx === activeIndex;
             return (
               <button
-                key={city}
+                key={`${city}-${idx}`}
                 type="button"
                 onClick={() => selectSuggestion(city)}
                 className={`w-full px-4 py-3 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between ${
