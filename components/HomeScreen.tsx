@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Tab, User } from '../types';
-import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap, Search, ArrowLeft, X, ChevronRight, Send, Eye } from 'lucide-react';
+import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap, Search, ArrowLeft, X, ChevronRight, Send, Eye, ShoppingBag } from 'lucide-react';
 import MenuBackground from './common/MenuBackground';
 import { databaseService, SavedContact } from '../services/databaseService';
 import ScannerOverlay, { extractQRInfo } from './ScannerOverlay';
@@ -1015,11 +1015,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const [profileType, setProfileType] = useState<'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise' | 'Client'>('Client');
   const [isLoadingServices, setIsLoadingServices] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   useEffect(() => {
     if (!user?.phone) return;
     const unsubscribe = databaseService.subscribeToUserProfileType(user.phone, (type) => {
       setProfileType(type);
+    });
+    return () => unsubscribe();
+  }, [user?.phone]);
+
+  useEffect(() => {
+    if (!user?.phone) return;
+    const prestatairePhone = user.phone.replace(/\D/g, '');
+    const unsubscribe = databaseService.subscribeToProviderServiceRequestsCount(prestatairePhone, (count) => {
+      setPendingRequestsCount(count);
     });
     return () => unsubscribe();
   }, [user?.phone]);
@@ -1376,7 +1386,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div className="w-64 h-1.5 rounded-full bg-animated-search-border animate-search-border-flow shadow-lg"></div>
                 </div>
 
-                <div className="w-full flex justify-center py-2">
+                <div className="w-full flex justify-center items-center py-2 pl-6 gap-3">
+                    {/* Services demandes button icon on the left */}
+                    <button
+                        onClick={() => {
+                            onNavigate('assistant_qr');
+                        }}
+                        className="relative p-3.5 bg-white border border-gray-200 text-pink-600 rounded-2xl shadow-sm hover:bg-gray-50 active:scale-95 transition-all flex items-center justify-center cursor-pointer shrink-0"
+                        title="Demandes de services"
+                    >
+                        <ShoppingBag className="w-5 h-5" />
+                        {pendingRequestsCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce shadow-md">
+                                {pendingRequestsCount}
+                            </span>
+                        )}
+                    </button>
+
                     <button
                         onClick={() => {
                             setIsLoadingServices(true);
@@ -1385,7 +1411,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                                 setIsLoadingServices(false);
                             }, 400);
                         }}
-                        className="flex items-center justify-center space-x-2.5 bg-red-600 hover:bg-red-700 border border-red-700/20 rounded-2xl px-6 py-3 transition-all duration-300 shadow-sm cursor-pointer active:scale-95 text-white font-sans group"
+                        className="flex items-center justify-center space-x-2.5 bg-pink-600 hover:bg-pink-700 border border-pink-700/20 rounded-2xl px-6 py-3 transition-all duration-300 shadow-sm cursor-pointer active:scale-95 text-white font-sans group"
                         id="services-en-ligne-lightweight"
                     >
                         {isLoadingServices ? (

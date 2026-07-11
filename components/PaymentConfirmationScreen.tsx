@@ -31,6 +31,7 @@ interface PaymentConfirmationScreenProps {
     title?: string
   ) => void;
   onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
+  serviceRequestId?: string;
 }
 
 const Spinner = () => (
@@ -115,7 +116,8 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     formData,
     onGoToMenu,
     onShowPopup,
-    onRegisterBackHandler
+    onRegisterBackHandler,
+    serviceRequestId
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -443,7 +445,8 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         paymentType: paymentType,
         waveNumber: 'FILANT°225 PORTEFEUILLE',
         timestamp: Date.now(),
-        status: 'Paiement validé'
+        status: 'Paiement validé',
+        serviceRequestId: serviceRequestId || null
       });
 
       if (path) {

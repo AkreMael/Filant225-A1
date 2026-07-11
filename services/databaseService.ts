@@ -1993,6 +1993,41 @@ export const databaseService = {
           };
           await databaseService.saveTypedChatMessage('Privee', userId, msg);
         }
+
+        // Check for serviceRequestId or matching service request to update status to VALIDATED
+        if (payment.serviceRequestId) {
+          try {
+            const reqRef = doc(db, 'ServiceRequests', payment.serviceRequestId);
+            await setDoc(reqRef, { 
+              status: 'VALIDATED',
+              paymentRtdbPath: payment.rtdbPath || null
+            }, { merge: true });
+            console.log("ServiceRequest validated via serviceRequestId:", payment.serviceRequestId);
+          } catch (err) {
+            console.error("Error updating ServiceRequest status on validation:", err);
+          }
+        } else if (userId) {
+          // Fallback: look up in Firestore for matching service request from this user
+          try {
+            const q = query(
+              collection(db, 'ServiceRequests'),
+              where('phone', '==', payment.phone || payment.userPhone || userId),
+              where('status', '==', 'En attente de paiement'),
+              limit(1)
+            );
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              const docId = snap.docs[0].id;
+              await setDoc(doc(db, 'ServiceRequests', docId), { 
+                status: 'VALIDATED',
+                paymentRtdbPath: payment.rtdbPath || null
+              }, { merge: true });
+              console.log("ServiceRequest validated via fallback lookup:", docId);
+            }
+          } catch (lookupErr) {
+            console.error("Error in fallback lookup for ServiceRequest:", lookupErr);
+          }
+        }
       }
     } catch (e) {
       console.error("Error validating payment:", e);
@@ -2159,6 +2194,121 @@ export const databaseService = {
     } catch (error) {
       console.error("Error saving service request:", error);
       throw error;
+    }
+  },
+
+  subscribeToProviderServiceRequests: (providerPhone: string, callback: (requests: any[]) => void) => {
+    const sanitizedPhone = providerPhone.replace(/\D/g, '');
+    const q = query(
+      collection(db, 'ServiceRequests'),
+      where('prestatairePhone', '==', sanitizedPhone),
+      where('status', '==', 'VALIDATED')
+    );
+    return onSnapshot(q, (snapshot) => {
+      const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(requests);
+    }, (error) => console.error("Error listening to provider service requests:", error));
+  },
+
+  subscribeToProviderServiceRequestsCount: (providerPhone: string, callback: (count: number) => void) => {
+    const sanitizedPhone = providerPhone.replace(/\D/g, '');
+    const q = query(
+      collection(db, 'ServiceRequests'),
+      where('prestatairePhone', '==', sanitizedPhone),
+      where('status', '==', 'VALIDATED')
+    );
+    return onSnapshot(q, (snapshot) => {
+      callback(snapshot.size);
+    }, (error) => console.error("Error listening to provider service requests count:", error));
+  },
+
+  acceptServiceRequest: async (requestId: string, prestatairePhone: string, clientPhone: string) => {
+    try {
+      const reqRef = doc(db, 'ServiceRequests', requestId);
+      await setDoc(reqRef, { status: 'ACCEPTED' }, { merge: true });
+
+      // Format provider phone: +225 XX XX XX XX XX
+      const rawPhone = prestatairePhone.replace(/\D/g, '');
+      const formattedProviderPhone = rawPhone.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
+      
+      const clientUserId = clientPhone.replace(/\D/g, '');
+      const msg = {
+        text: `Votre demande de service a été acceptée par le prestataire.\nVous pouvez maintenant le contacter au :\n+225 ${formattedProviderPhone}`,
+        sender: 'admin',
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        adminReadStatus: 'LU'
+      };
+
+      await databaseService.saveTypedChatMessage('Privee', clientUserId, msg);
+      return true;
+    } catch (error) {
+      console.error("Error accepting service request:", error);
+      return false;
+    }
+  },
+
+  refuseServiceRequest: async (requestId: string, prestatairePhone: string, clientPhone: string, amount: number, clientName: string, clientCity: string, paymentRtdbPath?: string) => {
+    try {
+      const reqRef = doc(db, 'ServiceRequests', requestId);
+      await setDoc(reqRef, { status: 'REFUSED' }, { merge: true });
+
+      const clientUserId = clientPhone.replace(/\D/g, '');
+
+      // 1. Send automatic notification to client private messages
+      const notificationMsg = {
+        text: `Désolé, votre demande de service a été refusée par le prestataire car celui-ci n'est pas disponible pour le moment.\n\nLe montant de ${amount} FCFA a été remboursé sur votre Portefeuille FILANT°225.`,
+        sender: 'admin',
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        adminReadStatus: 'LU'
+      };
+      await databaseService.saveTypedChatMessage('Privee', clientUserId, notificationMsg);
+
+      // 2. Perform wallet refund
+      if (amount > 0) {
+        await databaseService.processWalletRefund(
+          clientUserId,
+          clientName || 'Utilisateur',
+          clientCity || 'Non spécifiée',
+          amount,
+          "Demande de service refusée par le prestataire"
+        );
+      }
+
+      // 3. Update the RTDB transaction status if path is available
+      if (paymentRtdbPath) {
+        await update(rtdbRef(rtdb, paymentRtdbPath), {
+          status: 'Service refusé / Paiement remboursé'
+        });
+      } else {
+        // Fallback: lookup in RTDB Paiements to find this request and mark it
+        try {
+          const paymentsSnapshot = await get(rtdbRef(rtdb, 'Paiements'));
+          if (paymentsSnapshot.exists()) {
+            const allPaymentsObj = paymentsSnapshot.val();
+            for (const userKey of Object.keys(allPaymentsObj)) {
+              const userPayments = allPaymentsObj[userKey];
+              for (const pId of Object.keys(userPayments)) {
+                const payItem = userPayments[pId];
+                if (payItem.serviceRequestId === requestId) {
+                  await update(rtdbRef(rtdb, `Paiements/${userKey}/${pId}`), {
+                    status: 'Service refusé / Paiement remboursé'
+                  });
+                  break;
+                }
+              }
+            }
+          }
+        } catch (rtdbErr) {
+          console.error("Error looking up and updating RTDB status on refuse:", rtdbErr);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error refusing service request:", error);
+      return false;
     }
   },
 

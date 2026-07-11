@@ -1076,7 +1076,9 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         readStatus: 'NON LU',
         prestataireName: item.name,
         prestataireCity: item.city,
-        prestataireActivity: item.titleOrActivity
+        prestataireActivity: item.titleOrActivity,
+        prestatairePhone: item.id.replace(/\D/g, ''),
+        status: 'VALIDATED'
       };
 
       // 1. Save Service Request to Firestore
@@ -1147,7 +1149,9 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         readStatus: 'NON LU',
         prestataireName: item.name,
         prestataireCity: item.city,
-        prestataireActivity: item.titleOrActivity
+        prestataireActivity: item.titleOrActivity,
+        prestatairePhone: item.id.replace(/\D/g, ''),
+        status: 'En attente de paiement'
       };
 
       // 2. Format chat message
@@ -1158,7 +1162,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
       };
 
       // 3. Save to administrators DB & private chat
-      await Promise.all([
+      const [serviceRequestId] = await Promise.all([
         databaseService.saveServiceRequest(serviceRequestData),
         databaseService.savePrivateChatMessage(chatUserId, chatMsg)
       ]);
@@ -1193,6 +1197,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
           amount: amount.toString(),
           paymentType: "Mise en relation",
           waveLink: `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${amount}`,
+          serviceRequestId: serviceRequestId,
           onSuccess: () => {
             // Once payment of "Mise en relation" is approved/finished,
             // direct the user to the chat screen to view their saved message.

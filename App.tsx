@@ -21,6 +21,7 @@ import NotificationsScreen from './components/NotificationsScreen';
 import EmergencyFormScreen from './components/EmergencyFormScreen';
 import ScannerOverlay, { extractQRInfo } from './components/ScannerOverlay';
 import AssistantQRScreen from './components/AssistantQRScreen';
+import ServicesRequestsScreen from './components/ServicesRequestsScreen';
 import MyQRCodeScreen from './components/MyQRCodeScreen';
 import PaymentConfirmationScreen from './components/PaymentConfirmationScreen';
 import ChatScreen from './components/ChatScreen';
@@ -1426,7 +1427,7 @@ const App: React.FC = () => {
           );
           break;
         case 'assistant_qr':
-          activeScreen = <AssistantQRScreen onBack={handleBack} user={displayUser} onShowPopup={showPopup} />;
+          activeScreen = <ServicesRequestsScreen onBack={handleBack} user={displayUser} onShowPopup={showPopup} />;
           break;
         case 'stage_formation_hub':
           activeScreen = <StageFormationHubScreen 
