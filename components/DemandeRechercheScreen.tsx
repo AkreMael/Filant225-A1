@@ -1851,12 +1851,26 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
       {/* Main Container */}
       <main id="demande-recherche-main" className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
+        {!pinnedProfile && (
+          <div className="bg-slate-50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800/60 rounded-3xl p-5 space-y-2 animate-in fade-in duration-300">
+            <h4 className="text-xs font-black uppercase tracking-widest text-orange-600 dark:text-orange-500 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+              <span>Services en ligne FILANT°225</span>
+            </h4>
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-bold leading-relaxed">
+              Sélectionnez un prestataire qualifié ci-dessous pour localiser son activité et soumettre votre demande en toute sécurité.
+            </p>
+          </div>
+        )}
+
         {/* 3D World Map & Automatic City Search Locator Panel */}
         {(() => {
+          if (!pinnedProfile) return null;
+
           // Compute geographic parameters for rendering
           const startCoordsInfo = userLocation || { x: 318, y: 175, lat: 5.3600, lng: -4.0083 };
-          const destCoordsInfo = pinnedProfile ? getStableCoordinatesForCity(pinnedProfile.city) : null;
-          const distanceBetweenKm = (pinnedProfile && destCoordsInfo) 
+          const destCoordsInfo = getStableCoordinatesForCity(pinnedProfile.city);
+          const distanceBetweenKm = destCoordsInfo 
             ? calculateHaversineDistance(startCoordsInfo.lat, startCoordsInfo.lng, destCoordsInfo.lat, destCoordsInfo.lng)
             : 0;
           const formattedDistanceInfo = distanceBetweenKm < 1 
@@ -3254,6 +3268,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                     onClick={() => {
                       setPinnedProfile(selectedAdDetail);
                       setSelectedItemForForm(selectedAdDetail);
+                      setShowActionOptions(selectedAdDetail);
                       setSelectedAdDetail(null);
                     }}
                     className="w-full py-4 bg-[#ff4500] hover:bg-[#e03a00] active:scale-[0.98] text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"

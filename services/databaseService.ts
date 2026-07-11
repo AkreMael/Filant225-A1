@@ -1884,6 +1884,32 @@ export const databaseService = {
       } else {
         // --- LOGIQUE DE DÉBLOCAGE PAR TYPE DE PAIEMENT STANDARD ---
         if (userId) {
+          // If the payment is manually validated and was in 'En attente' state, deduct from the wallet
+          if (payment.status === 'En attente') {
+            const amountNum = parseFloat(payment.amount || '0');
+            if (!isNaN(amountNum) && amountNum > 0) {
+              const walletRef = doc(db, 'Wallets', userId);
+              await setDoc(walletRef, {
+                phone: userId,
+                balance: increment(-amountNum),
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+
+              await addDoc(collection(db, 'WalletTransactions'), {
+                phone: userId,
+                userName: payment.userName || 'Utilisateur',
+                userCity: payment.city || 'Non spécifiée',
+                type: 'PAYMENT',
+                amount: -amountNum,
+                paymentNumber: 'FILANT°225 PORTEFEUILLE (VALIDATION)',
+                description: `Prélèvement de service par Admin - ${payment.title || payment.paymentType}`,
+                status: 'SUCCESS',
+                timestamp: Date.now(),
+                dateStr: new Date().toLocaleString('fr-FR')
+              });
+            }
+          }
+
           if (payment.paymentType === 'Inscription' || payment.amount === '310') {
             // Étape 2 -> 3
             await databaseService.updateQRCodeActivation(userId, {
