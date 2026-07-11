@@ -451,6 +451,13 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 
       if (path) {
         setPaymentPath(path);
+        if (paymentType === 'Mise en relation' && serviceRequestId) {
+          try {
+            await databaseService.triggerServiceRequestValidationFlow(serviceRequestId, path);
+          } catch (flowErr) {
+            console.error("Error triggering service request validation flow:", flowErr);
+          }
+        }
         try {
           const autoMsg = {
             text: isMiseEnLigne 
@@ -560,7 +567,8 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           targetPaymentType: paymentType || null,
           targetAmount: currentAmount || null,
           targetTitle: title || null,
-          targetFormData: formData || null
+          targetFormData: formData || null,
+          targetServiceRequestId: serviceRequestId || null
         });
 
         if (path) {

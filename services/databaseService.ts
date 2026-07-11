@@ -1669,6 +1669,7 @@ export const databaseService = {
                 amount: payment.targetAmount,
                 title: payment.targetTitle,
                 formData: payment.targetFormData,
+                serviceRequestId: payment.targetServiceRequestId || null,
                 rtdbPath: null
               };
             } else {
@@ -1701,6 +1702,7 @@ export const databaseService = {
                           amount: pendingItem.amount,
                           title: pendingItem.title || pendingItem.serviceType,
                           formData: pendingItem.formData || null,
+                          serviceRequestId: pendingItem.serviceRequestId || null,
                           rtdbPath: `Paiements/${uKey}/${foundPushId}`,
                           id: foundPushId
                         };
@@ -1833,6 +1835,37 @@ export const databaseService = {
                   }
 
                   databaseService.triggerEvolutionUpdate(userPhone);
+                } else if (pType === 'Mise en relation') {
+                  if (pendingPaymentToProcess.serviceRequestId) {
+                    try {
+                      await databaseService.triggerServiceRequestValidationFlow(
+                        pendingPaymentToProcess.serviceRequestId,
+                        pendingPaymentToProcess.rtdbPath || null
+                      );
+                    } catch (flowErr) {
+                      console.error("Error running triggerServiceRequestValidationFlow in auto-payment:", flowErr);
+                    }
+                  } else {
+                    // Fallback: search for pending service request
+                    try {
+                      const q = query(
+                        collection(db, 'ServiceRequests'),
+                        where('phone', '==', userPhone),
+                        where('status', '==', 'En attente de paiement'),
+                        limit(1)
+                      );
+                      const snap = await getDocs(q);
+                      if (!snap.empty) {
+                        const docId = snap.docs[0].id;
+                        await databaseService.triggerServiceRequestValidationFlow(
+                          docId,
+                          pendingPaymentToProcess.rtdbPath || null
+                        );
+                      }
+                    } catch (lookupErr) {
+                      console.error("Error looking up service request in auto-payment fallback:", lookupErr);
+                    }
+                  }
                 }
 
                 // If form data or favorites should copy
@@ -1997,12 +2030,7 @@ export const databaseService = {
         // Check for serviceRequestId or matching service request to update status to VALIDATED
         if (payment.serviceRequestId) {
           try {
-            const reqRef = doc(db, 'ServiceRequests', payment.serviceRequestId);
-            await setDoc(reqRef, { 
-              status: 'VALIDATED',
-              paymentRtdbPath: payment.rtdbPath || null
-            }, { merge: true });
-            console.log("ServiceRequest validated via serviceRequestId:", payment.serviceRequestId);
+            await databaseService.triggerServiceRequestValidationFlow(payment.serviceRequestId, payment.rtdbPath || null);
           } catch (err) {
             console.error("Error updating ServiceRequest status on validation:", err);
           }
@@ -2018,11 +2046,7 @@ export const databaseService = {
             const snap = await getDocs(q);
             if (!snap.empty) {
               const docId = snap.docs[0].id;
-              await setDoc(doc(db, 'ServiceRequests', docId), { 
-                status: 'VALIDATED',
-                paymentRtdbPath: payment.rtdbPath || null
-              }, { merge: true });
-              console.log("ServiceRequest validated via fallback lookup:", docId);
+              await databaseService.triggerServiceRequestValidationFlow(docId, payment.rtdbPath || null);
             }
           } catch (lookupErr) {
             console.error("Error in fallback lookup for ServiceRequest:", lookupErr);
@@ -2194,6 +2218,65 @@ export const databaseService = {
     } catch (error) {
       console.error("Error saving service request:", error);
       throw error;
+    }
+  },
+
+  triggerServiceRequestValidationFlow: async (requestId: string, paymentRtdbPath?: string | null) => {
+    try {
+      const reqRef = doc(db, 'ServiceRequests', requestId);
+      const snap = await getDoc(reqRef);
+      if (!snap.exists()) {
+        console.error("Service request not found for flow:", requestId);
+        return;
+      }
+      const data = snap.data();
+      
+      const prestatairePhone = (data.prestatairePhone || '').replace(/\D/g, '');
+      const clientPhone = (data.phone || '').replace(/\D/g, '');
+      const clientName = data.userName || 'Client';
+      const clientCity = data.city || 'Non spécifiée';
+      const serviceTitle = data.serviceTitle || 'Demande de service';
+      const amount = data.totalPrice || 0;
+      const prestataireName = data.prestataireName || 'Prestataire';
+
+      // Update ServiceRequests fields for maximum query compatibility
+      const updatedFields = {
+        status: 'VALIDATED',
+        providerId: prestatairePhone,
+        clientId: clientPhone,
+        requestId: requestId,
+        createdAt: new Date().toISOString(),
+        paymentRtdbPath: paymentRtdbPath || data.paymentRtdbPath || null
+      };
+      await setDoc(reqRef, updatedFields, { merge: true });
+
+      // Notify provider in MessageriePrivee
+      if (prestatairePhone) {
+        const providerMsg = {
+          text: `🔔 NOUVELLE DEMANDE DE SERVICE DE ${clientName} (${clientCity})\n\nService demandé : ${serviceTitle}\nMontant : ${amount} FCFA\n\nVous pouvez gérer cette demande directement en cliquant sur le bouton "Services" (icône sac de shopping) sur votre écran d'accueil !`,
+          sender: 'admin',
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          adminReadStatus: 'LU'
+        };
+        await databaseService.saveTypedChatMessage('Privee', prestatairePhone, providerMsg);
+      }
+
+      // Notify client in MessageriePrivee
+      if (clientPhone) {
+        const clientMsg = {
+          text: `✅ Votre paiement de ${amount} FCFA pour la demande de service avec ${prestataireName} a été validé. La demande a été transmise au prestataire pour acceptation. Vous serez notifié dès qu'il aura répondu.`,
+          sender: 'admin',
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          adminReadStatus: 'LU'
+        };
+        await databaseService.saveTypedChatMessage('Privee', clientPhone, clientMsg);
+      }
+
+      console.log("Successfully ran triggerServiceRequestValidationFlow for:", requestId);
+    } catch (err) {
+      console.error("Error in triggerServiceRequestValidationFlow:", err);
     }
   },
 
