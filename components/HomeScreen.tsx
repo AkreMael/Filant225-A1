@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Tab, User } from '../types';
-import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap, Search, ArrowLeft, X, ChevronRight, Send } from 'lucide-react';
+import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap, Search, ArrowLeft, X, ChevronRight, Send, Eye } from 'lucide-react';
 import MenuBackground from './common/MenuBackground';
 import { databaseService, SavedContact } from '../services/databaseService';
 import ScannerOverlay, { extractQRInfo } from './ScannerOverlay';
@@ -1014,6 +1014,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   const [timeLeft, setTimeLeft] = useState<{ min: number; sec: number } | null>(null);
 
   const [profileType, setProfileType] = useState<'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise' | 'Client'>('Client');
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
 
   useEffect(() => {
     if (!user?.phone) return;
@@ -1375,24 +1376,30 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div className="w-64 h-1.5 rounded-full bg-animated-search-border animate-search-border-flow shadow-lg"></div>
                 </div>
 
-                <div className="w-full">
+                <div className="w-full flex justify-center py-2">
                     <button
-                        onClick={() => handleMainServiceClick('demande_recherche')}
-                        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-3xl p-5 flex items-center justify-between shadow-xl transform active:scale-[0.98] transition-all border-2 border-white/20 font-sans relative overflow-hidden group"
-                        id="demande-recherche-button"
+                        onClick={() => {
+                            setIsLoadingServices(true);
+                            setTimeout(() => {
+                                handleMainServiceClick('demande_recherche');
+                                setIsLoadingServices(false);
+                            }, 400);
+                        }}
+                        className="flex items-center justify-center space-x-2.5 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/60 rounded-2xl px-6 py-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 shadow-sm cursor-pointer active:scale-95 text-slate-800 dark:text-white font-sans group"
+                        id="services-en-ligne-lightweight"
                     >
-                        <div className="flex items-center space-x-4 text-left">
-                            <IconWrapper className="w-12 h-12 bg-white/20 text-white shadow-md">
-                                <Search className="w-6 h-6 stroke-[2.5]" />
-                            </IconWrapper>
-                            <div className="flex flex-col items-start">
-                                <span className="text-lg font-black uppercase tracking-tight leading-none text-white">Demande de recherche</span>
-                                <span className="text-[10px] text-white/90 mt-1 font-bold">Métier, travailleur, agence immobilière ou équipement</span>
-                            </div>
-                        </div>
-                        <div className="p-2 rounded-full bg-white text-orange-600 shadow-sm">
-                            <ChevronRight className="h-5 w-5 stroke-[3]" />
-                        </div>
+                        {isLoadingServices ? (
+                            <svg className="animate-spin h-4 w-4 text-orange-500 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            <Search className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform duration-200 shrink-0" />
+                        )}
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">
+                            Services en ligne
+                        </span>
+                        <Eye className="w-4.5 h-4.5 text-orange-500 animate-eye-blink shrink-0" />
                     </button>
                 </div>
 
@@ -1681,6 +1688,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         }
         .animate-search-cursor-color {
             animation: search-cursor-color 3s linear infinite;
+        }
+
+        /* SERVICES EN LIGNE - EYE BLINK ANIMATION */
+        @keyframes eye-blink {
+          0%, 88%, 94%, 100% {
+            transform: scaleY(1);
+          }
+          91%, 97% {
+            transform: scaleY(0.1);
+          }
+        }
+        .animate-eye-blink {
+          animation: eye-blink 3.5s infinite ease-in-out;
+          transform-origin: center;
         }
       `}</style>
     </div>

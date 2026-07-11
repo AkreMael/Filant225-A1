@@ -48,6 +48,7 @@ const CardImageCarousel = ({ images, onImageClick }: { images: string[], onImage
               className="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition-transform duration-500"
               onClick={() => onImageClick(imgUrl)}
               referrerPolicy="no-referrer"
+              loading="lazy"
             />
           </div>
         ))}
@@ -280,7 +281,22 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   const [queryInput, setQueryInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<InscriptionResult[] | null>(null);
-  const [inscriptionsFromDB, setInscriptionsFromDB] = useState<any[]>([]);
+  const [inscriptionsFromDB, setInscriptionsFromDB] = useState<any[]>(() => {
+    try {
+      const cached = localStorage.getItem('filant_cached_inscriptions');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isInitialLoading, setIsInitialLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem('filant_cached_inscriptions');
+      return cached ? false : true;
+    } catch {
+      return true;
+    }
+  });
   const [isLinking, setIsLinking] = useState(false);
 
   // Real-time current user ad states, detail view states & lightbox states
@@ -543,8 +559,15 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       setInscriptionsFromDB(data);
+      try {
+        localStorage.setItem('filant_cached_inscriptions', JSON.stringify(data));
+      } catch (e) {
+        console.warn("Could not cache inscriptions:", e);
+      }
+      setIsInitialLoading(false);
     }, (err) => {
       console.error("Error setting up live Inscriptions listener:", err);
+      setIsInitialLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -707,11 +730,11 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
     setIsLoading(true);
     setResults(null);
 
-    // Exact loading duration around 3 seconds (3000ms)
+    // Snappy loading feedback of 150ms for instant search
     setTimeout(() => {
       executeDatabaseSearch(term);
       setIsLoading(false);
-    }, 3000);
+    }, 150);
   };
 
   const executeDatabaseSearch = (term: string) => {
@@ -1823,7 +1846,7 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         >
           <ArrowLeft className="h-5 w-5 text-gray-800 stroke-[2.5]" />
         </button>
-        <span className="text-sm font-black uppercase tracking-wider text-slate-900">Demande de recherche</span>
+        <span className="text-sm font-black uppercase tracking-wider text-slate-900">Services en ligne</span>
       </header>
 
       {/* Main Container */}
@@ -2111,21 +2134,23 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
         </div>
 
         {/* Loading Spinner Area */}
-        {isLoading && (
+        {(isLoading || isInitialLoading) && (
           <div className="bg-white rounded-3xl p-10 shadow-lg border border-slate-100 flex flex-col items-center justify-center text-center space-y-4">
             <div className="relative">
-              <div className="w-16 h-16 border-4 border-orange-500/20 rounded-full"></div>
-              <div className="absolute inset-0 w-16 h-16 border-4 border-orange-50 border-t-transparent rounded-full animate-spin font-sans"></div>
+              <div className="w-16 h-16 border-4 border-orange-500/20 rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
             <div className="space-y-1">
-              <h4 className="text-base font-black uppercase tracking-wide text-slate-900">Recherche en cours...</h4>
-              <p className="text-xs text-slate-400 font-bold">Vérification de la base de données FILANT°225</p>
+              <h4 className="text-base font-black uppercase tracking-wide text-slate-900">
+                {isInitialLoading ? "Chargement des cartes..." : "Recherche en cours..."}
+              </h4>
+              <p className="text-xs text-slate-400 font-bold">Synchronisation en direct avec FILANT°225</p>
             </div>
           </div>
         )}
 
         {/* Results layout */}
-        {!isLoading && results !== null && (
+        {!(isLoading || isInitialLoading) && results !== null && (
           <div className="space-y-4 animate-in fade-in">
             <div className="flex justify-between items-center px-1">
               <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">
