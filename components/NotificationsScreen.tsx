@@ -11,7 +11,7 @@ interface NotificationsScreenProps {
   onBack: () => void;
   user: User;
   onViewDetails?: (notification: Notification) => void;
-  onNotificationAction?: (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next' | 'qr_code' | 'paiement', searchFilter?: string, notificationMessage?: string, amount?: number) => void;
+  onNotificationAction?: (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next' | 'qr_code' | 'paiement' | 'inscription', searchFilter?: string, notificationMessage?: string, amount?: number) => void;
   onUniversalLink?: (url: string) => void;
 }
 

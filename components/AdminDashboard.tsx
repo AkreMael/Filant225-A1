@@ -108,6 +108,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [notifButtonRecherche, setNotifButtonRecherche] = useState(false);
   const [notifButtonSimpleDemande, setNotifButtonSimpleDemande] = useState(false);
   const [notifButtonQrCode, setNotifButtonQrCode] = useState(false);
+  const [notifButtonInscription, setNotifButtonInscription] = useState(false);
   const [notifButtonPaiement, setNotifButtonPaiement] = useState(false);
   const [notifPaiementAmount, setNotifPaiementAmount] = useState('');
   const [additionalSteps, setAdditionalSteps] = useState<Array<{
@@ -116,6 +117,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     buttonRecherche: boolean;
     buttonSimpleDemande: boolean;
     buttonQrCode: boolean;
+    buttonInscription: boolean;
     buttonPaiement: boolean;
     paiementAmount: string;
   }>>([]);
@@ -1205,6 +1207,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
     if (notifButtonQrCode) {
       buttonsList.push({ label: "Voir le code QR", action: "qr_code" });
     }
+    if (notifButtonInscription) {
+      buttonsList.push({ label: "Inscription", action: "inscription" });
+    }
     if (notifButtonPaiement) {
       const amt = parseFloat(notifPaiementAmount) || 0;
       buttonsList.push({ 
@@ -1224,6 +1229,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       }
       if (step.buttonQrCode) {
         stepButtons.push({ label: "Voir le code QR", action: "qr_code" });
+      }
+      if (step.buttonInscription) {
+        stepButtons.push({ label: "Inscription", action: "inscription" });
       }
       if (step.buttonPaiement) {
         const amt = parseFloat(step.paiementAmount) || 0;
@@ -2143,6 +2151,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                           </label>
 
                           <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                            notifButtonInscription 
+                              ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
+                              : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
+                          }`}>
+                            <input 
+                              type="checkbox" 
+                              checked={notifButtonInscription}
+                              onChange={e => setNotifButtonInscription(e.target.checked)}
+                              className="w-4 h-4 rounded text-blue-650 focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="text-xs font-bold font-mono tracking-tight">Inscription</span>
+                          </label>
+
+                          <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer select-none transition-all ${
                             notifButtonPaiement 
                               ? 'bg-blue-50/10 border-blue-500/35 text-blue-600 dark:text-blue-450 font-bold shadow-sm' 
                               : 'bg-white dark:bg-slate-900 border-gray-105 dark:border-slate-800 text-gray-500 dark:text-gray-400'
@@ -2189,6 +2211,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               buttonRecherche: false,
                               buttonSimpleDemande: false,
                               buttonQrCode: false,
+                              buttonInscription: false,
                               buttonPaiement: false,
                               paiementAmount: ''
                             }
@@ -2304,6 +2327,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                       className="w-3.5 h-3.5 rounded text-blue-600"
                                     />
                                     <span className="text-[10px] font-bold text-gray-650">Voir le code QR</span>
+                                  </label>
+
+                                  {/* Step Inscription Button */}
+                                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={step.buttonInscription}
+                                      onChange={e => {
+                                        const checked = e.target.checked;
+                                        setAdditionalSteps(prev => prev.map((s, i) => i === idx ? { ...s, buttonInscription: checked } : s));
+                                      }}
+                                      className="w-3.5 h-3.5 rounded text-blue-600"
+                                    />
+                                    <span className="text-[10px] font-bold text-gray-650">Inscription</span>
                                   </label>
 
                                   {/* Step Paiement Button */}

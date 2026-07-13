@@ -1193,7 +1193,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleNotificationButtonAction = (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next' | 'qr_code' | 'paiement', searchFilter?: string, notificationMessage?: string, amount?: number) => {
+  const handleNotificationButtonAction = (action: 'travailleurs' | 'equipements' | 'agences' | 'recherche' | 'simple_demande' | 'next' | 'qr_code' | 'paiement' | 'inscription', searchFilter?: string, notificationMessage?: string, amount?: number) => {
     switch (action) {
       case 'travailleurs':
         setInteractiveModalContext({
@@ -1230,6 +1230,9 @@ const App: React.FC = () => {
         break;
       case 'qr_code':
         navigateTo({ activeTab: Tab.MyQRCode });
+        break;
+      case 'inscription':
+        setShowFullRegistration(true);
         break;
       case 'paiement': {
         const payAmount = amount || 0;
