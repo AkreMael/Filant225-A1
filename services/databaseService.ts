@@ -373,9 +373,11 @@ export const databaseService = {
   getUserByUidFromFirestore: async (uid: string): Promise<User | null> => {
     try {
       const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
-      for (const col of collections) {
+      
+      const promises = collections.map(async (col) => {
+        try {
           const q = query(collection(db, col), where('userId', '==', uid), limit(1));
-          const snapshot = await withTimeout(getDocs(q));
+          const snapshot = await getDocs(q);
           if (!snapshot.empty) {
             const doc = snapshot.docs[0];
             const data = doc.data();
@@ -385,6 +387,17 @@ export const databaseService = {
               ...data
             } as User;
           }
+        } catch (colErr) {
+          console.warn(`Silently ignoring error in collection ${col} for UID lookup:`, colErr);
+        }
+        return null;
+      });
+
+      // Wrap the parallel queries with a generous 10 second timeout
+      const results = await withTimeout(Promise.all(promises), 10000);
+      const foundUser = results.find(user => user !== null);
+      if (foundUser) {
+        return foundUser;
       }
     } catch (e) {
       console.error("Error fetching user by UID:", e);
