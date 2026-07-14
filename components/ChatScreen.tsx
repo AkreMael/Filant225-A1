@@ -207,7 +207,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     });
 
     try {
-      if (typeof textOverride !== 'string') setInputText('');
+      if (typeof textOverride !== 'string') {
+        setInputText('');
+        // Close the soft keyboard automatically by blurring the textarea
+        if (textareaRef.current) {
+          textareaRef.current.blur();
+        }
+      }
       await databaseService.savePrivateChatMessage(chatUserId, newMessage);
     } catch (error) {
       console.error("Error in handleSendMessage:", error);

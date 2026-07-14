@@ -2029,7 +2029,7 @@ const App: React.FC = () => {
         {isChatModalOpen && (
           <div 
             onClick={() => setIsChatModalOpen(false)}
-            className="fixed left-0 right-0 z-[11000] flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 animate-in fade-in duration-300 cursor-pointer"
+            className="fixed inset-x-0 z-[11000] flex items-stretch sm:items-center justify-center bg-slate-950/85 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-300 cursor-pointer"
             style={{ 
               top: `${chatViewport.offsetTop}px`,
               height: `${chatViewport.height}px`,
@@ -2037,7 +2037,7 @@ const App: React.FC = () => {
           >
             <div 
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-[#efeae2] dark:bg-[#111b21] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-full max-h-[85%] border border-white/10 animate-in zoom-in-95 duration-300 cursor-default"
+              className="w-full max-w-md bg-[#efeae2] dark:bg-[#111b21] rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[85dvh] border-0 sm:border border-white/10 animate-in zoom-in-95 duration-300 cursor-default"
             >
                <ChatScreen 
                  currentUser={currentUser || maelUser} 
