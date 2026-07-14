@@ -1741,31 +1741,141 @@ const App: React.FC = () => {
   }
 
   if (!isAdminView && enAttenteTraitement && activeTab !== Tab.UserChat) {
+    if (blockedView === 'carte') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col" style={{ height: globalViewportHeight }}>
+          <MyQRCodeScreen 
+            user={displayUser!} 
+            onBack={() => setBlockedView('lock')} 
+            onTriggerPayment={(context) => setPaymentConfirmationContext(context)}
+            onStartRegistration={() => {}}
+          />
+        </div>
+      );
+    }
+
+    if (blockedView === 'services') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-300" style={{ height: globalViewportHeight }}>
+          <ServicesRequestsScreen 
+            onBack={() => setBlockedView('lock')} 
+            user={displayUser} 
+            onShowPopup={showPopup} 
+          />
+        </div>
+      );
+    }
+
     return (
-      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-900 via-slate-950 to-black flex flex-col items-center justify-center p-8 text-center text-white font-sans">
-        <div className="w-24 h-24 bg-blue-500/10 rounded-full border border-blue-500/20 flex items-center justify-center mb-8 shadow-2xl shadow-blue-500/10">
-          <svg className="w-10 h-10 text-blue-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-900 via-slate-950 to-black flex flex-col items-center justify-center p-8 text-center text-white font-sans" style={{ height: globalViewportHeight }}>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="w-24 h-24 bg-blue-500/10 rounded-full border border-blue-500/20 flex items-center justify-center mb-8 shadow-2xl shadow-blue-500/10">
+            <svg className="w-10 h-10 text-blue-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-black text-white mb-6 uppercase tracking-widest leading-tight border-b-2 border-blue-500/30 pb-3 max-w-xs">
+            En attente de traitement
+          </h2>
+          <p className="text-gray-300 font-bold text-sm leading-relaxed max-w-md bg-white/5 border border-white/10 p-6 rounded-3xl shadow-inner mb-6">
+            “Nous vous conseillons d'attendre le message final de l'entreprise FILANT°225. Votre dossier ou votre situation est actuellement en cours de traitement.”
+          </p>
+          
+          <div className="w-full max-w-xs flex flex-col items-center">
+            <button
+              onClick={() => {
+                setActiveTab(Tab.UserChat);
+              }}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <MessageSquare size={16} />
+              MESSAGERIE
+            </button>
+
+            {/* Beautiful inline navigation bar directly integrated under the MESSAGERIE button */}
+            <div className="w-full mt-6">
+              <nav className="bg-[#0f172a]/95 backdrop-blur-md rounded-[2.5rem] py-3 px-6 flex items-center justify-around gap-6 shadow-[0_15px_35px_rgba(0,0,0,0.5)] border border-white/10 w-full">
+                
+                {/* Profil Button */}
+                <button
+                  onClick={() => setBlockedProfileOpen(true)}
+                  className="flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 flex-1 cursor-pointer"
+                >
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-[#FF4500] hover:bg-[#FF4500]/90 transition-all duration-300 shadow-lg mb-1 relative overflow-hidden">
+                    <UserIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                  </div>
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-white/60">
+                    Profil
+                  </span>
+                </button>
+
+                {/* Ma Carte Button */}
+                <button
+                  onClick={() => setBlockedView('carte')}
+                  className="flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 flex-1 cursor-pointer"
+                >
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-[#FF4500] hover:bg-[#FF4500]/90 transition-all duration-300 shadow-lg mb-1 relative overflow-hidden">
+                    <QrCodeIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                  </div>
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-white/60">
+                    Ma Carte
+                  </span>
+                </button>
+
+                {/* Services Button */}
+                <button
+                  onClick={() => setBlockedView('services')}
+                  className="flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 flex-1 cursor-pointer"
+                >
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-pink-600 hover:bg-pink-700 transition-all duration-300 shadow-lg mb-1 relative overflow-hidden">
+                    <ShoppingBagIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                  </div>
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-white/60">
+                    Services
+                  </span>
+                </button>
+
+              </nav>
+            </div>
+          </div>
         </div>
-        <h2 className="text-xl font-black text-white mb-6 uppercase tracking-widest leading-tight border-b-2 border-blue-500/30 pb-3 max-w-xs">
-          En attente de traitement
-        </h2>
-        <p className="text-gray-300 font-bold text-sm leading-relaxed max-w-md bg-white/5 border border-white/10 p-6 rounded-3xl shadow-inner">
-          “Nous vous conseillons d'attendre le message final de l'entreprise FILANT°225. Votre dossier ou votre situation est actuellement en cours de traitement.”
-        </p>
-        <div className="mt-8 w-full max-w-xs">
-          <button
-            onClick={() => {
-              setActiveTab(Tab.UserChat);
-            }}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <MessageSquare size={16} />
-            MESSAGERIE
-          </button>
-        </div>
-        <div className="mt-16 pt-8 border-t border-white/5 w-full max-w-xs">
+
+        {/* Profile modal overlay inside the block screen */}
+        {blockedProfileOpen && (
+          <div className="absolute inset-0 z-[10000] pointer-events-none">
+            <div className="pointer-events-auto h-full w-full">
+              <ProfileScreen 
+                user={currentUser} 
+                onClose={() => setBlockedProfileOpen(false)}
+                onLogout={handleLogout}
+                setActiveTab={() => {}}
+                onShowPopup={showPopup}
+                deferredPrompt={deferredPrompt}
+                onInstallPWA={handleInstallPWA}
+                isDarkMode={isDarkMode}
+                onToggleDarkMode={setIsDarkMode}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Global Popups if any triggers inside blocked view */}
+        {popup.show && (
+          <div className="absolute inset-0 z-[20000]">
+            <GlobalPopup 
+              message={popup.message} 
+              type={popup.type} 
+              onConfirm={popup.onConfirm} 
+              onCancel={popup.onCancel}
+              confirmLabel={popup.confirmLabel}
+              cancelLabel={popup.cancelLabel}
+              isConfirmLoading={popup.isConfirmLoading}
+              title={popup.title}
+            />
+          </div>
+        )}
+
+        <div className="mt-8 pt-8 border-t border-white/5 w-full max-w-xs">
           <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">FILANT°225 • SERVICE DE SUIVI</p>
         </div>
       </div>
