@@ -18,7 +18,19 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onBack }) => {
     e.preventDefault();
     setError('');
     
-    if (phone === '0705052632' && pin === '0661') {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+
+    if (sanitizedPhone.length === 11) {
+      setError('Erreur de numéro.');
+      return;
+    }
+
+    if (sanitizedPhone === '0705052632') {
+      setError('Identifiants administrateur incorrects.');
+      return;
+    }
+    
+    if (sanitizedPhone === '07050526320506827007' && pin === '0661') {
       setLoading(true);
       setTimeout(() => {
         onSuccess();
@@ -58,7 +70,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onBack }) => {
                 inputMode="tel"
                 pattern="[0-9]*"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 20))}
                 placeholder="00 00 00 00"
                 className="w-full bg-gray-100 dark:bg-slate-800 border-none rounded-2xl py-4 pl-26 pr-4 text-sm font-bold focus:ring-2 focus:ring-blue-500/50 transition-all outline-none tracking-widest"
                 required
