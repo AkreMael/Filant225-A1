@@ -203,7 +203,14 @@ const App: React.FC = () => {
   }, []);
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => databaseService.getActiveUser());
-  const [enAttenteTraitement, setEnAttenteTraitement] = useState(false);
+  const [enAttenteTraitement, setEnAttenteTraitement] = useState(() => {
+    const activeUser = databaseService.getActiveUser();
+    if (activeUser?.phone) {
+      const sanitizedPhone = activeUser.phone.replace(/\D/g, '');
+      return localStorage.getItem(`filant_blocked_status_${sanitizedPhone}`) === 'true';
+    }
+    return false;
+  });
   const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services' | 'demande_recherche'>('lock');
   const [blockedProfileOpen, setBlockedProfileOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
@@ -252,13 +259,20 @@ const App: React.FC = () => {
     const sanitizedPhone = currentUser.phone.replace(/\D/g, '');
     if (!sanitizedPhone) return;
 
+    // Load initial state from localStorage
+    const localBlocked = localStorage.getItem(`filant_blocked_status_${sanitizedPhone}`) === 'true';
+    setEnAttenteTraitement(localBlocked);
+
     const docRef = doc(db, 'Connexions', sanitizedPhone);
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
-        setEnAttenteTraitement(!!data?.enAttenteTraitement);
+        const blocked = !!data?.enAttenteTraitement;
+        setEnAttenteTraitement(blocked);
+        localStorage.setItem(`filant_blocked_status_${sanitizedPhone}`, blocked ? 'true' : 'false');
       } else {
         setEnAttenteTraitement(false);
+        localStorage.setItem(`filant_blocked_status_${sanitizedPhone}`, 'false');
       }
     }, (err) => {
       console.error("Error listening to user Connexions block status:", err);
@@ -520,8 +534,24 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkAuth = async () => {
       const activeUser = databaseService.getActiveUser();
-      if (activeUser) {
+      if (activeUser?.phone) {
         setCurrentUser(activeUser);
+        const sanitizedPhone = activeUser.phone.replace(/\D/g, '');
+        const wasBlocked = localStorage.getItem(`filant_blocked_status_${sanitizedPhone}`) === 'true';
+        setEnAttenteTraitement(wasBlocked);
+        
+        try {
+          const docRef = doc(db, 'Connexions', sanitizedPhone);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            const blocked = !!data?.enAttenteTraitement;
+            setEnAttenteTraitement(blocked);
+            localStorage.setItem(`filant_blocked_status_${sanitizedPhone}`, blocked ? 'true' : 'false');
+          }
+        } catch (e) {
+          console.error("Error pre-fetching block status on startup:", e);
+        }
       }
       setIsAuthChecking(false);
     };
@@ -798,6 +828,23 @@ const App: React.FC = () => {
                 if (!isValid(fullUser.city) && isValid(localUser.city)) fullUser.city = localUser.city;
             }
 
+            const sanitizedPhone = fullUser.phone.replace(/\D/g, '');
+            const wasBlocked = localStorage.getItem(`filant_blocked_status_${sanitizedPhone}`) === 'true';
+            setEnAttenteTraitement(wasBlocked);
+
+            try {
+              const docRef = doc(db, 'Connexions', sanitizedPhone);
+              const snap = await getDoc(docRef);
+              if (snap.exists()) {
+                const data = snap.data();
+                const blocked = !!data?.enAttenteTraitement;
+                setEnAttenteTraitement(blocked);
+                localStorage.setItem(`filant_blocked_status_${sanitizedPhone}`, blocked ? 'true' : 'false');
+              }
+            } catch (e) {
+              console.error("Error pre-fetching block status in auth state:", e);
+            }
+
             setCurrentUser(fullUser);
             if (isAdmin(fullUser)) {
               setIsAdminAuthenticated(true);
@@ -965,7 +1012,11 @@ const App: React.FC = () => {
 
   const isUserAdmin = currentUser?.phone === '0705052632';
 
-  const handleLogin = (user: User) => {
+  const handleLogin = async (user: User) => {
+    const sanitizedPhone = user.phone.replace(/\D/g, '');
+    const wasBlocked = localStorage.getItem(`filant_blocked_status_${sanitizedPhone}`) === 'true';
+    setEnAttenteTraitement(wasBlocked);
+
     setCurrentUser(user);
     databaseService.saveActiveUser(user);
     
@@ -974,6 +1025,19 @@ const App: React.FC = () => {
       setAdminForceAppView(false);
       setIsAdminAuthenticated(true);
       setMenuView('admin_dashboard');
+    } else {
+      try {
+        const docRef = doc(db, 'Connexions', sanitizedPhone);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          const blocked = !!data?.enAttenteTraitement;
+          setEnAttenteTraitement(blocked);
+          localStorage.setItem(`filant_blocked_status_${sanitizedPhone}`, blocked ? 'true' : 'false');
+        }
+      } catch (e) {
+        console.error("Error pre-fetching block status in handleLogin:", e);
+      }
     }
     
     setShowSplash(true);
@@ -1805,7 +1869,7 @@ const App: React.FC = () => {
     );
   }
 
-  if (!isAdminView && enAttenteTraitement && activeTab !== Tab.UserChat) {
+  if (!isAdminView && enAttenteTraitement) {
     if (blockedView === 'carte') {
       return (
         <div className="fixed inset-0 z-[9999] bg-white flex flex-col" style={{ height: globalViewportHeight }}>
