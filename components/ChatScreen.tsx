@@ -3,7 +3,7 @@ import { User } from '../types';
 import { databaseService } from '../services/databaseService';
 import { Linkify } from '../utils/textUtils';
 import SpeakerIcon from './common/SpeakerIcon';
-import { ChevronLeft, Send, Trash2, CreditCard, Check, CheckCheck } from 'lucide-react';
+import { ChevronLeft, Send, Trash2, CreditCard, Check, CheckCheck, X } from 'lucide-react';
 
 interface ChatMessage {
   id?: string;
@@ -23,6 +23,7 @@ interface ChatScreenProps {
   onBack: () => void;
   type?: 'Privee';
   isEnAttenteDeTraitement?: boolean;
+  isModal?: boolean;
 }
 
 const WhatsAppIcon = () => (
@@ -37,7 +38,7 @@ const QUICK_MESSAGES = [
   { label: 'CORRECTION', text: "Bonjour, certaines informations de votre formulaire sont incomplètes. Merci de nous préciser les détails manquants ici même dans cette messagerie." }
 ];
 
-const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmin, onBack, type = 'Privee', isEnAttenteDeTraitement = false }) => {
+const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmin, onBack, type = 'Privee', isEnAttenteDeTraitement = false, isModal = false }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -279,13 +280,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     <div 
       id="chat_screen_root"
       className="flex flex-col bg-[#efeae2] dark:bg-[#111b21] animate-in fade-in duration-300 w-full overflow-hidden h-full"
-      style={{ height: typeof viewportHeight === 'number' ? `${viewportHeight}px` : '100dvh' }}
+      style={{ height: isModal ? '100%' : (typeof viewportHeight === 'number' ? `${viewportHeight}px` : '100dvh') }}
     >
       {/* WhatsApp Header: Elegant Green for Light Mode, Dark Slate for Dark Mode */}
       <header id="chat_header" className="bg-[#008069] dark:bg-[#1f2c34] text-white py-3 px-4 flex items-center justify-between sticky top-0 z-20 shadow-md">
         <div className="flex items-center gap-2">
           <button id="btn_back_chat" onClick={onBack} className="p-1.5 -ml-1 rounded-full hover:bg-black/10 active:scale-95 transition-all text-white">
-            <ChevronLeft size={24} />
+            {isModal ? <X size={24} /> : <ChevronLeft size={24} />}
           </button>
           
           <div className="flex items-center gap-2">

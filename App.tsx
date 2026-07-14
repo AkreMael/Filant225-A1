@@ -206,6 +206,43 @@ const App: React.FC = () => {
   const [enAttenteTraitement, setEnAttenteTraitement] = useState(false);
   const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services' | 'demande_recherche'>('lock');
   const [blockedProfileOpen, setBlockedProfileOpen] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [chatViewport, setChatViewport] = useState({
+    height: typeof window !== 'undefined' && window.visualViewport ? window.visualViewport.height : (typeof window !== 'undefined' ? window.innerHeight : 800),
+    offsetTop: typeof window !== 'undefined' && window.visualViewport ? window.visualViewport.offsetTop : 0,
+  });
+
+  useEffect(() => {
+    const updateChatViewport = () => {
+      if (window.visualViewport) {
+        setChatViewport({
+          height: window.visualViewport.height,
+          offsetTop: window.visualViewport.offsetTop,
+        });
+      } else {
+        setChatViewport({
+          height: window.innerHeight,
+          offsetTop: 0,
+        });
+      }
+    };
+
+    window.addEventListener('resize', updateChatViewport);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateChatViewport);
+      window.visualViewport.addEventListener('scroll', updateChatViewport);
+    }
+    
+    updateChatViewport();
+
+    return () => {
+      window.removeEventListener('resize', updateChatViewport);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateChatViewport);
+        window.visualViewport.removeEventListener('scroll', updateChatViewport);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!currentUser?.phone) {
@@ -1824,7 +1861,7 @@ const App: React.FC = () => {
           <div className="w-full max-w-xs flex flex-col items-center">
             <button
               onClick={() => {
-                setActiveTab(Tab.UserChat);
+                setIsChatModalOpen(true);
               }}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
@@ -1926,6 +1963,31 @@ const App: React.FC = () => {
               isConfirmLoading={popup.isConfirmLoading}
               title={popup.title}
             />
+          </div>
+        )}
+
+        {/* Chat Screen Modal Popup with visual viewport awareness */}
+        {isChatModalOpen && (
+          <div 
+            onClick={() => setIsChatModalOpen(false)}
+            className="fixed left-0 right-0 z-[11000] flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 animate-in fade-in duration-300 cursor-pointer"
+            style={{ 
+              top: `${chatViewport.offsetTop}px`,
+              height: `${chatViewport.height}px`,
+            }}
+          >
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-[#efeae2] dark:bg-[#111b21] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-full max-h-[85%] border border-white/10 animate-in zoom-in-95 duration-300 cursor-default"
+            >
+               <ChatScreen 
+                 currentUser={currentUser || maelUser} 
+                 isAdmin={false}
+                 onBack={() => setIsChatModalOpen(false)}
+                 isEnAttenteDeTraitement={enAttenteTraitement}
+                 isModal={true}
+               />
+            </div>
           </div>
         )}
 
