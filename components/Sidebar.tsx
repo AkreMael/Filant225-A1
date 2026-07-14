@@ -33,9 +33,25 @@ interface BottomNavProps {
   isHidden?: boolean;
   onOpenScanner?: () => void;
   showAdmin?: boolean;
+  tutorialStep?: number;
+  onUpdateTutorialStep?: (step: number) => void;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggleProfile, isProfileOpen, userRole, userPhone, isMiseEnRelationActive, unreadChatCount, onOpenScanner, isHidden, showAdmin = false }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ 
+  activeTab, 
+  setActiveTab, 
+  onToggleProfile, 
+  isProfileOpen, 
+  userRole, 
+  userPhone, 
+  isMiseEnRelationActive, 
+  unreadChatCount, 
+  onOpenScanner, 
+  isHidden, 
+  showAdmin = false,
+  tutorialStep = 0,
+  onUpdateTutorialStep
+}) => {
   if (isHidden) return null;
   
   // Définition statique des onglets pour le Client uniquement
@@ -57,25 +73,48 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
     const isBlue = (item as any).isBlue;
     const hasUnread = item.id === Tab.UserChat && (unreadChatCount || 0) > 0;
 
+    const isTutorialLock = tutorialStep !== undefined && tutorialStep > 0 && tutorialStep <= 4;
+    const isMyQRCode = item.id === Tab.MyQRCode;
+    const isItemDisabled = isTutorialLock && !isMyQRCode;
+
     return (
       <button
         key={item.id}
+        disabled={isItemDisabled}
         onClick={() => {
+          if (isItemDisabled) return;
+          if (item.id === Tab.MyQRCode && tutorialStep === 1) {
+            if (onUpdateTutorialStep) onUpdateTutorialStep(2);
+          }
           if (item.id === Tab.Profile) onToggleProfile();
           else if (item.id === 'scanner') onOpenScanner();
           else setActiveTab(item.id as Tab);
         }}
-        className={`group relative flex flex-col items-center justify-center transition-all duration-300 flex-shrink-0 ${isActive ? 'scale-110' : 'hover:scale-105 active:scale-95'}`}
+        className={`group relative flex flex-col items-center justify-center transition-all duration-300 flex-shrink-0 ${
+          isItemDisabled ? 'opacity-30 pointer-events-none scale-90' : isActive ? 'scale-110' : 'hover:scale-105 active:scale-95'
+        }`}
       >
+        {isMyQRCode && tutorialStep === 1 && (
+          <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex flex-col items-center z-[1200] pointer-events-none animate-bounce">
+            <div className="bg-yellow-400 text-slate-950 font-black text-[8px] sm:text-[9px] px-2 py-1 rounded-md shadow-lg whitespace-nowrap mb-1 uppercase tracking-wider">
+              Ma Carte QR !
+            </div>
+            <svg className="w-4 h-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </div>
+        )}
         <div 
           className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg mb-1 relative overflow-hidden ${
-            isRestricted
-              ? 'bg-gray-700 grayscale'
-              : hasUnread
-                ? 'animate-blink-red-green'
-                : isActive 
-                  ? isBlue ? 'bg-blue-600 ring-4 ring-blue-600/30' : 'bg-[#008000] ring-4 ring-[#008000]/30 animate-pulse-green' 
-                  : isBlue ? 'bg-blue-500 opacity-90' : 'bg-[#FF4500] opacity-80 animate-float-subtle'
+            isMyQRCode && tutorialStep === 1
+              ? 'bg-[#008000] ring-4 ring-yellow-400 animate-glow-pulse-tutorial shadow-[0_0_20px_rgba(234,179,8,0.8)]'
+              : isRestricted
+                ? 'bg-gray-700 grayscale'
+                : hasUnread
+                  ? 'animate-blink-red-green'
+                  : isActive 
+                    ? isBlue ? 'bg-blue-600 ring-4 ring-blue-600/30' : 'bg-[#008000] ring-4 ring-[#008000]/30 animate-pulse-green' 
+                    : isBlue ? 'bg-blue-500 opacity-90' : 'bg-[#FF4500] opacity-80 animate-float-subtle'
           }`}
           style={{ animationDelay: `${idx * 0.1}s` }}
         >
@@ -150,6 +189,14 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
         }
         .animate-blink-red-green {
             animation: blink-red-green 0.15s infinite;
+        }
+        @keyframes glow-pulse-tutorial {
+          0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+          70% { box-shadow: 0 0 0 15px rgba(234, 179, 8, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+        }
+        .animate-glow-pulse-tutorial {
+          animation: glow-pulse-tutorial 1.5s infinite;
         }
       `}</style>
     </div>
