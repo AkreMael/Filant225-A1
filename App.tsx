@@ -211,7 +211,7 @@ const App: React.FC = () => {
     }
     return false;
   });
-  const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services' | 'demande_recherche'>('lock');
+  const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services' | 'demande_recherche' | 'messagerie'>('lock');
   const [blockedProfileOpen, setBlockedProfileOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [chatViewport, setChatViewport] = useState({
@@ -1913,9 +1913,20 @@ const App: React.FC = () => {
           user={displayUser} 
           onSelectTab={(tab) => {
             if (tab === Tab.UserChat) {
-              setIsChatModalOpen(true);
+              setBlockedView('messagerie');
             }
           }}
+        />
+      );
+    } else if (blockedView === 'messagerie') {
+      containerClass = "fixed inset-0 z-[9999] bg-[#efeae2] dark:bg-[#111b21] flex flex-col animate-in fade-in duration-300";
+      screenContent = (
+        <ChatScreen 
+          currentUser={currentUser || maelUser} 
+          isAdmin={false}
+          onBack={() => setBlockedView('lock')}
+          isEnAttenteDeTraitement={enAttenteTraitement}
+          isLockScreenChat={true}
         />
       );
     } else {
@@ -1937,7 +1948,7 @@ const App: React.FC = () => {
           <div className="w-full max-w-xs flex flex-col items-center flex-shrink-0">
             <button
               onClick={() => {
-                setIsChatModalOpen(true);
+                setBlockedView('messagerie');
               }}
               className="relative w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >

@@ -3,7 +3,7 @@ import { User } from '../types';
 import { databaseService } from '../services/databaseService';
 import { Linkify } from '../utils/textUtils';
 import SpeakerIcon from './common/SpeakerIcon';
-import { ChevronLeft, Send, Trash2, CreditCard, Check, CheckCheck, X } from 'lucide-react';
+import { ChevronLeft, Send, Trash2, CreditCard, Check, CheckCheck, X, Pen } from 'lucide-react';
 
 interface ChatMessage {
   id?: string;
@@ -24,6 +24,7 @@ interface ChatScreenProps {
   type?: 'Privee';
   isEnAttenteDeTraitement?: boolean;
   isModal?: boolean;
+  isLockScreenChat?: boolean;
 }
 
 const WhatsAppIcon = () => (
@@ -38,7 +39,7 @@ const QUICK_MESSAGES = [
   { label: 'CORRECTION', text: "Bonjour, certaines informations de votre formulaire sont incomplètes. Merci de nous préciser les détails manquants ici même dans cette messagerie." }
 ];
 
-const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmin, onBack, type = 'Privee', isEnAttenteDeTraitement = false, isModal = false }) => {
+const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmin, onBack, type = 'Privee', isEnAttenteDeTraitement = false, isModal = false, isLockScreenChat = false }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -62,6 +63,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     if (!text) return;
     setIsWritingMessage(false);
     setPopupInputText('');
+    
+    // Fermer le clavier automatiquement
+    if (document.activeElement) {
+      (document.activeElement as HTMLElement).blur();
+    }
+    
     await handleSendMessage(text);
   };
 
@@ -298,7 +305,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
     <div 
       id="chat_screen_root"
       className="flex flex-col bg-[#efeae2] dark:bg-[#111b21] animate-in fade-in duration-300 w-full overflow-hidden h-full"
-      style={{ height: isModal ? '100%' : (typeof viewportHeight === 'number' ? `${viewportHeight}px` : '100dvh') }}
+      style={{ height: isLockScreenChat ? '100%' : (isModal ? '100%' : (typeof viewportHeight === 'number' ? `${viewportHeight}px` : '100dvh')) }}
     >
       {/* WhatsApp Header: Elegant Green for Light Mode, Dark Slate for Dark Mode */}
       <header id="chat_header" className="bg-[#008069] dark:bg-[#1f2c34] text-white py-3 px-4 flex items-center justify-between sticky top-0 z-20 shadow-md">
@@ -504,6 +511,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Floating pen write icon for the stable lock screen chat */}
+      {isLockScreenChat && (
+        <button
+          id="btn_open_write_popup"
+          onClick={() => setIsWritingMessage(true)}
+          className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#00a884] text-white flex items-center justify-center shadow-2xl hover:brightness-95 hover:scale-105 active:scale-95 transition-all z-[1000] cursor-pointer"
+          title="Écrire un message"
+        >
+          <Pen size={22} className="text-white" />
+        </button>
+      )}
+
       {/* WhatsApp Style Curved Footer Input Bar */}
       {isAdmin && (
         <div id="chat_footer" className="p-3 bg-[#f0f2f5] dark:bg-[#1f2c34] flex items-end gap-2.5 shrink-0 shadow-inner">
@@ -547,7 +566,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
       )}
 
       {/* Special lock screen fake input bar */}
-      {!isAdmin && isEnAttenteDeTraitement && (
+      {!isAdmin && isEnAttenteDeTraitement && !isLockScreenChat && (
         <div 
           id="chat_footer_fake"
           onClick={() => setIsWritingMessage(true)}
@@ -569,7 +588,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
       )}
 
       {/* Standard client-side footer if not on lock screen */}
-      {!isAdmin && !isEnAttenteDeTraitement && (
+      {!isAdmin && !isEnAttenteDeTraitement && !isLockScreenChat && (
         <div id="chat_footer_client" className="p-3 bg-[#f0f2f5] dark:bg-[#1f2c34] flex items-end gap-2.5 shrink-0 shadow-inner">
           <div className="flex-1 flex items-center min-h-[44px] bg-white dark:bg-[#2a3942] rounded-3xl px-4 py-2 border border-transparent shadow shadow-neutral-100">
             <textarea
