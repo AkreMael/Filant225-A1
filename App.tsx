@@ -33,7 +33,7 @@ import StageFormationHubScreen from './components/StageFormationHubScreen';
 import { DemandeRechercheScreen } from './components/DemandeRechercheScreen';
 import { EvolutionScreen } from './components/EvolutionScreen';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquare, Check } from 'lucide-react';
+import { MessageSquare, Check, User as UserIcon, QrCode as QrCodeIcon, ShoppingBag as ShoppingBagIcon } from 'lucide-react';
 import { isAdmin } from './utils/authUtils';
 import { databaseService, SavedContact } from './services/databaseService';
 import { messagingService } from './services/messagingService';
@@ -204,6 +204,8 @@ const App: React.FC = () => {
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => databaseService.getActiveUser());
   const [enAttenteTraitement, setEnAttenteTraitement] = useState(false);
+  const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services'>('lock');
+  const [blockedProfileOpen, setBlockedProfileOpen] = useState(false);
 
   useEffect(() => {
     if (!currentUser?.phone) {
@@ -1610,22 +1612,130 @@ const App: React.FC = () => {
   const isAdminView = shouldShowAdminDashboard || (menuView === 'admin_dashboard' && activeTab === Tab.Menu) || (activeTab === Tab.Admin && isAdminAuthenticated);
 
   if (currentUser?.isBlocked) {
+    if (blockedView === 'carte') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col" style={{ height: globalViewportHeight }}>
+          <MyQRCodeScreen 
+            user={displayUser!} 
+            onBack={() => setBlockedView('lock')} 
+            onTriggerPayment={(context) => setPaymentConfirmationContext(context)}
+            onStartRegistration={() => {}}
+          />
+        </div>
+      );
+    }
+
+    if (blockedView === 'services') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-300" style={{ height: globalViewportHeight }}>
+          <ServicesRequestsScreen 
+            onBack={() => setBlockedView('lock')} 
+            user={displayUser} 
+            onShowPopup={showPopup} 
+          />
+        </div>
+      );
+    }
+
     return (
-      <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center p-8 text-center">
-        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-8 animate-pulse">
-          <svg className="w-12 h-12 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+      <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center p-8 text-center" style={{ height: globalViewportHeight }}>
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-8 animate-pulse">
+            <svg className="w-12 h-12 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tighter leading-tight">
+            Accès Restreint
+          </h2>
+          <p className="text-gray-600 font-bold text-lg leading-relaxed max-w-xs">
+            “Vous ne pouvez plus effectuer une demande. Veuillez patienter. Une demande d’agence va vous contacter.”
+          </p>
+          <div className="mt-12 pt-8 border-t border-gray-100 w-full max-w-xs mb-20">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">FILANT°225 • SERVICE SÉCURITÉ</p>
+          </div>
         </div>
-        <h2 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tighter leading-tight">
-          Accès Restreint
-        </h2>
-        <p className="text-gray-600 font-bold text-lg leading-relaxed max-w-xs">
-          “Vous ne pouvez plus effectuer une demande. Veuillez patienter. Une demande d’agence va vous contacter.”
-        </p>
-        <div className="mt-12 pt-8 border-t border-gray-100 w-full max-w-xs">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">FILANT°225 • SERVICE SÉCURITÉ</p>
+
+        {/* Beautiful bottom navigation specifically for the blocked page */}
+        <div className="absolute bottom-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+          <nav className="bg-[#0f172a]/95 backdrop-blur-md pointer-events-auto rounded-[2.5rem] py-3 px-6 flex items-center justify-around gap-6 shadow-[0_15px_35px_rgba(0,0,0,0.5)] border border-white/10 w-full max-w-md">
+            
+            {/* Profil Button */}
+            <button
+              onClick={() => setBlockedProfileOpen(true)}
+              className="flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 flex-1 cursor-pointer"
+            >
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-[#FF4500] hover:bg-[#FF4500]/90 transition-all duration-300 shadow-lg mb-1">
+                <UserIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-white/80">
+                Profil
+              </span>
+            </button>
+
+            {/* Ma Carte Button */}
+            <button
+              onClick={() => setBlockedView('carte')}
+              className="flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 flex-1 cursor-pointer"
+            >
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-[#008000] hover:bg-[#008000]/90 transition-all duration-300 shadow-lg mb-1 animate-pulse-green">
+                <QrCodeIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-white/80">
+                Ma Carte
+              </span>
+            </button>
+
+            {/* Services Button */}
+            <button
+              onClick={() => setBlockedView('services')}
+              className="flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 flex-1 cursor-pointer"
+            >
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-pink-600 hover:bg-pink-700 transition-all duration-300 shadow-lg mb-1">
+                <ShoppingBagIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+              </div>
+              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-white/80">
+                Services
+              </span>
+            </button>
+
+          </nav>
         </div>
+
+        {/* Profile modal overlay inside the block screen */}
+        {blockedProfileOpen && (
+          <div className="absolute inset-0 z-[10000] pointer-events-none">
+            <div className="pointer-events-auto h-full w-full">
+              <ProfileScreen 
+                user={currentUser} 
+                onClose={() => setBlockedProfileOpen(false)}
+                onLogout={handleLogout}
+                setActiveTab={() => {}}
+                onShowPopup={showPopup}
+                deferredPrompt={deferredPrompt}
+                onInstallPWA={handleInstallPWA}
+                isDarkMode={isDarkMode}
+                onToggleDarkMode={setIsDarkMode}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Global Popups if any triggers inside blocked view */}
+        {popup.show && (
+          <div className="absolute inset-0 z-[20000]">
+            <GlobalPopup 
+              message={popup.message} 
+              type={popup.type} 
+              onConfirm={popup.onConfirm} 
+              onCancel={popup.onCancel}
+              confirmLabel={popup.confirmLabel}
+              cancelLabel={popup.cancelLabel}
+              isConfirmLoading={popup.isConfirmLoading}
+              title={popup.title}
+            />
+          </div>
+        )}
       </div>
     );
   }
