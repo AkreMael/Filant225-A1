@@ -235,15 +235,7 @@ const App: React.FC = () => {
       return localStorage.getItem('filant_has_selected_profile') === 'true';
   });
 
-  const [tutorialStep, setTutorialStep] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const completed = localStorage.getItem('filant_tutorial_completed') === 'true';
-      if (completed) return 0;
-      const savedStep = localStorage.getItem('filant_tutorial_step');
-      return savedStep ? parseInt(savedStep, 10) : 0;
-    }
-    return 0;
-  });
+  const [tutorialStep, setTutorialStep] = useState<number>(0);
 
   const handleUpdateTutorialStep = useCallback((step: number) => {
     console.log("Updating tutorial step to:", step);
@@ -251,20 +243,44 @@ const App: React.FC = () => {
       localStorage.setItem('filant_tutorial_completed', 'true');
       localStorage.removeItem('filant_tutorial_step');
       setTutorialStep(0);
+      if (currentUser?.phone) {
+        databaseService.saveTutorialCompleted(currentUser.phone).catch(e => {
+          console.error("Failed to save tutorial completed in Firestore:", e);
+        });
+      }
     } else {
       localStorage.setItem('filant_tutorial_step', String(step));
       setTutorialStep(step);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
-    if (currentUser && !localStorage.getItem('filant_tutorial_completed')) {
-      const savedStep = localStorage.getItem('filant_tutorial_step');
-      if (!savedStep) {
-        localStorage.setItem('filant_tutorial_step', '1');
-        setTutorialStep(1);
+    if (currentUser) {
+      const isCompleted = currentUser.tutorialCompleted === true || localStorage.getItem('filant_tutorial_completed') === 'true';
+      if (isCompleted) {
+        localStorage.setItem('filant_tutorial_completed', 'true');
+        setTutorialStep(0);
       } else {
-        setTutorialStep(parseInt(savedStep, 10));
+        // Wait 15 seconds to let the user discover the interface freely, without any indications
+        setTutorialStep(0);
+        console.log("Starting 15-second delay before tutorial begins...");
+        
+        const timer = setTimeout(() => {
+          const stillNotCompleted = !localStorage.getItem('filant_tutorial_completed');
+          if (stillNotCompleted) {
+            const savedStep = localStorage.getItem('filant_tutorial_step');
+            if (!savedStep || savedStep === '0') {
+              localStorage.setItem('filant_tutorial_step', '1');
+              setTutorialStep(1);
+              console.log("Tutorial started automatically after 15 seconds delay.");
+            } else {
+              setTutorialStep(parseInt(savedStep, 10));
+              console.log("Tutorial resumed automatically after 15 seconds delay at step:", savedStep);
+            }
+          }
+        }, 15000); // 15 seconds
+        
+        return () => clearTimeout(timer);
       }
     } else {
       setTutorialStep(0);

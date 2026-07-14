@@ -30,6 +30,7 @@ export interface User {
   idCardBack?: string;
   idCardUploadedAt?: any;
   idCardStatus?: string;
+  tutorialCompleted?: boolean;
 }
 
 export interface NotificationButton {
