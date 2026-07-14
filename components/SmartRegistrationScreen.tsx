@@ -32,8 +32,6 @@ interface SmartRegistrationScreenProps {
   ) => void;
   onGoToMenu?: () => void;
   onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
-  tutorialStep?: number;
-  onUpdateTutorialStep?: (step: number) => void;
 }
 
 type ProfileType = 'Travailleur' | 'Propriétaire' | 'Agence' | 'Entreprise';
@@ -44,12 +42,10 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({
   currentUser,
   onShowPopup,
   onGoToMenu,
-  onRegisterBackHandler,
-  tutorialStep,
-  onUpdateTutorialStep
+  onRegisterBackHandler
 }) => {
   const [step, setStep] = useState(1);
-  const [selectedProfile, setSelectedProfile] = useState<ProfileType | ''>(() => (tutorialStep === 3) ? '' : 'Travailleur');
+  const [selectedProfile, setSelectedProfile] = useState<ProfileType>('Travailleur');
   const [formData, setFormData] = useState({ 
     name: currentUser?.name || '', 
     city: currentUser?.city || '', 
@@ -94,17 +90,6 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({
   const [isSaved, setIsSaved] = useState(false);
 
   const handleBackWithConfirmation = () => {
-    if (tutorialStep === 3 || tutorialStep === 4) {
-      if (onShowPopup) {
-        onShowPopup(
-          "Veuillez terminer votre inscription avant de quitter cette étape.",
-          "alert"
-        );
-      } else {
-        alert("Veuillez terminer votre inscription avant de quitter cette étape.");
-      }
-      return true; // handled, blocks navigation!
-    }
     const hasStarted = step > 1 || formData.name !== '' || formData.city !== '' || formData.job !== '' || formData.equipmentType !== '' || formData.agencyName !== '' || formData.companyName !== '';
     if (hasStarted && !isSaved) {
       if (onShowPopup && onGoToMenu) {
@@ -400,9 +385,6 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({
 
   const handlePayRegistration = () => {
       setPaymentInitiated(true);
-      if (tutorialStep === 4 && onUpdateTutorialStep) {
-          onUpdateTutorialStep(5);
-      }
       const event = new CustomEvent('trigger-payment-view', {
           detail: {
               title: `Frais Dossier (${selectedProfile})`,
@@ -425,9 +407,6 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({
   const handleNext = () => {
     if (step === 1) {
       if (selectedProfile) {
-        if (tutorialStep === 3 && onUpdateTutorialStep) {
-          onUpdateTutorialStep(4);
-        }
         setStep(2);
       }
     } else {
@@ -990,17 +969,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({
                  </div>
               </div>
             ) : step === 1 ? (
-              <div className="px-2 mb-6 relative">
-                {tutorialStep === 3 && !selectedProfile && (
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center z-[1400] pointer-events-none animate-bounce">
-                    <div className="bg-yellow-400 text-slate-950 font-black text-[10px] px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap mb-1.5 uppercase tracking-wider">
-                      Choisissez une catégorie !
-                    </div>
-                    <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
-                  </div>
-                )}
+              <div className="px-2 mb-6">
                 <h4 className="text-slate-600 font-black text-xs uppercase tracking-[0.2em] mb-4">QUI ÊTES-VOUS ?</h4>
                 
                 <div className="grid grid-cols-2 gap-3">
@@ -1011,15 +980,11 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({
                       disabled={!profile.active}
                       onClick={() => {
                         setSelectedProfile(profile.id as ProfileType);
-                        if (tutorialStep === 3 && onUpdateTutorialStep) {
-                          onUpdateTutorialStep(4);
-                        }
                       }}
                       className={`
                         relative p-4 rounded-3xl border-2 transition-all duration-300 text-left flex flex-col justify-between h-[120px]
                         ${!profile.active ? 'bg-slate-50 border-slate-100 opacity-60' : 
-                          selectedProfile === profile.id ? 'bg-orange-50 border-orange-500 ring-2 ring-orange-500/10' : 
-                          tutorialStep === 3 ? 'bg-yellow-50/50 border-yellow-300 animate-pulse' : 'bg-slate-50 border-slate-200'}
+                          selectedProfile === profile.id ? 'bg-orange-50 border-orange-500 ring-2 ring-orange-500/10' : 'bg-slate-50 border-slate-200'}
                       `}
                     >
                       <div className={`p-2 rounded-xl w-fit ${selectedProfile === profile.id && profile.active ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-400'}`}>
@@ -1094,17 +1059,7 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({
           </div>
 
           {!isSaved && (
-            <div className="mt-auto pt-6 px-2 shrink-0 relative">
-              {step === 1 && tutorialStep === 3 && selectedProfile && (
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center z-[1400] pointer-events-none animate-bounce">
-                  <div className="bg-yellow-400 text-slate-950 font-black text-[10px] px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap mb-1.5 uppercase tracking-wider">
-                    Cliquez sur Suivant !
-                  </div>
-                  <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                </div>
-              )}
+            <div className="mt-auto pt-6 px-2 shrink-0">
               <AnimatePresence>
                 {errors.length > 0 && (
                   <motion.div 
@@ -1125,10 +1080,8 @@ const SmartRegistrationScreen: React.FC<SmartRegistrationScreenProps> = ({
               <button
                 type="button"
                 onClick={handleNext}
-                disabled={isSubmitting || (step === 1 && !selectedProfile)}
-                className={`w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 active:scale-95 transition-all text-white font-black py-5 rounded-3xl flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(249,115,22,0.3)] ${
-                  step === 1 && tutorialStep === 3 && selectedProfile ? 'ring-4 ring-yellow-400 animate-pulse' : ''
-                }`}
+                disabled={isSubmitting}
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 active:scale-95 transition-all text-white font-black py-5 rounded-3xl flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(249,115,22,0.3)]"
               >
                 {isSubmitting ? (
                    <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>

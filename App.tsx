@@ -235,58 +235,6 @@ const App: React.FC = () => {
       return localStorage.getItem('filant_has_selected_profile') === 'true';
   });
 
-  const [tutorialStep, setTutorialStep] = useState<number>(0);
-
-  const handleUpdateTutorialStep = useCallback((step: number) => {
-    console.log("Updating tutorial step to:", step);
-    if (step > 5 || step === 0) {
-      localStorage.setItem('filant_tutorial_completed', 'true');
-      localStorage.removeItem('filant_tutorial_step');
-      setTutorialStep(0);
-      if (currentUser?.phone) {
-        databaseService.saveTutorialCompleted(currentUser.phone).catch(e => {
-          console.error("Failed to save tutorial completed in Firestore:", e);
-        });
-      }
-    } else {
-      localStorage.setItem('filant_tutorial_step', String(step));
-      setTutorialStep(step);
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (currentUser) {
-      const isCompleted = currentUser.tutorialCompleted === true || localStorage.getItem('filant_tutorial_completed') === 'true';
-      if (isCompleted) {
-        localStorage.setItem('filant_tutorial_completed', 'true');
-        setTutorialStep(0);
-      } else {
-        // Wait 15 seconds to let the user discover the interface freely, without any indications
-        setTutorialStep(0);
-        console.log("Starting 15-second delay before tutorial begins...");
-        
-        const timer = setTimeout(() => {
-          const stillNotCompleted = !localStorage.getItem('filant_tutorial_completed');
-          if (stillNotCompleted) {
-            const savedStep = localStorage.getItem('filant_tutorial_step');
-            if (!savedStep || savedStep === '0') {
-              localStorage.setItem('filant_tutorial_step', '1');
-              setTutorialStep(1);
-              console.log("Tutorial started automatically after 15 seconds delay.");
-            } else {
-              setTutorialStep(parseInt(savedStep, 10));
-              console.log("Tutorial resumed automatically after 15 seconds delay at step:", savedStep);
-            }
-          }
-        }, 15000); // 15 seconds
-        
-        return () => clearTimeout(timer);
-      }
-    } else {
-      setTutorialStep(0);
-    }
-  }, [currentUser]);
-
   // RAW states (do not push to history when set directly during popping/restoring)
   const [showSmartRegistrationRaw, setShowSmartRegistrationRaw] = useState(false);
   const [activeTabRaw, setActiveTabRaw] = useState<Tab>(Tab.Menu);
@@ -1360,8 +1308,6 @@ const App: React.FC = () => {
                     onRegisterBackHandler={(handler) => {
                       backHandlerRef.current = handler;
                     }}
-                    tutorialStep={tutorialStep}
-                    onUpdateTutorialStep={handleUpdateTutorialStep}
                   />
                 )}
               </div>
@@ -1546,8 +1492,6 @@ const App: React.FC = () => {
         onBack={() => setActiveTab(Tab.Menu)} 
         onTriggerPayment={(context) => setPaymentConfirmationContext(context)}
         onStartRegistration={() => setShowFullRegistration(true)}
-        tutorialStep={tutorialStep}
-        onUpdateTutorialStep={handleUpdateTutorialStep}
       />;
       break;
     case Tab.Offer:
@@ -1806,18 +1750,6 @@ const App: React.FC = () => {
                       onRegisterBackHandler={(handler) => {
                         backHandlerRef.current = handler;
                       }}
-                      tutorialStep={tutorialStep}
-                      onUpdateTutorialStep={handleUpdateTutorialStep}
-                      onSuccess={() => {
-                        if (tutorialStep === 5) {
-                          handleUpdateTutorialStep(0); // Complete tutorial!
-                        }
-                        if (paymentConfirmationContext.onSuccess) {
-                          paymentConfirmationContext.onSuccess();
-                        } else {
-                          setPaymentConfirmationContext(null);
-                        }
-                      }}
                     />
                 </div>
             )}
@@ -2031,8 +1963,6 @@ const App: React.FC = () => {
             unreadChatCount={unreadChatCount}
             isHidden={isFullScreenView}
             showAdmin={isAdmin(currentUser) || isAdminAuthenticated}
-            tutorialStep={tutorialStep}
-            onUpdateTutorialStep={handleUpdateTutorialStep}
           />
         </div>
       </div>

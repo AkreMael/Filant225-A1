@@ -835,35 +835,6 @@ export const databaseService = {
     }
   },
 
-  saveTutorialCompleted: async (phone: string) => {
-    try {
-      await databaseService.ensureAuth();
-      const sanitizedPhone = phone.replace(/\D/g, '');
-      const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
-      
-      let updatedAny = false;
-      for (const col of collections) {
-        const ref = doc(db, col, sanitizedPhone);
-        const snap = await getDoc(ref);
-        if (snap.exists()) {
-          await updateDoc(ref, { tutorialCompleted: true });
-          console.log(`Updated tutorialCompleted in collection ${col} for ${sanitizedPhone}`);
-          updatedAny = true;
-        }
-      }
-      
-      if (!updatedAny) {
-        const ref = doc(db, 'Clients', sanitizedPhone);
-        await setDoc(ref, { tutorialCompleted: true }, { merge: true });
-        console.log(`Created/Merged tutorialCompleted in collection Clients for ${sanitizedPhone}`);
-      }
-      return true;
-    } catch (e) {
-      console.error("Error saving tutorial completion to Firestore:", e);
-      return false;
-    }
-  },
-
   getInscriptions: async () => {
     try {
       const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));

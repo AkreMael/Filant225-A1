@@ -13,18 +13,9 @@ interface MyQRCodeScreenProps {
   onBack: () => void;
   onTriggerPayment: (context: any) => void;
   onStartRegistration: () => void;
-  tutorialStep?: number;
-  onUpdateTutorialStep?: (step: number) => void;
 }
 
-const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ 
-  user, 
-  onBack, 
-  onTriggerPayment, 
-  onStartRegistration,
-  tutorialStep,
-  onUpdateTutorialStep
-}) => {
+const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTriggerPayment, onStartRegistration }) => {
   const [qrData, setQrData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showMissions, setShowMissions] = useState(false);
@@ -189,9 +180,6 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({
 
   const handleAction = () => {
       if (step === 1) {
-          if (tutorialStep === 2 && onUpdateTutorialStep) {
-              onUpdateTutorialStep(3);
-          }
           onStartRegistration();
       } else if (step === 2) {
           onTriggerPayment({
@@ -229,11 +217,7 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({
   return (
     <div className="flex flex-col h-full bg-[#f8fafc] animate-in fade-in duration-500">
       <header className="p-5 flex items-center bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
-        <button 
-          onClick={onBack} 
-          disabled={tutorialStep === 2}
-          className={`p-2.5 bg-gray-50 rounded-full active:scale-90 transition-transform ${tutorialStep === 2 ? 'opacity-30 pointer-events-none' : ''}`}
-        >
+        <button onClick={onBack} className="p-2.5 bg-gray-50 rounded-full active:scale-90 transition-transform">
            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
         </button>
         <h1 className="flex-1 text-center font-black text-lg text-slate-900 uppercase tracking-tight mr-10 italic">VOTRE CARTE QR</h1>
@@ -314,22 +298,10 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({
 
               <div className="mt-10 w-full">
                   {!isActive ? (
-                      <div className="space-y-4 relative">
-                          {tutorialStep === 2 && (
-                            <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center z-[1300] pointer-events-none animate-bounce">
-                              <div className="bg-yellow-400 text-slate-950 font-black text-[10px] px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap mb-1.5 uppercase tracking-wider">
-                                Cliquez sur Inscription !
-                              </div>
-                              <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                              </svg>
-                            </div>
-                          )}
+                      <div className="space-y-4">
                           <button 
                             onClick={handleAction}
-                            className={`w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-5 rounded-[2rem] shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3 ${
-                              tutorialStep === 2 ? 'ring-4 ring-yellow-400 animate-pulse' : ''
-                            }`}
+                            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-5 rounded-[2rem] shadow-xl active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center justify-center gap-3"
                           >
                             {step === 1 ? 'Commencer Inscription' : 
                              step === 2 ? 'Payer Frais Dossier (310 CFA)' : 

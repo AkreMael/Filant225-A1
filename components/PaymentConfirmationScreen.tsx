@@ -32,8 +32,6 @@ interface PaymentConfirmationScreenProps {
   ) => void;
   onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
   serviceRequestId?: string;
-  tutorialStep?: number;
-  onUpdateTutorialStep?: (step: number) => void;
 }
 
 const Spinner = () => (
@@ -119,9 +117,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     onGoToMenu,
     onShowPopup,
     onRegisterBackHandler,
-    serviceRequestId,
-    tutorialStep,
-    onUpdateTutorialStep
+    serviceRequestId
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -981,51 +977,39 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                 />
                 <span className="text-[7.5px] font-black uppercase text-slate-400 mt-1 font-sans">WALLET SECURE</span>
               </div>
-              <div className="flex-1 relative flex flex-col">
-                {tutorialStep === 5 && (
-                  <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex flex-col items-center z-[1100] pointer-events-none animate-bounce">
-                    <div className="bg-yellow-400 text-slate-950 font-black text-[10px] px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap mb-1 uppercase tracking-wider">
-                      Payez ici !
+              <button 
+                onClick={handlePay}
+                disabled={isProcessing || isSuccess || !isValidated || loadingWallet || !!paymentPath || pendingDepositStatus === 'PENDING'}
+                className={`flex-1 font-black py-3 px-4 rounded-xl shadow-lg transform active:scale-95 transition-all text-base uppercase tracking-wider min-h-[58px] flex items-center justify-center cursor-pointer font-sans ${
+                    isSuccess
+                        ? 'bg-green-500 text-white shadow-green-200'
+                        : isProcessing 
+                            ? 'bg-gray-100 cursor-default shadow-none' 
+                            : (paymentPath || pendingDepositStatus === 'PENDING')
+                                ? 'bg-orange-100 text-orange-500 border-2 border-orange-200 cursor-default shadow-none animate-pulse'
+                                : (isValidated && !loadingWallet) 
+                                    ? isInsufficient
+                                        ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                }`}
+              >
+                {isProcessing ? (
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                        <span className="text-blue-600 text-sm">TRANSACTION...</span>
                     </div>
-                    <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
-                  </div>
-                )}
-                <button 
-                  onClick={handlePay}
-                  disabled={isProcessing || isSuccess || !isValidated || loadingWallet || !!paymentPath || pendingDepositStatus === 'PENDING'}
-                  className={`flex-1 w-full font-black py-3 px-4 rounded-xl shadow-lg transform active:scale-95 transition-all text-base uppercase tracking-wider min-h-[58px] flex items-center justify-center cursor-pointer font-sans ${
-                      isSuccess
-                          ? 'bg-green-500 text-white shadow-green-200'
-                          : isProcessing 
-                              ? 'bg-gray-100 cursor-default shadow-none' 
-                              : (paymentPath || pendingDepositStatus === 'PENDING')
-                                  ? 'bg-orange-100 text-orange-500 border-2 border-orange-200 cursor-default shadow-none animate-pulse'
-                                  : (isValidated && !loadingWallet) 
-                                      ? isInsufficient
-                                          ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-200'
-                                          : `bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200 ${tutorialStep === 5 ? 'ring-4 ring-yellow-400 animate-pulse' : ''}`
-                                      : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                  }`}
-                >
-                  {isProcessing ? (
-                      <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                          <span className="text-blue-600 text-sm">TRANSACTION...</span>
-                      </div>
-                  ) : isSuccess ? (
-                      <div className="flex items-center gap-2 animate-in zoom-in duration-300">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          <span>Validé</span>
-                      </div>
-                  ) : (paymentPath || pendingDepositStatus === 'PENDING') ? (
-                      <span className="text-orange-500 text-xs font-black text-center leading-tight">EN ATTENTE ADMIN</span>
-                  ) : paymentType === 'Dépôt' ? 'Confirmer le dépôt' : isInsufficient ? 'Faire un Dépôt' : 'Payer avec le Portefeuille'}
-                </button>
-              </div>
+                ) : isSuccess ? (
+                    <div className="flex items-center gap-2 animate-in zoom-in duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>Validé</span>
+                    </div>
+                ) : (paymentPath || pendingDepositStatus === 'PENDING') ? (
+                    <span className="text-orange-500 text-xs font-black text-center leading-tight">EN ATTENTE ADMIN</span>
+                ) : paymentType === 'Dépôt' ? 'Confirmer le dépôt' : isInsufficient ? 'Faire un Dépôt' : 'Payer avec le Portefeuille'}
+              </button>
           </div>
       </main>
 
