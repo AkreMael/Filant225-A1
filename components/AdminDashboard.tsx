@@ -39,6 +39,19 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+const WhatsAppIcon = ({ size = 18 }: { size?: number }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    width={size} 
+    height={size} 
+    fill="currentColor"
+    className="inline-block"
+  >
+    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.717-1.455L0 24zm6.59-4.846c1.6.95 3.18 1.449 4.725 1.45 5.535 0 10.026-4.502 10.029-10.04.001-2.683-1.04-5.205-2.933-7.1-1.893-1.893-4.41-2.935-7.102-2.936-5.541 0-10.033 4.502-10.036 10.042-.001 1.837.493 3.63 1.429 5.212l-.991 3.616 3.708-.973zm10.174-6.887c-.29-.145-1.716-.847-1.982-.944-.265-.096-.458-.145-.65.145-.192.29-.746.944-.914 1.137-.168.193-.336.217-.626.072-1.359-.68-2.335-1.113-3.267-2.717-.247-.425.248-.395.71-.132.414.237.914 1.11.914 1.11s.14.24.07.48c-.07.24-.315.86-.445.98-.13.12-.27.25-.385.35-.115.1-.235.21-.1.44.135.23.6 1.024 1.284 1.636.883.788 1.624 1.03 1.854 1.144.23.114.363.097.5-.07.135-.168.6-.698.762-.94.162-.24.324-.193.554-.108.23.084 1.46.687 1.71.81.25.122.418.18.48.29.062.112.062.643-.182 1.332z" />
+  </svg>
+);
+
 interface AdminDashboardProps {
   onBack: () => void;
   user: User;
@@ -933,6 +946,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                       );
                     }
 
+                    if (key === 'actions_whatsapp') {
+                      const phone = item.phone || '';
+                      const cleanedPhone = phone.replace(/\D/g, '');
+                      let waPhone = cleanedPhone;
+                      if (cleanedPhone.length === 10 && (cleanedPhone.startsWith('05') || cleanedPhone.startsWith('07') || cleanedPhone.startsWith('01'))) {
+                        waPhone = '225' + cleanedPhone;
+                      } else if (cleanedPhone.length === 8) {
+                        waPhone = '22507' + cleanedPhone;
+                      } else if (!cleanedPhone.startsWith('225') && cleanedPhone.length > 0) {
+                        waPhone = '225' + cleanedPhone;
+                      }
+
+                      const defaultText = `Bienvenue sur FILANT°225 et merci pour votre inscription.\n\nPour finaliser votre intégration sur la plateforme, veuillez maintenant enregistrer votre activité.\n\nRendez-vous dans l'icône Ma Carte.\nCliquez sur le bouton Inscription.\nChoisissez votre catégorie :\n- Travailleur\n- Propriétaire d'équipements\n- Agence immobilière\n- Entreprise\n\nRemplissez entièrement le formulaire correspondant à votre activité.\nUne fois le formulaire envoyé, procédez au paiement des 310 FCFA de frais d'inscription.\n\nAprès validation de votre paiement, votre activité sera enregistrée sur FILANT°225 et vous pourrez commencer à recevoir vos premières demandes de mission.`;
+
+                      const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(defaultText)}`;
+
+                      return (
+                        <td key={j} className="px-6 py-4 text-center">
+                          <a 
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center justify-center p-2 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-xl transition-all active:scale-90 border border-green-500/10 hover:border-green-500"
+                            title="Contacter sur WhatsApp"
+                          >
+                            <WhatsAppIcon size={18} />
+                          </a>
+                        </td>
+                      );
+                    }
+
                     if (key === 'actions_delete') {
                       return (
                         <td key={j} className="px-6 py-4 text-center">
@@ -1553,8 +1598,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               )}
 
               {activeTab === 'inscriptions' && renderTable(
-                ['Profil', 'Activité / Identité', 'Nom', 'Ville', 'Numéro', 'Détails', 'Status', 'Date'],
-                ['profileType', 'activity', 'name', 'city', 'phone', 'details', 'status', 'timestamp'],
+                ['Profil', 'Activité / Identité', 'Nom', 'Ville', 'Numéro', 'WhatsApp', 'Détails', 'Status', 'Date'],
+                ['profileType', 'activity', 'name', 'city', 'phone', 'actions_whatsapp', 'details', 'status', 'timestamp'],
                 data.inscriptions,
                 'Inscriptions'
               )}
@@ -1698,29 +1743,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
           )}
 
           {activeTab === 'workers' && renderTable(
-            ['Nom', 'Activité', 'Ville', 'Numéro', 'Date'],
-            ['name', 'activity', 'city', 'phone', 'timestamp'],
+            ['Nom', 'Activité', 'Ville', 'Numéro', 'WhatsApp', 'Date'],
+            ['name', 'activity', 'city', 'phone', 'actions_whatsapp', 'timestamp'],
             data.inscriptions.filter(i => i.profileType === 'Travailleur'),
             'Inscriptions'
           )}
 
           {activeTab === 'equipments' && renderTable(
-            ['Nom', 'Matériel', 'Ville', 'Numéro', 'Date'],
-            ['name', 'activity', 'city', 'phone', 'timestamp'],
+            ['Nom', 'Matériel', 'Ville', 'Numéro', 'WhatsApp', 'Date'],
+            ['name', 'activity', 'city', 'phone', 'actions_whatsapp', 'timestamp'],
             data.inscriptions.filter(i => i.profileType === 'Propriétaire'),
             'Inscriptions'
           )}
 
           {activeTab === 'agencies' && renderTable(
-            ['Nom Agence', 'Ville', 'Numéro', 'Date'],
-            ['activity', 'city', 'phone', 'timestamp'],
+            ['Nom Agence', 'Ville', 'Numéro', 'WhatsApp', 'Date'],
+            ['activity', 'city', 'phone', 'actions_whatsapp', 'timestamp'],
             data.inscriptions.filter(i => i.profileType === 'Agence'),
             'Inscriptions'
           )}
 
           {activeTab === 'companies' && renderTable(
-            ['Nom Entreprise', 'Ville', 'Numéro', 'Date'],
-            ['activity', 'city', 'phone', 'timestamp'],
+            ['Nom Entreprise', 'Ville', 'Numéro', 'WhatsApp', 'Date'],
+            ['activity', 'city', 'phone', 'actions_whatsapp', 'timestamp'],
             data.inscriptions.filter(i => i.profileType === 'Entreprise'),
             'Inscriptions'
           )}
@@ -2077,7 +2122,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase tracking-wider text-gray-400">Texte de la notification</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black uppercase tracking-wider text-gray-400">Texte de la notification</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNotifMessage("Bienvenue sur FILANT°225 et merci pour votre inscription.\n\nPour finaliser votre intégration sur la plateforme, veuillez maintenant enregistrer votre activité.\n\nRendez-vous dans l'icône Ma Carte.\nCliquez sur le bouton Inscription.\nChoisissez votre catégorie :\nTravailleur\nPropriétaire d'équipements\nAgence immobilière\nEntreprise\nRemplissez entièrement le formulaire correspondant à votre activité.\nUne fois le formulaire envoyé, procédez au paiement des 310 FCFA de frais d'inscription.\n\nAprès validation de votre paiement, votre activité sera enregistrée sur FILANT°225 et vous pourrez commencer à recevoir vos premières demandes de mission.");
+                            setNotifButtonInscription(true);
+                          }}
+                          className="text-[9px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 border border-blue-500/25 px-2.5 py-1 rounded-xl hover:bg-blue-50/50 dark:hover:bg-slate-800 transition-all active:scale-95 cursor-pointer"
+                        >
+                          Suivi des messages (Inscription)
+                        </button>
+                      </div>
                       <textarea 
                         value={notifMessage}
                         onChange={e => setNotifMessage(e.target.value)}
