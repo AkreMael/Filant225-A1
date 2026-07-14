@@ -1,8 +1,9 @@
 import { User, Worker, Offer, FavoriteRequest, PersonalRequest, Notification } from '../types';
 import { db, auth, rtdb, storage } from '../firebase';
 import { doc, setDoc, serverTimestamp, collection, addDoc, getDocs, query, orderBy, deleteDoc, getDoc, onSnapshot, writeBatch, updateDoc, where, limit, increment } from 'firebase/firestore';
-import { ref as rtdbRef, push, set, serverTimestamp as rtdbTimestamp, get, update, onValue, remove } from 'firebase/database';
+import { ref as rtdbRef, push, set, serverTimestamp as rtdbTimestamp, get, update, onValue, remove, child } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL, uploadString } from 'firebase/storage';
+import { signInAnonymously } from 'firebase/auth';
 
 // --- ENUMS & INTERFACES FOR ERROR HANDLING ---
 enum OperationType {
@@ -291,7 +292,6 @@ export const databaseService = {
 
   ensureAuth: async () => {
     if (!auth.currentUser) {
-      const { signInAnonymously } = await import('firebase/auth');
       try {
         const cred = await withTimeout(signInAnonymously(auth), 5000);
         console.log("Authenticated anonymously as:", cred.user.uid);
@@ -421,6 +421,40 @@ export const databaseService = {
     const sanitizedPhone = phone.replace(/\D/g, '');
     try {
       await databaseService.ensureAuth();
+
+      // Direct check for Admin phone to bypass collections searching completely
+      if (sanitizedPhone === '0705052632') {
+          const adminCollections = ['Admin', 'Clients'];
+          for (const col of adminCollections) {
+              const userRef = doc(db, col, sanitizedPhone);
+              const docSnap = await getDoc(userRef);
+              if (docSnap.exists()) {
+                 const data = docSnap.data();
+                 localStorage.setItem(`filant_user_collection_${sanitizedPhone}`, col);
+                 return {
+                    id: docSnap.id,
+                    phone: data.phone || docSnap.id,
+                    ...data
+                 } as User;
+              }
+          }
+      }
+
+      // Try cached collection first for sub-millisecond retrieval
+      const cachedCol = localStorage.getItem(`filant_user_collection_${sanitizedPhone}`);
+      if (cachedCol) {
+          const userRef = doc(db, cachedCol, sanitizedPhone);
+          const docSnap = await getDoc(userRef);
+          if (docSnap.exists()) {
+             const data = docSnap.data();
+             return {
+                id: docSnap.id,
+                phone: data.phone || docSnap.id,
+                ...data
+             } as User;
+          }
+      }
+
       const collections = ['Clients', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Admin'];
       
       const promises = collections.map(async (col) => {
@@ -431,8 +465,9 @@ export const databaseService = {
              return {
                 id: docSnap.id,
                 phone: data.phone || docSnap.id,
+                colName: col,
                 ...data
-             } as User;
+             } as unknown as User;
           }
           return null;
       });
@@ -443,11 +478,17 @@ export const databaseService = {
       if (validUsers.length === 0) return null;
 
       // Prioritize the user with the most filled standard fields (name and city)
-      return validUsers.sort((a, b) => {
+      const bestUser = validUsers.sort((a, b) => {
           const scoreA = (a.name && !["Utilisateur", "Inconnu"].includes(a.name) ? 2 : 0) + (a.city && !["Non spécifiée", "N/A"].includes(a.city) ? 1 : 0);
           const scoreB = (b.name && !["Utilisateur", "Inconnu"].includes(b.name) ? 2 : 0) + (b.city && !["Non spécifiée", "N/A"].includes(b.city) ? 1 : 0);
           return scoreB - scoreA;
       })[0];
+
+      if (bestUser && (bestUser as any).colName) {
+          localStorage.setItem(`filant_user_collection_${sanitizedPhone}`, (bestUser as any).colName);
+      }
+
+      return bestUser;
       
     } catch (e) {
       console.error("Error in getUserByPhoneFromFirestore:", e);
@@ -460,7 +501,6 @@ export const databaseService = {
     
     // Sync Scanned Contacts from RTDB
     try {
-        const { get, child } = await import('firebase/database');
         const sanitizedUserName = (user.name || 'Utilisateur').replace(/[.#$[\]/]/g, '_');
         const userKey = `${sanitizedUserName}_${user.phone}`;
         const dbRef = rtdbRef(rtdb);
@@ -516,7 +556,46 @@ export const databaseService = {
     const users = getUsers();
     const normalizedInputPhone = phone.replace(/\D/g, '');
     
-    // 1. Check Firestore first (Source of truth)
+    // 0. Quick connect via local cached user to guarantee sub-millisecond connection
+    const localUser = users.find(u => u.phone === normalizedInputPhone);
+    if (localUser) {
+        console.log("Instant login via local cache for:", normalizedInputPhone);
+        
+        // Save to active user
+        databaseService.saveActiveUser(localUser);
+        
+        // Log connection in the background non-blockingly
+        databaseService.logConnection(localUser);
+        databaseService.syncUserDataFromCloud(localUser);
+
+        // Perform non-blocking Firestore sync in the background
+        databaseService.getUserByPhoneFromFirestore(normalizedInputPhone).then((firestoreUser) => {
+            if (firestoreUser) {
+                const updatedUser = {
+                    ...firestoreUser,
+                    role: firestoreUser.role || 'Client'
+                };
+                const latestUsers = getUsers();
+                const existingIndex = latestUsers.findIndex(u => u.phone === normalizedInputPhone);
+                if (existingIndex !== -1) {
+                    latestUsers[existingIndex] = { ...latestUsers[existingIndex], ...updatedUser };
+                } else {
+                    latestUsers.push(updatedUser);
+                }
+                saveUsers(latestUsers);
+                
+                // If the active user matches, update their session too
+                const active = databaseService.getActiveUser();
+                if (active && active.phone === normalizedInputPhone) {
+                    databaseService.saveActiveUser(updatedUser);
+                }
+            }
+        }).catch(err => console.warn("Background Firestore user sync failed:", err));
+
+        return { user: localUser };
+    }
+    
+    // 1. Fallback to direct Firestore fetch if no local cache exists
     console.log("Checking Firestore for user:", normalizedInputPhone);
     const firestoreUser = await databaseService.getUserByPhoneFromFirestore(normalizedInputPhone);
     
@@ -535,20 +614,12 @@ export const databaseService = {
         }
         saveUsers(users);
         
-        // Sync their data
-        await databaseService.syncUserDataFromCloud(user);
-        await databaseService.logConnection(user);
+        // Non-blocking background sync & logging
+        databaseService.syncUserDataFromCloud(user);
+        databaseService.logConnection(user);
         databaseService.saveActiveUser(user);
+        
         return { user };
-    }
-    
-    // 2. Fallback to localStorage
-    let localUser = users.find(u => u.phone === normalizedInputPhone);
-    
-    if (localUser) {
-      await databaseService.logConnection(localUser);
-      databaseService.saveActiveUser(localUser);
-      return { user: localUser };
     }
     
     return { user: null, error: "Numéro non reconnu, veuillez vous inscrire" };

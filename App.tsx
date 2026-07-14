@@ -33,7 +33,7 @@ import StageFormationHubScreen from './components/StageFormationHubScreen';
 import { DemandeRechercheScreen } from './components/DemandeRechercheScreen';
 import { EvolutionScreen } from './components/EvolutionScreen';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquare, Check, User as UserIcon, QrCode as QrCodeIcon, ShoppingBag as ShoppingBagIcon } from 'lucide-react';
+import { MessageSquare, Check, User as UserIcon, QrCode as QrCodeIcon, ShoppingBag as ShoppingBagIcon, Search, Eye } from 'lucide-react';
 import { isAdmin } from './utils/authUtils';
 import { databaseService, SavedContact } from './services/databaseService';
 import { messagingService } from './services/messagingService';
@@ -204,7 +204,7 @@ const App: React.FC = () => {
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => databaseService.getActiveUser());
   const [enAttenteTraitement, setEnAttenteTraitement] = useState(false);
-  const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services'>('lock');
+  const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services' | 'demande_recherche'>('lock');
   const [blockedProfileOpen, setBlockedProfileOpen] = useState(false);
 
   useEffect(() => {
@@ -1637,6 +1637,18 @@ const App: React.FC = () => {
       );
     }
 
+    if (blockedView === 'demande_recherche') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-300" style={{ height: globalViewportHeight }}>
+          <DemandeRechercheScreen 
+            onBack={() => setBlockedView('lock')} 
+            user={displayUser} 
+            onSelectTab={() => {}}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center p-8 text-center" style={{ height: globalViewportHeight }}>
         <div className="flex-1 flex flex-col items-center justify-center">
@@ -1648,10 +1660,26 @@ const App: React.FC = () => {
           <h2 className="text-2xl font-black text-slate-900 mb-4 uppercase tracking-tighter leading-tight">
             Accès Restreint
           </h2>
-          <p className="text-gray-600 font-bold text-lg leading-relaxed max-w-xs">
+          <p className="text-gray-600 font-bold text-lg leading-relaxed max-w-xs mb-6">
             “Vous ne pouvez plus effectuer une demande. Veuillez patienter. Une demande d’agence va vous contacter.”
           </p>
-          <div className="mt-12 pt-8 border-t border-gray-100 w-full max-w-xs mb-20">
+
+          <div className="w-full max-w-xs mb-8">
+            <button
+              onClick={() => {
+                setBlockedView('demande_recherche');
+              }}
+              className="w-full py-4 bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-pink-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+            >
+              <Search className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
+              <span className="text-xs font-black uppercase tracking-widest text-white">
+                Services en ligne
+              </span>
+              <Eye className="w-4.5 h-4.5 text-white animate-eye-blink shrink-0" />
+            </button>
+          </div>
+
+          <div className="pt-8 border-t border-gray-100 w-full max-w-xs mb-20">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">FILANT°225 • SERVICE SÉCURITÉ</p>
           </div>
         </div>
@@ -1766,6 +1794,18 @@ const App: React.FC = () => {
       );
     }
 
+    if (blockedView === 'demande_recherche') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-300" style={{ height: globalViewportHeight }}>
+          <DemandeRechercheScreen 
+            onBack={() => setBlockedView('lock')} 
+            user={displayUser} 
+            onSelectTab={() => {}}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-900 via-slate-950 to-black flex flex-col items-center justify-center p-8 text-center text-white font-sans" style={{ height: globalViewportHeight }}>
         <div className="flex-1 flex flex-col items-center justify-center">
@@ -1792,7 +1832,21 @@ const App: React.FC = () => {
               MESSAGERIE
             </button>
 
-            {/* Beautiful inline navigation bar directly integrated under the MESSAGERIE button */}
+            {/* Services en ligne button exactly as in main app */}
+            <button
+              onClick={() => {
+                setBlockedView('demande_recherche');
+              }}
+              className="w-full mt-3 py-4 bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-pink-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+            >
+              <Search className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
+              <span className="text-xs font-black uppercase tracking-widest text-white">
+                Services en ligne
+              </span>
+              <Eye className="w-4.5 h-4.5 text-white animate-eye-blink shrink-0" />
+            </button>
+
+            {/* Beautiful inline navigation bar directly integrated under the MESSAGERIE and Services en ligne buttons */}
             <div className="w-full mt-6">
               <nav className="bg-[#0f172a]/95 backdrop-blur-md rounded-[2.5rem] py-3 px-6 flex items-center justify-around gap-6 shadow-[0_15px_35px_rgba(0,0,0,0.5)] border border-white/10 w-full">
                 
