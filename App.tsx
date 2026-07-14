@@ -1870,59 +1870,58 @@ const App: React.FC = () => {
   }
 
   if (!isAdminView && enAttenteTraitement) {
+    let screenContent = null;
+    let containerClass = "fixed inset-0 z-[9999] bg-white flex flex-col";
+    
     if (blockedView === 'carte') {
-      return (
-        <div className="fixed inset-0 z-[9999] bg-white flex flex-col" style={{ height: globalViewportHeight }}>
-          <MyQRCodeScreen 
-            user={displayUser!} 
-            onBack={() => setBlockedView('lock')} 
-            onTriggerPayment={(context) => setPaymentConfirmationContext(context)}
-            onStartRegistration={() => {}}
-          />
-        </div>
+      containerClass = "fixed inset-0 z-[9999] bg-white flex flex-col";
+      screenContent = (
+        <MyQRCodeScreen 
+          user={displayUser!} 
+          onBack={() => setBlockedView('lock')} 
+          onTriggerPayment={(context) => setPaymentConfirmationContext(context)}
+          onStartRegistration={() => setShowFullRegistration(true)}
+        />
       );
-    }
-
-    if (blockedView === 'services') {
-      return (
-        <div className="fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-300" style={{ height: globalViewportHeight }}>
-          <ServicesRequestsScreen 
-            onBack={() => setBlockedView('lock')} 
-            user={displayUser} 
-            onShowPopup={showPopup} 
-          />
-        </div>
+    } else if (blockedView === 'services') {
+      containerClass = "fixed inset-0 z-[9999] bg-[#F3F3F3] flex flex-col animate-in fade-in duration-300";
+      screenContent = (
+        <ServicesRequestsScreen 
+          onBack={() => setBlockedView('lock')} 
+          user={displayUser} 
+          onShowPopup={showPopup} 
+        />
       );
-    }
-
-    if (blockedView === 'demande_recherche') {
-      return (
-        <div className="fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-300" style={{ height: globalViewportHeight }}>
-          <DemandeRechercheScreen 
-            onBack={() => setBlockedView('lock')} 
-            user={displayUser} 
-            onSelectTab={() => {}}
-          />
-        </div>
+    } else if (blockedView === 'demande_recherche') {
+      containerClass = "fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-300";
+      screenContent = (
+        <DemandeRechercheScreen 
+          onBack={() => setBlockedView('lock')} 
+          user={displayUser} 
+          onSelectTab={(tab) => {
+            if (tab === Tab.UserChat) {
+              setIsChatModalOpen(true);
+            }
+          }}
+        />
       );
-    }
-
-    return (
-      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-900 via-slate-950 to-black flex flex-col items-center justify-center p-8 text-center text-white font-sans" style={{ height: globalViewportHeight }}>
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="w-24 h-24 bg-blue-500/10 rounded-full border border-blue-500/20 flex items-center justify-center mb-8 shadow-2xl shadow-blue-500/10">
+    } else {
+      containerClass = "fixed inset-0 z-[9999] bg-gradient-to-b from-slate-900 via-slate-950 to-black flex flex-col items-center justify-center p-8 text-center text-white font-sans";
+      screenContent = (
+        <div className="flex-1 flex flex-col items-center justify-center w-full max-w-md">
+          <div className="w-24 h-24 bg-blue-500/10 rounded-full border border-blue-500/20 flex items-center justify-center mb-8 shadow-2xl shadow-blue-500/10 flex-shrink-0">
             <svg className="w-10 h-10 text-blue-500 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h2 className="text-xl font-black text-white mb-6 uppercase tracking-widest leading-tight border-b-2 border-blue-500/30 pb-3 max-w-xs">
+          <h2 className="text-xl font-black text-white mb-6 uppercase tracking-widest leading-tight border-b-2 border-blue-500/30 pb-3 max-w-xs w-full flex-shrink-0">
             En attente de traitement
           </h2>
-          <p className="text-gray-300 font-bold text-sm leading-relaxed max-w-md bg-white/5 border border-white/10 p-6 rounded-3xl shadow-inner mb-6">
-            “Nous vous conseillons d'attendre le message final de l'entreprise FILANT°225. Votre dossier ou votre situation est actuellement en cours de traitement.”
+          <p className="text-gray-300 font-bold text-sm leading-relaxed max-w-md bg-white/5 border border-white/10 p-6 rounded-3xl shadow-inner mb-6 flex-shrink-0">
+            “Nous vous conseillons d\'attendre le message final de l\'entreprise FILANT°225. Votre dossier ou votre situation est actuellement en cours de traitement.”
           </p>
           
-          <div className="w-full max-w-xs flex flex-col items-center">
+          <div className="w-full max-w-xs flex flex-col items-center flex-shrink-0">
             <button
               onClick={() => {
                 setIsChatModalOpen(true);
@@ -1993,7 +1992,19 @@ const App: React.FC = () => {
               </nav>
             </div>
           </div>
+
+          <div className="mt-8 pt-8 border-t border-white/5 w-full max-w-xs flex-shrink-0">
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">FILANT°225 • SERVICE DE SUIVI</p>
+          </div>
         </div>
+      );
+    }
+
+    return (
+      <div className={containerClass} style={{ height: globalViewportHeight }}>
+        {screenContent}
+
+        {/* Global Overlays & Screens rendered on top of whichever view we are in */}
 
         {/* Profile modal overlay inside the block screen */}
         {blockedProfileOpen && (
@@ -2011,22 +2022,6 @@ const App: React.FC = () => {
                 onToggleDarkMode={setIsDarkMode}
               />
             </div>
-          </div>
-        )}
-
-        {/* Global Popups if any triggers inside blocked view */}
-        {popup.show && (
-          <div className="absolute inset-0 z-[20000]">
-            <GlobalPopup 
-              message={popup.message} 
-              type={popup.type} 
-              onConfirm={popup.onConfirm} 
-              onCancel={popup.onCancel}
-              confirmLabel={popup.confirmLabel}
-              cancelLabel={popup.cancelLabel}
-              isConfirmLoading={popup.isConfirmLoading}
-              title={popup.title}
-            />
           </div>
         )}
 
@@ -2055,9 +2050,96 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="mt-8 pt-8 border-t border-white/5 w-full max-w-xs">
-          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">FILANT°225 • SERVICE DE SUIVI</p>
-        </div>
+        {/* Smart Registration modal for Ma Carte */}
+        <AnimatePresence>
+          {showFullRegistration && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[12000] bg-white overflow-y-auto"
+            >
+              <SmartRegistrationScreen 
+                currentUser={currentUser}
+                onComplete={() => {
+                    setShowFullRegistration(false);
+                    // Trigger payment process after registration
+                    setPaymentConfirmationContext({
+                      title: "Frais de Dossier",
+                      amount: "310",
+                      waveLink: "https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=310",
+                      paymentType: "Inscription"
+                    });
+                }}
+                onBack={() => setShowFullRegistration(false)}
+                onShowPopup={showPopup}
+                onGoToMenu={() => setBlockedView('lock')}
+                onRegisterBackHandler={(handler) => {
+                  backHandlerRef.current = handler;
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Interactive Modal form if any */}
+        <AnimatePresence>
+          {interactiveModalContext && (
+            <div className="absolute inset-0 z-[13000]">
+              <InteractiveModal
+                  title={interactiveModalContext.title}
+                  formType={interactiveModalContext.formType}
+                  user={displayUser}
+                  imageUrl={interactiveModalContext.imageUrl}
+                  isBlurredImage={interactiveModalContext.isBlurredImage}
+                  description={interactiveModalContext.description}
+                  price={interactiveModalContext.price}
+                  onClose={() => setInteractiveModalContext(null)}
+                  onShowPopup={showPopup}
+                  onGoToMenu={() => setBlockedView('lock')}
+                  onRegisterBackHandler={(handler) => {
+                    backHandlerRef.current = handler;
+                  }}
+              />
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Payment Confirmation Screen Overlay */}
+        {paymentConfirmationContext && (
+          <div className="absolute inset-0 z-[14000]">
+              <PaymentConfirmationScreen 
+                {...paymentConfirmationContext}
+                user={displayUser}
+                onBack={() => setPaymentConfirmationContext(null)}
+                onModify={() => {
+                  setPaymentConfirmationContext(null);
+                  setShowFullRegistration(true);
+                }}
+                onGoToMenu={() => setBlockedView('lock')}
+                onShowPopup={showPopup}
+                onRegisterBackHandler={(handler) => {
+                  backHandlerRef.current = handler;
+                }}
+              />
+          </div>
+        )}
+
+        {/* Global Popups inside blocked view */}
+        {popup.show && (
+          <div className="absolute inset-0 z-[20000]">
+            <GlobalPopup 
+              message={popup.message} 
+              type={popup.type} 
+              onConfirm={popup.onConfirm} 
+              onCancel={popup.onCancel}
+              confirmLabel={popup.confirmLabel}
+              cancelLabel={popup.cancelLabel}
+              isConfirmLoading={popup.isConfirmLoading}
+              title={popup.title}
+            />
+          </div>
+        )}
       </div>
     );
   }
