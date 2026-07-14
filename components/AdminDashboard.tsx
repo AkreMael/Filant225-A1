@@ -89,6 +89,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
   const [viewingConversation, setViewingConversation] = useState<{ id: string, name: string, messages: any[] } | null>(null);
   const [itemToDelete, setItemToDelete] = useState<{ id: string, collectionName: string, rtdbPath?: string } | null>(null);
 
+  const handleWhatsAppClick = (phone?: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const clean = (phone || '').replace(/\D/g, '');
+    if (!clean) {
+      alert("Aucun numéro WhatsApp disponible pour cet utilisateur.");
+      return;
+    }
+    let waPhone = clean;
+    if (clean.length === 10 && (clean.startsWith('05') || clean.startsWith('07') || clean.startsWith('01'))) {
+      waPhone = '225' + clean;
+    } else if (clean.length === 8) {
+      waPhone = '22507' + clean;
+    } else if (!clean.startsWith('225') && clean.length > 0) {
+      waPhone = '225' + clean;
+    }
+    
+    window.open(`https://wa.me/${waPhone}`, '_blank');
+  };
+
   // Photo link states for registrations
   const [localImageLink, setLocalImageLink] = useState('');
   const [isSavingImageLink, setIsSavingImageLink] = useState(false);
@@ -1130,13 +1152,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         </td>
                       );
                     }
-                    return (
-                        <td key={j} className="px-6 py-4">
-                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">
-                          {String(val || '-')}
-                        </span>
-                      </td>
-                    );
+                     if (key === 'phone' || key === 'userPhone' || key === 'waveNumber') {
+                       const displayVal = String(val || '-');
+                       return (
+                         <td key={j} className="px-6 py-4">
+                           <div className="flex items-center gap-2 justify-center">
+                             <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">
+                               {displayVal}
+                             </span>
+                             {val && (
+                               <button
+                                 onClick={(e) => handleWhatsAppClick(displayVal, e)}
+                                 className="inline-flex items-center justify-center p-1.5 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-lg transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                                 title="Contacter sur WhatsApp"
+                               >
+                                 <WhatsAppIcon size={12} />
+                               </button>
+                             )}
+                           </div>
+                         </td>
+                       );
+                     }
+                     return (
+                         <td key={j} className="px-6 py-4">
+                         <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">
+                           {String(val || '-')}
+                         </span>
+                       </td>
+                     );
                   })}
                 </tr>
               )) : (
@@ -1523,7 +1566,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                  </div>
                                  <div className="flex-1">
                                     <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">{conn.name}</p>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{conn.city} • {conn.phone}</p>
+                                     <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                          {conn.city} • {conn.phone}
+                                        </span>
+                                        {conn.phone && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => handleWhatsAppClick(conn.phone, e)}
+                                            className="inline-flex items-center justify-center p-1 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-md transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                                            title="Contacter sur WhatsApp"
+                                          >
+                                            <WhatsAppIcon size={10} />
+                                          </button>
+                                        )}
+                                     </div>
                                  </div>
                                  <div className="text-right flex flex-col items-end gap-2">
                                     <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest">{(formatDate(conn.timestamp) || '').split(' ')[1] || '-'}</p>
@@ -1683,7 +1740,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{userId}</span>
+                                  {userId && userId !== 'Inconnu' && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleWhatsAppClick(userId, e)}
+                                      className="inline-flex items-center justify-center p-1 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-md transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                                      title="Contacter sur WhatsApp"
+                                    >
+                                      <WhatsAppIcon size={10} />
+                                    </button>
+                                  )}
+                                </div>
                              </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1844,7 +1913,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               <tr key={w.id} className="hover:bg-gray-50/60 dark:hover:bg-slate-800/50 transition-colors">
                                 <td className="px-6 py-4 font-black text-xs uppercase text-slate-800 dark:text-white">{w.name || 'Utilisateur'}</td>
                                 <td className="px-6 py-4 font-bold text-xs uppercase text-slate-500 dark:text-slate-400">{w.city || 'Non spécifiée'}</td>
-                                <td className="px-6 py-4 font-mono text-xs text-slate-600 dark:text-slate-300">+225 {w.phone}</td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs text-slate-600 dark:text-slate-300">+225 {w.phone}</span>
+                                    {w.phone && (
+                                      <button
+                                        onClick={(e) => handleWhatsAppClick(w.phone, e)}
+                                        className="inline-flex items-center justify-center p-1.5 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-lg transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                                        title="Contacter sur WhatsApp"
+                                      >
+                                        <WhatsAppIcon size={12} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
                                 <td className="px-6 py-4">
                                   <span className="bg-blue-50 dark:bg-blue-950 px-3 py-1 rounded-full text-xs font-black text-blue-700 dark:text-blue-300">
                                     {(w.balance || 0).toLocaleString('fr-FR')} FCFA
@@ -1880,9 +1962,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                       </button>
                       <div>
                         <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-white">Détails Compes : {selectedWalletUser.name}</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                          +225 {selectedWalletUser.phone} • {selectedWalletUser.city}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            +225 {selectedWalletUser.phone} • {selectedWalletUser.city}
+                          </span>
+                          {selectedWalletUser.phone && (
+                            <button
+                              onClick={(e) => handleWhatsAppClick(selectedWalletUser.phone, e)}
+                              className="inline-flex items-center justify-center p-1 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-md transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                              title="Contacter sur WhatsApp"
+                            >
+                              <WhatsAppIcon size={10} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </header>
 
@@ -2500,7 +2593,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                               />
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">{recipient.name}</p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate mt-0.5">{recipient.city} • {recipient.phone}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">
+                                    {recipient.city} • {recipient.phone}
+                                  </span>
+                                  {recipient.phone && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => handleWhatsAppClick(recipient.phone, e)}
+                                      className="inline-flex items-center justify-center p-1 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-md transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                                      title="Contacter sur WhatsApp"
+                                    >
+                                      <WhatsAppIcon size={10} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           );
@@ -2545,8 +2652,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                             <td className="px-6 py-4 font-bold text-xs uppercase text-slate-600 dark:text-gray-400">
                               {req.city}
                             </td>
-                            <td className="px-6 py-4 font-bold text-xs uppercase text-slate-600 dark:text-gray-400">
-                              {req.phone}
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-xs uppercase text-slate-600 dark:text-gray-400">
+                                  {req.phone}
+                                </span>
+                                {req.phone && (
+                                  <button
+                                    onClick={(e) => handleWhatsAppClick(req.phone, e)}
+                                    className="inline-flex items-center justify-center p-1.5 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-lg transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                                    title="Contacter sur WhatsApp"
+                                  >
+                                    <WhatsAppIcon size={12} />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4">
                               <span className="px-3 py-1 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase rounded-lg border border-rose-100 dark:border-rose-500/20">
@@ -2697,7 +2817,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         {(selectedItemForDetails.phone || selectedItemForDetails.userPhone) && (
                           <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone</p>
-                             <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.phone || selectedItemForDetails.userPhone}</p>
+                             <div className="flex items-center gap-2">
+                               <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedItemForDetails.phone || selectedItemForDetails.userPhone}</p>
+                               <button
+                                 type="button"
+                                 onClick={(e) => handleWhatsAppClick(selectedItemForDetails.phone || selectedItemForDetails.userPhone, e)}
+                                 className="inline-flex items-center justify-center p-1.5 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-xl transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                                 title="Contacter sur WhatsApp"
+                               >
+                                 <WhatsAppIcon size={12} />
+                               </button>
+                             </div>
                           </div>
                         )}
                         {selectedItemForDetails.city && (
@@ -3078,7 +3208,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         </div>
                         <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone</p>
-                           <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedRequest.phone}</p>
+                           <div className="flex items-center gap-2">
+                             <p className="text-sm font-bold text-slate-800 dark:text-white uppercase">{selectedRequest.phone}</p>
+                             {selectedRequest.phone && (
+                               <button
+                                 type="button"
+                                 onClick={(e) => handleWhatsAppClick(selectedRequest.phone, e)}
+                                 className="inline-flex items-center justify-center p-1.5 bg-green-500/10 hover:bg-green-500 hover:text-white text-green-650 dark:text-green-400 rounded-xl transition-all active:scale-90 border border-green-500/10 hover:border-green-500 cursor-pointer"
+                                 title="Contacter sur WhatsApp"
+                               >
+                                 <WhatsAppIcon size={12} />
+                               </button>
+                             )}
+                           </div>
                         </div>
                         <div className="p-4 bg-gray-50 dark:bg-slate-800/40 rounded-2xl border border-gray-100 dark:border-slate-800">
                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Ville</p>
