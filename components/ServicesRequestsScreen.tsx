@@ -32,6 +32,12 @@ const ServicesRequestsScreen: React.FC<ServicesRequestsScreenProps> = ({ onBack,
     const unsub = databaseService.subscribeToProviderServiceRequests(prestatairePhone, (newRequests) => {
       setRequests(newRequests);
       setLoading(false);
+      
+      // Mark as read in real time if there are any unread ones
+      const hasUnread = newRequests.some(req => req.isRead !== true);
+      if (hasUnread) {
+        databaseService.markServiceRequestsAsRead(prestatairePhone);
+      }
     });
 
     return () => unsub();

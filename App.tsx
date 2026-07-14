@@ -671,6 +671,7 @@ const App: React.FC = () => {
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [privateUnreadCount, setPrivateUnreadCount] = useState(0);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   useEffect(() => {
     if (!isAdmin(currentUser)) {
@@ -1067,6 +1068,18 @@ const App: React.FC = () => {
       };
     }
   }, [currentUser?.phone, currentUser?.userId, currentUser?.id, currentUser?.name, isAuthReady]);
+
+  // Écoute du compteur des demandes de service pour le prestataire (incluant l'écran de verrouillage)
+  useEffect(() => {
+    const userPhone = currentUser?.phone || displayUser?.phone;
+    if (userPhone && isAuthReady) {
+      const sanitizedPhone = userPhone.replace(/\D/g, '');
+      const unsubscribe = databaseService.subscribeToProviderServiceRequestsCount(sanitizedPhone, (count) => {
+        setPendingRequestsCount(count);
+      });
+      return () => unsubscribe();
+    }
+  }, [currentUser?.phone, displayUser?.phone, isAuthReady]);
 
   const handleToggleProfile = () => {
     setIsProfileOpen(prev => !prev);
@@ -1926,10 +1939,15 @@ const App: React.FC = () => {
               onClick={() => {
                 setIsChatModalOpen(true);
               }}
-              className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="relative w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <MessageSquare size={16} />
               MESSAGERIE
+              {unreadChatCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-black w-5.5 h-5.5 rounded-full flex items-center justify-center animate-bounce shadow-md border-2 border-white z-10">
+                  {unreadChatCount}
+                </span>
+              )}
             </button>
 
             {/* Services en ligne button exactly as in main app */}
@@ -1937,13 +1955,18 @@ const App: React.FC = () => {
               onClick={() => {
                 setBlockedView('demande_recherche');
               }}
-              className="w-full mt-3 py-4 bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-pink-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+              className="relative w-full mt-3 py-4 bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-pink-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer group"
             >
               <Search className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
               <span className="text-xs font-black uppercase tracking-widest text-white">
                 Services en ligne
               </span>
               <Eye className="w-4.5 h-4.5 text-white animate-eye-blink shrink-0" />
+              {pendingRequestsCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-black w-5.5 h-5.5 rounded-full flex items-center justify-center animate-bounce shadow-md border-2 border-white z-10">
+                  {pendingRequestsCount}
+                </span>
+              )}
             </button>
 
             {/* Beautiful inline navigation bar directly integrated under the MESSAGERIE and Services en ligne buttons */}
@@ -1981,8 +2004,13 @@ const App: React.FC = () => {
                   onClick={() => setBlockedView('services')}
                   className="flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 flex-1 cursor-pointer"
                 >
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-pink-600 hover:bg-pink-700 transition-all duration-300 shadow-lg mb-1 relative overflow-hidden">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center bg-pink-600 hover:bg-pink-700 transition-all duration-300 shadow-lg mb-1 relative overflow-visible">
                     <ShoppingBagIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                    {pendingRequestsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce shadow-md border border-white z-10">
+                        {pendingRequestsCount}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-white/60">
                     Services

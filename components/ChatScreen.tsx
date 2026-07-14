@@ -53,6 +53,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
   const [viewportHeight, setViewportHeight] = useState<number | string>('100dvh');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [isWritingMessage, setIsWritingMessage] = useState(false);
+  const [popupInputText, setPopupInputText] = useState('');
+  const popupTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleSendFromPopup = async () => {
+    const text = popupInputText.trim();
+    if (!text) return;
+    setIsWritingMessage(false);
+    setPopupInputText('');
+    await handleSendMessage(text);
+  };
+
   useEffect(() => {
     const handleResize = () => {
       const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -493,7 +505,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
       </div>
 
       {/* WhatsApp Style Curved Footer Input Bar */}
-      {(isAdmin || isEnAttenteDeTraitement) && (
+      {isAdmin && (
         <div id="chat_footer" className="p-3 bg-[#f0f2f5] dark:bg-[#1f2c34] flex items-end gap-2.5 shrink-0 shadow-inner">
           <div className="flex-1 flex items-center min-h-[44px] bg-white dark:bg-[#2a3942] rounded-3xl px-4 py-2 border border-transparent shadow shadow-neutral-100">
             <textarea
@@ -521,6 +533,70 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
           
           <button
             id="btn_send_message"
+            onClick={() => handleSendMessage()}
+            disabled={!inputText.trim()}
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md shrink-0 active:scale-90 ${
+              inputText.trim() 
+                ? 'bg-[#00a884] text-white hover:brightness-95 hover:shadow-lg' 
+                : 'bg-slate-300 dark:bg-slate-750 text-slate-400 cursor-not-allowed shadow-none'
+            }`}
+          >
+            <Send size={18} />
+          </button>
+        </div>
+      )}
+
+      {/* Special lock screen fake input bar */}
+      {!isAdmin && isEnAttenteDeTraitement && (
+        <div 
+          id="chat_footer_fake"
+          onClick={() => setIsWritingMessage(true)}
+          className="p-3 bg-[#f0f2f5] dark:bg-[#1f2c34] flex items-end gap-2.5 shrink-0 shadow-inner cursor-pointer"
+        >
+          <div className="flex-1 flex items-center min-h-[44px] bg-white dark:bg-[#2a3942] rounded-3xl px-4 py-2 border border-transparent shadow shadow-neutral-100">
+            <span className="text-slate-400 dark:text-slate-300 text-sm py-1 font-semibold">
+              Écrivez votre message...
+            </span>
+          </div>
+          
+          <button
+            id="btn_send_message_fake"
+            className="w-11 h-11 rounded-full flex items-center justify-center bg-slate-300 dark:bg-slate-750 text-slate-400 shadow-none shrink-0"
+          >
+            <Send size={18} />
+          </button>
+        </div>
+      )}
+
+      {/* Standard client-side footer if not on lock screen */}
+      {!isAdmin && !isEnAttenteDeTraitement && (
+        <div id="chat_footer_client" className="p-3 bg-[#f0f2f5] dark:bg-[#1f2c34] flex items-end gap-2.5 shrink-0 shadow-inner">
+          <div className="flex-1 flex items-center min-h-[44px] bg-white dark:bg-[#2a3942] rounded-3xl px-4 py-2 border border-transparent shadow shadow-neutral-100">
+            <textarea
+              id="chat_input_textarea_client"
+              ref={textareaRef}
+              rows={1}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              onFocus={() => {
+                setTimeout(() => {
+                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 150);
+              }}
+              placeholder="Écrivez votre message..."
+              className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-1 font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 resize-none max-h-24 overflow-y-auto scrollbar-hide focus:outline-none"
+              style={{ height: 'auto' }}
+            />
+          </div>
+          
+          <button
+            id="btn_send_message_client"
             onClick={() => handleSendMessage()}
             disabled={!inputText.trim()}
             className={`w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-md shrink-0 active:scale-90 ${
@@ -563,6 +639,60 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ currentUser, targetUser, isAdmi
                 className="w-full py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl font-black uppercase tracking-wider text-[10px] active:scale-95 transition-all text-center"
               >
                 Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Centered input popup modal exclusively for the lock screen */}
+      {isWritingMessage && (
+        <div 
+          onClick={() => setIsWritingMessage(false)}
+          className="absolute inset-0 z-[12000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-none cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#222e35] rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-200/50 dark:border-white/10 flex flex-col gap-4 cursor-default animate-none"
+          >
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-white/5">
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">
+                Nouveau message
+              </h3>
+              <button 
+                onClick={() => setIsWritingMessage(false)}
+                className="text-slate-450 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="bg-[#f0f2f5] dark:bg-[#2a3942] rounded-2xl p-3.5 border border-transparent shadow-inner">
+              <textarea
+                ref={popupTextareaRef}
+                autoFocus
+                rows={4}
+                value={popupInputText}
+                onChange={(e) => setPopupInputText(e.target.value)}
+                placeholder="Écrivez votre message..."
+                className="w-full bg-transparent border-none focus:ring-0 text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 resize-none focus:outline-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-1">
+              <button
+                onClick={() => setIsWritingMessage(false)}
+                className="px-4 py-2.5 text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSendFromPopup}
+                disabled={!popupInputText.trim()}
+                className="px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5 shadow-md active:scale-95 bg-[#00a884] text-white hover:brightness-95 disabled:bg-slate-300 dark:disabled:bg-slate-750 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                <Send size={12} />
+                Envoyer
               </button>
             </div>
           </div>

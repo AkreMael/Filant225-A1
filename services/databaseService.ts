@@ -2385,8 +2385,35 @@ export const databaseService = {
       where('status', '==', 'VALIDATED')
     );
     return onSnapshot(q, (snapshot) => {
-      callback(snapshot.size);
+      const unreadCount = snapshot.docs.filter(doc => doc.data().isRead !== true).length;
+      callback(unreadCount);
     }, (error) => console.error("Error listening to provider service requests count:", error));
+  },
+
+  markServiceRequestsAsRead: async (providerPhone: string) => {
+    try {
+      const sanitizedPhone = providerPhone.replace(/\D/g, '');
+      const q = query(
+        collection(db, 'ServiceRequests'),
+        where('prestatairePhone', '==', sanitizedPhone),
+        where('status', '==', 'VALIDATED')
+      );
+      const snapshot = await getDocs(q);
+      const batch = writeBatch(db);
+      let updatedCount = 0;
+      snapshot.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.isRead !== true) {
+          batch.update(docSnap.ref, { isRead: true });
+          updatedCount++;
+        }
+      });
+      if (updatedCount > 0) {
+        await batch.commit();
+      }
+    } catch (err) {
+      console.error("Error marking service requests as read:", err);
+    }
   },
 
   acceptServiceRequest: async (requestId: string, prestatairePhone: string, clientPhone: string) => {
