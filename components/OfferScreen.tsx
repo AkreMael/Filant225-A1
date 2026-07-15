@@ -24,6 +24,7 @@ export interface WorkerOffer {
 
 import SmartRegistrationScreen from './SmartRegistrationScreen';
 import { motion, AnimatePresence } from 'motion/react';
+import { getProfileDisplayInfo } from './DemandeRechercheScreen';
 
 // --- Icons ---
 const PhoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>;
@@ -629,13 +630,47 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
   }, []);
 
   const onlineAds = useMemo(() => {
-    return inscriptions.filter((item) => {
-      if (item.isActive === false) return false;
-      const isOnline = item.isOnline === true;
-      const onlineEnd = item.onlineEnd;
-      const isExpired = onlineEnd ? Date.now() > onlineEnd : false;
-      return isOnline && !isExpired;
-    });
+    return inscriptions
+      .filter((item) => {
+        if (item.isActive === false) return false;
+        const isOnline = item.isOnline === true;
+        const onlineEnd = item.onlineEnd;
+        const isExpired = onlineEnd ? Date.now() > onlineEnd : false;
+        return isOnline && !isExpired;
+      })
+      .map((item) => {
+        let titleOrActivity = '';
+        if (item.profileType === 'Travailleur') {
+          titleOrActivity = item.job || 'Travailleur Qualifié';
+        } else if (item.profileType === 'Propriétaire') {
+          titleOrActivity = `${item.equipmentType || item.equipmentCategory || 'Équipement'}`;
+        } else if (item.profileType === 'Agence' || item.profileType === 'Agence immobilière') {
+          titleOrActivity = item.agencyName || 'Agence Immobilière';
+        } else if (item.profileType === 'Entreprise') {
+          titleOrActivity = item.companyName || 'Entreprise';
+        }
+
+        return {
+          ...item,
+          id: item.id || Math.random().toString(),
+          name: item.name || item.agencyName || item.companyName || 'Prestataire',
+          userName: item.userName || item.name || 'Prestataire',
+          city: item.city || item.agencyCity || item.companyCity || item.equipmentCity || 'Non spécifié',
+          profileType: (item.profileType === 'Agence immobilière' ? 'Agence' : item.profileType) || 'Travailleur',
+          titleOrActivity,
+          description: item.skillsDescription || item.equipmentDescription || item.companyServices || item.description || '',
+          imageLink: item.imageLink || '',
+          // Include new custom fields for cards
+          images: item.onlineImages || item.images || [],
+          desiredSalary: item.desiredSalary || '',
+          salaryPeriod: item.salaryPeriod || '',
+          propertyTypes: item.propertyTypes || '',
+          equipmentsAvailable: item.equipmentsAvailable || '',
+          equipmentCategory: item.equipmentCategory || '',
+          companyDomain: item.companyDomain || '',
+          companyServices: item.companyServices || ''
+        };
+      });
   }, [inscriptions]);
 
   useEffect(() => {
@@ -880,9 +915,15 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                 <div className="w-full overflow-hidden">
                   <div className="flex gap-4 overflow-x-auto py-2 px-6 scrollbar-hide snap-x snap-mandatory scroll-smooth pb-4">
                     {onlineAds.map((item) => {
+                      const hasImage = !!(
+                        (item.onlineImages && item.onlineImages.length > 0 && item.onlineImages[0]) ||
+                        (item.images && item.images.length > 0 && item.images[0]) ||
+                        (item.imageLink && item.imageLink.trim())
+                      );
+
                       const cardImages = item.onlineImages && item.onlineImages.length > 0
                         ? item.onlineImages
-                        : (item.images && item.images.length > 0 ? item.images : [item.imageLink || "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80"]);
+                        : (item.images && item.images.length > 0 ? item.images : (item.imageLink ? [item.imageLink] : []));
 
                       return (
                         <div
@@ -895,13 +936,19 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                           className="snap-start shrink-0 w-[240px] bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-[340px] cursor-pointer text-left relative"
                         >
                           {/* Thumbnail layout with profileType */}
-                          <div className="relative w-full h-36 bg-slate-50 overflow-hidden shrink-0">
-                            <img 
-                              src={cardImages[0]} 
-                              alt={item.name} 
-                              className="w-full h-full object-cover" 
-                              referrerPolicy="no-referrer"
-                            />
+                          <div className="relative w-full h-36 bg-slate-50 overflow-hidden shrink-0 flex items-center justify-center">
+                            {hasImage && cardImages.length > 0 ? (
+                              <img 
+                                src={cardImages[0]} 
+                                alt={item.name} 
+                                className="w-full h-full object-cover" 
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <span className="text-xs font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                Image masquée
+                              </span>
+                            )}
                             <span className="absolute top-3 left-3 bg-[#ff4500] text-white text-[7px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
                               {item.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : item.profileType}
                             </span>
