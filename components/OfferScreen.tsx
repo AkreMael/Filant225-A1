@@ -32,26 +32,32 @@ const VIDEOS_DATA = [
   {
     id: 'vid-1',
     url: 'https://res.cloudinary.com/oax0osyj/video/upload/v1784161116/Reel_Instagram_Vid%C3%A9o_Anniversaire_Entreprise_Minimaliste_Noir_et_Blanc_20260715_153459_0000_vu7dqy.mp4',
-    title: 'FILANT°225 - Vidéo Officielle',
+    title: 'FILANT°225 - Présentation',
     description: 'Votre plateforme de mise en relation directe de confiance en Côte d\'Ivoire.',
-    category: 'travailleurs',
-    badge: 'Présentation'
+    category: 'presentation',
+    badge: 'Présentation',
+    duration: 60,
+    isEmbed: false
   },
   {
     id: 'vid-2',
-    url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-carpenter-measuring-a-wooden-plank-41584-large.mp4',
-    title: 'Artisans & Ouvriers Qualifiés',
-    description: 'Des menuisiers, maçons, mécaniciens et techniciens de confiance en Côte d\'Ivoire.',
+    url: 'https://player.cloudinary.com/embed/?cloud_name=oax0osyj&public_id=download_20260716_004007_0000_kvy3al',
+    title: 'FILANT°225 - Nos Services',
+    description: 'Trouvez rapidement des travailleurs qualifiés et louez des équipements au meilleur prix.',
     category: 'travailleurs',
-    badge: 'BTP & Artisanat'
+    badge: 'Services',
+    duration: 60,
+    isEmbed: true
   },
   {
     id: 'vid-3',
-    url: 'https://assets.mixkit.co/videos/preview/mixkit-electrician-checking-an-electrical-panel-41580-large.mp4',
-    title: 'Dépannage & Installation Électrique',
-    description: 'Interventions rapides par des électriciens professionnels certifiés.',
-    category: 'intervention',
-    badge: 'Électricité'
+    url: 'https://player.cloudinary.com/embed/?cloud_name=oax0osyj&public_id=IMG_20260716_025604_603_ytnpeq',
+    title: 'FILANT°225 - Partout en Côte d\'Ivoire',
+    description: 'Une mise en relation directe, simple, rapide et efficace avec les bonnes personnes.',
+    category: 'presentation',
+    badge: 'Mise en Relation',
+    duration: 60,
+    isEmbed: true
   }
 ];
 
@@ -679,6 +685,24 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
   // Safely reference active video object with a guaranteed fallback to prevent crashes
   const currentVideo = VIDEOS_DATA[currentVideoIndex] || VIDEOS_DATA[0];
 
+  // Automatic transition timer for embedded videos (where onEnded is not accessible natively)
+  useEffect(() => {
+    if (!currentVideo || isFullVideoOpen || isApercuOpen || currentVideoIndex === -1) return;
+
+    let timerId: NodeJS.Timeout | null = null;
+
+    if (currentVideo.isEmbed) {
+      // Auto-advance to next video after specified duration
+      timerId = setTimeout(() => {
+        handleNextVideo();
+      }, (currentVideo.duration || 60) * 1000);
+    }
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [currentVideoIndex, currentVideo, handleNextVideo, isFullVideoOpen, isApercuOpen]);
+
   // Live listener to all Inscriptions for real-time online ads syncing
   useEffect(() => {
     const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));
@@ -912,25 +936,45 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
               className="absolute inset-0 w-full h-full"
             >
               {currentVideoIndex !== -1 && currentVideo ? (
-                <video
-                  src={currentVideo.url}
-                  autoPlay
-                  muted
-                  playsInline
-                  preload="auto"
-                  onEnded={handleNextVideo}
-                  onLoadStart={() => {
-                    setIsVideoLoading(true);
-                    setIsVideoError(false);
-                  }}
-                  onCanPlay={() => setIsVideoLoading(false)}
-                  onPlaying={() => setIsVideoLoading(false)}
-                  onError={() => {
-                    setIsVideoLoading(false);
-                    setIsVideoError(true);
-                  }}
-                  className="w-full h-full object-cover"
-                />
+                currentVideo.isEmbed ? (
+                  <iframe
+                    src={`${currentVideo.url}&autoplay=1&muted=1&player[autoplay]=true&player[muted]=true&player[loop]=true`}
+                    width="100%"
+                    height="100%"
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                    frameBorder="0"
+                    onLoad={() => {
+                      setIsVideoLoading(false);
+                      setIsVideoError(false);
+                    }}
+                    onError={() => {
+                      setIsVideoLoading(false);
+                      setIsVideoError(true);
+                    }}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <video
+                    src={currentVideo.url}
+                    autoPlay
+                    muted
+                    playsInline
+                    preload="auto"
+                    onEnded={handleNextVideo}
+                    onLoadStart={() => {
+                      setIsVideoLoading(true);
+                      setIsVideoError(false);
+                    }}
+                    onCanPlay={() => setIsVideoLoading(false)}
+                    onPlaying={() => setIsVideoLoading(false)}
+                    onError={() => {
+                      setIsVideoLoading(false);
+                      setIsVideoError(true);
+                    }}
+                    className="w-full h-full object-cover"
+                  />
+                )
               ) : (
                 <div className="absolute inset-0 bg-slate-950 flex items-center justify-center">
                   <div className="w-8 h-8 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
@@ -1930,14 +1974,26 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
 
             {/* Main Video Viewport */}
             <div className="w-full max-w-4xl aspect-video bg-slate-950 rounded-2xl overflow-hidden relative shadow-2xl">
-              <video
-                src={currentVideo.url}
-                autoPlay
-                controls
-                playsInline
-                preload="auto"
-                className="w-full h-full object-contain"
-              />
+              {currentVideo.isEmbed ? (
+                <iframe
+                  src={`${currentVideo.url}&autoplay=1&muted=0&player[autoplay]=true&player[muted]=false`}
+                  width="100%"
+                  height="100%"
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                  frameBorder="0"
+                  className="w-full h-full"
+                />
+              ) : (
+                <video
+                  src={currentVideo.url}
+                  autoPlay
+                  controls
+                  playsInline
+                  preload="auto"
+                  className="w-full h-full object-contain"
+                />
+              )}
             </div>
 
             {/* Bottom helper text */}
@@ -1993,15 +2049,27 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
 
               {/* Card visual preview */}
               <div className="relative w-full h-40 bg-slate-950 rounded-2xl overflow-hidden mb-5 shrink-0 flex items-center justify-center">
-                <video
-                  src={currentVideo.url}
-                  autoPlay
-                  muted
-                  playsInline
-                  loop
-                  preload="metadata"
-                  className="w-full h-full object-cover"
-                />
+                {currentVideo.isEmbed ? (
+                  <iframe
+                    src={`${currentVideo.url}&autoplay=1&muted=1&player[autoplay]=true&player[muted]=true&player[loop]=true`}
+                    width="100%"
+                    height="100%"
+                    allow="autoplay; fullscreen"
+                    allowFullScreen
+                    frameBorder="0"
+                    className="w-full h-full object-cover pointer-events-none"
+                  />
+                ) : (
+                  <video
+                    src={currentVideo.url}
+                    autoPlay
+                    muted
+                    playsInline
+                    loop
+                    preload="metadata"
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
                 <span className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-1 rounded-md">
                   Extrait vidéo
