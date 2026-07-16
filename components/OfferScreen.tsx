@@ -41,21 +41,21 @@ const VIDEOS_DATA = [
   },
   {
     id: 'vid-2',
-    url: 'https://player.cloudinary.com/embed/?cloud_name=oax0osyj&public_id=download_20260716_004007_0000_kvy3al',
-    title: 'FILANT°225 - Nos Services',
-    description: 'Trouvez rapidement des travailleurs qualifiés et louez des équipements au meilleur prix.',
-    category: 'travailleurs',
-    badge: 'Services',
-    duration: 60,
-    isEmbed: true
-  },
-  {
-    id: 'vid-3',
     url: 'https://player.cloudinary.com/embed/?cloud_name=oax0osyj&public_id=IMG_20260716_025604_603_ytnpeq',
     title: 'FILANT°225 - Partout en Côte d\'Ivoire',
     description: 'Une mise en relation directe, simple, rapide et efficace avec les bonnes personnes.',
     category: 'presentation',
     badge: 'Mise en Relation',
+    duration: 60,
+    isEmbed: true
+  },
+  {
+    id: 'vid-3',
+    url: 'https://player.cloudinary.com/embed/?cloud_name=oax0osyj&public_id=download_20260716_004007_0000_kvy3al',
+    title: 'FILANT°225 - Nos Services',
+    description: 'Trouvez rapidement des travailleurs qualifiés et louez des équipements au meilleur prix.',
+    category: 'travailleurs',
+    badge: 'Services',
     duration: 60,
     isEmbed: true
   }
@@ -654,6 +654,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
 
   // States for Videos Section
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [direction, setDirection] = useState(0); // -1 for left, 1 for right
   const [isVideoLoading, setIsVideoLoading] = useState(true);
   const [isVideoError, setIsVideoError] = useState(false);
   const [isFullVideoOpen, setIsFullVideoOpen] = useState(false);
@@ -662,12 +663,14 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
   const handleNextVideo = useCallback(() => {
     setIsVideoLoading(true);
     setIsVideoError(false);
+    setDirection(1);
     setCurrentVideoIndex((prev) => (prev + 1) % VIDEOS_DATA.length);
   }, []);
 
   const handlePrevVideo = useCallback(() => {
     setIsVideoLoading(true);
     setIsVideoError(false);
+    setDirection(-1);
     setCurrentVideoIndex((prev) => (prev - 1 + VIDEOS_DATA.length) % VIDEOS_DATA.length);
   }, []);
 
@@ -925,15 +928,44 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
       <div className="w-full bg-slate-950 relative overflow-hidden border-b border-slate-900 flex flex-col justify-center">
         <div className="w-full h-64 sm:h-80 md:h-96 relative select-none">
           
-          {/* Active video slide with crossfade animation */}
-          <AnimatePresence mode="wait">
+          {/* Active video slide with modern sliding carousel animation */}
+          <AnimatePresence initial={false} custom={direction}>
             <motion.div
               key={currentVideoIndex}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="absolute inset-0 w-full h-full"
+              custom={direction}
+              variants={{
+                enter: (dir: number) => ({
+                  x: dir > 0 ? '100%' : dir < 0 ? '-100%' : 0,
+                  opacity: 0
+                }),
+                center: {
+                  x: 0,
+                  opacity: 1
+                },
+                exit: (dir: number) => ({
+                  x: dir < 0 ? '100%' : dir > 0 ? '-100%' : 0,
+                  opacity: 0
+                })
+              }}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: 'spring', stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+              }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.5}
+              onDragEnd={(event, info) => {
+                const swipeThreshold = 50;
+                if (info.offset.x < -swipeThreshold) {
+                  handleNextVideo();
+                } else if (info.offset.x > swipeThreshold) {
+                  handlePrevVideo();
+                }
+              }}
+              className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing touch-pan-y"
             >
               {currentVideoIndex !== -1 && currentVideo ? (
                 currentVideo.isEmbed ? (
@@ -952,7 +984,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                       setIsVideoLoading(false);
                       setIsVideoError(true);
                     }}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover pointer-events-none"
                   />
                 ) : (
                   <video
@@ -972,7 +1004,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                       setIsVideoLoading(false);
                       setIsVideoError(true);
                     }}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover pointer-events-none"
                   />
                 )
               ) : (
@@ -980,6 +1012,9 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                   <div className="w-8 h-8 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
                 </div>
               )}
+
+              {/* Transparent gesture overlay to ensure swipe works flawlessly on both embeds and video */}
+              <div className="absolute inset-0 bg-transparent z-[5] select-none" />
 
               {/* Dynamic Loading Spinner Overlay */}
               {isVideoLoading && !isVideoError && (
@@ -1019,6 +1054,11 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
               <div className="absolute top-4 left-4 bg-orange-600/90 text-white text-[9px] font-black tracking-widest uppercase px-2.5 py-1.5 rounded-full z-10 flex items-center gap-1 shadow-md">
                 <Sparkles className="w-2.5 h-2.5 text-white fill-white" />
                 {currentVideo?.badge || 'Présentation'}
+              </div>
+
+              {/* Top-right Discrete Numeric Index indicator */}
+              <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-2.5 py-1.5 rounded-full z-10 shadow-md">
+                {currentVideoIndex + 1} / {VIDEOS_DATA.length}
               </div>
 
               {/* Text Info Overlay (Bottom Left) */}
@@ -1078,13 +1118,19 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
             <ChevronRight className="w-5 h-5" />
           </button>
 
-          {/* Slider Progress/Dot Indicators */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 pointer-events-none">
+          {/* Slider Progress/Dot Indicators (Clickable) */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
             {VIDEOS_DATA.map((_, idx) => (
-              <div
+              <button
                 key={idx}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  currentVideoIndex === idx ? 'w-5 bg-orange-500' : 'w-1.5 bg-white/40'
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDirection(idx > currentVideoIndex ? 1 : -1);
+                  setCurrentVideoIndex(idx);
+                }}
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  currentVideoIndex === idx ? 'w-5 bg-orange-500' : 'w-1.5 bg-white/40 hover:bg-white/60'
                 }`}
               />
             ))}
