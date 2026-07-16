@@ -960,7 +960,7 @@ const BuildingCarousel: React.FC<{ onSelectItem: (item: any) => void }> = ({ onS
 };
 
 interface HomeScreenProps {
-  onNavigate: (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub' | 'demande_recherche', category?: 'appartement' | 'equipement') => void;
+  onNavigate: (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'services_requests' | 'stage_formation_hub' | 'demande_recherche', category?: 'appartement' | 'equipement') => void;
   user: User;
   setActiveTab: (tab: Tab) => void;
   onOpenBuildingService: (item: any) => void;
@@ -1056,7 +1056,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   const isCardExpired = false;
   const cardData = null;
 
-  const handleMainServiceClick = (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'stage_formation_hub' | 'demande_recherche', category?: 'appartement' | 'equipement') => {
+  const handleMainServiceClick = (view: 'worker_list' | 'location_hub' | 'location_map' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'services_requests' | 'stage_formation_hub' | 'demande_recherche', category?: 'appartement' | 'equipement') => {
       onNavigate(view, category);
   };
 
@@ -1390,7 +1390,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     {/* Services demandes button icon on the left */}
                     <button
                         onClick={() => {
-                            onNavigate('assistant_qr');
+                            onNavigate('services_requests');
                         }}
                         className="relative p-3.5 bg-white border border-gray-200 text-pink-600 rounded-2xl shadow-sm hover:bg-gray-50 active:scale-95 transition-all flex items-center justify-center cursor-pointer shrink-0"
                         title="Demandes de services"

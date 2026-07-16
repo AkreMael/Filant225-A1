@@ -294,7 +294,7 @@ const App: React.FC = () => {
   const [showFullRegistrationRaw, setShowFullRegistrationRaw] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [adminForceAppView, setAdminForceAppView] = useState(false);
-  const [menuViewRaw, setMenuViewRaw] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>(() => {
+  const [menuViewRaw, setMenuViewRaw] = useState<'hub' | 'worker_list' | 'notifications' | 'emergency_form' | 'assistant_qr' | 'services_requests' | 'admin_dashboard' | 'location_hub' | 'location_map' | 'stage_formation_hub' | 'demande_recherche'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('adId')) {
@@ -944,6 +944,7 @@ const App: React.FC = () => {
     'location_hub',
     'notifications',
     'assistant_qr',
+    'services_requests',
     'emergency_form',
     'stage_formation_hub',
     'demande_recherche'
@@ -1546,6 +1547,9 @@ const App: React.FC = () => {
           );
           break;
         case 'assistant_qr':
+          activeScreen = <AssistantQRScreen onBack={handleBack} user={displayUser} onShowPopup={showPopup} />;
+          break;
+        case 'services_requests':
           activeScreen = <ServicesRequestsScreen onBack={handleBack} user={displayUser} onShowPopup={showPopup} />;
           break;
         case 'stage_formation_hub':

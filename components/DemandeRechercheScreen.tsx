@@ -8,6 +8,7 @@ import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, Check
 import { doc, onSnapshot, collection, query, orderBy, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
+import { encodeAdId, decodeAdId } from '../utils/shareUtils';
 
 interface InscriptionResult {
   id: string;
@@ -275,6 +276,19 @@ export const getProfileDisplayInfo = (item: any) => {
   }
 
   return { mainTitle, userName };
+};
+
+export const handleWhatsAppShare = (item: any) => {
+  const { mainTitle, userName } = getProfileDisplayInfo(item);
+  const publicAdId = encodeAdId(item.id);
+  const shareUrl = `${window.location.protocol}//${window.location.host}/?adId=${encodeURIComponent(publicAdId)}&col=Inscriptions`;
+  const text = `Profil disponible sur FILANT°225. Consultez ce profil directement depuis la plateforme.\n\n${shareUrl}`;
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  try {
+    window.open(whatsappUrl, '_blank');
+  } catch (e) {
+    window.location.href = whatsappUrl;
+  }
 };
 
 export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ onBack, user, onSelectTab, initialQuery }) => {
@@ -636,9 +650,10 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const deepLinkId = params.get('adId');
-      if (deepLinkId) {
-        console.log("Deep link detected for adId:", deepLinkId);
+      const deepLinkIdRaw = params.get('adId');
+      if (deepLinkIdRaw) {
+        const deepLinkId = decodeAdId(deepLinkIdRaw);
+        console.log("Deep link detected for adId:", deepLinkIdRaw, "decoded to:", deepLinkId);
         const docRef = doc(db, 'Inscriptions', deepLinkId);
         getDoc(docRef).then((snap) => {
           if (snap.exists()) {
@@ -2232,6 +2247,19 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
                         <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#ff4500] text-white text-[7px] sm:text-[8px] font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-full uppercase tracking-widest shadow-sm z-20">
                           {item.profileType === 'Propriétaire' ? 'ÉQUIPEMENT À LOUER' : item.profileType}
                         </span>
+
+                        {/* WhatsApp Direct Share Button on Top Right of Card Image */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWhatsAppShare(item);
+                          }}
+                          className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full p-1.5 sm:p-2 z-30 transition-all active:scale-90 flex items-center justify-center shadow-md border border-white/20"
+                          title="Partager sur WhatsApp"
+                        >
+                          <Share2 className="h-3 w-3 sm:h-4 sm:w-4 text-white font-bold" />
+                        </button>
                       </div>
 
                       {/* Info & Text Content */}
@@ -2937,27 +2965,10 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
               <button 
                 type="button"
                 onClick={() => {
-                  const { mainTitle, userName } = getProfileDisplayInfo(selectedAdDetail);
-                  const shareUrl = `${window.location.protocol}//${window.location.host}/?adId=${encodeURIComponent(selectedAdDetail.id)}&col=Inscriptions`;
-                  const shareTitle = `${mainTitle} - ${userName}`;
-                  const shareText = selectedAdDetail.description || "";
-
-                  if (navigator.share) {
-                    navigator.share({
-                      title: shareTitle,
-                      text: shareText,
-                      url: shareUrl,
-                    }).catch(console.error);
-                  } else {
-                    try {
-                      navigator.clipboard.writeText(shareUrl);
-                      alert("Lien de l'annonce copié dans le presse-papiers !");
-                    } catch (e) {
-                      alert("Lien de l'annonce : " + shareUrl);
-                    }
-                  }
+                  handleWhatsAppShare(selectedAdDetail);
                 }}
-                className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition-all cursor-pointer border border-white/10"
+                className="w-10 h-10 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:bg-[#20ba5a] active:scale-95 transition-all cursor-pointer border border-white/20 shadow-md"
+                title="Partager sur WhatsApp"
               >
                 <Share2 className="w-5 h-5 text-white" />
               </button>

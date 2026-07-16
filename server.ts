@@ -20,6 +20,9 @@ import {
 } from "firebase/firestore";
 import { getAuth as getClientAuth, signInAnonymously as clientSignInAnonymously } from "firebase/auth";
 import { GoogleGenAI, Type } from "@google/genai";
+import { Jimp, loadFont } from "jimp";
+import { SANS_32_BLACK, SANS_16_BLACK, SANS_16_WHITE } from "jimp/fonts";
+import { decodeAdId } from "./utils/shareUtils";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -620,6 +623,167 @@ async function startServer() {
     }
   });
 
+  // Endpoint to generate beautiful professional sharing cards with Jimp
+  app.get("/api/share-image", async (req, res) => {
+    try {
+      const adId = req.query.adId as string;
+      const col = req.query.col as string || "Inscriptions";
+      
+      const decodedId = decodeAdId(adId);
+      if (!decodedId) {
+        return res.status(400).send("Identifiant d'annonce invalide");
+      }
+
+      let data: any = {};
+      try {
+        const docSnap = await firestore.collection(col).doc(decodedId).get();
+        if (docSnap.exists) {
+          data = docSnap.data() || {};
+        } else {
+          console.warn(`Ad document not found in Firestore for image generation. ID: ${decodedId}, Col: ${col}`);
+        }
+      } catch (dbErr) {
+        console.error("Error reading Firestore for share image:", dbErr);
+      }
+
+      // Extract details
+      const type = (data.profileType === 'Agence immobilière' ? 'Agence' : data.profileType) || 'Travailleur';
+      let mainTitle = '';
+      let userName = '';
+
+      if (type === 'Travailleur') {
+        mainTitle = data.job || data.jobTitle || data.service || 'Travailleur Qualifié';
+        userName = data.userName || data.name || 'Prestataire';
+      } else if (type === 'Propriétaire') {
+        mainTitle = data.equipmentType || data.equipmentCategory || 'Équipement';
+        userName = data.ownerName || data.userName || data.name || 'Prestataire';
+      } else if (type === 'Agence') {
+        mainTitle = data.propertyTypes ? (Array.isArray(data.propertyTypes) ? data.propertyTypes.join(', ') : data.propertyTypes) : '';
+        userName = data.agencyName || data.userName || data.name || 'Prestataire';
+      } else if (type === 'Entreprise') {
+        mainTitle = data.companyName || 'Entreprise';
+        userName = data.companyOwner || data.userName || data.name || 'Prestataire';
+      } else {
+        mainTitle = data.titleOrActivity || 'Prestataire';
+        userName = data.userName || data.name || 'Prestataire';
+      }
+
+      if (!mainTitle) {
+        mainTitle = type === 'Agence' ? 'Immobilier' : (data.titleOrActivity || 'Service');
+      }
+      if (!userName) userName = data.name || 'Prestataire';
+
+      const city = data.city || data.agencyCity || data.companyCity || data.equipmentCity || 'Non spécifiée';
+
+      // Load fonts
+      const font32Black = await loadFont(SANS_32_BLACK);
+      const font16Black = await loadFont(SANS_16_BLACK);
+      const font16White = await loadFont(SANS_16_WHITE);
+
+      // Create base canvas: 1200x630
+      const baseImg = new Jimp({ width: 1200, height: 630, color: 0xf8fafcff }); // slate-50
+
+      // Draw border card
+      const borderImg = new Jimp({ width: 1104, height: 534, color: 0xe2e8f0ff }); // slate-200
+      const cardImg = new Jimp({ width: 1100, height: 530, color: 0xffffffff }); // white
+
+      baseImg.composite(borderImg, 48, 48);
+      baseImg.composite(cardImg, 50, 50);
+
+      // Load avatar image
+      let providerImg;
+      let hasImage = false;
+      const avatarUrl = data.profileImageUrl || data.photoUrl || data.imageLink;
+      if (avatarUrl && avatarUrl.trim() && !avatarUrl.toLowerCase().includes("placeholder")) {
+        try {
+          let resolvedUrl = avatarUrl;
+          if (resolvedUrl.startsWith("/")) {
+            resolvedUrl = `${req.protocol}://${req.get('host')}${resolvedUrl}`;
+          }
+          providerImg = await Jimp.read(resolvedUrl);
+          providerImg.resize({ width: 360, height: 360 });
+          providerImg.circle();
+          hasImage = true;
+        } catch (e) {
+          console.warn("Error reading provider image for Jimp, will use placeholder:", e);
+        }
+      }
+
+      if (!hasImage) {
+        providerImg = new Jimp({ width: 360, height: 360, color: 0x475569ff }); // slate-600
+        providerImg.circle();
+        providerImg.print({
+          font: font16White,
+          x: 105,
+          y: 170,
+          text: "IMAGE MASQUÉE"
+        });
+      }
+
+      // Draw a beautiful circular ring around avatar
+      const isOnline = data.isOnline === true;
+      const ringImg = new Jimp({ width: 372, height: 372, color: isOnline ? 0x10b981ff : 0xe2e8f0ff });
+      ringImg.circle();
+
+      baseImg.composite(ringImg, 94, 129);
+      baseImg.composite(providerImg, 100, 135);
+
+      // Print Prestataire Name
+      baseImg.print({
+        font: font32Black,
+        x: 520,
+        y: 160,
+        text: userName.toUpperCase()
+      });
+
+      // Composite Job/Service badge
+      const jobBadge = new Jimp({ width: 500, height: 50, color: 0xf1f5f9ff }); // slate-100
+      jobBadge.print({
+        font: font16Black,
+        x: 15,
+        y: 15,
+        text: `MÉTIER : ${mainTitle.toUpperCase()}`
+      });
+      baseImg.composite(jobBadge, 520, 240);
+
+      // Composite City badge
+      const cityBadge = new Jimp({ width: 500, height: 50, color: 0xfef3c7ff }); // amber-100
+      cityBadge.print({
+        font: font16Black,
+        x: 15,
+        y: 15,
+        text: `VILLE : ${city.toUpperCase()}`
+      });
+      baseImg.composite(cityBadge, 520, 310);
+
+      // Print Logo and Label in top right
+      baseImg.print({
+        font: font32Black,
+        x: 800,
+        y: 70,
+        text: "FILANT°225"
+      });
+
+      const lineAccent = new Jimp({ width: 220, height: 5, color: 0xff4500ff }); // Orange accent line under logo
+      baseImg.composite(lineAccent, 800, 115);
+
+      baseImg.print({
+        font: font16Black,
+        x: 800,
+        y: 130,
+        text: "PROFIL DISPONIBLE"
+      });
+
+      const buffer = await baseImg.getBuffer("image/png");
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours
+      return res.status(200).send(buffer);
+    } catch (err: any) {
+      console.error("Error generating share preview image:", err);
+      res.status(500).send("Erreur interne du serveur");
+    }
+  });
+
   // Custom router/middleware to intercept HTML requests for sharing preview metadata
   let globalViteInstance: any = null;
 
@@ -631,14 +795,20 @@ async function startServer() {
     
     try {
       const adId = req.query.adId as string;
-      const col = req.query.col as string || "Travailleurs";
+      const col = req.query.col as string || "Inscriptions";
+      
+      const decodedId = decodeAdId(adId);
+      if (!decodedId) {
+        return next();
+      }
       
       let title = "FILANT°225";
       let description = "Trouvez des travailleurs, équipements, agences ou opportunités en Côte d'Ivoire.";
-      let imageUrl = "https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/2286048e-7c07-4f27-b7c3-d7ce09254214.png";
+      // Set the dynamic share image URL as the Open Graph image!
+      let imageUrl = `${req.protocol}://${req.get('host')}/api/share-image?adId=${encodeURIComponent(adId)}&col=${encodeURIComponent(col)}`;
 
       try {
-        const docSnap = await firestore.collection(col).doc(adId).get();
+        const docSnap = await firestore.collection(col).doc(decodedId).get();
         if (docSnap.exists) {
           const data = docSnap.data() || {};
           
@@ -681,23 +851,9 @@ async function startServer() {
             }
           }
 
-          title = `${mainTitle} - ${userName}`;
-          description = data.description || `Découvrez l'annonce de ${userName} sur FILANT°225.`;
-          
-          let primaryImg = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80";
-          if (data.onlineImages && data.onlineImages.length > 0) {
-            primaryImg = data.onlineImages[0];
-          } else if (data.images && data.images.length > 0) {
-            primaryImg = data.images[0];
-          } else if (data.imageLink) {
-            primaryImg = data.imageLink;
-          } else if (data.photoUrl) {
-            primaryImg = data.photoUrl;
-          }
-          imageUrl = primaryImg;
-          if (imageUrl.startsWith("/")) {
-            imageUrl = `${req.protocol}://${req.get('host')}${imageUrl}`;
-          }
+          const city = data.city || data.agencyCity || data.companyCity || data.equipmentCity || 'Non spécifiée';
+          title = "Profil disponible sur FILANT°225";
+          description = `Titre : ${mainTitle} • Nom : ${userName} • Ville : ${city}`;
         }
       } catch (dbErr) {
         console.error("Error reading Firestore document for share metadata:", dbErr);
@@ -715,6 +871,9 @@ async function startServer() {
       if (process.env.NODE_ENV !== "production" && globalViteInstance) {
         html = await globalViteInstance.transformIndexHtml(req.originalUrl, html);
       }
+
+      // Replace standard title tag with dynamic one
+      html = html.replace("<title>FILANT°225</title>", `<title>${title}</title>`);
 
       const metaTags = `
     <!-- Open Graph / Facebook / WhatsApp -->

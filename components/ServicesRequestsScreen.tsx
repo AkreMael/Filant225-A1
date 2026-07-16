@@ -102,7 +102,7 @@ const ServicesRequestsScreen: React.FC<ServicesRequestsScreenProps> = ({ onBack,
             <div className="w-16 h-16 border-2 border-dashed border-gray-400 rounded-full flex items-center justify-center mb-4">
               <Wrench className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="text-sm font-bold uppercase tracking-widest leading-tight text-gray-500">Aucune demande de service en cours</p>
+            <p className="text-sm font-bold uppercase tracking-widest leading-tight text-gray-500">AUCUNE DEMANDE DE SERVICE EN COURS</p>
           </div>
         ) : (
           requests.map(req => (

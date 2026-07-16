@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { Tab } from '../types';
 import { databaseService } from '../services/databaseService';
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
@@ -7,7 +7,8 @@ import { db } from '../firebase';
 import SpeakerIcon from './common/SpeakerIcon';
 import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { audioService } from '../services/audioService';
-import { MapPin, X, ChevronLeft, ChevronRight, Share2, Heart } from 'lucide-react';
+import { MapPin, X, ChevronLeft, ChevronRight, Share2, Heart, Play, Eye, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { encodeAdId } from '../utils/shareUtils';
 
 // Define WorkerOffer locally since we're removing googleSheetsService
 export interface WorkerOffer {
@@ -24,7 +25,35 @@ export interface WorkerOffer {
 
 import SmartRegistrationScreen from './SmartRegistrationScreen';
 import { motion, AnimatePresence } from 'motion/react';
-import { getProfileDisplayInfo } from './DemandeRechercheScreen';
+import { getProfileDisplayInfo, handleWhatsAppShare } from './DemandeRechercheScreen';
+
+// --- Videos Constants ---
+const VIDEOS_DATA = [
+  {
+    id: 'vid-1',
+    url: 'https://res.cloudinary.com/oax0osyj/video/upload/v1784161116/Reel_Instagram_Vid%C3%A9o_Anniversaire_Entreprise_Minimaliste_Noir_et_Blanc_20260715_153459_0000_vu7dqy.mp4',
+    title: 'FILANT°225 - Vidéo Officielle',
+    description: 'Votre plateforme de mise en relation directe de confiance en Côte d\'Ivoire.',
+    category: 'travailleurs',
+    badge: 'Présentation'
+  },
+  {
+    id: 'vid-2',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-carpenter-measuring-a-wooden-plank-41584-large.mp4',
+    title: 'Artisans & Ouvriers Qualifiés',
+    description: 'Des menuisiers, maçons, mécaniciens et techniciens de confiance en Côte d\'Ivoire.',
+    category: 'travailleurs',
+    badge: 'BTP & Artisanat'
+  },
+  {
+    id: 'vid-3',
+    url: 'https://assets.mixkit.co/videos/preview/mixkit-electrician-checking-an-electrical-panel-41580-large.mp4',
+    title: 'Dépannage & Installation Électrique',
+    description: 'Interventions rapides par des électriciens professionnels certifiés.',
+    category: 'intervention',
+    badge: 'Électricité'
+  }
+];
 
 // --- Icons ---
 const PhoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>;
@@ -617,6 +646,39 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
 
+  // States for Videos Section
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [isVideoError, setIsVideoError] = useState(false);
+  const [isFullVideoOpen, setIsFullVideoOpen] = useState(false);
+  const [isApercuOpen, setIsApercuOpen] = useState(false);
+
+  const handleNextVideo = useCallback(() => {
+    setIsVideoLoading(true);
+    setIsVideoError(false);
+    setCurrentVideoIndex((prev) => (prev + 1) % VIDEOS_DATA.length);
+  }, []);
+
+  const handlePrevVideo = useCallback(() => {
+    setIsVideoLoading(true);
+    setIsVideoError(false);
+    setCurrentVideoIndex((prev) => (prev - 1 + VIDEOS_DATA.length) % VIDEOS_DATA.length);
+  }, []);
+
+  const handleRetryVideo = useCallback(() => {
+    setIsVideoLoading(true);
+    setIsVideoError(false);
+    // Briefly clear index to force a video component mount/reload
+    const temp = currentVideoIndex;
+    setCurrentVideoIndex(-1);
+    setTimeout(() => {
+      setCurrentVideoIndex(temp);
+    }, 50);
+  }, [currentVideoIndex]);
+
+  // Safely reference active video object with a guaranteed fallback to prevent crashes
+  const currentVideo = VIDEOS_DATA[currentVideoIndex] || VIDEOS_DATA[0];
+
   // Live listener to all Inscriptions for real-time online ads syncing
   useEffect(() => {
     const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));
@@ -834,6 +896,158 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
           </button>
         </div>
       </header>
+
+      {/* --- SECTION VIDÉOS (Carousel Autoplay) --- */}
+      <div className="w-full bg-slate-950 relative overflow-hidden border-b border-slate-900 flex flex-col justify-center">
+        <div className="w-full h-64 sm:h-80 md:h-96 relative select-none">
+          
+          {/* Active video slide with crossfade animation */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentVideoIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0 w-full h-full"
+            >
+              {currentVideoIndex !== -1 && currentVideo ? (
+                <video
+                  src={currentVideo.url}
+                  autoPlay
+                  muted
+                  playsInline
+                  preload="auto"
+                  onEnded={handleNextVideo}
+                  onLoadStart={() => {
+                    setIsVideoLoading(true);
+                    setIsVideoError(false);
+                  }}
+                  onCanPlay={() => setIsVideoLoading(false)}
+                  onPlaying={() => setIsVideoLoading(false)}
+                  onError={() => {
+                    setIsVideoLoading(false);
+                    setIsVideoError(true);
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-slate-950 flex items-center justify-center">
+                  <div className="w-8 h-8 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                </div>
+              )}
+
+              {/* Dynamic Loading Spinner Overlay */}
+              {isVideoLoading && !isVideoError && (
+                <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-10">
+                  <div className="w-8 h-8 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                </div>
+              )}
+
+              {/* Connection Error Overlay */}
+              {isVideoError && (
+                <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-20">
+                  <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl max-w-xs flex flex-col items-center">
+                    <svg className="w-8 h-8 text-red-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p className="text-white text-xs font-bold mb-3 leading-relaxed">
+                      Impossible de charger la vidéo. Vérifiez votre connexion Internet.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRetryVideo();
+                      }}
+                      className="bg-orange-500 hover:bg-orange-600 active:scale-95 text-white text-[10px] font-black uppercase tracking-wider px-4 py-2 rounded-xl shadow-md transition-all cursor-pointer"
+                    >
+                      Réessayer
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Legibility Gradient Overlays */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/20 z-0 pointer-events-none" />
+
+              {/* Top-left Category Badge */}
+              <div className="absolute top-4 left-4 bg-orange-600/90 text-white text-[9px] font-black tracking-widest uppercase px-2.5 py-1.5 rounded-full z-10 flex items-center gap-1 shadow-md">
+                <Sparkles className="w-2.5 h-2.5 text-white fill-white" />
+                {currentVideo?.badge || 'Présentation'}
+              </div>
+
+              {/* Text Info Overlay (Bottom Left) */}
+              <div className="absolute bottom-5 left-4 right-4 text-left z-10 pr-24 sm:pr-32 pb-4">
+                <h2 className="text-white font-black text-sm sm:text-base md:text-lg tracking-tight leading-tight drop-shadow-md mb-1 uppercase">
+                  {currentVideo?.title}
+                </h2>
+                <p className="text-white/80 text-[10px] sm:text-xs font-bold leading-relaxed drop-shadow line-clamp-1 max-w-md">
+                  {currentVideo?.description}
+                </p>
+              </div>
+
+              {/* Control Buttons (Overlaid on Bottom Right) */}
+              <div className="absolute bottom-6 right-4 flex items-center gap-2 z-20">
+                {/* Watch Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFullVideoOpen(true);
+                  }}
+                  className="bg-emerald-500 hover:bg-emerald-600 active:scale-90 text-white rounded-full px-3.5 py-2 text-xs font-black flex items-center gap-1.5 shadow-xl transition-all border border-emerald-400 select-none cursor-pointer"
+                >
+                  <Play className="h-3.5 w-3.5 fill-current" />
+                  <span>Regarder</span>
+                </button>
+
+                {/* Preview Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsApercuOpen(true);
+                  }}
+                  className="bg-black/30 hover:bg-black/50 backdrop-blur-md text-white border border-white/20 rounded-full px-3.5 py-2 text-xs font-black flex items-center gap-1.5 shadow-xl active:scale-90 transition-all select-none cursor-pointer"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  <span>Aperçu</span>
+                </button>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Left/Right Arrow manual triggers (hidden on small screens, shown on hover/touch) */}
+          <button
+            type="button"
+            onClick={handlePrevVideo}
+            className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2.5 rounded-full backdrop-blur-md z-20 active:scale-90 transition-all cursor-pointer border border-white/10 hidden sm:flex items-center justify-center"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNextVideo}
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2.5 rounded-full backdrop-blur-md z-20 active:scale-90 transition-all cursor-pointer border border-white/10 hidden sm:flex items-center justify-center"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+
+          {/* Slider Progress/Dot Indicators */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 pointer-events-none">
+            {VIDEOS_DATA.map((_, idx) => (
+              <div
+                key={idx}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  currentVideoIndex === idx ? 'w-5 bg-orange-500' : 'w-1.5 bg-white/40'
+                }`}
+              />
+            ))}
+          </div>
+
+        </div>
+      </div>
 
       {/* --- HERO SECTION --- */}
       <div className="relative w-full bg-white border-b border-gray-100">
@@ -1357,28 +1571,10 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                       <button 
                         type="button"
                         onClick={() => {
-                          const mainTitle = selectedAdDetail.titleOrActivity || (selectedAdDetail.profileType === 'Travailleur' ? selectedAdDetail.job : (selectedAdDetail.profileType === 'Propriétaire' ? selectedAdDetail.equipmentCategory : (selectedAdDetail.profileType === 'Agence' ? 'IMMOBILIER' : 'ENTREPRISE')));
-                          const userName = selectedAdDetail.name;
-                          const shareTitle = `${mainTitle} - ${userName}`;
-                          const shareUrl = `${window.location.protocol}//${window.location.host}/?adId=${encodeURIComponent(selectedAdDetail.id)}&col=Inscriptions`;
-                          const shareText = selectedAdDetail.description || selectedAdDetail.skillsDescription || "";
-
-                          if (navigator.share) {
-                            navigator.share({
-                              title: shareTitle,
-                              text: shareText,
-                              url: shareUrl,
-                            }).catch(console.error);
-                          } else {
-                            try {
-                              navigator.clipboard.writeText(shareUrl);
-                              audioService.speak("Lien copié dans le presse-papier");
-                            } catch (e) {
-                              alert("Lien de l'annonce : " + shareUrl);
-                            }
-                          }
+                          handleWhatsAppShare(selectedAdDetail);
                         }}
-                        className="w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/75 active:scale-95 transition-all cursor-pointer border border-white/10"
+                        className="w-10 h-10 rounded-full bg-[#25D366] text-white flex items-center justify-center hover:bg-[#20ba5a] active:scale-95 transition-all cursor-pointer border border-white/20 shadow-md"
+                        title="Partager sur WhatsApp"
                       >
                         <Share2 className="w-5 h-5 text-white" />
                       </button>
@@ -1703,6 +1899,178 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
                 )}
               </AnimatePresence>
       </main>
+
+      {/* --- MODAL DE LECTURE GRAND ÉCRAN --- */}
+      <AnimatePresence>
+        {isFullVideoOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black z-[9999] flex flex-col justify-center items-center p-4"
+          >
+            {/* Top Close Button */}
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-[10000]">
+              <div className="flex items-center gap-2">
+                <span className="bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                  {currentVideo.badge}
+                </span>
+                <span className="text-white/80 font-bold text-xs truncate max-w-[180px]">
+                  {currentVideo.title}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFullVideoOpen(false)}
+                className="bg-white/10 hover:bg-white/20 active:scale-90 text-white p-2.5 rounded-full backdrop-blur-md transition-all border border-white/10 cursor-pointer flex items-center justify-center"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Main Video Viewport */}
+            <div className="w-full max-w-4xl aspect-video bg-slate-950 rounded-2xl overflow-hidden relative shadow-2xl">
+              <video
+                src={currentVideo.url}
+                autoPlay
+                controls
+                playsInline
+                preload="auto"
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            {/* Bottom helper text */}
+            <p className="mt-4 text-white/50 text-[10px] font-medium text-center">
+              Appuyez sur l'icône de volume du lecteur si nécessaire pour écouter le son.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- MODAL APERÇU DÉTAILS --- */}
+      <AnimatePresence>
+        {isApercuOpen && (
+          <div className="fixed inset-0 z-[5500] flex items-end justify-center">
+            {/* Backdrop click-to-close */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsApercuOpen(false)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+
+            {/* Sliding sheet */}
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="relative w-full max-w-md bg-white rounded-t-[2.5rem] border-t border-slate-100 shadow-2xl p-6 z-[5600] flex flex-col pb-safe max-h-[85vh] overflow-y-auto"
+            >
+              {/* Drag indicator bar */}
+              <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-5 shrink-0" />
+
+              {/* Header */}
+              <div className="flex justify-between items-start mb-4 shrink-0">
+                <div className="flex flex-col gap-1 text-left">
+                  <span className="text-[9px] font-black tracking-widest text-orange-600 uppercase">
+                    {currentVideo.badge}
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight leading-tight uppercase">
+                    {currentVideo.title}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsApercuOpen(false)}
+                  className="bg-slate-50 hover:bg-slate-100 text-slate-600 p-2 rounded-full transition-all border border-slate-100 flex items-center justify-center cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Card visual preview */}
+              <div className="relative w-full h-40 bg-slate-950 rounded-2xl overflow-hidden mb-5 shrink-0 flex items-center justify-center">
+                <video
+                  src={currentVideo.url}
+                  autoPlay
+                  muted
+                  playsInline
+                  loop
+                  preload="metadata"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                <span className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-1 rounded-md">
+                  Extrait vidéo
+                </span>
+              </div>
+
+              {/* Custom descriptive summary text */}
+              <div className="text-left space-y-4 mb-6">
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                    Présentation du Service
+                  </h4>
+                  <p className="text-slate-700 text-sm font-bold leading-relaxed">
+                    {currentVideo.description}
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
+                    Pourquoi choisir FILANT°225 ?
+                  </h4>
+                  <ul className="space-y-2">
+                    <li className="flex items-start gap-2.5 text-xs text-slate-600 font-bold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
+                      <span>Relation directe et instantanée par Téléphone & WhatsApp</span>
+                    </li>
+                    <li className="flex items-start gap-2.5 text-xs text-slate-600 font-bold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
+                      <span>Profils et entreprises géolocalisés partout en Côte d'Ivoire</span>
+                    </li>
+                    <li className="flex items-start gap-2.5 text-xs text-slate-600 font-bold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
+                      <span>Services rapides, fiables et adaptés à votre budget</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div className="flex flex-col gap-2 shrink-0 mt-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsApercuOpen(false);
+                    if (currentVideo.category === 'intervention') {
+                      onOpenIntervention();
+                    } else {
+                      // Navigate to workers or trigger discover
+                      scrollIntoView();
+                    }
+                  }}
+                  className="w-full py-4 bg-[#ff4500] hover:bg-[#e03a00] active:scale-[0.98] text-white font-black text-xs tracking-wider uppercase rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-white fill-white shrink-0 animate-pulse" />
+                  <span>DÉCOUVRIR CE SERVICE SUR L'APP</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsApercuOpen(false)}
+                  className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all"
+                >
+                  Fermer
+                </button>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
