@@ -24,11 +24,16 @@ import { Jimp, loadFont } from "jimp";
 import { SANS_32_BLACK, SANS_16_BLACK, SANS_16_WHITE } from "jimp/fonts";
 import { decodeAdId } from "./utils/shareUtils";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const moduleFilename = typeof __filename !== "undefined"
+  ? __filename
+  : (typeof import.meta !== "undefined" && import.meta.url ? fileURLToPath(import.meta.url) : "");
+
+const moduleDirname = typeof __dirname !== "undefined"
+  ? __dirname
+  : (moduleFilename ? path.dirname(moduleFilename) : process.cwd());
 
 // Load Firebase Config
-const firebaseConfig = JSON.parse(fs.readFileSync(path.join(__dirname, "firebase-applet-config.json"), "utf8"));
+const firebaseConfig = JSON.parse(fs.readFileSync(path.join(moduleDirname, "firebase-applet-config.json"), "utf8"));
 
 // Initialize Firestore with Firebase Admin (keep for admin SDK backwards compatibility if any)
 if (!admin.apps.length) {
@@ -81,7 +86,7 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // Create public/uploads directory if it doesn't exist
-  const uploadsDir = path.join(__dirname, "public", "uploads");
+  const uploadsDir = path.join(moduleDirname, "public", "uploads");
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
@@ -860,9 +865,9 @@ async function startServer() {
       }
 
       // Read template index.html
-      let templatePath = path.join(__dirname, process.env.NODE_ENV === "production" ? "dist" : "", "index.html");
+      let templatePath = path.join(moduleDirname, process.env.NODE_ENV === "production" ? "dist" : "", "index.html");
       if (!fs.existsSync(templatePath)) {
-        templatePath = path.join(__dirname, "index.html");
+        templatePath = path.join(moduleDirname, "index.html");
       }
 
       let html = fs.readFileSync(templatePath, "utf8");
@@ -914,9 +919,9 @@ async function startServer() {
     globalViteInstance = vite;
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
+    app.use(express.static(path.join(moduleDirname, "dist")));
     app.get("*all", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
+      res.sendFile(path.join(moduleDirname, "dist", "index.html"));
     });
   }
 
