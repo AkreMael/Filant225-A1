@@ -363,6 +363,7 @@ export const databaseService = {
       
       if (user.role) userData.role = user.role;
       if (user.isVerified !== undefined) userData.isVerified = user.isVerified;
+      if (user.pin !== undefined) userData.pin = user.pin;
       
       await setDoc(userRef, userData, { merge: true });
     } catch (e) {
@@ -638,7 +639,7 @@ export const databaseService = {
     return { user: null, error: "Numéro non reconnu, veuillez vous inscrire" };
   },
 
-  registerUser: async (name: string, city: string, phone: string): Promise<{user: User | null, error?: string}> => {
+  registerUser: async (name: string, city: string, phone: string, pin?: string): Promise<{user: User | null, error?: string}> => {
     const users = getUsers();
     const normalizedPhone = phone.replace(/\D/g, '');
     
@@ -657,6 +658,7 @@ export const databaseService = {
         name: name.trim(), 
         city: city.trim(), 
         phone: normalizedPhone,
+        pin: pin,
         role: localStorage.getItem('filant_user_role') || 'Client',
     };
     
@@ -669,6 +671,133 @@ export const databaseService = {
     databaseService.logConnection(newUser);
     
     return { user: newUser };
+  },
+
+  updateUserPin: async (phone: string, pin: string | null) => {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    try {
+      await databaseService.ensureAuth();
+      
+      // Find collection
+      let targetCollection = 'Clients';
+      const collections = ['Admin', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Clients'];
+      
+      const checkPromises = collections.map(async (col) => {
+          const ref = doc(db, col, sanitizedPhone);
+          const snap = await getDoc(ref);
+          return snap.exists() ? col : null;
+      });
+
+      const results = await Promise.all(checkPromises);
+      const foundCol = results.find(c => c !== null);
+      if (foundCol) {
+          targetCollection = foundCol;
+      }
+      
+      const userRef = doc(db, targetCollection, sanitizedPhone);
+      await setDoc(userRef, {
+        pin: pin,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      
+      // Also update in 'Connexions' if it exists
+      try {
+        const connRef = doc(db, 'Connexions', sanitizedPhone);
+        const connSnap = await getDoc(connRef);
+        if (connSnap.exists()) {
+          await setDoc(connRef, { pin: pin }, { merge: true });
+        }
+      } catch (e) {
+        console.warn("Could not update pin in Connexions collection:", e);
+      }
+      
+      // Update local storage
+      const users = getUsers();
+      const userIdx = users.findIndex(u => u.phone === sanitizedPhone);
+      if (userIdx !== -1) {
+        if (pin === null) {
+          delete users[userIdx].pin;
+        } else {
+          users[userIdx].pin = pin;
+        }
+        saveUsers(users);
+      }
+      
+      const active = databaseService.getActiveUser();
+      if (active && active.phone.replace(/\D/g, '') === sanitizedPhone) {
+        if (pin === null) {
+          delete active.pin;
+        } else {
+          active.pin = pin;
+        }
+        databaseService.saveActiveUser(active);
+      }
+      
+      return { success: true };
+    } catch (e) {
+      console.error("Error in updateUserPin:", e);
+      return { success: false, error: "Erreur de mise à jour du Code PIN." };
+    }
+  },
+
+  resetUserPin: async (phone: string) => {
+    const sanitizedPhone = phone.replace(/\D/g, '');
+    try {
+      await databaseService.ensureAuth();
+      
+      // Find collection
+      let targetCollection = 'Clients';
+      const collections = ['Admin', 'Travailleurs', 'Agences immobilières', 'Équipements', 'Entreprises', 'Clients'];
+      
+      const checkPromises = collections.map(async (col) => {
+          const ref = doc(db, col, sanitizedPhone);
+          const snap = await getDoc(ref);
+          return snap.exists() ? col : null;
+      });
+
+      const results = await Promise.all(checkPromises);
+      const foundCol = results.find(c => c !== null);
+      if (foundCol) {
+          targetCollection = foundCol;
+      }
+      
+      const userRef = doc(db, targetCollection, sanitizedPhone);
+      // Update by setting pin to null or deleting it
+      await setDoc(userRef, {
+        pin: null,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      
+      // Also update in 'Connexions' if it exists
+      try {
+        const connRef = doc(db, 'Connexions', sanitizedPhone);
+        const connSnap = await getDoc(connRef);
+        if (connSnap.exists()) {
+          await setDoc(connRef, { pin: null }, { merge: true });
+        }
+      } catch (e) {
+        console.warn("Could not clear pin in Connexions collection:", e);
+      }
+      
+      // Update local storage
+      const users = getUsers();
+      const userIdx = users.findIndex(u => u.phone === sanitizedPhone);
+      if (userIdx !== -1) {
+        delete users[userIdx].pin;
+        saveUsers(users);
+      }
+      
+      const active = databaseService.getActiveUser();
+      if (active && active.phone.replace(/\D/g, '') === sanitizedPhone) {
+        delete active.pin;
+        databaseService.saveActiveUser(active);
+      }
+      
+      return { success: true };
+    } catch (e) {
+      console.error("Error in resetUserPin:", e);
+      return { success: false, error: "Erreur lors de la réinitialisation du Code PIN." };
+    }
   },
 
   resetPin: async (phone: string, newPin: string) => {

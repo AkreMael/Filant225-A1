@@ -27,6 +27,8 @@ import {
   Scan,
   MoreVertical,
   Eye,
+  EyeOff,
+  RotateCcw,
   X,
   FileText,
   Send,
@@ -79,6 +81,7 @@ type AdminTab =
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenChat, onSwitchToApp }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [visiblePins, setVisiblePins] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<any>(null);
@@ -1152,6 +1155,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                         </td>
                       );
                     }
+                    if (key === 'pin') {
+                      const pinVal = val ? String(val) : '';
+                      const isVisible = !!visiblePins[item.id];
+                      return (
+                        <td key={j} className="px-6 py-4">
+                          <div className="flex items-center gap-2 justify-center">
+                            <span className="text-xs font-mono font-bold text-gray-700 dark:text-gray-300">
+                              {pinVal ? (isVisible ? pinVal : '••••') : 'AUCUN'}
+                            </span>
+                            {pinVal && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVisiblePins(prev => ({ ...prev, [item.id]: !prev[item.id] }));
+                                }}
+                                className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                                title={isVisible ? "Masquer le Code PIN" : "Afficher le Code PIN"}
+                              >
+                                {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                              </button>
+                            )}
+                            {pinVal && (
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`Voulez-vous réinitialiser le Code PIN de ${item.name || 'cet utilisateur'} ?`)) {
+                                    try {
+                                      const res = await databaseService.resetUserPin(item.phone || item.id);
+                                      if (res.success) {
+                                        alert("Le Code PIN a été réinitialisé avec succès.");
+                                      } else {
+                                        alert(res.error || "Une erreur est survenue.");
+                                      }
+                                    } catch (err) {
+                                      console.error("Error resetting PIN:", err);
+                                      alert("Erreur lors de la réinitialisation.");
+                                    }
+                                  }
+                                }}
+                                className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                                title="Réinitialiser le Code PIN"
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    }
                      if (key === 'phone' || key === 'userPhone' || key === 'waveNumber') {
                        const displayVal = String(val || '-');
                        return (
@@ -1648,8 +1702,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                 </div>
               )}
               {activeTab === 'connections' && renderTable(
-                ['Nom', 'Ville', 'Numéro', 'Date'],
-                ['name', 'city', 'phone', 'timestamp'],
+                ['Nom', 'Ville', 'Numéro', 'Code PIN', 'Date'],
+                ['name', 'city', 'phone', 'pin', 'timestamp'],
                 data.connections,
                 'Connexions'
               )}
