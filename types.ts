@@ -27,6 +27,7 @@ export interface User {
   activeSessionId?: string;
   pin?: string; // 4-digit PIN
   pinResetRequired?: boolean; // PIN reset indicator
+  forgotPinRequested?: boolean; // PIN reset request by user indicator
   idCardFront?: string;
   idCardBack?: string;
   idCardUploadedAt?: any;

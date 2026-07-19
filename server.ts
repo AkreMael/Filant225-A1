@@ -32,8 +32,12 @@ const moduleDirname = typeof __dirname !== "undefined"
   ? __dirname
   : (moduleFilename ? path.dirname(moduleFilename) : process.cwd());
 
+const appDir = fs.existsSync(path.join(process.cwd(), "package.json"))
+  ? process.cwd()
+  : (moduleDirname.endsWith("dist") ? path.dirname(moduleDirname) : moduleDirname);
+
 // Load Firebase Config
-const firebaseConfig = JSON.parse(fs.readFileSync(path.join(moduleDirname, "firebase-applet-config.json"), "utf8"));
+const firebaseConfig = JSON.parse(fs.readFileSync(path.join(appDir, "firebase-applet-config.json"), "utf8"));
 
 // Initialize Firestore with Firebase Admin (keep for admin SDK backwards compatibility if any)
 if (!admin.apps.length) {
@@ -86,7 +90,7 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // Create public/uploads directory if it doesn't exist
-  const uploadsDir = path.join(moduleDirname, "public", "uploads");
+  const uploadsDir = path.join(appDir, "public", "uploads");
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
@@ -865,9 +869,9 @@ async function startServer() {
       }
 
       // Read template index.html
-      let templatePath = path.join(moduleDirname, process.env.NODE_ENV === "production" ? "dist" : "", "index.html");
+      let templatePath = path.join(appDir, process.env.NODE_ENV === "production" ? "dist" : "", "index.html");
       if (!fs.existsSync(templatePath)) {
-        templatePath = path.join(moduleDirname, "index.html");
+        templatePath = path.join(appDir, "index.html");
       }
 
       let html = fs.readFileSync(templatePath, "utf8");
@@ -919,9 +923,9 @@ async function startServer() {
     globalViteInstance = vite;
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(moduleDirname, "dist")));
+    app.use(express.static(path.join(appDir, "dist")));
     app.get("*all", (req, res) => {
-      res.sendFile(path.join(moduleDirname, "dist", "index.html"));
+      res.sendFile(path.join(appDir, "dist", "index.html"));
     });
   }
 

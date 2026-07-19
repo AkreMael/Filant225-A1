@@ -874,7 +874,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
               {list.length > 0 ? list.map((item, i) => (
                 <tr 
                    key={i} 
-                   className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors ${item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : ''}`}
+                   className={`hover:bg-gray-50/80 dark:hover:bg-slate-800/80 transition-colors ${
+                     item.forgotPinRequested 
+                       ? 'bg-red-50/50 dark:bg-red-950/20 border-l-4 border-red-500' 
+                       : (item.adminReadStatus === 'NON LU' ? 'bg-amber-50/30' : '')
+                   }`}
                 >
                   {keysWithStatus.map((key, j) => {
                     if (key === 'actions_select_blocking') {
@@ -1158,49 +1162,61 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
                     if (key === 'pin') {
                       const pinVal = val ? String(val) : '';
                       const isVisible = !!visiblePins[item.id];
+                      const isForgotRequested = !!item.forgotPinRequested;
                       return (
                         <td key={j} className="px-6 py-4">
-                          <div className="flex items-center gap-2 justify-center">
-                            <span className="text-xs font-mono font-bold text-gray-700 dark:text-gray-300">
-                              {pinVal ? (isVisible ? pinVal : '••••') : 'AUCUN'}
-                            </span>
-                            {pinVal && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setVisiblePins(prev => ({ ...prev, [item.id]: !prev[item.id] }));
-                                }}
-                                className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-                                title={isVisible ? "Masquer le Code PIN" : "Afficher le Code PIN"}
-                              >
-                                {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
-                              </button>
-                            )}
-                            {pinVal && (
-                              <button
-                                type="button"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (confirm(`Voulez-vous réinitialiser le Code PIN de ${item.name || 'cet utilisateur'} ?`)) {
-                                    try {
-                                      const res = await databaseService.resetUserPin(item.phone || item.id);
-                                      if (res.success) {
-                                        alert("Le Code PIN a été réinitialisé avec succès.");
-                                      } else {
-                                        alert(res.error || "Une erreur est survenue.");
+                          <div className="flex flex-col items-center gap-1.5 justify-center">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold text-gray-700 dark:text-gray-300">
+                                {pinVal ? (isVisible ? pinVal : '••••') : 'AUCUN'}
+                              </span>
+                              {pinVal && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setVisiblePins(prev => ({ ...prev, [item.id]: !prev[item.id] }));
+                                  }}
+                                  className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer flex items-center justify-center"
+                                  title={isVisible ? "Masquer le Code PIN" : "Afficher le Code PIN"}
+                                >
+                                  {isVisible ? <EyeOff size={14} /> : <Eye size={14} />}
+                                </button>
+                              )}
+                              {pinVal && (
+                                <button
+                                  type="button"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (confirm(`Voulez-vous réinitialiser le Code PIN de ${item.name || 'cet utilisateur'} ?`)) {
+                                      try {
+                                        const res = await databaseService.resetUserPin(item.phone || item.id);
+                                        if (res.success) {
+                                          alert("Le Code PIN a été réinitialisé avec succès.");
+                                        } else {
+                                          alert(res.error || "Une erreur est survenue.");
+                                        }
+                                      } catch (err) {
+                                        console.error("Error resetting PIN:", err);
+                                        alert("Erreur lors de la réinitialisation.");
                                       }
-                                    } catch (err) {
-                                      console.error("Error resetting PIN:", err);
-                                      alert("Erreur lors de la réinitialisation.");
                                     }
-                                  }
-                                }}
-                                className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg transition-all cursor-pointer flex items-center justify-center"
-                                title="Réinitialiser le Code PIN"
-                              >
-                                <RotateCcw size={14} />
-                              </button>
+                                  }}
+                                  className={`p-1 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+                                    isForgotRequested 
+                                      ? "text-red-600 bg-red-100 hover:bg-red-200 hover:scale-110 shadow-sm animate-pulse" 
+                                      : "text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-800"
+                                  }`}
+                                  title="Réinitialiser le Code PIN"
+                                >
+                                  <RotateCcw size={14} className={isForgotRequested ? "animate-spin text-red-600" : ""} />
+                                </button>
+                              )}
+                            </div>
+                            {isForgotRequested && (
+                              <span className="text-[9px] font-black uppercase text-red-650 bg-red-100 border border-red-200 rounded-md px-1.5 py-0.5 tracking-wider animate-pulse whitespace-nowrap">
+                                ⚠️ PIN oublié
+                              </span>
                             )}
                           </div>
                         </td>
