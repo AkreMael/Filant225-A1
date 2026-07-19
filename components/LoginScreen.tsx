@@ -5,7 +5,6 @@ import SpeakerIcon from './common/SpeakerIcon';
 import CityAutocompleteInput from './common/CityAutocompleteInput';
 import Typewriter from './common/Typewriter';
 import { ADMIN_PHONE } from '../utils/authUtils';
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 interface LoginScreenProps {
   onLoginSuccess: (user: User) => void;
@@ -22,43 +21,12 @@ const PhoneIcon: React.FC<{className: string}> = ({className}) => <svg xmlns="ht
 const KeyIcon: React.FC<{className: string}> = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" /></svg>;
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }) => {
-  const [isRegisterView, setIsRegisterView] = useState(() => {
-    try {
-      const stored = localStorage.getItem('filant_users');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return false; // Returning user, show login (Connexion) first
-        }
-      }
-    } catch (e) {}
-    return true; // Brand new user, show registration (Inscription) first
-  });
+  const [isRegisterView, setIsRegisterView] = useState(true);
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-
-  // New States for 4-digit PIN system
-  const [registrationStep, setRegistrationStep] = useState<'info' | 'pin-setup'>('info');
-  const [loginStep, setLoginStep] = useState<'phone' | 'pin' | 'reset-setup' | 'forgot-pin'>('phone');
-  
-  const [enteredPin, setEnteredPin] = useState('');
-  const [enteredConfirmPin, setEnteredConfirmPin] = useState('');
-  
-  const [showPin, setShowPin] = useState(false);
-  const [showConfirmPin, setShowConfirmPin] = useState(false);
-  
-  const [registeredUserForLogin, setRegisteredUserForLogin] = useState<User | null>(null);
-
-  // Clear typed PIN characters on any step transition to prevent state pollution
-  useEffect(() => {
-    setEnteredPin('');
-    setEnteredConfirmPin('');
-    setShowPin(false);
-    setShowConfirmPin(false);
-  }, [loginStep, registrationStep]);
 
   useEffect(() => {
     const handleViewportResize = () => {
@@ -78,19 +46,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
     if (tempName) setName(tempName);
     if (tempCity) setCity(tempCity);
   }, []);
-
-  // Reset values when switching between register and login views
-  useEffect(() => {
-    setRegistrationStep('info');
-    setLoginStep('phone');
-    setEnteredPin('');
-    setEnteredConfirmPin('');
-    setShowPin(false);
-    setShowConfirmPin(false);
-    setRegisteredUserForLogin(null);
-  }, [isRegisterView]);
   
-  const handleRegisterInfoSubmit = async () => {
+  const handleRegister = async () => {
     const sanitizedPhone = phone.replace(/\s/g, '');
     
     if (sanitizedPhone.length === 11) {
@@ -110,39 +67,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
 
     setIsLoading(true);
     try {
-      const existingUser = await databaseService.getUserByPhoneFromFirestore(sanitizedPhone);
-      if (existingUser) {
-        onShowPopup("Ce numéro existe déjà, veuillez vous connecter.", "alert");
-        setIsLoading(false);
-        return;
-      }
-      
-      // If unique and correct, transition to PIN Setup Step!
-      setRegistrationStep('pin-setup');
-    } catch (error) {
-      onShowPopup("Une erreur est survenue, veuillez réessayer.", "alert");
-      console.error("Error during register checks:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRegisterPinSubmit = async () => {
-    const sanitizedPhone = phone.replace(/\s/g, '');
-
-    if (enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
-      onShowPopup("Le Code PIN doit contenir exactement 4 chiffres.", "alert");
-      return;
-    }
-
-    if (enteredPin !== enteredConfirmPin) {
-      onShowPopup("Les deux Codes PIN doivent être identiques.", "alert");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-        const { user, error: registerError } = await databaseService.registerUser(name, city, sanitizedPhone, enteredPin);
+        const { user, error: registerError } = await databaseService.registerUser(name, city, sanitizedPhone);
         if (user) {
           // Clear temp data
           localStorage.removeItem('filant_temp_name');
@@ -159,7 +84,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
     }
   };
 
-  const handleLoginPhoneSubmit = async () => {
+  const handleLogin = async () => {
     const sanitizedPhone = phone.replace(/\s/g, '');
     
     if (sanitizedPhone.length === 11) {
@@ -182,20 +107,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
     
     setIsLoading(true);
     try {
-        // Fetch user first to see if they exist and check their PIN field
-        const user = await databaseService.getUserByPhoneFromFirestore(loginPhone);
+        const { user, error: loginError } = await databaseService.loginUser(loginPhone);
         if (user) {
-          setRegisteredUserForLogin(user);
-          
-          if (user.pinResetRequired === true || !user.pin) {
-            // User PIN has been reset or is not defined, force them to set a new PIN
-            setLoginStep('reset-setup');
-          } else {
-            // User already has a PIN and hasn't been reset, ask for it
-            setLoginStep('pin');
-          }
+          onLoginSuccess(user);
         } else {
-          onShowPopup("Numéro non reconnu, veuillez vous inscrire.", "alert");
+          onShowPopup(loginError || "Erreur de connexion.", "alert");
         }
     } catch (error) {
         onShowPopup("Une erreur est survenue lors de la connexion. Veuillez réessayer.", "alert");
@@ -205,113 +121,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
     }
   };
 
-  const handleLoginPinSubmit = async () => {
-    if (!registeredUserForLogin) return;
-    
-    if (enteredPin.length !== 4) {
-      onShowPopup("Veuillez entrer un Code PIN à 4 chiffres.", "alert");
-      return;
-    }
-
-    if (enteredPin === registeredUserForLogin.pin) {
-      setIsLoading(true);
-      try {
-        const { user, error: loginError } = await databaseService.loginUser(registeredUserForLogin.phone);
-        if (user) {
-          onLoginSuccess(user);
-        } else {
-          onShowPopup(loginError || "Erreur de connexion.", "alert");
-        }
-      } catch (err) {
-        onShowPopup("Une erreur est survenue lors de la connexion.", "alert");
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      onShowPopup("Code PIN incorrect. Veuillez réessayer.", "alert");
-    }
-  };
-
-  const handleLoginResetSetupSubmit = async () => {
-    if (!registeredUserForLogin) return;
-
-    if (enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
-      onShowPopup("Le Code PIN doit contenir exactement 4 chiffres.", "alert");
-      return;
-    }
-
-    if (enteredPin !== enteredConfirmPin) {
-      onShowPopup("Les deux Codes PIN doivent être identiques.", "alert");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // 1. Save new PIN to Firestore & local storage
-      const res = await databaseService.updateUserPin(registeredUserForLogin.phone, enteredPin);
-      if (res.success) {
-        // 2. Perform direct login
-        const { user, error: loginError } = await databaseService.loginUser(registeredUserForLogin.phone);
-        if (user) {
-          onLoginSuccess(user);
-        } else {
-          onShowPopup(loginError || "Erreur de connexion.", "alert");
-        }
-      } else {
-        onShowPopup(res.error || "Erreur lors de l'enregistrement du Code PIN.", "alert");
-      }
-    } catch (err) {
-      onShowPopup("Une erreur est survenue. Veuillez réessayer.", "alert");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleForgotPinSubmit = async () => {
-    const sanitizedPhone = phone.replace(/\s/g, '');
-    let loginPhone = sanitizedPhone;
-    if (sanitizedPhone === '07050526320506827007') {
-      loginPhone = '0705052632';
-    } else if (!/^\d{10}$/.test(sanitizedPhone)) {
-      onShowPopup("Veuillez entrer un numéro à 10 chiffres.", "alert");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const res = await databaseService.requestPinReset(loginPhone);
-      if (res.success) {
-        onShowPopup("Votre demande de réinitialisation de Code PIN a été envoyée à l'Administrateur.", "alert");
-        setLoginStep('phone');
-      } else {
-        onShowPopup(res.error || "Erreur lors de la demande de réinitialisation.", "alert");
-      }
-    } catch (error) {
-      onShowPopup("Une erreur est survenue, veuillez réessayer.", "alert");
-      console.error("Error sending PIN reset request:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleSubmit = () => {
     if (isLoading) return;
     if (isRegisterView) {
-      if (registrationStep === 'info') {
-        handleRegisterInfoSubmit();
-      } else {
-        handleRegisterPinSubmit();
-      }
+      handleRegister();
     } else {
-      if (loginStep === 'phone') {
-        handleLoginPhoneSubmit();
-      } else if (loginStep === 'pin') {
-        handleLoginPinSubmit();
-      } else if (loginStep === 'forgot-pin') {
-        handleForgotPinSubmit();
-      } else {
-        handleLoginResetSetupSubmit();
-      }
+      handleLogin();
     }
   };
 
@@ -343,331 +158,77 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
             
             <div className="text-sm text-gray-500 font-medium pt-4 px-4">
               {isRegisterView ? (
-                <Typewriter text={registrationStep === 'info' ? "Inscrivez-vous pour profiter pleinement de nos services sur FILANT°225." : "Sécurisez votre compte en créant votre Code PIN secret à 4 chiffres."} speed={20} delay={500} />
+                <Typewriter text="Inscrivez-vous pour profiter pleinement de nos services sur FILANT°225." speed={20} delay={500} />
               ) : (
-                <Typewriter text={loginStep === 'phone' ? "Connectez-vous directement avec votre numéro WhatsApp." : "Entrez votre Code PIN pour valider votre identité."} speed={20} delay={500} />
+                <Typewriter text="Connectez-vous directement avec votre numéro WhatsApp." speed={20} delay={500} />
               )}
             </div>
           </div>
           
           <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-5">
-            {/* REGISTER VIEW: STEP 1 - INFO */}
-            {isRegisterView && registrationStep === 'info' && (
-              <>
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Votre Nom *</label>
-                  <div className="relative">
-                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input 
-                        type="text" 
-                        placeholder="Ex: Filant Mael" 
-                        value={name} 
-                        onChange={(e) => setName(e.target.value)} 
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <SpeakerIcon text="Entrez votre nom" className="text-orange-500" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Votre Ville *</label>
-                  <div className="relative">
-                    <CityIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <CityAutocompleteInput 
-                      id="login-city"
-                      value={city} 
-                      onChange={setCity} 
-                      placeholder="Ex: Abidjan, Cocody..." 
-                      inputClassName="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all text-sm" 
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <SpeakerIcon text="Entrez votre ville" className="text-orange-500" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Numéro WhatsApp *</label>
-                  <div className="relative">
-                    <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <div className="absolute left-11 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm select-none flex items-center gap-1.5">
-                        <span>🇨🇮</span>
-                        <span>+225</span>
-                    </div>
-                    <input 
-                        type="tel" 
-                        inputMode="tel"
-                        pattern="[0-9]*"
-                        placeholder="01 02 03 04 05" 
-                        value={phone} 
-                        onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 20);
-                            setPhone(val);
-                        }} 
-                        className="w-full pl-24 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all text-sm tracking-wide" 
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <SpeakerIcon text="Entrez votre numéro WhatsApp à 10 chiffres" className="text-orange-500" />
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* REGISTER VIEW: STEP 2 - PIN SETUP */}
-            {isRegisterView && registrationStep === 'pin-setup' && (
-              <div className="space-y-4">
-                <button 
-                  type="button" 
-                  onClick={() => setRegistrationStep('info')} 
-                  className="flex items-center gap-1.5 text-xs font-black text-gray-400 hover:text-orange-500 uppercase tracking-widest transition-colors mb-4"
-                >
-                  <ArrowLeft size={14} /> Retour
-                </button>
-                
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Code PIN (4 chiffres) *</label>
-                  <div className="relative">
-                    <KeyIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input 
-                        type={showPin ? "text" : "password"} 
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={4}
-                        placeholder="••••" 
-                        value={enteredPin} 
-                        onChange={(e) => setEnteredPin(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-850 font-black tracking-widest text-center text-xl placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPin(!showPin)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                    >
-                      {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Confirmer le Code PIN *</label>
-                  <div className="relative">
-                    <KeyIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input 
-                        type={showConfirmPin ? "text" : "password"} 
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={4}
-                        placeholder="••••" 
-                        value={enteredConfirmPin} 
-                        onChange={(e) => setEnteredConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-855 font-black tracking-widest text-center text-xl placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPin(!showConfirmPin)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                    >
-                      {showConfirmPin ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* LOGIN VIEW: STEP 1 - PHONE */}
-            {!isRegisterView && loginStep === 'phone' && (
+            {isRegisterView && (
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Numéro WhatsApp *</label>
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Votre Nom *</label>
                 <div className="relative">
-                  <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <div className="absolute left-11 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm select-none flex items-center gap-1.5">
-                      <span>🇨🇮</span>
-                      <span>+225</span>
-                  </div>
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input 
-                      type="tel" 
-                      inputMode="tel"
-                      pattern="[0-9]*"
-                      placeholder="01 02 03 04 05" 
-                      value={phone} 
-                      onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 20);
-                          setPhone(val);
-                      }} 
-                      className="w-full pl-24 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all text-sm tracking-wide" 
+                      type="text" 
+                      placeholder="Ex: Filant Mael" 
+                      value={name} 
+                      onChange={(e) => setName(e.target.value)} 
+                      className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <SpeakerIcon text="Entrez votre numéro WhatsApp à 10 chiffres" className="text-orange-500" />
+                      <SpeakerIcon text="Entrez votre nom" className="text-orange-500" />
                   </div>
                 </div>
               </div>
             )}
-
-            {/* LOGIN VIEW: STEP 2 - ENTER PIN */}
-            {!isRegisterView && loginStep === 'pin' && (
-              <div className="space-y-4">
-                <button 
-                  type="button" 
-                  onClick={() => setLoginStep('phone')} 
-                  className="flex items-center gap-1.5 text-xs font-black text-gray-400 hover:text-orange-500 uppercase tracking-widest transition-colors mb-4"
-                >
-                  <ArrowLeft size={14} /> Retour
-                </button>
-
-                <div className="text-center pb-2">
-                  <p className="text-xs font-bold text-gray-650">Bienvenue, <span className="text-orange-600 font-extrabold">{registeredUserForLogin?.name}</span></p>
-                  <p className="text-[11px] text-gray-400 font-medium">Saisissez votre Code PIN pour vous connecter.</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Votre Code PIN *</label>
-                  <div className="relative">
-                    <KeyIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input 
-                        type={showPin ? "text" : "password"} 
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={4}
-                        placeholder="••••" 
-                        value={enteredPin} 
-                        onChange={(e) => setEnteredPin(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-850 font-black tracking-widest text-center text-xl placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPin(!showPin)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                    >
-                      {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="text-right mt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginStep('forgot-pin');
-                    }}
-                    className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline transition-colors"
-                  >
-                    Mot de passe oublié ?
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* LOGIN VIEW: STEP 2.5 - FORGOT PIN REQUEST */}
-            {!isRegisterView && loginStep === 'forgot-pin' && (
-              <div className="space-y-4">
-                <button 
-                  type="button" 
-                  onClick={() => setLoginStep('pin')} 
-                  className="flex items-center gap-1.5 text-xs font-black text-gray-400 hover:text-orange-500 uppercase tracking-widest transition-colors mb-4"
-                >
-                  <ArrowLeft size={14} /> Retour
-                </button>
-
-                <div className="text-center pb-2">
-                  <p className="text-xs font-bold text-gray-650">Mot de passe oublié</p>
-                  <p className="text-[11px] text-gray-400 font-medium">Saisissez votre numéro de téléphone pour demander une réinitialisation à l'administrateur.</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Numéro WhatsApp *</label>
-                  <div className="relative">
-                    <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <div className="absolute left-11 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm select-none flex items-center gap-1.5">
-                        <span>🇨🇮</span>
-                        <span>+225</span>
-                    </div>
-                    <input 
-                        type="tel" 
-                        inputMode="tel"
-                        pattern="[0-9]*"
-                        placeholder="01 02 03 04 05" 
-                        value={phone} 
-                        onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 20);
-                            setPhone(val);
-                        }} 
-                        className="w-full pl-24 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all text-sm tracking-wide" 
-                    />
+            
+            {isRegisterView && (
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Votre Ville *</label>
+                <div className="relative">
+                  <CityIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <CityAutocompleteInput 
+                    id="login-city"
+                    value={city} 
+                    onChange={setCity} 
+                    placeholder="Ex: Abidjan, Cocody..." 
+                    inputClassName="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all text-sm" 
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <SpeakerIcon text="Entrez votre ville" className="text-orange-500" />
                   </div>
                 </div>
               </div>
             )}
-
-            {/* LOGIN VIEW: STEP 3 - FORCE SETUP AFTER RESET */}
-            {!isRegisterView && loginStep === 'reset-setup' && (
-              <div className="space-y-4">
-                <button 
-                  type="button" 
-                  onClick={() => setLoginStep('phone')} 
-                  className="flex items-center gap-1.5 text-xs font-black text-gray-400 hover:text-orange-500 uppercase tracking-widest transition-colors mb-4"
-                >
-                  <ArrowLeft size={14} /> Retour
-                </button>
-
-                <div className="text-center pb-2">
-                  <p className="text-xs font-bold text-gray-650">Bonjour, <span className="text-orange-650 font-black">{registeredUserForLogin?.name}</span></p>
-                  <p className="text-[10px] text-orange-700 bg-orange-50 rounded-2xl p-3 font-bold border border-orange-200 mt-2 leading-snug">
-                    Le Code PIN de votre compte a été réinitialisé. Veuillez en définir un nouveau pour vous connecter.
-                  </p>
+            
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Numéro WhatsApp *</label>
+              <div className="relative">
+                <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <div className="absolute left-11 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm select-none flex items-center gap-1.5">
+                    <span>🇨🇮</span>
+                    <span>+225</span>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nouveau Code PIN (4 chiffres) *</label>
-                  <div className="relative">
-                    <KeyIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input 
-                        type={showPin ? "text" : "password"} 
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={4}
-                        placeholder="••••" 
-                        value={enteredPin} 
-                        onChange={(e) => setEnteredPin(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-850 font-black tracking-widest text-center text-xl placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPin(!showPin)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                    >
-                      {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Confirmer le nouveau Code PIN *</label>
-                  <div className="relative">
-                    <KeyIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input 
-                        type={showConfirmPin ? "text" : "password"} 
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={4}
-                        placeholder="••••" 
-                        value={enteredConfirmPin} 
-                        onChange={(e) => setEnteredConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))} 
-                        className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-855 font-black tracking-widest text-center text-xl placeholder-gray-300 focus:border-orange-500 outline-none transition-all" 
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPin(!showConfirmPin)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                    >
-                      {showConfirmPin ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
+                <input 
+                    type="tel" 
+                    inputMode="tel"
+                    pattern="[0-9]*"
+                    placeholder="01 02 03 04 05" 
+                    value={phone} 
+                    onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 20);
+                        setPhone(val);
+                    }} 
+                    className="w-full pl-24 pr-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-800 font-bold placeholder-gray-300 focus:border-orange-500 outline-none transition-all text-sm tracking-wide" 
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <SpeakerIcon text="Entrez votre numéro WhatsApp à 10 chiffres" className="text-orange-500" />
                 </div>
               </div>
-            )}
+            </div>
 
             <div className="pt-6">
               <button 
@@ -675,11 +236,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
                   disabled={isLoading} 
                   className="w-full py-5 px-4 rounded-3xl shadow-xl flex items-center justify-center font-black text-white transition-all transform active:scale-95 bg-orange-500 hover:bg-orange-600 disabled:opacity-80 disabled:cursor-not-allowed min-h-[64px] uppercase tracking-widest text-sm"
               >
-                  {isLoading ? <Spinner /> : (
-                    isRegisterView 
-                      ? (registrationStep === 'info' ? 'Continuer' : 'Confirmer l\'inscription') 
-                      : (loginStep === 'phone' ? 'Continuer' : (loginStep === 'forgot-pin' ? 'Réinitialiser' : 'Se connecter'))
-                  )}
+                  {isLoading ? <Spinner /> : (isRegisterView ? 'S\'inscrire maintenant' : 'Se connecter')}
               </button>
             </div>
           </form>

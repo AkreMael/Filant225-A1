@@ -15,8 +15,7 @@
         "lastModeChange": { "type": "string", "format": "date-time", "description": "Dernier changement de mode" },
         "cardDataPro": { "type": "object", "description": "Données de la carte Pro" },
         "cardDataService": { "type": "object", "description": "Données de la carte Service" },
-        "fcmToken": { "type": "string", "description": "Token Firebase Cloud Messaging" },
-        "pin": { "type": "string", "description": "Code PIN de connexion à 4 chiffres" }
+        "fcmToken": { "type": "string", "description": "Token Firebase Cloud Messaging" }
       },
       "required": ["name", "phone", "city"]
     },
@@ -283,7 +282,6 @@
         "name": { "type": "string" },
         "phone": { "type": "string" },
         "city": { "type": "string" },
-        "pin": { "type": "string", "description": "Code PIN de connexion" },
         "adminReadStatus": { "type": "string", "enum": ["NON LU", "VU"] },
         "timestamp": { "type": "string", "format": "date-time" }
       },
