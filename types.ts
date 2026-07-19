@@ -26,6 +26,7 @@ export interface User {
   status?: 'active' | 'pending' | 'blocked';
   activeSessionId?: string;
   pin?: string; // 4-digit PIN
+  pinResetRequired?: boolean; // PIN reset indicator
   idCardFront?: string;
   idCardBack?: string;
   idCardUploadedAt?: any;

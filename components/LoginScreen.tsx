@@ -168,12 +168,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onShowPopup }
         if (user) {
           setRegisteredUserForLogin(user);
           
-          if (user.pin) {
-            // User already has a PIN, ask for it
-            setLoginStep('pin');
-          } else {
-            // User PIN is not defined or reset, force them to set a new PIN
+          if (user.pinResetRequired === true || !user.pin) {
+            // User PIN has been reset or is not defined, force them to set a new PIN
             setLoginStep('reset-setup');
+          } else {
+            // User already has a PIN and hasn't been reset, ask for it
+            setLoginStep('pin');
           }
         } else {
           onShowPopup("Numéro non reconnu, veuillez vous inscrire.", "alert");

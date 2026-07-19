@@ -364,6 +364,7 @@ export const databaseService = {
       if (user.role) userData.role = user.role;
       if (user.isVerified !== undefined) userData.isVerified = user.isVerified;
       if (user.pin !== undefined) userData.pin = user.pin;
+      if (user.pinResetRequired !== undefined) userData.pinResetRequired = user.pinResetRequired;
       
       await setDoc(userRef, userData, { merge: true });
     } catch (e) {
@@ -697,6 +698,7 @@ export const databaseService = {
       const userRef = doc(db, targetCollection, sanitizedPhone);
       await setDoc(userRef, {
         pin: pin,
+        pinResetRequired: false,
         updatedAt: serverTimestamp()
       }, { merge: true });
       
@@ -705,7 +707,7 @@ export const databaseService = {
         const connRef = doc(db, 'Connexions', sanitizedPhone);
         const connSnap = await getDoc(connRef);
         if (connSnap.exists()) {
-          await setDoc(connRef, { pin: pin }, { merge: true });
+          await setDoc(connRef, { pin: pin, pinResetRequired: false }, { merge: true });
         }
       } catch (e) {
         console.warn("Could not update pin in Connexions collection:", e);
@@ -720,6 +722,7 @@ export const databaseService = {
         } else {
           users[userIdx].pin = pin;
         }
+        users[userIdx].pinResetRequired = false;
         saveUsers(users);
       }
       
@@ -730,6 +733,7 @@ export const databaseService = {
         } else {
           active.pin = pin;
         }
+        active.pinResetRequired = false;
         databaseService.saveActiveUser(active);
       }
       
@@ -762,9 +766,10 @@ export const databaseService = {
       }
       
       const userRef = doc(db, targetCollection, sanitizedPhone);
-      // Update by setting pin to null or deleting it
+      // Update by setting pin to null and pinResetRequired to true
       await setDoc(userRef, {
         pin: null,
+        pinResetRequired: true,
         updatedAt: serverTimestamp()
       }, { merge: true });
       
@@ -773,7 +778,7 @@ export const databaseService = {
         const connRef = doc(db, 'Connexions', sanitizedPhone);
         const connSnap = await getDoc(connRef);
         if (connSnap.exists()) {
-          await setDoc(connRef, { pin: null }, { merge: true });
+          await setDoc(connRef, { pin: null, pinResetRequired: true }, { merge: true });
         }
       } catch (e) {
         console.warn("Could not clear pin in Connexions collection:", e);
@@ -784,12 +789,14 @@ export const databaseService = {
       const userIdx = users.findIndex(u => u.phone === sanitizedPhone);
       if (userIdx !== -1) {
         delete users[userIdx].pin;
+        users[userIdx].pinResetRequired = true;
         saveUsers(users);
       }
       
       const active = databaseService.getActiveUser();
       if (active && active.phone.replace(/\D/g, '') === sanitizedPhone) {
         delete active.pin;
+        active.pinResetRequired = true;
         databaseService.saveActiveUser(active);
       }
       
