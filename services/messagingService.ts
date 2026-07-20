@@ -12,6 +12,11 @@ export const messagingService = {
     if (!messaging) return;
     
     try {
+      if (typeof Notification === 'undefined') {
+        console.warn('HTML5 Notifications are not supported in this environment (e.g. WebView/Capacitor).');
+        return;
+      }
+      
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         // Ensure service worker is registered and ready
@@ -55,7 +60,7 @@ export const messagingService = {
           });
           
           // Show system notification even in foreground
-          if (Notification.permission === 'granted') {
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.ready.then(registration => {
                 registration.showNotification(payload.notification?.title || 'Notification', {

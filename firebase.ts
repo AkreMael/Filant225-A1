@@ -13,7 +13,15 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const rtdb = getDatabase(app);
 export const storage = getStorage(app, firebaseConfig.storageBucket);
-export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+let messagingInstance = null;
+if (typeof window !== 'undefined') {
+  try {
+    messagingInstance = getMessaging(app);
+  } catch (error) {
+    console.warn("Firebase Messaging is not supported or failed to initialize in this environment:", error);
+  }
+}
+export const messaging = messagingInstance;
 
 // Initialisation de App Check en mode Debug pour l'environnement de développement / iframe
 // REMARQUE: Mettez ENABLE_APP_CHECK à true UNIQUEMENT si vous avez activé et configuré
