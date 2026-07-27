@@ -42,7 +42,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
   const navItems = [
     { id: Tab.Menu, icon: <MenuIcon />, label: "Menu" },
     { id: Tab.Profile, icon: <ProfileIcon />, label: "Profil" },
-    { id: Tab.MyQRCode, icon: <IdCardIcon />, label: "Ma Carte" },
     { id: Tab.Offer, icon: <SiteIcon />, label: "Site" },
     { id: Tab.UserChat, icon: <ChatBubbleIcon />, label: "Chat" },
     { id: 'scanner', icon: <ScannerIcon />, label: "Scanner" },
