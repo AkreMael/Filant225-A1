@@ -41,7 +41,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
   // Définition statique des onglets pour le Client uniquement
   const navItems = [
     { id: Tab.Menu, icon: <MenuIcon />, label: "Menu" },
-    { id: Tab.Profile, icon: <ProfileIcon />, label: "Profil" },
     { id: Tab.Offer, icon: <SiteIcon />, label: "Site" },
     { id: Tab.UserChat, icon: <ChatBubbleIcon />, label: "Chat" },
     { id: 'scanner', icon: <ScannerIcon />, label: "Scanner" },

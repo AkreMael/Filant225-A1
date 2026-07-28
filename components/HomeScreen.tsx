@@ -19,6 +19,12 @@ const IconWrapper: React.FC<{ children: React.ReactNode; className?: string }> =
     </div>
 );
 
+const ProfileIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+    </svg>
+);
+
 const UserCircleIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -984,6 +990,7 @@ interface HomeScreenProps {
   unreadNotifCount?: number;
   deferredPrompt: any;
   onInstallPWA: () => void;
+  onToggleProfile?: () => void;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ 
@@ -998,7 +1005,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
   unreadChatCount = 0,
   unreadNotifCount = 0,
   deferredPrompt,
-  onInstallPWA
+  onInstallPWA,
+  onToggleProfile
 }) => {
   const isMainServiceOpen = true;
 
@@ -1220,12 +1228,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         <header className="pt-5">
             <div className="flex justify-between items-center px-4 h-20">
                 <div className="flex items-center gap-1.5 relative flex-1">
-                    <div className="flex items-center gap-2">
-                         <div className="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-lg border border-orange-500/10 p-0.5 overflow-hidden">
-                             <img src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    <button 
+                        onClick={() => onToggleProfile ? onToggleProfile() : setActiveTab(Tab.Profile)}
+                        className="flex items-center gap-2 text-left focus:outline-none group active:scale-95 transition-all bg-slate-100/90 hover:bg-slate-200/90 dark:bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-700/80 shadow-xs"
+                    >
+                         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200/80 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shrink-0">
+                             <ProfileIcon className="w-4.5 h-4.5 text-slate-500 dark:text-slate-400" />
                          </div>
-                         <h2 className="text-xl font-black text-[#1e293b] uppercase tracking-tighter">FILANT°225</h2>
-                    </div>
+                         <span className="text-xs sm:text-sm font-medium lowercase tracking-normal text-slate-500 dark:text-slate-400">profil</span>
+                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                         </svg>
+                    </button>
                 </div>
 
                 <div className="flex items-center space-x-1.5">
@@ -1249,8 +1263,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <div className={`bg-white/10 backdrop-blur-md my-4 p-6 border-y ${isClient ? 'border-slate-200' : 'border-white/10'} overflow-hidden`}>
                 <div className="flex flex-col items-center">
                     <h1 className="text-5xl sm:text-6xl font-black tracking-tighter flex items-center justify-center flex-nowrap whitespace-nowrap">
-                        <div className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center bg-orange-600 text-white rounded-2xl shadow-xl mr-3">
-                            <span className="font-black text-4xl sm:text-5xl">F</span>
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center bg-white rounded-2xl shadow-xl mr-3 p-1 overflow-hidden border border-orange-500/10">
+                            <img 
+                                src="https://i.supaimg.com/0543a7e5-673b-44b9-9668-8152c5aea01b/49d4592c-b74d-4904-b209-a32e8c921f1b.png" 
+                                alt="Logo FILANT°225" 
+                                className="w-full h-full object-contain" 
+                                referrerPolicy="no-referrer" 
+                            />
                         </div>
                         <div className="flex">
                             {"FILANT".split("").map((letter, idx) => (

@@ -33,7 +33,17 @@ const resolvedDirname = typeof import.meta !== "undefined" && import.meta.url
   : __dirname;
 
 // Load Firebase Config
-const firebaseConfig = JSON.parse(fs.readFileSync(path.join(resolvedDirname, "firebase-applet-config.json"), "utf8"));
+const configPath = [
+  path.join(process.cwd(), "firebase-applet-config.json"),
+  path.join(resolvedDirname, "firebase-applet-config.json"),
+  path.join(resolvedDirname, "..", "firebase-applet-config.json")
+].find(p => fs.existsSync(p));
+
+if (!configPath) {
+  throw new Error("firebase-applet-config.json not found in working directory or bundle directory.");
+}
+
+const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
 // Initialize Firestore with Firebase Admin (keep for admin SDK backwards compatibility if any)
 if (!admin.apps.length) {
@@ -919,9 +929,10 @@ async function startServer() {
     globalViteInstance = vite;
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(resolvedDirname, "dist")));
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
     app.get("*all", (req, res) => {
-      res.sendFile(path.join(resolvedDirname, "dist", "index.html"));
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
 

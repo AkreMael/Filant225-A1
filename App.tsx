@@ -1602,6 +1602,7 @@ const App: React.FC = () => {
             unreadNotifCount={unreadNotifCount}
             deferredPrompt={deferredPrompt}
             onInstallPWA={handleInstallPWA}
+            onToggleProfile={handleToggleProfile}
           />;
           break;
       }
@@ -1722,6 +1723,7 @@ const App: React.FC = () => {
         onRestrictedAccess={handleRestrictedAccess}
         onShowPopup={showPopup}
         unreadChatCount={unreadChatCount}
+        onToggleProfile={handleToggleProfile}
       />;
       break;
     }
