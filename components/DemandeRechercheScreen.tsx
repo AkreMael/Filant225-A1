@@ -9,6 +9,7 @@ import { doc, onSnapshot, collection, query, orderBy, getDocs, getDoc } from 'fi
 import { db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { encodeAdId, decodeAdId } from '../utils/shareUtils';
+import WhatsAppPaymentSupportButton from './WhatsAppPaymentSupportButton';
 
 interface InscriptionResult {
   id: string;
@@ -2151,9 +2152,13 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
           {/* Pending or Refused status announcements */}
           {currentUserAd?.onlinePending === true && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-800 font-bold text-xs space-y-1 mt-3 animate-in fade-in duration-300">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-800 font-bold text-xs space-y-2 mt-3 animate-in fade-in duration-300">
               <p className="font-extrabold uppercase tracking-wide">⏳ En attente de validation</p>
               <p className="text-amber-700/90 font-medium">Votre demande d'inscription et de mise en ligne est en attente de validation par l'administrateur. Votre preuve de dépôt/paiement est en cours de vérification. L'annonce sera publiée automatiquement dès validation. Merci de patienter.</p>
+              <WhatsAppPaymentSupportButton
+                serviceName="Mise en ligne"
+                amount="310"
+              />
             </div>
           )}
 

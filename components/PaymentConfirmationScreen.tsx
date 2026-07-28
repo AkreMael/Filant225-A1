@@ -5,6 +5,7 @@ import { getCardType } from '../utils/authUtils';
 import { rtdb } from '../firebase';
 import { ref as rtdbRef, onValue, off } from 'firebase/database';
 import { CreditCard } from 'lucide-react';
+import WhatsAppPaymentSupportButton from './WhatsAppPaymentSupportButton';
 
 interface PaymentConfirmationScreenProps {
   title: string;
@@ -615,6 +616,10 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           <p className="text-[9px] text-slate-400 font-black uppercase font-sans">
             Le montant restera bloqué en attente de sa validation.
           </p>
+          <WhatsAppPaymentSupportButton
+            serviceName={title || paymentType || "Dépôt de compte"}
+            amount={depositAmount || currentAmount}
+          />
           <button
             onClick={() => {
               setShowDepositOverlay(false);
@@ -832,13 +837,19 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
 
                 {pendingDepositPath ? (
                   pendingDepositStatus === 'PENDING' ? (
-                    <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 text-center space-y-1 animate-pulse">
+                    <div className="bg-orange-50 border border-orange-100 rounded-xl p-3 text-center space-y-1.5 animate-pulse">
                       <p className="text-[9px] font-black text-orange-600 uppercase tracking-wide font-sans">
                         ⏳ DÉPÔT EN ATTENTE DE VALIDATION
                       </p>
                       <p className="text-[8px] font-extrabold text-orange-800 leading-relaxed font-sans">
                         Votre demande de recharge de <span className="font-black text-[10px] text-orange-700">{(parseFloat(depositAmount) || 0).toLocaleString('fr-FR')} FCFA</span> est en cours de vérification par l'administrateur. Dès validation, votre solde de compte sera mis à jour.
                       </p>
+                      <WhatsAppPaymentSupportButton
+                        serviceName={title || paymentType || "Dépôt de compte"}
+                        amount={depositAmount || currentAmount}
+                        variant="compact"
+                        className="w-full mt-1"
+                      />
                     </div>
                   ) : pendingDepositStatus === 'SUCCESS' ? (
                     <div className="bg-green-50 border border-green-150 rounded-xl p-3 text-center space-y-2 animate-in zoom-in-95 duration-300">
@@ -947,7 +958,7 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     </button>
                   </div>
                 ) : paymentPath ? (
-                  <div className="text-orange-600 block bg-orange-50 p-3 rounded-xl border-2 border-orange-100 space-y-1 transition-all">
+                  <div className="text-orange-600 block bg-orange-50 p-3 rounded-xl border-2 border-orange-100 space-y-2 transition-all">
                     <p className="font-black text-[10px] uppercase tracking-wider animate-pulse font-sans">Dépôt en attente de validation</p>
                     <p className="text-[9.5px] leading-relaxed text-orange-950 font-semibold font-sans">
                       Votre demande de <span className="font-black text-sm text-orange-700">{parseFloat(currentAmount).toLocaleString('fr-FR')} FCFA</span> a été enregistrée avec succès.
@@ -955,13 +966,10 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     <p className="text-[8.5px] leading-relaxed text-slate-500 font-sans">
                       Veuillez patienter pendant que l'administrateur valide votre dépôt. Le solde de votre compte sera rechargé instantanément après confirmation.
                     </p>
-                  </div>
-                ) : pendingDepositStatus === 'PENDING' ? (
-                  <div className="text-orange-600 block bg-orange-50 p-3 rounded-xl border-2 border-orange-100 space-y-1 transition-all">
-                    <p className="font-black text-[10px] uppercase tracking-wider animate-pulse font-sans">Dépôt Compte en attente</p>
-                    <p className="text-[9px] leading-relaxed text-orange-950 font-semibold font-sans animate-pulse">
-                      Votre demande de recharge de <span className="font-black text-sm text-orange-700">{(parseFloat(depositAmount) || 0).toLocaleString('fr-FR')} FCFA</span> est en cours d'examen.
-                    </p>
+                    <WhatsAppPaymentSupportButton
+                      serviceName={title || paymentType}
+                      amount={currentAmount}
+                    />
                   </div>
                 ) : isInsufficient ? (
                   <span className="text-rose-500 text-[10px] font-black uppercase tracking-wide">Solde insuffisant pour commander ce service.</span>

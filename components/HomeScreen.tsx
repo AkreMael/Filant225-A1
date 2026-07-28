@@ -53,6 +53,12 @@ const IdCardIcon: React.FC<{ className?: string }> = ({ className }) => (
     </svg>
 );
 
+const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6 text-white" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.762.459 3.48 1.332 5.002l-1.416 5.17 5.289-1.387c1.47 0.8 3.125 1.22 4.78 1.221h.005c5.506 0 9.989-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.064s-4.398-2.942-7.063-2.942zm0 18.257c-1.493 0-2.955-.401-4.233-1.159l-.304-.18-3.146.824.839-3.067-.198-.315c-.833-1.326-1.273-2.868-1.273-4.453 0-4.57 3.719-8.288 8.293-8.288 2.215 0 4.297.863 5.862 2.43 1.565 1.566 2.427 3.649 2.426 5.864 0 4.571-3.719 8.288-8.291 8.288zm4.542-6.208c-.249-.125-1.472-.726-1.7-.809-.228-.083-.394-.125-.56.125-.166.249-.643.809-.788.975-.145.166-.291.187-.54.062-.249-.125-1.052-.388-2.003-1.236-.74-.66-1.24-1.475-1.385-1.724-.145-.249-.015-.384.109-.508.112-.112.249-.291.374-.436.125-.145.166-.249.249-.415.083-.166.042-.311-.021-.436-.062-.125-.56-1.349-.768-1.847-.203-.486-.41-.42-.56-.428l-.478-.009c-.166 0-.436.062-.664.311-.228.249-.872.851-.872 2.075 0 1.224.892 2.407 1.017 2.573.125.166 1.756 2.682 4.254 3.762.594.257 1.058.411 1.42.526.598.19 1.142.163 1.572.099.48-.071 1.472-.602 1.679-1.183.208-.581.208-1.079.145-1.183-.062-.104-.228-.187-.477-.312z" />
+    </svg>
+);
+
 const ServiceRapideIcon: React.FC = () => <IconWrapper className="w-12 h-12 bg-white/20"><svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-current" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0zM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg></IconWrapper>;
 const EquipmentIcon: React.FC = () => <IconWrapper className="w-12 h-12 bg-orange-600/20"><svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.528-1.036.94-2.197 1.088-3.386l-.738-2.652L3 14l2.652.738c1.19.147 2.35.56 3.386 1.088l3.03-2.496z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 21.75l-4.135-4.134a1.21 1.21 0 010-1.707l4.134-4.135a1.21 1.21 0 011.707 0l4.135 4.135a1.21 1.21 0 010 1.707l-4.134 4.135a1.21 1.21 0 01-1.707 0z" /></svg></IconWrapper>;
 
@@ -1113,6 +1119,52 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const menuTitle = "Mise en relation & Solutions";
 
+  const [liveUser, setLiveUser] = useState<User>(user);
+
+  useEffect(() => {
+    setLiveUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user?.phone) return;
+    const sanitizedPhone = user.phone.replace(/\D/g, '');
+    if (!sanitizedPhone) return;
+
+    const userDocRef = doc(db, 'Users', sanitizedPhone);
+    const unsubUser = onSnapshot(userDocRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setLiveUser(prev => ({
+          ...prev,
+          name: data.name || data.nom || prev.name,
+          city: data.city || data.ville || prev.city,
+          status: data.status || prev.status,
+        }));
+      }
+    }, (err) => {
+      console.warn("Error listening to Users doc in HomeScreen:", err);
+    });
+
+    const inscDocRef = doc(db, 'Inscriptions', sanitizedPhone);
+    const unsubInsc = onSnapshot(inscDocRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setLiveUser(prev => ({
+          ...prev,
+          name: data.name || data.nom || prev.name,
+          city: data.city || data.ville || prev.city,
+        }));
+      }
+    }, (err) => {
+      console.warn("Error listening to Inscriptions doc in HomeScreen:", err);
+    });
+
+    return () => {
+      unsubUser();
+      unsubInsc();
+    };
+  }, [user?.phone]);
+
   const [isInscriptionValidated, setIsInscriptionValidated] = useState<boolean>(() => {
     return localStorage.getItem(`filant_inscription_validated_${user?.phone || ''}`) === 'true';
   });
@@ -1275,16 +1327,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
       
         <header className="pt-5">
             <div className="flex justify-between items-center px-4 h-20">
-                <div className="flex items-center gap-1.5 relative flex-1">
+                <div className="flex items-center gap-1.5 relative flex-1 pr-1">
                     <button 
                         onClick={() => onToggleProfile ? onToggleProfile() : setActiveTab(Tab.Profile)}
-                        className="flex items-center gap-2 text-left focus:outline-none group active:scale-95 transition-all bg-slate-100/90 hover:bg-slate-200/90 dark:bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-700/80 shadow-xs"
+                        className="flex items-center gap-2 text-left focus:outline-none group active:scale-95 transition-all bg-slate-100/90 hover:bg-slate-200/90 dark:bg-slate-800/80 px-2.5 py-1 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs max-w-full"
                     >
                          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200/80 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shrink-0">
                              <ProfileIcon className="w-4.5 h-4.5 text-slate-500 dark:text-slate-400" />
                          </div>
-                         <span className="text-xs sm:text-sm font-medium lowercase tracking-normal text-slate-500 dark:text-slate-400">profil</span>
-                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                         <div className="flex flex-col min-w-0 leading-tight">
+                             <span className="text-[11px] sm:text-xs font-bold text-slate-600 dark:text-slate-300 truncate max-w-[100px] sm:max-w-[130px]">
+                                 {liveUser?.name || 'Profil'}
+                             </span>
+                             <span className="text-[9.5px] sm:text-[10px] font-medium text-slate-400 dark:text-slate-400 truncate max-w-[100px] sm:max-w-[130px]">
+                                 {liveUser?.city || 'Côte d\'Ivoire'}
+                             </span>
+                             <div className="flex items-center gap-1 text-[9px] font-medium text-slate-400 dark:text-slate-400">
+                                 <span>{getStatusLabel(profileType)}</span>
+                                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                                 <span className="text-emerald-500 dark:text-emerald-400 font-semibold">en ligne</span>
+                             </div>
+                         </div>
+                         <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform ml-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                          </svg>
                     </button>
@@ -1362,18 +1426,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
             </div>
             
-            <div className="flex justify-between items-end px-4">
-            <div>
-                <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Session active</p>
-                <p className="text-lg font-bold capitalize flex items-center gap-1.5">
-                    {user.name} <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full" style={{ color: '#6b7280', backgroundColor: '#f3f4f6' }}>{getStatusLabel(profileType)}</span>
-                </p>
-                <p className="text-sm font-medium">{user.city} <span className="text-green-500 font-bold animate-pulse ml-2" style={{ color: '#22c55e' }}>• EN LIGNE</span></p>
-            </div>
-            <div className="flex items-start space-x-3">
+            <div className="flex justify-center sm:justify-end items-end px-4 w-full">
+            <div className="flex items-start gap-2.5 sm:gap-3 overflow-x-auto scrollbar-hide max-w-full py-1">
                 <button 
                     onClick={() => setActiveTab(Tab.MyQRCode)}
-                    className="flex flex-col items-center space-y-1 group"
+                    className="flex flex-col items-center space-y-1 group shrink-0"
                 >
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-600 rounded-full shadow-lg transform group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-white">
                         <IdCardIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
@@ -1382,8 +1439,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
 
                 <button 
+                    onClick={() => window.open('https://wa.me/2250705052632', '_blank')}
+                    className="flex flex-col items-center space-y-1 group shrink-0"
+                >
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500 hover:bg-emerald-600 rounded-full shadow-lg transform group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-white">
+                        <WhatsAppIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                    </div>
+                    <span className="text-[7.5px] sm:text-[8px] font-black uppercase text-slate-600 text-center leading-tight max-w-[65px] sm:max-w-[75px]">
+                        WhatsApp FILANT°225
+                    </span>
+                </button>
+
+                <button 
                     onClick={() => setActiveTab(Tab.UserChat)}
-                    className="flex flex-col items-center space-y-1 group relative"
+                    className="flex flex-col items-center space-y-1 group relative shrink-0"
                 >
                     <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg transform group-hover:scale-110 relative overflow-hidden ${
                         unreadChatCount > 0 ? 'animate-blink-red-green' : 'bg-blue-600'
@@ -1400,7 +1469,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
                 <button 
                     onClick={() => handleMainServiceClick('assistant_qr')}
-                    className="flex flex-col items-center space-y-1 group"
+                    className="flex flex-col items-center space-y-1 group shrink-0"
                 >
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 rounded-full shadow-lg transform group-hover:scale-110 transition-transform flex items-center justify-center">
                         <AssistantIcon />
@@ -1410,7 +1479,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
                 <button 
                     onClick={() => handleMainServiceClick('emergency_form')}
-                    className="flex flex-col items-center space-y-1 group"
+                    className="flex flex-col items-center space-y-1 group shrink-0"
                 >
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-600 rounded-full shadow-lg transform group-hover:scale-110 transition-transform border border-red-400 animate-pulse flex items-center justify-center">
                         <EmergencyIcon />
