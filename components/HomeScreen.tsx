@@ -11,6 +11,8 @@ import { chatService } from '../services/chatService';
 import { isAdmin, getCardType } from '../utils/authUtils';
 import { getServiceItemImage } from './InterventionShopScreen';
 import { motion, AnimatePresence } from 'motion/react';
+import { db } from '../firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 // --- SVG Icons ---
 const IconWrapper: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
@@ -1111,6 +1113,52 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const menuTitle = "Mise en relation & Solutions";
 
+  const [isInscriptionValidated, setIsInscriptionValidated] = useState<boolean>(() => {
+    return localStorage.getItem(`filant_inscription_validated_${user?.phone || ''}`) === 'true';
+  });
+
+  useEffect(() => {
+    if (!user?.phone) return;
+    const sanitizedPhone = user.phone.replace(/\D/g, '');
+    if (!sanitizedPhone) return;
+
+    const qrRef = doc(db, 'QRCodeActivations', sanitizedPhone);
+    const unsubQr = onSnapshot(qrRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const validated = 
+          data?.fraisDossierPayes === true || 
+          data?.requiresRegistration === false ||
+          data?.status === "Code QR Actif" ||
+          (data?.status && !data?.status.includes("Inscrivez-vous"));
+        if (validated) {
+          setIsInscriptionValidated(true);
+          localStorage.setItem(`filant_inscription_validated_${user.phone}`, 'true');
+        }
+      }
+    }, (err) => {
+      console.warn("Error listening to QRCodeActivations in HomeScreen:", err);
+    });
+
+    const inscRef = doc(db, 'Inscriptions', sanitizedPhone);
+    const unsubInsc = onSnapshot(inscRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data?.fraisDossierPayes === true || data?.step >= 2) {
+          setIsInscriptionValidated(true);
+          localStorage.setItem(`filant_inscription_validated_${user.phone}`, 'true');
+        }
+      }
+    }, (err) => {
+      console.warn("Error listening to Inscriptions in HomeScreen:", err);
+    });
+
+    return () => {
+      unsubQr();
+      unsubInsc();
+    };
+  }, [user?.phone]);
+
   const handleScanResult = (data: string) => {
     setShowScanner(false);
     const info = extractQRInfo(data);
@@ -1258,6 +1306,32 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                         <IvoryCoastFlagIcon className="h-6 w-9 rounded-sm shadow-sm" />
                     )}
                 </div>
+            </div>
+
+            {/* Grand bouton INSCRIVEZ-VOUS / INSCRIPTION VALIDÉE sous la section Profil */}
+            <div className="px-4 mt-2 mb-1">
+                {!isInscriptionValidated ? (
+                    <button 
+                        onClick={() => setActiveTab(Tab.MyQRCode)}
+                        className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] transition-all duration-200 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-md shadow-orange-500/20 flex items-center justify-center gap-2.5 cursor-pointer border border-orange-400/30 group"
+                    >
+                        <IdCardIcon className="w-5 h-5 text-white shrink-0 group-hover:scale-110 transition-transform" />
+                        <span>INSCRIVEZ-VOUS</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white/90 group-hover:translate-x-1 transition-transform ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                    </button>
+                ) : (
+                    <button 
+                        onClick={() => setActiveTab(Tab.MyQRCode)}
+                        className="w-full py-2.5 px-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.98] transition-all"
+                    >
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-black shadow-xs shrink-0">
+                            ✓
+                        </div>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-black">INSCRIPTION VALIDÉE</span>
+                    </button>
+                )}
             </div>
 
             <div className={`bg-white/10 backdrop-blur-md my-4 p-6 border-y ${isClient ? 'border-slate-200' : 'border-white/10'} overflow-hidden`}>

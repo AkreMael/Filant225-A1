@@ -125,14 +125,20 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
   const [paymentPath, setPaymentPath] = useState<string | null>(null);
   const [hasAutoPaid, setHasAutoPaid] = useState(false);
 
+  const exitScreen = () => {
+    if (onRegisterBackHandler) {
+      onRegisterBackHandler(null);
+    }
+    onBack();
+    if (onGoToMenu) {
+      onGoToMenu();
+    }
+  };
+
   const handleBackNavigation = () => {
     // If payment is completed and validated (isSuccess is true), return directly to menu principal
     if (isSuccess) {
-      if (onGoToMenu) {
-        onGoToMenu();
-      } else {
-        onBack();
-      }
+      exitScreen();
       return true; // handled
     }
 
@@ -140,13 +146,13 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
     const isPendingPayment = isProcessing || !!paymentPath;
     const isPendingDeposit = pendingDepositStatus === 'PENDING' || isDepositing;
     if (isPendingPayment || isPendingDeposit) {
-      if (onShowPopup && onGoToMenu) {
+      if (onShowPopup) {
         onShowPopup(
           "Votre paiement ou votre dépôt est encore en cours de traitement. Si vous quittez cette page, vous pourrez reprendre l'opération plus tard.",
           "confirm",
           (close) => {
             close();
-            onGoToMenu();
+            exitScreen();
           },
           "Quitter",
           "Rester sur la page",
@@ -155,14 +161,14 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
       } else {
         const confirmExit = window.confirm("Quitter cette page ? Votre paiement ou votre dépôt est encore en cours de traitement.");
         if (confirmExit) {
-          if (onGoToMenu) onGoToMenu(); else onBack();
+          exitScreen();
         }
       }
       return true; // handled
     }
 
     // Otherwise, normal back behavior
-    onBack();
+    exitScreen();
     return true; // handled
   };
   

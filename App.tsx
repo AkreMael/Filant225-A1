@@ -1133,11 +1133,16 @@ const App: React.FC = () => {
     const currentMenuView = stateRef.current.menuView;
     if (currentActiveTab === Tab.Menu && currentMenuView === 'hub') {
       showPopup(
-        "Voulez-vous quitter l’application ?",
+        "Voulez-vous quitter l'application ?",
         "confirm",
         (close) => {
-          CapApp.exitApp();
           close();
+          try {
+            CapApp.exitApp();
+          } catch (e) {}
+          try {
+            window.close();
+          } catch (e) {}
         },
         "Oui",
         "Non"
