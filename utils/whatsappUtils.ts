@@ -1,3 +1,5 @@
+import { trackContactWhatsAppEvent } from './analytics';
+
 export const COMPANY_WHATSAPP_PHONE = "2250705052632";
 
 export function formatPaymentAmount(amount: string | number): string {
@@ -37,6 +39,7 @@ export function getPaymentWhatsAppMessage(serviceName: string, amount: string | 
 }
 
 export function openPaymentWhatsAppSupport(serviceName: string, amount: string | number) {
+  trackContactWhatsAppEvent(`payment_support_${serviceName}`);
   const message = getPaymentWhatsAppMessage(serviceName, amount);
   const url = `https://wa.me/${COMPANY_WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
   window.open(url, '_blank');
