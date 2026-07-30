@@ -211,7 +211,7 @@ const App: React.FC = () => {
     }
     return false;
   });
-  const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services' | 'demande_recherche' | 'messagerie'>('lock');
+  const [blockedView, setBlockedView] = useState<'lock' | 'carte' | 'services' | 'demande_recherche' | 'messagerie' | 'emergency_form'>('lock');
   const [blockedProfileOpen, setBlockedProfileOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [chatViewport, setChatViewport] = useState({
@@ -1000,14 +1000,18 @@ const App: React.FC = () => {
     localStorage.setItem('filant_darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
 
+  const handleEmergencyTrigger = useCallback(() => {
+    setMenuView('emergency_form');
+    setIsProfileOpen(false);
+    setBlockedProfileOpen(false);
+    if (currentUser?.isBlocked || enAttenteTraitement) {
+      setBlockedView('emergency_form');
+    }
+  }, [currentUser?.isBlocked, enAttenteTraitement]);
+
   useEffect(() => {
       const handlePaymentTrigger = (event: CustomEvent<PaymentConfirmationContext>) => {
           setPaymentConfirmationContext(event.detail);
-      };
-
-      const handleEmergencyTrigger = () => {
-          setMenuView('emergency_form');
-          setIsProfileOpen(false);
       };
 
       window.addEventListener('trigger-payment-view' as any, handlePaymentTrigger as any);
@@ -1017,7 +1021,7 @@ const App: React.FC = () => {
           window.removeEventListener('trigger-payment-view' as any, handlePaymentTrigger as any);
           window.removeEventListener('trigger-emergency-view', handleEmergencyTrigger);
       };
-  }, []);
+  }, [handleEmergencyTrigger]);
 
   const isUserAdmin = currentUser?.phone === '0705052632';
 
@@ -1781,6 +1785,22 @@ const App: React.FC = () => {
       );
     }
 
+    if (blockedView === 'emergency_form') {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-white flex flex-col animate-in fade-in duration-300" style={{ height: globalViewportHeight }}>
+          <EmergencyFormScreen 
+            onBack={() => setBlockedView('lock')} 
+            user={displayUser} 
+            onShowPopup={showPopup}
+            onGoToMenu={goToMainMenu}
+            onRegisterBackHandler={(handler) => {
+              backHandlerRef.current = handler;
+            }}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center p-8 text-center" style={{ height: globalViewportHeight }}>
         <div className="flex-1 flex flex-col items-center justify-center">
@@ -1803,11 +1823,11 @@ const App: React.FC = () => {
               }}
               className="w-full py-4 bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-pink-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer group"
             >
-              <Search className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
+              <Search className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
               <span className="text-xs font-black uppercase tracking-widest text-white">
                 Services en ligne
               </span>
-              <Eye className="w-4.5 h-4.5 text-white animate-eye-blink shrink-0" />
+              <Eye className="w-6 h-6 text-white animate-eye-blink shrink-0" />
             </button>
           </div>
 
@@ -1876,6 +1896,12 @@ const App: React.FC = () => {
                 onInstallPWA={handleInstallPWA}
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={setIsDarkMode}
+                onNavigate={(view) => {
+                  setBlockedProfileOpen(false);
+                  if (view === 'emergency_form') {
+                    handleEmergencyTrigger();
+                  }
+                }}
               />
             </div>
           </div>
@@ -1986,11 +2012,11 @@ const App: React.FC = () => {
               }}
               className="relative w-full mt-3 py-4 bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-black uppercase text-xs tracking-widest rounded-2xl shadow-lg shadow-pink-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer group"
             >
-              <Search className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
+              <Search className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
               <span className="text-xs font-black uppercase tracking-widest text-white">
                 Services en ligne
               </span>
-              <Eye className="w-4.5 h-4.5 text-white animate-eye-blink shrink-0" />
+              <Eye className="w-6 h-6 text-white animate-eye-blink shrink-0" />
               {pendingRequestsCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-black w-5.5 h-5.5 rounded-full flex items-center justify-center animate-bounce shadow-md border-2 border-white z-10">
                   {pendingRequestsCount}
@@ -2077,6 +2103,12 @@ const App: React.FC = () => {
                 onInstallPWA={handleInstallPWA}
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={setIsDarkMode}
+                onNavigate={(view) => {
+                  setBlockedProfileOpen(false);
+                  if (view === 'emergency_form') {
+                    handleEmergencyTrigger();
+                  }
+                }}
               />
             </div>
           </div>

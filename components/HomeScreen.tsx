@@ -1447,13 +1447,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
             </div>
             
-            <div className="flex justify-center sm:justify-end items-end px-4 w-full">
+            <div className="flex justify-end items-end px-4 w-full">
             <div className="flex items-start gap-2.5 sm:gap-3 overflow-x-auto scrollbar-hide max-w-full py-1">
                 <button 
                     onClick={() => setActiveTab(Tab.MyQRCode)}
                     className="flex flex-col items-center space-y-1 group shrink-0"
                 >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-600 rounded-full shadow-lg transform group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-white">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-600 rounded-2xl shadow-lg transform group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-white">
                         <IdCardIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                     </div>
                     <span className="text-[8px] font-black uppercase text-slate-600">Ma Carte</span>
@@ -1463,7 +1463,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     onClick={() => window.open('https://wa.me/2250705052632', '_blank')}
                     className="flex flex-col items-center space-y-1 group shrink-0"
                 >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500 hover:bg-emerald-600 rounded-full shadow-lg transform group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-white">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-500 hover:bg-emerald-600 rounded-2xl shadow-lg transform group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-white">
                         <WhatsAppIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                     </div>
                     <span className="text-[7.5px] sm:text-[8px] font-black uppercase text-slate-600 text-center leading-tight max-w-[65px] sm:max-w-[75px]">
@@ -1475,7 +1475,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     onClick={() => setActiveTab(Tab.UserChat)}
                     className="flex flex-col items-center space-y-1 group relative shrink-0"
                 >
-                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg transform group-hover:scale-110 relative overflow-hidden ${
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-lg transform group-hover:scale-110 relative overflow-hidden ${
                         unreadChatCount > 0 ? 'animate-blink-red-green' : 'bg-blue-600'
                     }`}>
                         <ChatBubbleIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
@@ -1492,7 +1492,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     onClick={() => handleMainServiceClick('assistant_qr')}
                     className="flex flex-col items-center space-y-1 group shrink-0"
                 >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 rounded-full shadow-lg transform group-hover:scale-110 transition-transform flex items-center justify-center">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 rounded-2xl shadow-lg transform group-hover:scale-110 transition-transform flex items-center justify-center">
                         <AssistantIcon />
                     </div>
                     <span className="text-[8px] font-black uppercase text-slate-600">Assistant QR</span>
@@ -1596,17 +1596,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                         id="services-en-ligne-lightweight"
                     >
                         {isLoadingServices ? (
-                            <svg className="animate-spin h-4 w-4 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-5 w-5 text-white shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         ) : (
-                            <Search className="w-4 h-4 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
+                            <Search className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-200 shrink-0" />
                         )}
                         <span className="text-xs font-black uppercase tracking-widest text-white">
                             Services en ligne
                         </span>
-                        <Eye className="w-4.5 h-4.5 text-white animate-eye-blink shrink-0" />
+                        <Eye className="w-6 h-6 text-white animate-eye-blink shrink-0" />
                     </button>
                 </div>
 

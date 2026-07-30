@@ -1,11 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
+import { Phone, MessageSquare, AlertTriangle, ShieldAlert, CheckCircle2, ChevronRight, ArrowLeft } from 'lucide-react';
 import { User } from '../types';
 import { databaseService } from '../services/databaseService';
-
-const BackIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>;
-const EmergencyIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>;
 
 interface EmergencyFormScreenProps {
   onBack: () => void;
@@ -22,14 +19,21 @@ interface EmergencyFormScreenProps {
   onRegisterBackHandler?: (handler: (() => boolean) | null) => void;
 }
 
-const options = [
-  "Annuler un contrat",
-  "Problème paiement WAVE",
-  "Trouver un travailleur rapidement",
-  "Louer un équipement",
-  "Trouver une agence immobilière",
-  "Problème avec l’application",
-  "Autre"
+const emergencyOptions = [
+  "Problème de paiement / Transaction Wave bloquée",
+  "Annuler un contrat ou régler un litige",
+  "Trouver un travailleur qualifié en urgence",
+  "Besoin urgent de location d'équipement",
+  "Accident / Problème de sécurité sur chantier",
+  "Problème d'accès à l'application",
+  "Autre urgence"
+];
+
+const nationalNumbers = [
+  { name: "SAMU (Secours Médicaux)", number: "185", phoneUrl: "tel:185", color: "bg-red-500", desc: "Urgences médicales & ambulances" },
+  { name: "Police Secours", number: "111", phoneUrl: "tel:111", color: "bg-blue-600", desc: "Secours & sécurité publique" },
+  { name: "Sapeurs-Pompiers (GSPM)", number: "180", phoneUrl: "tel:180", color: "bg-orange-600", desc: "Incendies, secours & accidents" },
+  { name: "Assistance Filant°225", number: "07 05 05 26 32", phoneUrl: "tel:+2250705052632", color: "bg-emerald-600", desc: "Ligne directe assistance 24/7" },
 ];
 
 const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({ 
@@ -41,12 +45,14 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({
 }) => {
   const [selectedOption, setSelectedOption] = useState<string>('');
   const [otherDetails, setOtherDetails] = useState('');
-  const [email, setEmail] = useState('');
+  const [contactInfo, setContactInfo] = useState(user?.phone || '');
   const [isSending, setIsSending] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
 
   const handleBackWithConfirmation = () => {
-    const hasStarted = selectedOption !== '' || otherDetails !== '' || email !== '';
-    if (hasStarted) {
+    const hasStarted = selectedOption !== '' || otherDetails !== '';
+    if (hasStarted && !isSubmitted) {
       if (onShowPopup && onGoToMenu) {
         onShowPopup(
           "Les informations non enregistrées seront perdues.",
@@ -56,8 +62,8 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({
             onGoToMenu();
           },
           "Quitter",
-          "Continuer la saisie",
-          "Quitter ce formulaire ?"
+          "Continuer",
+          "Quitter la page d'urgence ?"
         );
       } else {
         const confirmExit = window.confirm("Quitter ce formulaire ? Les informations non enregistrées seront perdues.");
@@ -65,10 +71,10 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({
           if (onGoToMenu) onGoToMenu(); else onBack();
         }
       }
-      return true; // handled
+      return true;
     }
     onBack();
-    return true; // handled
+    return true;
   };
 
   useEffect(() => {
@@ -78,59 +84,81 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({
         onRegisterBackHandler(null);
       };
     }
-  }, [onRegisterBackHandler, selectedOption, otherDetails, email, onBack, onGoToMenu, onShowPopup]);
-
-  const [errors, setErrors] = useState<string[]>([]);
+  }, [onRegisterBackHandler, selectedOption, otherDetails, contactInfo, isSubmitted, onBack, onGoToMenu, onShowPopup]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: string[] = [];
     if (!selectedOption) newErrors.push('reason');
-    if (!email) newErrors.push('email');
-    if (selectedOption === 'Autre' && !otherDetails) newErrors.push('details');
+    if (!contactInfo) newErrors.push('contact');
+    if (selectedOption === 'Autre urgence' && !otherDetails) newErrors.push('details');
     
     if (newErrors.length > 0) {
-        setErrors(newErrors);
-        return;
+      setErrors(newErrors);
+      return;
     }
 
     setIsSending(true);
     
-    const finalReason = selectedOption === 'Autre' ? `Autre: ${otherDetails}` : selectedOption;
+    const finalReason = selectedOption === 'Autre urgence' ? `Autre: ${otherDetails}` : selectedOption;
     
-    const emailBody = `URGENCE FILANT°225\n\n` +
-                      `Motif: ${finalReason}\n` +
-                      `Email de contact: ${email}\n\n` +
-                      `--- INFORMATIONS CLIENT ---\n` +
-                      `Nom: ${user.name}\n` +
-                      `Téléphone: ${user.phone}\n` +
-                      `Ville de résidence: ${user.city}\n\n` +
-                      `Envoyé via l'application FILANT°225`;
+    const reportText = `🚨 *URGENCE FILANT°225*\n\n` +
+                       `*Motif d'urgence:* ${finalReason}\n` +
+                       `*Détails complémentaires:* ${otherDetails || 'Aucun'}\n` +
+                       `*Contact client:* ${contactInfo}\n\n` +
+                       `--- INFORMATIONS UTILISATEUR ---\n` +
+                       `*Nom:* ${user?.name || 'Client'}\n` +
+                       `*Téléphone:* ${user?.phone || 'Non spécifié'}\n` +
+                       `*Ville:* ${user?.city || 'Abidjan'}\n` +
+                       `*Date:* ${new Date().toLocaleString('fr-FR')}\n\n` +
+                       `Envoyé depuis l'application FILANT°225`;
 
-    const subject = `URGENCE FILANT225 - ${finalReason}`;
-    const mailtoLink = `mailto:filantmael225@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Synchronisation Firebase en arrière-plan
-    databaseService.saveFormSubmission({
-        userPhone: user.phone,
-        userName: user.name,
+    try {
+      // 1. Sauvegarde dans Realtime Database / Firestore
+      await databaseService.saveFormSubmission({
+        userPhone: user?.phone || contactInfo,
+        userName: user?.name || 'Client',
         formType: 'emergency',
         formTitle: 'URGENCE - ' + finalReason,
         data: {
-            reason: finalReason,
-            contactEmail: email,
-            city: user.city
+          reason: finalReason,
+          details: otherDetails,
+          contactInfo,
+          city: user?.city || 'Abidjan'
         },
-        whatsappMessage: emailBody, // On réutilise le corps pour l'affichage admin
+        whatsappMessage: reportText,
         type: 'emergency_submission'
-    }).catch(err => console.error("Error syncing emergency to Firebase:", err));
+      });
 
-    window.location.href = mailtoLink;
-    
-    setIsSending(false);
-    onBack();
+      // 2. Redirection directe vers le WhatsApp Support
+      const whatsappUrl = `https://wa.me/2250705052632?text=${encodeURIComponent(reportText)}`;
+      window.open(whatsappUrl, '_blank');
+
+      setIsSubmitted(true);
+      if (onShowPopup) {
+        onShowPopup(
+          "Votre signalement d'urgence a été transmis à l'équipe FILANT°225. Un conseiller vous contacte dans les plus brefs délais.",
+          "alert",
+          (close) => {
+            close();
+          },
+          "D'accord"
+        );
+      }
+    } catch (err) {
+      console.error("Erreur d'envoi de l'urgence:", err);
+      // Fallback vers WhatsApp direct
+      const whatsappUrl = `https://wa.me/2250705052632?text=${encodeURIComponent(reportText)}`;
+      window.open(whatsappUrl, '_blank');
+      setIsSubmitted(true);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const openDirectWhatsApp = () => {
+    const text = `🚨 *ASSISTANCE URGENCE FILANT°225*\nBonjour, j'ai besoin d'une assistance immédiate.\nNom: ${user?.name || ''}\nTéléphone: ${user?.phone || ''}`;
+    window.open(`https://wa.me/2250705052632?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
@@ -138,119 +166,234 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 bg-white z-[600] flex flex-col font-sans overflow-hidden"
+      className="fixed inset-0 bg-slate-900 z-[600] flex flex-col font-sans overflow-hidden text-slate-100"
     >
-      <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-hide">
-        <motion.div 
-          initial={{ y: -50, opacity: 0, scale: 1.1 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-          className="relative h-[180px] w-full flex-shrink-0 bg-red-600 flex items-center justify-center"
-        >
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-            <EmergencyIcon />
-            <button onClick={handleBackWithConfirmation} className="absolute top-4 left-4 p-2.5 bg-white/30 backdrop-blur-md rounded-full text-white shadow-lg active:scale-95 z-20 border border-white/40">
-                <BackIcon />
-            </button>
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-                <span className="text-white font-black text-xl tracking-tighter uppercase drop-shadow-lg">FILANT°225</span>
-            </div>
-        </motion.div>
+      {/* Header SOS Header */}
+      <header className="relative bg-red-600 px-4 py-4 sm:py-6 text-white shadow-xl flex flex-col shrink-0">
+        <div className="flex items-center justify-between">
+          <button 
+            onClick={handleBackWithConfirmation} 
+            className="p-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-2xl text-white shadow-md active:scale-95 transition-all flex items-center justify-center border border-white/30"
+          >
+            <ArrowLeft className="w-5 h-5 text-white" />
+          </button>
 
-        <motion.div 
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="flex-1 bg-white rounded-t-[3rem] -mt-12 relative z-10 p-6 flex flex-col items-center"
-        >
-            <div className="w-16 h-1.5 bg-gray-100 rounded-full mb-6"></div>
+          <div className="flex flex-col items-center">
+            <span className="text-white font-black text-lg tracking-tighter uppercase drop-shadow-md">FILANT°225</span>
+            <div className="flex items-center gap-1.5 bg-black/30 px-2.5 py-0.5 rounded-full border border-white/20">
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-ping"></span>
+              <span className="text-[9px] font-black uppercase text-white tracking-widest">CENTRE D'URGENCE 24/7</span>
+            </div>
+          </div>
+
+          <button 
+            onClick={openDirectWhatsApp}
+            className="p-2.5 bg-emerald-500 hover:bg-emerald-600 backdrop-blur-md rounded-2xl text-white shadow-md active:scale-95 transition-all flex items-center justify-center border border-white/30"
+            title="WhatsApp Urgence"
+          >
+            <MessageSquare className="w-5 h-5 text-white" />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className="flex-1 bg-slate-950 overflow-y-auto p-4 sm:p-6 space-y-6 pb-20">
+        
+        {/* Urgent Call Hero Banner */}
+        <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-3xl p-5 shadow-2xl border border-red-500/30 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-xl"></div>
+          
+          <div className="flex items-start gap-4 relative z-10">
+            <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shrink-0 border border-white/30 shadow-inner">
+              <ShieldAlert className="w-8 h-8 text-white animate-bounce" />
+            </div>
             
-            <div className="mb-6 flex flex-col items-center">
-                <h2 className="text-xl font-black text-red-600 uppercase tracking-tight text-center">Urgence</h2>
-                <div className="h-1 w-20 bg-red-500 mt-1 rounded-full"></div>
+            <div className="flex-1">
+              <h1 className="text-lg font-black uppercase tracking-tight text-white leading-tight">
+                Service d'Intervention d'Urgence
+              </h1>
+              <p className="text-xs text-white/90 font-medium mt-1 leading-relaxed">
+                Assistance immédiate pour vos litiges, paiements bloqués, accidents ou besoins d'ouvriers en urgence.
+              </p>
             </div>
+          </div>
 
-            <div className="flex flex-col items-center mb-8">
-                <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 shadow-inner">
-                    <EmergencyIcon />
+          {/* Quick Buttons */}
+          <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/20">
+            <a 
+              href="tel:+2250705052632"
+              className="py-3 px-4 bg-white text-red-600 hover:bg-red-50 active:scale-95 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all"
+            >
+              <Phone className="w-4 h-4 text-red-600 shrink-0" />
+              <span>Appeler 24/7</span>
+            </a>
+
+            <button 
+              onClick={openDirectWhatsApp}
+              className="py-3 px-4 bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all"
+            >
+              <MessageSquare className="w-4 h-4 text-white shrink-0" />
+              <span>WhatsApp SOS</span>
+            </button>
+          </div>
+        </div>
+
+        {/* National Emergency Contacts Grid */}
+        <div className="space-y-3">
+          <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <span>Numéros d'Urgence Nationale (Côte d'Ivoire)</span>
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {nationalNumbers.map((item, idx) => (
+              <a
+                key={idx}
+                href={item.phoneUrl}
+                className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex items-center justify-between shadow-md active:scale-95 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl ${item.color} text-white flex items-center justify-center shadow-md font-black text-xs`}>
+                    <Phone className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-white uppercase">{item.name}</h3>
+                    <p className="text-[10px] text-slate-400 font-medium">{item.desc}</p>
+                  </div>
                 </div>
-                <p className="text-center text-sm font-bold text-gray-600 uppercase tracking-tight">
-                    VEUILLEZ SIGNALER VOTRE PROBLÈME.<br/>
-                    UN E-MAIL SERA GÉNÉRÉ POUR NOTRE ÉQUIPE D'URGENCE.
+
+                <div className="bg-slate-800 group-hover:bg-slate-700 px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-1">
+                  <span className="text-xs font-black text-green-400">{item.number}</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Declaration Form Card */}
+        <div className="bg-slate-900 rounded-3xl p-5 border border-slate-800 shadow-xl space-y-5">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h3 className="text-sm font-black uppercase text-white tracking-tight">Formulaire de Signalement</h3>
+              <p className="text-[11px] text-slate-400 font-bold">Transmettez votre problème directement au centre de sécurité</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center font-bold text-xs">
+              SOS
+            </div>
+          </div>
+
+          {isSubmitted ? (
+            <div className="bg-emerald-950/60 border border-emerald-500/40 rounded-2xl p-6 text-center space-y-4 animate-in fade-in duration-300">
+              <div className="w-14 h-14 bg-emerald-500/20 text-emerald-400 rounded-full mx-auto flex items-center justify-center border border-emerald-500/30">
+                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="text-base font-black text-white uppercase">Signalement Enregistré !</h4>
+                <p className="text-xs text-emerald-200 mt-1">
+                  Votre message a été transmis aux agents d'intervention FILANT°225. Un conseiller s'occupe de votre cas immédiatement.
                 </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSubmitted(false)}
+                className="py-3 px-6 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-600 transition-all shadow-md"
+              >
+                Faire un autre signalement
+              </button>
             </div>
-
-            <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5 pb-12">
-            <div className="space-y-2">
-                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1">Sélectionnez le motif *</label>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Option Selection */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Motif de l'urgence *
+                </label>
                 <div className="grid grid-cols-1 gap-2">
-                    {options.map((opt) => (
-                        <button
-                            key={opt}
-                            type="button"
-                            onClick={() => {
-                                setSelectedOption(opt);
-                                if (errors.includes('reason')) setErrors(errors.filter(e => e !== 'reason'));
-                            }}
-                            className={`w-full text-left py-3 px-4 rounded-2xl border-2 transition-all flex items-center justify-between ${
-                                selectedOption === opt 
-                                ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' 
-                                : errors.includes('reason') ? 'bg-red-50/30 border-red-200 text-red-400' : 'bg-gray-50 border-gray-100 text-gray-600'
-                            }`}
-                        >
-                            <span className="text-xs font-bold uppercase">{opt}</span>
-                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedOption === opt ? 'border-red-500 bg-red-500' : 'border-gray-300'}`}>
-                                {selectedOption === opt && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
-                            </div>
-                        </button>
-                    ))}
+                  {emergencyOptions.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => {
+                        setSelectedOption(opt);
+                        if (errors.includes('reason')) setErrors(errors.filter(e => e !== 'reason'));
+                      }}
+                      className={`w-full text-left py-3 px-4 rounded-2xl border transition-all flex items-center justify-between ${
+                        selectedOption === opt 
+                          ? 'bg-red-950/80 border-red-500 text-red-200 shadow-md' 
+                          : errors.includes('reason')
+                          ? 'bg-red-950/30 border-red-800 text-red-400'
+                          : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="text-xs font-bold uppercase">{opt}</span>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedOption === opt ? 'border-red-500 bg-red-600' : 'border-slate-700'}`}>
+                        {selectedOption === opt && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                      </div>
+                    </button>
+                  ))}
                 </div>
-            </div>
+              </div>
 
-            {selectedOption === 'Autre' && (
-                <div className="space-y-1 animate-in fade-in duration-300">
-                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1">Précisez votre demande *</label>
-                    <textarea
-                        required
-                        value={otherDetails}
-                        onChange={(e) => {
-                            setOtherDetails(e.target.value);
-                            if (errors.includes('details')) setErrors(errors.filter(e => e !== 'details'));
-                        }}
-                        className={`w-full bg-gray-50 border-2 rounded-2xl py-3 px-4 text-xs text-gray-800 font-bold focus:border-red-500 outline-none transition-all h-24 ${errors.includes('details') ? 'border-red-500 bg-red-50/30' : 'border-gray-100'}`}
-                        placeholder="Détails de l'urgence..."
-                    />
-                </div>
-            )}
-
-            <div className="space-y-1">
-                <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1">Votre Email (Obligatoire) *</label>
-                <input
-                    type="email"
+              {/* Other details text area */}
+              {selectedOption === 'Autre urgence' && (
+                <div className="space-y-1 animate-in fade-in duration-200">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Précisions obligatoires *
+                  </label>
+                  <textarea
                     required
-                    value={email}
+                    value={otherDetails}
                     onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (errors.includes('email')) setErrors(errors.filter(e => e !== 'email'));
+                      setOtherDetails(e.target.value);
+                      if (errors.includes('details')) setErrors(errors.filter(e => e !== 'details'));
                     }}
-                    className={`w-full bg-gray-50 border-2 rounded-2xl py-3 px-4 text-xs text-gray-800 font-bold focus:border-red-500 outline-none transition-all ${errors.includes('email') ? 'border-red-500 bg-red-50/30' : 'border-gray-100'}`}
-                    placeholder="exemple@gmail.com"
-                />
-            </div>
+                    className={`w-full bg-slate-950 border rounded-2xl py-3 px-4 text-xs text-white font-medium focus:border-red-500 outline-none transition-all h-24 ${
+                      errors.includes('details') ? 'border-red-500 bg-red-950/20' : 'border-slate-800'
+                    }`}
+                    placeholder="Décrivez précisément votre problème urgent..."
+                  />
+                </div>
+              )}
 
-            <button
+              {/* Phone or Contact Input */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Numéro de Téléphone pour rappel *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={contactInfo}
+                  onChange={(e) => {
+                    setContactInfo(e.target.value);
+                    if (errors.includes('contact')) setErrors(errors.filter(e => e !== 'contact'));
+                  }}
+                  className={`w-full bg-slate-950 border rounded-2xl py-3.5 px-4 text-xs text-white font-bold focus:border-red-500 outline-none transition-all ${
+                    errors.includes('contact') ? 'border-red-500 bg-red-950/20' : 'border-slate-800'
+                  }`}
+                  placeholder="Ex: 0705052632"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
                 type="submit"
                 disabled={isSending}
-                className="w-full py-5 rounded-2xl bg-red-600 text-white font-black text-sm uppercase tracking-[0.2em] shadow-xl transform active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3"
-            >
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 to-red-700 text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:from-red-500 hover:to-red-600 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3 border border-red-500/30"
+              >
                 {isSending ? (
-                    <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
                 ) : (
-                    "Envoyer Urgence"
+                  <>
+                    <ShieldAlert className="w-4 h-4 text-white" />
+                    <span>Transmettre le Signalement d'Urgence</span>
+                  </>
                 )}
-            </button>
-        </form>
-        </motion.div>
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </motion.div>
   );

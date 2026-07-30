@@ -520,24 +520,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
               </div>
             )}
 
-            {/* Urgence Section */}
-            <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-red-100">
-                <ProfileRow 
-                    icon={<div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-xs shadow-sm tracking-tight">SOS</div>} 
-                    title="Urgence" 
-                    subtitle="Service d'intervention d'urgence" 
-                    onClick={() => {
-                        handleClose();
-                        if (onNavigate) {
-                            onNavigate('emergency_form');
-                        } else {
-                            window.dispatchEvent(new CustomEvent('trigger-emergency-view'));
-                        }
-                    }} 
-                    rightElement={<div className="bg-red-50 px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-red-200"><span className="text-[10px] font-black text-red-600 uppercase tracking-tighter">Urgent</span><ChevronRight className="h-3 w-3 text-red-600" /></div>}
-                />
-            </div>
-
             <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-gray-100">
                 <ProfileRow icon={<PayeIcon className="w-10 h-10 text-blue-600" />} title="Modes de paiement" subtitle="ESPÈCES / WAVE" onClick={() => { setActiveTab(Tab.Payment); handleClose(); }} rightElement={<div className="bg-green-100 px-2.5 py-1 rounded-lg flex items-center gap-1.5"><span className="text-[10px] font-black text-green-700 uppercase tracking-tighter">Actif</span><ChevronRight className="h-3 w-3 text-green-700" /></div>} />
                 <div className="h-px bg-gray-50 mx-4"></div>
@@ -599,6 +581,23 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                             <span className="w-4 h-4 rounded-full bg-white shadow-md block transition-all shrink-0" />
                         </button>
                     }
+                />
+            </div>
+
+            {/* Urgence Section (Moved to the very bottom, last option before Déconnexion) */}
+            <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-red-100">
+                <ProfileRow 
+                    icon={<div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-xs shadow-sm tracking-tight">SOS</div>} 
+                    title="Urgence" 
+                    subtitle="Service d'intervention d'urgence 24/7" 
+                    onClick={() => {
+                        handleClose();
+                        if (onNavigate) {
+                            onNavigate('emergency_form');
+                        }
+                        window.dispatchEvent(new CustomEvent('trigger-emergency-view'));
+                    }} 
+                    rightElement={<div className="bg-red-50 px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-red-200"><span className="text-[10px] font-black text-red-600 uppercase tracking-tighter">Urgent</span><ChevronRight className="h-3 w-3 text-red-600" /></div>}
                 />
             </div>
             <div className="px-4 pt-6">
