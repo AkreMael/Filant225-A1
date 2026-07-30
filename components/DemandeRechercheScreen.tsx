@@ -5,7 +5,7 @@ import { imageService } from '../services/imageService';
 import { LeafletMap } from './LeafletMap';
 import CityAutocompleteInput from './common/CityAutocompleteInput';
 import { ArrowLeft, Search, Loader2, Compass, MapPin, Briefcase, Building, CheckCircle, MessageSquare, AlertCircle, X, ChevronLeft, ChevronRight, Camera, Trash2, Check, RefreshCw, Heart, Share2 } from 'lucide-react';
-import { doc, onSnapshot, collection, query, orderBy, getDocs, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, orderBy, limit, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { encodeAdId, decodeAdId } from '../utils/shareUtils';
@@ -570,12 +570,17 @@ export const DemandeRechercheScreen: React.FC<DemandeRechercheScreenProps> = ({ 
 
   // 1. Listen to all Inscriptions in real-time
   useEffect(() => {
-    const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'), limit(150));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       setInscriptionsFromDB(data);
       try {
-        localStorage.setItem('filant_cached_inscriptions', JSON.stringify(data));
+        // Optimisation performance: filtrer les images base64 lourdes pour le cache local
+        const lightweightData = data.slice(0, 50).map((item: any) => {
+          const { documentPhoto, photoPiece, selfiePhoto, photoRecto, photoVerso, ...rest } = item;
+          return rest;
+        });
+        localStorage.setItem('filant_cached_inscriptions', JSON.stringify(lightweightData));
       } catch (e) {
         console.warn("Could not cache inscriptions:", e);
       }

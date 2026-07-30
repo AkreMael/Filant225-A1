@@ -6,7 +6,7 @@ import EmbeddedForm from './EmbeddedForm';
 import { User } from 'lucide-react';
 import { getFormImage } from './common/formDefinitions';
 import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
 
 // --- ICONS (Matching the provided mockup) ---
 const BackIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>;
@@ -414,7 +414,7 @@ const WorkerListScreen: React.FC<WorkerListScreenProps> = ({ onBack, user, onSch
 
   useEffect(() => {
     setLoading(true);
-    const q = query(collection(db, 'Disponible'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'Disponible'), orderBy('createdAt', 'desc'), limit(100));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map(doc => {
         const data = doc.data();

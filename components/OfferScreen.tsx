@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { Tab } from '../types';
 import { databaseService } from '../services/databaseService';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp, doc } from 'firebase/firestore';
 import { db } from '../firebase';
 import SpeakerIcon from './common/SpeakerIcon';
 import CityAutocompleteInput from './common/CityAutocompleteInput';
@@ -708,7 +708,7 @@ const OfferScreen: React.FC<OfferScreenProps> = ({
 
   // Live listener to all Inscriptions for real-time online ads syncing
   useEffect(() => {
-    const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'));
+    const q = query(collection(db, 'Inscriptions'), orderBy('timestamp', 'desc'), limit(150));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
       setInscriptions(data);

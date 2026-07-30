@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import EmbeddedForm from './EmbeddedForm';
 import { db } from '../firebase';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 // --- ICONS ---
 const BackIcon: React.FC<{ className?: string }> = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" className={className || "h-6 w-6"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>;
@@ -274,7 +274,7 @@ const LocationScreen: React.FC<LocationScreenProps> = ({ onBack, user, onPropose
   }, [initialCategory]);
 
   useEffect(() => {
-    const qEq = query(collection(db, 'Equipements'), orderBy('createdAt', 'desc'));
+    const qEq = query(collection(db, 'Equipements'), orderBy('createdAt', 'desc'), limit(100));
     const unsubEq = onSnapshot(qEq, (snap) => {
       setDynamicEquipements(snap.docs.map(doc => {
         const d = doc.data();
@@ -292,7 +292,7 @@ const LocationScreen: React.FC<LocationScreenProps> = ({ onBack, user, onPropose
       }));
     });
 
-    const qApp = query(collection(db, 'Appartements'), orderBy('createdAt', 'desc'));
+    const qApp = query(collection(db, 'Appartements'), orderBy('createdAt', 'desc'), limit(100));
     const unsubApp = onSnapshot(qApp, (snap) => {
       setDynamicAppartements(snap.docs.map(doc => {
         const d = doc.data();

@@ -246,15 +246,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack, user, onOpenCha
       setWalletTransactions(txList);
     });
 
-    const unsubDisponible = onSnapshot(query(collection(db, 'Disponible'), orderBy('createdAt', 'desc')), (snap) => {
+    const unsubDisponible = onSnapshot(query(collection(db, 'Disponible'), orderBy('createdAt', 'desc'), limit(150)), (snap) => {
       setData(prev => ({ ...prev, disponible: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
-    const unsubEquipementsDispo = onSnapshot(query(collection(db, 'Equipements'), orderBy('createdAt', 'desc')), (snap) => {
+    const unsubEquipementsDispo = onSnapshot(query(collection(db, 'Equipements'), orderBy('createdAt', 'desc'), limit(150)), (snap) => {
       setData(prev => ({ ...prev, equipements_dispo: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
-    const unsubAppartementsDispo = onSnapshot(query(collection(db, 'Appartements'), orderBy('createdAt', 'desc')), (snap) => {
+    const unsubAppartementsDispo = onSnapshot(query(collection(db, 'Appartements'), orderBy('createdAt', 'desc'), limit(150)), (snap) => {
       setData(prev => ({ ...prev, appartements_dispo: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) }));
     });
 
