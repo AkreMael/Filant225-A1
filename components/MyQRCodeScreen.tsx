@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { Briefcase, Calendar, Clock, ChevronRight } from 'lucide-react';
+import WhatsAppPaymentSupportButton from './WhatsAppPaymentSupportButton';
 
 interface MyQRCodeScreenProps {
   user: User;
@@ -269,6 +270,29 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
                           {currentStatus}
                       </p>
                     )
+                  )}
+                  {currentStatus.toLowerCase().includes('attente') && (
+                    <div className="mt-3">
+                      <WhatsAppPaymentSupportButton
+                        serviceName={
+                          currentStatus.includes('310') ? "Frais de dossier Inscription" :
+                          currentStatus.includes('7 100') || currentStatus.includes('7100') ? "Activation Code QR Professionnel" :
+                          currentStatus.includes('500') ? "Renouvellement Carte FILANT°225" :
+                          "Validation Paiement FILANT°225"
+                        }
+                        amount={
+                          currentStatus.includes('310') ? 310 :
+                          currentStatus.includes('7 100') || currentStatus.includes('7100') ? 7100 :
+                          currentStatus.includes('500') ? 500 :
+                          0
+                        }
+                        waveLink={
+                          currentStatus.includes('310') ? "https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=310" :
+                          currentStatus.includes('7 100') || currentStatus.includes('7100') ? "https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=7100" :
+                          "https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=500"
+                        }
+                      />
+                    </div>
                   )}
                   {qrData?.expiryDate && isActive && (
                       <p className="text-center text-[10px] font-bold text-gray-400 mt-2">

@@ -7,6 +7,8 @@ interface WhatsAppPaymentSupportButtonProps {
   className?: string;
   buttonText?: string;
   variant?: 'primary' | 'compact' | 'card';
+  paymentRef?: string;
+  waveLink?: string;
 }
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5 text-white" }) => (
@@ -20,11 +22,13 @@ export const WhatsAppPaymentSupportButton: React.FC<WhatsAppPaymentSupportButton
   amount,
   className = '',
   buttonText = 'Contacter le service client pour la validation de votre paiement',
-  variant = 'primary'
+  variant = 'primary',
+  paymentRef,
+  waveLink
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    openPaymentWhatsAppSupport(serviceName, amount);
+    openPaymentWhatsAppSupport(serviceName, amount, paymentRef, waveLink);
   };
 
   if (variant === 'compact') {

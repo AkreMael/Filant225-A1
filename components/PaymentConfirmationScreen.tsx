@@ -619,6 +619,8 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
           <WhatsAppPaymentSupportButton
             serviceName={title || paymentType || "Dépôt de compte"}
             amount={depositAmount || currentAmount}
+            paymentRef={pendingDepositPath || undefined}
+            waveLink={waveLink || `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${depositAmount || currentAmount}`}
           />
           <button
             onClick={() => {
@@ -847,6 +849,8 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                       <WhatsAppPaymentSupportButton
                         serviceName={title || paymentType || "Dépôt de compte"}
                         amount={depositAmount || currentAmount}
+                        paymentRef={pendingDepositPath || undefined}
+                        waveLink={waveLink || `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${depositAmount || currentAmount}`}
                         variant="compact"
                         className="w-full mt-1"
                       />
@@ -969,6 +973,8 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
                     <WhatsAppPaymentSupportButton
                       serviceName={title || paymentType}
                       amount={currentAmount}
+                      paymentRef={paymentPath || undefined}
+                      waveLink={waveLink || `https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${currentAmount}`}
                     />
                   </div>
                 ) : isInsufficient ? (

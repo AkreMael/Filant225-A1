@@ -5,6 +5,7 @@ import ScannerOverlay, { extractQRInfo } from './ScannerOverlay';
 import { databaseService, SavedContact } from '../services/databaseService';
 import { imageService } from '../services/imageService';
 import { getQuestionsForType, generateWhatsAppMessage } from './common/formDefinitions';
+import WhatsAppPaymentSupportButton from './WhatsAppPaymentSupportButton';
 
 // --- PROPS ---
 interface ProfileScreenProps {
@@ -210,6 +211,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     city: user.city || ''
   });
   const [walletTransactions, setWalletTransactions] = useState<any[]>([]);
+  const [pendingPayments, setPendingPayments] = useState<any[]>([]);
   const [idImages, setIdImages] = useState(() => {
     if (user?.phone) {
       const storedFront = localStorage.getItem(`filant_id_image_front_${user.phone}`);
@@ -265,6 +267,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
     let unsubWallet = () => {};
     let unsubWalletTxs = () => {};
     let unsubContacts = () => {};
+    let unsubPending = () => {};
 
     if (user?.phone) {
       unsubContacts = databaseService.subscribeToScannedContacts(user.phone, (newContacts) => {
@@ -278,6 +281,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
       unsubWalletTxs = databaseService.subscribeToWalletTransactions(user.phone, (txs) => {
         setWalletTransactions(txs);
       });
+
+      unsubPending = databaseService.subscribeToUserPendingPayments(user.phone, (pendingList) => {
+        setPendingPayments(pendingList);
+      });
     }
 
     requestAnimationFrame(() => {
@@ -289,6 +296,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
       unsubWallet();
       unsubWalletTxs();
       unsubContacts();
+      unsubPending();
     };
   }, [user?.phone]);
 
@@ -466,6 +474,51 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                 </button>
               </div>
             </div>
+
+            {/* Pending Payments Alert Section with WhatsApp Support Button */}
+            {pendingPayments.length > 0 && (
+              <div className="mx-4 mb-3 space-y-3">
+                {pendingPayments.map((pendingPay) => (
+                  <div 
+                    key={pendingPay.id || pendingPay.rtdbPath} 
+                    className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-4 shadow-md space-y-2.5 font-sans animate-in fade-in duration-300"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-amber-800 tracking-wider flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+                        ⏳ Paiement en attente de validation
+                      </span>
+                      <span className="text-xs font-black text-amber-900 font-mono">
+                        {(parseFloat(pendingPay.amount) || 0).toLocaleString('fr-FR')} FCFA
+                      </span>
+                    </div>
+                    
+                    <div>
+                      <p className="text-[11.5px] font-black text-slate-900 leading-tight">
+                        {pendingPay.title || pendingPay.serviceType || pendingPay.paymentType || "Demande de paiement"}
+                      </p>
+                      {pendingPay.waveNumber && pendingPay.waveNumber !== 'N/A' && (
+                        <p className="text-[10px] font-bold text-slate-500 mt-0.5">
+                          Numéro d'expédition Wave : +225 {pendingPay.waveNumber}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="text-[9.5px] text-amber-900/90 font-medium leading-relaxed">
+                      Votre paiement est en cours de vérification par l'administrateur. Cliquez ci-dessous pour contacter le service client sur WhatsApp afin de finaliser votre transaction.
+                    </p>
+
+                    <WhatsAppPaymentSupportButton
+                      serviceName={pendingPay.title || pendingPay.serviceType || pendingPay.paymentType || "Dépôt de compte"}
+                      amount={pendingPay.amount}
+                      paymentRef={pendingPay.rtdbPath || pendingPay.id}
+                      waveLink={`https://pay.wave.com/m/M_ci_jwxwatdcoKS8/c/ci/?amount=${pendingPay.amount}`}
+                      variant="primary"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Urgence Section */}
             <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-red-100">

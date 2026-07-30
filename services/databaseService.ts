@@ -1691,6 +1691,40 @@ export const databaseService = {
     }
   },
 
+  subscribeToUserPendingPayments: (userPhone: string, callback: (payments: any[]) => void) => {
+    if (!userPhone) return () => {};
+    const cleanPhone = userPhone.replace(/\D/g, '');
+    const paymentsRef = rtdbRef(rtdb, 'Paiements');
+
+    const unsub = onValue(paymentsRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        callback([]);
+        return;
+      }
+      const val = snapshot.val();
+      const pendingList: any[] = [];
+      Object.entries(val).forEach(([userKey, userPayments]: [string, any]) => {
+        const parts = userKey.split('_');
+        const phonePart = parts[parts.length - 1];
+        if (phonePart === cleanPhone && userPayments) {
+          Object.entries(userPayments).forEach(([pushId, pay]: [string, any]) => {
+            if (pay && pay.status === 'En attente') {
+              pendingList.push({
+                ...pay,
+                id: pushId,
+                rtdbPath: `Paiements/${userKey}/${pushId}`
+              });
+            }
+          });
+        }
+      });
+      pendingList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      callback(pendingList);
+    });
+
+    return unsub;
+  },
+
   validatePaymentStatus: async (payment: any) => {
     if (!payment.rtdbPath) return;
     try {
