@@ -1005,10 +1005,17 @@ const App: React.FC = () => {
           setPaymentConfirmationContext(event.detail);
       };
 
+      const handleEmergencyTrigger = () => {
+          setMenuView('emergency_form');
+          setIsProfileOpen(false);
+      };
+
       window.addEventListener('trigger-payment-view' as any, handlePaymentTrigger as any);
+      window.addEventListener('trigger-emergency-view', handleEmergencyTrigger);
       
       return () => {
           window.removeEventListener('trigger-payment-view' as any, handlePaymentTrigger as any);
+          window.removeEventListener('trigger-emergency-view', handleEmergencyTrigger);
       };
   }, []);
 
@@ -2254,6 +2261,10 @@ const App: React.FC = () => {
                       onInstallPWA={handleInstallPWA}
                       isDarkMode={isDarkMode}
                       onToggleDarkMode={setIsDarkMode}
+                      onNavigate={(view) => {
+                        setMenuView(view);
+                        setIsProfileOpen(false);
+                      }}
                   />
                 </div>
               </div>

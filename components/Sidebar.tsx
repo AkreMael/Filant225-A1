@@ -52,7 +52,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
   const renderNavItem = (item: any, idx: number) => {
     const isActive = item.id === Tab.Profile ? isProfileOpen : activeTab === item.id;
     const isRestricted = (item as any).isRestricted;
-    const isBlue = (item as any).isBlue;
     const hasUnread = item.id === Tab.UserChat && (unreadChatCount || 0) > 0;
 
     return (
@@ -72,13 +71,13 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
               : hasUnread
                 ? 'animate-blink-red-green'
                 : isActive 
-                  ? isBlue ? 'bg-blue-600 ring-4 ring-blue-600/30' : 'bg-[#008000] ring-4 ring-[#008000]/30 animate-pulse-green' 
-                  : isBlue ? 'bg-blue-500 opacity-90' : 'bg-[#FF4500] opacity-80 animate-float-subtle'
+                  ? 'bg-black border-2 border-white ring-4 ring-slate-400/30' 
+                  : 'bg-blue-600 hover:bg-blue-500 opacity-95'
           }`}
           style={{ animationDelay: `${idx * 0.1}s` }}
         >
           {React.cloneElement(item.icon as React.ReactElement, { 
-            className: `h-6 w-6 sm:h-7 sm:w-7 transition-colors text-white` 
+            className: `h-6 w-6 sm:h-7 sm:w-7 transition-colors ${isActive ? 'text-white' : 'text-white'}` 
           })}
           
           {item.id === Tab.UserChat && (unreadChatCount || 0) > 0 && (
@@ -95,7 +94,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, onToggle
           )}
         </div>
         
-        <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-tighter transition-all duration-300 ${isActive ? 'text-white' : 'text-white/60'}`}>
+        <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-tighter transition-all duration-300 ${isActive ? 'text-white' : 'text-slate-300/80'}`}>
           {item.label}
         </span>
       </button>

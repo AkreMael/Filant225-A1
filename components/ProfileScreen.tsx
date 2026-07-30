@@ -17,6 +17,7 @@ interface ProfileScreenProps {
   onInstallPWA: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: (value: boolean) => void;
+  onNavigate?: (view: any) => void;
 }
 
 // --- CONSTANTS ---
@@ -189,7 +190,7 @@ const ContactListView: React.FC<{ contacts: SavedContact[], onDelete: (id: strin
 };
 
 // --- PROFILE SCREEN COMPONENT ---
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, setActiveTab, onShowPopup, deferredPrompt, onInstallPWA, isDarkMode, onToggleDarkMode }) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, setActiveTab, onShowPopup, deferredPrompt, onInstallPWA, isDarkMode, onToggleDarkMode, onNavigate }) => {
   if (!user) return null;
 
   const panelRef = useRef<HTMLDivElement>(null);
@@ -464,6 +465,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, onClose, onLogout, 
                   <span>Recharger le solde</span>
                 </button>
               </div>
+            </div>
+
+            {/* Urgence Section */}
+            <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-red-100">
+                <ProfileRow 
+                    icon={<div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-xs shadow-sm tracking-tight">SOS</div>} 
+                    title="Urgence" 
+                    subtitle="Service d'intervention d'urgence" 
+                    onClick={() => {
+                        handleClose();
+                        if (onNavigate) {
+                            onNavigate('emergency_form');
+                        } else {
+                            window.dispatchEvent(new CustomEvent('trigger-emergency-view'));
+                        }
+                    }} 
+                    rightElement={<div className="bg-red-50 px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-red-200"><span className="text-[10px] font-black text-red-600 uppercase tracking-tighter">Urgent</span><ChevronRight className="h-3 w-3 text-red-600" /></div>}
+                />
             </div>
 
             <div className="bg-white rounded-3xl overflow-hidden mx-4 shadow-sm border border-gray-100">

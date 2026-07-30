@@ -1169,6 +1169,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     return localStorage.getItem(`filant_inscription_validated_${user?.phone || ''}`) === 'true';
   });
 
+  const [hasSubmittedForm, setHasSubmittedForm] = useState<boolean>(() => {
+    return localStorage.getItem(`filant_inscription_submitted_${user?.phone || ''}`) === 'true';
+  });
+
   useEffect(() => {
     if (!user?.phone) return;
     const sanitizedPhone = user.phone.replace(/\D/g, '');
@@ -1178,11 +1182,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     const unsubQr = onSnapshot(qrRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
+        setHasSubmittedForm(true);
+        localStorage.setItem(`filant_inscription_submitted_${user.phone}`, 'true');
         const validated = 
           data?.fraisDossierPayes === true || 
           data?.requiresRegistration === false ||
           data?.status === "Code QR Actif" ||
-          (data?.status && !data?.status.includes("Inscrivez-vous"));
+          (data?.status && !data?.status.includes("Inscrivez-vous") && !data?.status.includes("310") && !data?.status.includes("attente"));
         if (validated) {
           setIsInscriptionValidated(true);
           localStorage.setItem(`filant_inscription_validated_${user.phone}`, 'true');
@@ -1196,7 +1202,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     const unsubInsc = onSnapshot(inscRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        if (data?.fraisDossierPayes === true || data?.step >= 2) {
+        setHasSubmittedForm(true);
+        localStorage.setItem(`filant_inscription_submitted_${user.phone}`, 'true');
+        if (data?.fraisDossierPayes === true || data?.step >= 2 || data?.validated === true) {
           setIsInscriptionValidated(true);
           localStorage.setItem(`filant_inscription_validated_${user.phone}`, 'true');
         }
@@ -1332,8 +1340,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                         onClick={() => onToggleProfile ? onToggleProfile() : setActiveTab(Tab.Profile)}
                         className="flex items-center gap-2 text-left focus:outline-none group active:scale-95 transition-all bg-slate-100/90 hover:bg-slate-200/90 dark:bg-slate-800/80 px-2.5 py-1 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs max-w-full"
                     >
-                         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200/80 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shrink-0">
-                             <ProfileIcon className="w-4.5 h-4.5 text-slate-500 dark:text-slate-400" />
+                         <div className="p-[2px] bg-gradient-to-tr from-orange-500 via-amber-300 to-white rounded-full shadow-sm shrink-0">
+                             <div className="w-7.5 h-7.5 rounded-full flex items-center justify-center bg-slate-200/80 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                                 <ProfileIcon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                             </div>
                          </div>
                          <div className="flex flex-col min-w-0 leading-tight">
                              <span className="text-[11px] sm:text-xs font-bold text-slate-600 dark:text-slate-300 truncate max-w-[100px] sm:max-w-[130px]">
@@ -1372,20 +1382,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
             </div>
 
-            {/* Grand bouton INSCRIVEZ-VOUS / INSCRIPTION VALIDÉE sous la section Profil */}
+            {/* Grand bouton INSCRIVEZ VOTRE DOMAINE / FINALISER L'INSCRIPTION / INSCRIPTION VALIDÉE sous la section Profil */}
             <div className="px-4 mt-2 mb-1">
-                {!isInscriptionValidated ? (
-                    <button 
-                        onClick={() => setActiveTab(Tab.MyQRCode)}
-                        className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] transition-all duration-200 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-md shadow-orange-500/20 flex items-center justify-center gap-2.5 cursor-pointer border border-orange-400/30 group"
-                    >
-                        <IdCardIcon className="w-5 h-5 text-white shrink-0 group-hover:scale-110 transition-transform" />
-                        <span>INSCRIVEZ-VOUS</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white/90 group-hover:translate-x-1 transition-transform ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                        </svg>
-                    </button>
-                ) : (
+                {isInscriptionValidated ? (
                     <button 
                         onClick={() => setActiveTab(Tab.MyQRCode)}
                         className="w-full py-2.5 px-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.98] transition-all"
@@ -1394,6 +1393,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                             ✓
                         </div>
                         <span className="text-emerald-600 dark:text-emerald-400 font-black">INSCRIPTION VALIDÉE</span>
+                    </button>
+                ) : hasSubmittedForm ? (
+                    <button 
+                        onClick={() => setActiveTab(Tab.MyQRCode)}
+                        className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 active:scale-[0.98] transition-all duration-200 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-md shadow-amber-500/20 flex items-center justify-center gap-2.5 cursor-pointer border border-amber-400/30 group"
+                    >
+                        <IdCardIcon className="w-5 h-5 text-white shrink-0 group-hover:scale-110 transition-transform" />
+                        <span>FINALISER L'INSCRIPTION</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white/90 group-hover:translate-x-1 transition-transform ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
+                    </button>
+                ) : (
+                    <button 
+                        onClick={() => setActiveTab(Tab.MyQRCode)}
+                        className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.98] transition-all duration-200 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-md shadow-orange-500/20 flex items-center justify-center gap-2.5 cursor-pointer border border-orange-400/30 group"
+                    >
+                        <IdCardIcon className="w-5 h-5 text-white shrink-0 group-hover:scale-110 transition-transform" />
+                        <span>INSCRIVEZ VOTRE DOMAINE</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white/90 group-hover:translate-x-1 transition-transform ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
                     </button>
                 )}
             </div>
@@ -1475,16 +1496,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                         <AssistantIcon />
                     </div>
                     <span className="text-[8px] font-black uppercase text-slate-600">Assistant QR</span>
-                </button>
-
-                <button 
-                    onClick={() => handleMainServiceClick('emergency_form')}
-                    className="flex flex-col items-center space-y-1 group shrink-0"
-                >
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-600 rounded-full shadow-lg transform group-hover:scale-110 transition-transform border border-red-400 animate-pulse flex items-center justify-center">
-                        <EmergencyIcon />
-                    </div>
-                    <span className="text-[8px] font-black uppercase text-slate-600">Urgence</span>
                 </button>
             </div>
             </div>
