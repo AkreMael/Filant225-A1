@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User } from '../types';
 import { databaseService } from '../services/databaseService';
 import { QRCodeSVG } from 'qrcode.react';
@@ -159,10 +159,25 @@ const MyQRCodeScreen: React.FC<MyQRCodeScreenProps> = ({ user, onBack, onTrigger
     return `Profil: ${profileType}\nActivité/Identité: ${displayProfession}\nNom: ${name}\nVille: ${city}`;
   };
 
+  const isQrExpired = useMemo(() => {
+    if (!qrData) return false;
+    if (qrData.status === 'Expiré' || (qrData.status && qrData.status.includes('renouvellement'))) return true;
+    const now = Date.now();
+    if (qrData.expiryDate) {
+      const exp = new Date(qrData.expiryDate).getTime();
+      if (!isNaN(exp) && exp < now) return true;
+    } else if (qrData.activationDate) {
+      const act = new Date(qrData.activationDate).getTime();
+      if (!isNaN(act) && (now - act > 30 * 24 * 3600 * 1000)) return true;
+    }
+    return false;
+  }, [qrData]);
+
   const currentStatus = qrData?.status || "Inscrivez-vous maintenant pour accéder aux missions, services et mises en relation disponibles sur FILANT°225.\n\n📌 Travailleurs\n📌 Équipements\n📌 Agences immobilières\n📌 Entreprises\n\n💳 Inscription : 310 FCFA seulement";
-  const isActive = currentStatus === "Code QR Actif";
+  const isActive = currentStatus === "Code QR Actif" && !isQrExpired;
   
   const getStepNumber = () => {
+      if (isQrExpired) return 5;
       if (qrData?.requiresRegistration) return 1;
       if (qrData?.fraisDossierPayes === true) {
           if (currentStatus.includes("7 100") || currentStatus.includes("activation")) return 3;

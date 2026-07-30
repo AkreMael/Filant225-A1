@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Tab, User } from '../types';
-import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap, Search, ArrowLeft, X, ChevronRight, Send, Eye, ShoppingBag } from 'lucide-react';
+import { History as LucideHistory, Calendar as LucideCalendar, Star as LucideStar, GraduationCap, Search, ArrowLeft, X, ChevronRight, Send, Eye, ShoppingBag, RefreshCw } from 'lucide-react';
 import MenuBackground from './common/MenuBackground';
 import { databaseService, SavedContact } from '../services/databaseService';
 import ScannerOverlay, { extractQRInfo } from './ScannerOverlay';
@@ -1173,6 +1173,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     return localStorage.getItem(`filant_inscription_submitted_${user?.phone || ''}`) === 'true';
   });
 
+  const [isQrExpired, setIsQrExpired] = useState<boolean>(false);
+
   useEffect(() => {
     if (!user?.phone) return;
     const sanitizedPhone = user.phone.replace(/\D/g, '');
@@ -1182,41 +1184,60 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
     const unsubQr = onSnapshot(qrRef, (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        setHasSubmittedForm(true);
-        localStorage.setItem(`filant_inscription_submitted_${user.phone}`, 'true');
-        const validated = 
-          data?.fraisDossierPayes === true || 
-          data?.requiresRegistration === false ||
-          data?.status === "Code QR Actif" ||
-          (data?.status && !data?.status.includes("Inscrivez-vous") && !data?.status.includes("310") && !data?.status.includes("attente"));
-        if (validated) {
-          setIsInscriptionValidated(true);
-          localStorage.setItem(`filant_inscription_validated_${user.phone}`, 'true');
+        const status = data?.status || '';
+        const isInactive = data?.active === false || data?.isDeleted === true || status.includes("Désactivé") || status.includes("Inactif") || status.includes("Supprimé");
+
+        // Expiration calculation (30 days = 30 * 86400 * 1000 ms)
+        const now = Date.now();
+        let expired = false;
+        if (data?.expiryDate) {
+          const exp = new Date(data.expiryDate).getTime();
+          if (!isNaN(exp) && exp < now) expired = true;
+        } else if (data?.activationDate) {
+          const act = new Date(data.activationDate).getTime();
+          if (!isNaN(act) && (now - act > 30 * 24 * 3600 * 1000)) expired = true;
+        } else if (status === "Expiré" || status.includes("renouvellement")) {
+          expired = true;
         }
+
+        if (isInactive) {
+          setIsInscriptionValidated(false);
+          setIsQrExpired(false);
+          setHasSubmittedForm(false);
+          localStorage.removeItem(`filant_inscription_validated_${user.phone}`);
+          localStorage.removeItem(`filant_inscription_submitted_${user.phone}`);
+        } else if (expired) {
+          setIsInscriptionValidated(false);
+          setIsQrExpired(true);
+          setHasSubmittedForm(true);
+          localStorage.removeItem(`filant_inscription_validated_${user.phone}`);
+        } else if (status === "Code QR Actif") {
+          setIsInscriptionValidated(true);
+          setIsQrExpired(false);
+          setHasSubmittedForm(true);
+          localStorage.setItem(`filant_inscription_validated_${user.phone}`, 'true');
+          localStorage.setItem(`filant_inscription_submitted_${user.phone}`, 'true');
+        } else {
+          // Form submitted or pending payment, but QR not active yet
+          setIsInscriptionValidated(false);
+          setIsQrExpired(false);
+          setHasSubmittedForm(true);
+          localStorage.removeItem(`filant_inscription_validated_${user.phone}`);
+          localStorage.setItem(`filant_inscription_submitted_${user.phone}`, 'true');
+        }
+      } else {
+        // Document deleted or non-existent in admin database -> Return to re-registration step immediately
+        setIsInscriptionValidated(false);
+        setIsQrExpired(false);
+        setHasSubmittedForm(false);
+        localStorage.removeItem(`filant_inscription_validated_${user.phone}`);
+        localStorage.removeItem(`filant_inscription_submitted_${user.phone}`);
       }
     }, (err) => {
       console.warn("Error listening to QRCodeActivations in HomeScreen:", err);
     });
 
-    const inscRef = doc(db, 'Inscriptions', sanitizedPhone);
-    const unsubInsc = onSnapshot(inscRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        setHasSubmittedForm(true);
-        localStorage.setItem(`filant_inscription_submitted_${user.phone}`, 'true');
-        if (data?.fraisDossierPayes === true || data?.step >= 2 || data?.validated === true) {
-          setIsInscriptionValidated(true);
-          localStorage.setItem(`filant_inscription_validated_${user.phone}`, 'true');
-        }
-      }
-    }, (err) => {
-      console.warn("Error listening to Inscriptions in HomeScreen:", err);
-    });
-
-    return () => {
-      unsubQr();
-      unsubInsc();
-    };
+    return () => unsubQr();
   }, [user?.phone]);
 
   const handleScanResult = (data: string) => {
@@ -1393,6 +1414,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                             ✓
                         </div>
                         <span className="text-emerald-600 dark:text-emerald-400 font-black">INSCRIPTION VALIDÉE</span>
+                    </button>
+                ) : isQrExpired ? (
+                    <button 
+                        onClick={() => setActiveTab(Tab.MyQRCode)}
+                        className="w-full py-3 px-4 bg-gradient-to-r from-red-500 via-orange-600 to-amber-600 hover:from-red-600 hover:to-orange-700 active:scale-[0.98] transition-all duration-200 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-md shadow-orange-500/20 flex items-center justify-center gap-2.5 cursor-pointer border border-orange-400/30 group animate-pulse"
+                    >
+                        <RefreshCw className="w-5 h-5 text-white shrink-0 group-hover:rotate-180 transition-transform duration-500" />
+                        <span>RENOUVELER VOTRE QR CODE - 500 FCFA</span>
                     </button>
                 ) : hasSubmittedForm ? (
                     <button 

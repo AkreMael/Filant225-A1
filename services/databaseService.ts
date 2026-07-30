@@ -1899,21 +1899,22 @@ export const databaseService = {
                     updatedAt: serverTimestamp()
                   });
                 } else if (pType === 'Activation' || targetAmountNum === 7100) {
-                  const expiryDate = new Date();
-                  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                  const now = new Date();
+                  const expiryDate = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
                   await databaseService.updateQRCodeActivation(userPhone, {
                     status: "Code QR Actif",
                     isVerified: true,
                     expiryDate: expiryDate.toISOString(),
-                    activationDate: new Date().toISOString(),
+                    activationDate: now.toISOString(),
                     updatedAt: serverTimestamp()
                   });
                 } else if (pType === 'Renouvellement' || targetAmountNum === 500) {
-                  const expiryDate = new Date();
-                  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+                  const now = new Date();
+                  const expiryDate = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
                   await databaseService.updateQRCodeActivation(userPhone, {
                     status: "Code QR Actif",
                     expiryDate: expiryDate.toISOString(),
+                    activationDate: now.toISOString(),
                     updatedAt: serverTimestamp()
                   });
                 } else if (pType === 'Mise en ligne') {
@@ -2070,22 +2071,23 @@ export const databaseService = {
             });
           } else if (payment.paymentType === 'Activation' || payment.amount === '7100') {
             // Étape 3 -> 4 (Actif)
-            const expiryDate = new Date();
-            expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+            const now = new Date();
+            const expiryDate = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
             
             await databaseService.updateQRCodeActivation(userId, {
               status: "Code QR Actif",
               isVerified: true,
               expiryDate: expiryDate.toISOString(),
-              activationDate: new Date().toISOString(),
+              activationDate: now.toISOString(),
               updatedAt: serverTimestamp()
             });
           } else if (payment.paymentType === 'Renouvellement' || payment.amount === '500') {
-             const expiryDate = new Date();
-             expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+             const now = new Date();
+             const expiryDate = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
              await databaseService.updateQRCodeActivation(userId, {
                 status: "Code QR Actif",
                 expiryDate: expiryDate.toISOString(),
+                activationDate: now.toISOString(),
                 updatedAt: serverTimestamp()
              });
           } else if (payment.paymentType === 'Mise en ligne' || payment.title?.includes('Mise en ligne')) {

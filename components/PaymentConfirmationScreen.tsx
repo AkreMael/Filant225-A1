@@ -388,13 +388,13 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         }
       } else if (paymentType === 'Activation' || needed === 7100) {
         try {
-          const expiryDate = new Date();
-          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+          const now = new Date();
+          const expiryDate = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
           await databaseService.updateQRCodeActivation(user.phone, {
             status: "Code QR Actif",
             isVerified: true,
             expiryDate: expiryDate.toISOString(),
-            activationDate: new Date().toISOString(),
+            activationDate: now.toISOString(),
           });
           console.log("Updated QRCodeActivation to: Code QR Actif for", user.phone);
         } catch (qrErr) {
@@ -402,11 +402,12 @@ const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps> = ({
         }
       } else if (paymentType === 'Renouvellement' || needed === 500) {
         try {
-          const expiryDate = new Date();
-          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+          const now = new Date();
+          const expiryDate = new Date(now.getTime() + 30 * 24 * 3600 * 1000);
           await databaseService.updateQRCodeActivation(user.phone, {
             status: "Code QR Actif",
             expiryDate: expiryDate.toISOString(),
+            activationDate: now.toISOString(),
           });
           console.log("Updated QRCodeActivation to: Code QR Actif (renewed) for", user.phone);
         } catch (qrErr) {

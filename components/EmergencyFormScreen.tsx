@@ -46,6 +46,7 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({
   const [selectedOption, setSelectedOption] = useState<string>('');
   const [otherDetails, setOtherDetails] = useState('');
   const [contactInfo, setContactInfo] = useState(user?.phone || '');
+  const [emailInfo, setEmailInfo] = useState(user?.email || '');
   const [isSending, setIsSending] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -105,32 +106,57 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({
     const reportText = `🚨 *URGENCE FILANT°225*\n\n` +
                        `*Motif d'urgence:* ${finalReason}\n` +
                        `*Détails complémentaires:* ${otherDetails || 'Aucun'}\n` +
-                       `*Contact client:* ${contactInfo}\n\n` +
+                       `*Téléphone:* ${contactInfo}\n` +
+                       `*E-mail:* ${emailInfo || 'Non renseigné'}\n\n` +
                        `--- INFORMATIONS UTILISATEUR ---\n` +
                        `*Nom:* ${user?.name || 'Client'}\n` +
-                       `*Téléphone:* ${user?.phone || 'Non spécifié'}\n` +
                        `*Ville:* ${user?.city || 'Abidjan'}\n` +
                        `*Date:* ${new Date().toLocaleString('fr-FR')}\n\n` +
                        `Envoyé depuis l'application FILANT°225`;
 
     try {
-      // 1. Sauvegarde dans Realtime Database / Firestore
+      const sanitizedPhone = (user?.phone || contactInfo).replace(/\D/g, '');
+
+      // 1. Sauvegarde dans Realtime Database / Messagerie Privee
       await databaseService.saveFormSubmission({
-        userPhone: user?.phone || contactInfo,
+        userPhone: sanitizedPhone,
         userName: user?.name || 'Client',
+        email: emailInfo,
         formType: 'emergency',
         formTitle: 'URGENCE - ' + finalReason,
         data: {
           reason: finalReason,
           details: otherDetails,
           contactInfo,
+          email: emailInfo,
           city: user?.city || 'Abidjan'
         },
         whatsappMessage: reportText,
         type: 'emergency_submission'
       });
 
-      // 2. Redirection directe vers le WhatsApp Support
+      // 2. Sauvegarde dans la collection Firestore ServiceRequests (Suivi Administrateur)
+      await databaseService.saveServiceRequest({
+        userId: sanitizedPhone,
+        userName: user?.name || 'Client',
+        phone: contactInfo,
+        email: emailInfo,
+        city: user?.city || 'Abidjan',
+        serviceTitle: `Signalement d'Urgence : ${finalReason}`,
+        formType: 'emergency',
+        answers: {
+          "Motif d'urgence": finalReason,
+          "Détails complémentaires": otherDetails || 'Aucun',
+          "Numéro de contact": contactInfo,
+          "Adresse E-mail": emailInfo || 'Non renseigné',
+          "Ville": user?.city || 'Abidjan'
+        },
+        totalPrice: 0,
+        readStatus: 'NON LU',
+        status: 'Urgent'
+      });
+
+      // 3. Redirection directe vers le WhatsApp Support
       const whatsappUrl = `https://wa.me/2250705052632?text=${encodeURIComponent(reportText)}`;
       window.open(whatsappUrl, '_blank');
 
@@ -373,6 +399,20 @@ const EmergencyFormScreen: React.FC<EmergencyFormScreenProps> = ({
                     errors.includes('contact') ? 'border-red-500 bg-red-950/20' : 'border-slate-800'
                   }`}
                   placeholder="Ex: 0705052632"
+                />
+              </div>
+
+              {/* Email Address Input */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Adresse E-mail pour suivi
+                </label>
+                <input
+                  type="email"
+                  value={emailInfo}
+                  onChange={(e) => setEmailInfo(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-3.5 px-4 text-xs text-white font-bold focus:border-red-500 outline-none transition-all"
+                  placeholder="Ex: exemple@email.com"
                 />
               </div>
 
