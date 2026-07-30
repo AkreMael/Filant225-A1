@@ -1476,8 +1476,24 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
             </div>
             
-            <div className="flex justify-end items-end px-4 w-full">
-            <div className="flex items-start gap-2.5 sm:gap-3 overflow-x-auto scrollbar-hide max-w-full py-1">
+            <div className="flex justify-center sm:justify-end items-end px-4 w-full">
+            <div className="flex items-start gap-2 sm:gap-3 overflow-x-auto scrollbar-hide max-w-full py-1">
+                <button 
+                    onClick={() => onNavigate('services_requests')}
+                    className="flex flex-col items-center space-y-1 group relative shrink-0"
+                    title="Demandes de services"
+                >
+                    <div className="w-[52px] h-[52px] sm:w-[60px] sm:h-[60px] bg-gradient-to-tr from-pink-600 via-rose-500 to-pink-500 hover:from-pink-700 hover:to-rose-600 rounded-2xl shadow-lg transform group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-white relative border border-pink-400/30">
+                        <ShoppingBag className="h-6.5 w-6.5 sm:h-7.5 sm:w-7.5 text-white" />
+                        {pendingRequestsCount > 0 && (
+                            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full border-2 border-white flex items-center justify-center px-1 bg-red-600 shadow-xl z-20 animate-bounce">
+                                <span className="text-[9px] font-black text-white leading-none">{pendingRequestsCount}</span>
+                            </div>
+                        )}
+                    </div>
+                    <span className="text-[8px] font-black uppercase text-pink-600 dark:text-pink-400 tracking-tight">Service</span>
+                </button>
+
                 <button 
                     onClick={() => setActiveTab(Tab.MyQRCode)}
                     className="flex flex-col items-center space-y-1 group shrink-0"
@@ -1596,23 +1612,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                     <div className="w-64 h-1.5 rounded-full bg-animated-search-border animate-search-border-flow shadow-lg"></div>
                 </div>
 
-                <div className="w-full flex justify-center items-center py-2 pl-6 gap-3">
-                    {/* Services demandes button icon on the left */}
-                    <button
-                        onClick={() => {
-                            onNavigate('services_requests');
-                        }}
-                        className="relative p-3.5 bg-white border border-gray-200 text-pink-600 rounded-2xl shadow-sm hover:bg-gray-50 active:scale-95 transition-all flex items-center justify-center cursor-pointer shrink-0"
-                        title="Demandes de services"
-                    >
-                        <ShoppingBag className="w-5 h-5" />
-                        {pendingRequestsCount > 0 && (
-                            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce shadow-md">
-                                {pendingRequestsCount}
-                            </span>
-                        )}
-                    </button>
-
+                <div className="w-full flex justify-center items-center py-2">
                     <button
                         onClick={() => {
                             setIsLoadingServices(true);
